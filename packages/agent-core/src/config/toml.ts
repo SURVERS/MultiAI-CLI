@@ -2,17 +2,17 @@ import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, open } from 'node:fs/promises';
 import { dirname } from 'pathe';
 
-import { ErrorCodes, KimiError } from '#/errors';
+import { ErrorCodes, MultiAIError } from '#/errors';
 import { applyEnvModelConfig, stripEnvModelConfig } from './env-model';
 import {
-  KimiConfigSchema,
+  MultiAIConfigSchema,
   formatConfigValidationError,
   getDefaultConfig,
   type BackgroundConfig,
   type ExperimentalConfig,
   type HookDefConfig,
   type ImageConfig,
-  type KimiConfig,
+  type MultiAIConfig,
   type LoopControl,
   type McpConfig,
   type ModelAlias,
@@ -45,10 +45,10 @@ function camelToSnake(str: string): string {
 /*  Read / parse                                                       */
 /* ------------------------------------------------------------------ */
 
-const DEFAULT_CONFIG_FILE_TEXT = `# ~/.kimi-code/config.toml
-# Runtime settings for Kimi Code.
+const DEFAULT_CONFIG_FILE_TEXT = `# ~/.multiai/config.toml
+# Runtime settings for MultiAI CLI.
 # This file starts empty so built-in defaults can apply.
-# Login will populate managed Kimi provider and model entries.
+# Login will populate managed MultiAI provider and model entries.
 `;
 
 export async function ensureConfigFile(filePath: string): Promise<void> {
@@ -65,7 +65,7 @@ export async function ensureConfigFile(filePath: string): Promise<void> {
   }
 }
 
-export function readConfigFile(filePath: string): KimiConfig {
+export function readConfigFile(filePath: string): MultiAIConfig {
   if (!existsSync(filePath)) {
     return getDefaultConfig();
   }
@@ -79,14 +79,14 @@ export function readConfigFile(filePath: string): KimiConfig {
  * sections). Re-throws validation failures with a short actionable message —
  * UIs surface it directly — instead of the raw validation details.
  */
-export function readConfigFileForUpdate(filePath: string): KimiConfig {
+export function readConfigFileForUpdate(filePath: string): MultiAIConfig {
   try {
     return readConfigFile(filePath);
   } catch (error) {
-    if (error instanceof KimiError && error.code === ErrorCodes.CONFIG_INVALID) {
-      throw new KimiError(
+    if (error instanceof MultiAIError && error.code === ErrorCodes.CONFIG_INVALID) {
+      throw new MultiAIError(
         ErrorCodes.CONFIG_INVALID,
-        `Cannot change settings while ${filePath} is invalid — fix it first (run \`kimi doctor\` for details).`,
+        `Cannot change settings while ${filePath} is invalid — fix it first (run \`multiai doctor\` for details).`,
         { cause: error },
       );
     }
@@ -96,22 +96,22 @@ export function readConfigFileForUpdate(filePath: string): KimiConfig {
 
 /**
  * Load the config for runtime consumption: the on-disk config plus any model
- * synthesized from `KIMI_MODEL_*` environment variables. Use this everywhere a
+ * synthesized from `MULTIAI_MODEL_*` environment variables. Use this everywhere a
  * value is assigned to the live runtime config; use the raw `readConfigFile`
  * for write-back paths so the synthesized model is never persisted.
  */
 export function loadRuntimeConfig(
   filePath: string,
   env: Readonly<Record<string, string | undefined>> = process.env,
-): KimiConfig {
+): MultiAIConfig {
   return applyEnvModelConfig(readConfigFile(filePath), env);
 }
 
 export interface RuntimeConfigLoadResult {
-  readonly config: KimiConfig;
+  readonly config: MultiAIConfig;
   /** Problems in config.toml itself; non-empty means parts (or all) of the file were ignored. */
   readonly fileWarnings: readonly string[];
-  /** Problems applying KIMI_MODEL_* env overrides; the overlay was skipped. */
+  /** Problems applying MULTIAI_MODEL_* env overrides; the overlay was skipped. */
   readonly envWarnings: readonly string[];
   /**
    * Set when the file is entirely unusable (unreadable, TOML syntax error, or
@@ -120,13 +120,13 @@ export interface RuntimeConfigLoadResult {
    * an actionable parse error. Mid-run reloads ignore it and keep the last
    * good config instead.
    */
-  readonly fileError?: KimiError;
+  readonly fileError?: MultiAIError;
 }
 
 /**
  * Lenient variant of `loadRuntimeConfig` that never throws: schema errors
  * drop only the offending sections (whole entry for `providers`/`models`,
- * whole top-level section otherwise) and a bad KIMI_MODEL_* env overlay is
+ * whole top-level section otherwise) and a bad MULTIAI_MODEL_* env overlay is
  * skipped, each reported as a warning. A file that cannot be used at all
  * additionally sets `fileError` so startup can fail fast while mid-run
  * reloads degrade. Runtime read paths use this; write paths must keep using
@@ -137,14 +137,14 @@ export function loadRuntimeConfigSafe(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): RuntimeConfigLoadResult {
   const fileWarnings: string[] = [];
-  let fileError: KimiError | undefined;
+  let fileError: MultiAIError | undefined;
   let config = getDefaultConfig();
 
   let text: string | undefined;
   try {
     text = existsSync(filePath) ? readFileSync(filePath, 'utf-8') : undefined;
   } catch (error) {
-    fileError = new KimiError(
+    fileError = new MultiAIError(
       ErrorCodes.CONFIG_INVALID,
       `Failed to read ${filePath}: ${describeUnknownError(error)}`,
       { cause: error },
@@ -159,7 +159,7 @@ export function loadRuntimeConfigSafe(
     } catch (error) {
       // Same message as the strict parser, code frame included, so failing
       // startup points straight at the offending line.
-      fileError = new KimiError(
+      fileError = new MultiAIError(
         ErrorCodes.CONFIG_INVALID,
         `Invalid TOML in ${filePath}: ${describeUnknownError(error)}`,
         { cause: error },
@@ -172,7 +172,7 @@ export function loadRuntimeConfigSafe(
       transformed['raw'] = raw;
       const salvaged = salvageConfigData(transformed);
       if (salvaged.config === undefined) {
-        fileError = new KimiError(
+        fileError = new MultiAIError(
           ErrorCodes.CONFIG_INVALID,
           `Invalid configuration in ${filePath}: ${formatConfigValidationError(salvaged.error)}`,
           { cause: salvaged.error },
@@ -184,7 +184,7 @@ export function loadRuntimeConfigSafe(
         config = salvaged.config;
         if (salvaged.dropped.length > 0) {
           fileWarnings.push(
-            `Ignored invalid config in ${filePath}: ${salvaged.dropped.join(', ')}. Run \`kimi doctor\` for details.`,
+            `Ignored invalid config in ${filePath}: ${salvaged.dropped.join(', ')}. Run \`multiai doctor\` for details.`,
           );
         }
       }
@@ -196,7 +196,7 @@ export function loadRuntimeConfigSafe(
     config = applyEnvModelConfig(config, env);
   } catch (error) {
     envWarnings.push(
-      `Ignoring KIMI_MODEL_* environment overrides: ${describeUnknownError(error)}`,
+      `Ignoring MULTIAI_MODEL_* environment overrides: ${describeUnknownError(error)}`,
     );
   }
 
@@ -207,7 +207,7 @@ export function loadRuntimeConfigSafe(
 const ENTRY_KEYED_SECTIONS = new Set(['providers', 'models']);
 
 interface SalvageResult {
-  readonly config: KimiConfig | undefined;
+  readonly config: MultiAIConfig | undefined;
   readonly dropped: readonly string[];
   readonly error?: unknown;
 }
@@ -215,7 +215,7 @@ interface SalvageResult {
 function salvageConfigData(transformed: Record<string, unknown>): SalvageResult {
   const dropped: string[] = [];
   for (;;) {
-    const result = KimiConfigSchema.safeParse(transformed);
+    const result = MultiAIConfigSchema.safeParse(transformed);
     if (result.success) {
       return { config: result.data, dropped };
     }
@@ -265,7 +265,7 @@ function describeTomlSyntaxError(error: unknown): string {
   return firstLine;
 }
 
-export function parseConfigString(tomlText: string, filePath = 'config.toml'): KimiConfig {
+export function parseConfigString(tomlText: string, filePath = 'config.toml'): MultiAIConfig {
   if (tomlText.trim().length === 0) {
     return getDefaultConfig();
   }
@@ -274,7 +274,7 @@ export function parseConfigString(tomlText: string, filePath = 'config.toml'): K
   try {
     data = parseToml(tomlText) as Record<string, unknown>;
   } catch (error) {
-    throw new KimiError(ErrorCodes.CONFIG_INVALID, `Invalid TOML in ${filePath}: ${error instanceof Error ? error.message : String(error)}`, {
+    throw new MultiAIError(ErrorCodes.CONFIG_INVALID, `Invalid TOML in ${filePath}: ${error instanceof Error ? error.message : String(error)}`, {
       cause: error,
     });
   }
@@ -282,15 +282,15 @@ export function parseConfigString(tomlText: string, filePath = 'config.toml'): K
   return parseConfigData(data, filePath);
 }
 
-function parseConfigData(data: Record<string, unknown>, filePath: string): KimiConfig {
+function parseConfigData(data: Record<string, unknown>, filePath: string): MultiAIConfig {
   const raw = cloneRecord(data);
   const transformed = transformTomlData(data);
   transformed['raw'] = raw;
 
   try {
-    return KimiConfigSchema.parse(transformed);
+    return MultiAIConfigSchema.parse(transformed);
   } catch (error) {
-    throw new KimiError(ErrorCodes.CONFIG_INVALID, `Invalid configuration in ${filePath}: ${formatConfigValidationError(error)}`, {
+    throw new MultiAIError(ErrorCodes.CONFIG_INVALID, `Invalid configuration in ${filePath}: ${formatConfigValidationError(error)}`, {
       cause: error,
     });
   }
@@ -457,7 +457,7 @@ function transformLoopControlData(data: Record<string, unknown>): Record<string,
 /*  Write / stringify                                                  */
 /* ------------------------------------------------------------------ */
 
-export async function writeConfigFile(filePath: string, config: KimiConfig): Promise<void> {
+export async function writeConfigFile(filePath: string, config: MultiAIConfig): Promise<void> {
   // Final guard: never persist the env-synthesized model/provider to disk,
   // even if a caller passes back the runtime config as a patch (see
   // stripEnvModelConfig / the getConfig -> setConfig round-trip).
@@ -466,7 +466,7 @@ export async function writeConfigFile(filePath: string, config: KimiConfig): Pro
   await atomicWrite(filePath, `${stringifyToml(configToTomlData(validated))}\n`);
 }
 
-export function configToTomlData(config: KimiConfig): Record<string, unknown> {
+export function configToTomlData(config: MultiAIConfig): Record<string, unknown> {
   const out = cloneRecord(config.raw);
 
   // Strip deprecated fields
@@ -477,7 +477,7 @@ export function configToTomlData(config: KimiConfig): Record<string, unknown> {
   delete out['defaultThinking'];
 
   // Top-level scalar fields
-  const scalarFields: (keyof KimiConfig)[] = [
+  const scalarFields: (keyof MultiAIConfig)[] = [
     'defaultProvider',
     'defaultModel',
     'planMode',

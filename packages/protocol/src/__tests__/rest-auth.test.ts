@@ -19,7 +19,7 @@ describe('authSummarySchema', () => {
     providers_count: 1,
     default_model: 'kimi-k2',
     managed_provider: {
-      name: 'kimi-code-oauth',
+      name: 'managed:multiai',
       status: 'authenticated',
     },
   };
@@ -38,7 +38,7 @@ describe('authSummarySchema', () => {
     expect(parsed.providers_count).toBe(1);
     expect(parsed.default_model).toBe('kimi-k2');
     expect(parsed.managed_provider).toEqual({
-      name: 'kimi-code-oauth',
+      name: 'managed:multiai',
       status: 'authenticated',
     });
   });
@@ -54,7 +54,7 @@ describe('authSummarySchema', () => {
   it('rejects an unknown managed_provider.status', () => {
     const bad = {
       ...readyState,
-      managed_provider: { name: 'kimi-code-oauth', status: 'pending' },
+      managed_provider: { name: 'managed:multiai', status: 'pending' },
     };
     expect(authSummarySchema.safeParse(bad).success).toBe(false);
   });

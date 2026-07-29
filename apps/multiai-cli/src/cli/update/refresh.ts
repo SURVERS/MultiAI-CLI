@@ -1,0 +1,34 @@
+import { writeUpdateCache } from './cache';
+import { fetchLatestFromGitHub, type FetchLatestResult } from './github';
+import { type UpdateCache } from './types';
+
+export interface RefreshUpdateCacheDeps {
+  /** Resolves with the latest version + rollout manifest. **Throws** on any
+   * failure — callers (including the default background invocation in
+   * preflight) must catch. Errors intentionally skip `writeCache` so a
+   * transient GitHub failure does not overwrite a previously known `latest` with
+   * `null`. */
+  readonly fetchLatest: () => Promise<FetchLatestResult>;
+  readonly writeCache: (cache: UpdateCache) => Promise<void>;
+  readonly now: () => Date;
+}
+
+export async function refreshUpdateCache(
+  overrides: Partial<RefreshUpdateCacheDeps> = {},
+): Promise<UpdateCache> {
+  const resolved: RefreshUpdateCacheDeps = {
+    fetchLatest: overrides.fetchLatest ?? (() => fetchLatestFromGitHub()),
+    writeCache: overrides.writeCache ?? writeUpdateCache,
+    now: overrides.now ?? (() => new Date()),
+  };
+
+  const { latest, manifest } = await resolved.fetchLatest();
+  const cache: UpdateCache = {
+    source: 'github',
+    checkedAt: resolved.now().toISOString(),
+    latest,
+    manifest,
+  };
+  await resolved.writeCache(cache);
+  return cache;
+}

@@ -2,7 +2,7 @@
  * Approval service interface + protocol adapter.
  *
  * **Service interface** (`IApprovalService`): Reverse-RPC one-shot broker
- * role — routes `ApprovalRequest`s coming out of `KimiCore` to a waiter
+ * role — routes `ApprovalRequest`s coming out of `MultiAICore` to a waiter
  * (web client over WS, mock handler in tests) and resolves the
  * promise when the response arrives.
  *
@@ -24,7 +24,7 @@
  * representations of the same approval interaction:
  *
  *   1. **In-process SDK shape** (agent-core, camelCase) — what `BridgeClientAPI`
- *      sees coming off `KimiCore.requestApproval(...)`. See
+ *      sees coming off `MultiAICore.requestApproval(...)`. See
  *      `packages/agent-core/src/rpc/sdk-api.ts:17-23`:
  *        `ApprovalRequest { turnId?, toolCallId, toolName, action, display }`
  *      and `ApprovalResponse { decision, scope?, feedback?, selectedLabel? }`.
@@ -46,7 +46,7 @@
  *
  * **Anti-corruption**: this is the ONLY place protocol↔SDK shape translation
  * happens for approval. Daemon routes call `toBrokerRequest` indirectly via
- * the adapter (KimiCore → BridgeClientAPI.requestApproval →
+ * the adapter (MultiAICore → BridgeClientAPI.requestApproval →
  * IApprovalService.request), and `toAgentCoreResponse` from the REST resolve
  * handler.
  */
@@ -56,8 +56,8 @@ import type { ApprovalRequest, ApprovalResponse } from '../../rpc';
 import type {
   ApprovalRequest as ProtocolApprovalRequest,
   ApprovalResponse as ProtocolApprovalResponse,
-} from '@moonshot-ai/protocol';
-import type {} from '@moonshot-ai/protocol'; // type-only marker — keep protocol dep referenced
+} from '@multiai/protocol';
+import type {} from '@multiai/protocol'; // type-only marker — keep protocol dep referenced
 
 // Re-export ApprovalResponse for service-side consumers so they don't have to
 // also depend on agent-core directly.
@@ -67,7 +67,7 @@ export interface IApprovalService {
   readonly _serviceBrand: undefined;
 
   /**
-   * Called by the adapter when KimiCore needs user approval. Resolves with the
+   * Called by the adapter when MultiAICore needs user approval. Resolves with the
    * user's decision (or a cancelled response if no client is connected /
    * timeout elapses — concrete-impl policy).
    */

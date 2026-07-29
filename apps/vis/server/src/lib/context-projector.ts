@@ -7,7 +7,7 @@ import {
   renderToolResultForModel,
   selectCompactionUserMessages,
   selectRecentUserMessages,
-} from '@moonshot-ai/agent-core';
+} from '@multiai/agent-core';
 import type {
   ContentPart,
   ContextMessage,

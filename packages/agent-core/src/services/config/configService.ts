@@ -1,6 +1,6 @@
 import { Disposable, InstantiationType, registerSingleton } from '../../di';
-import type { KimiConfig, ProviderConfig } from '../../config';
-import type { ConfigResponse, PatchConfigRequest } from '@moonshot-ai/protocol';
+import type { MultiAIConfig, ProviderConfig } from '../../config';
+import type { ConfigResponse, PatchConfigRequest } from '@multiai/protocol';
 
 import { ICoreProcessService } from '../coreProcess/coreProcess';
 import { IEventService } from '../event/event';
@@ -17,13 +17,13 @@ export class ConfigService extends Disposable implements IConfigService {
   }
 
   async get(): Promise<ConfigResponse> {
-    const config = await this.core.rpc.getKimiConfig({ reload: true });
+    const config = await this.core.rpc.getMultiAIConfig({ reload: true });
     return toConfigResponse(config);
   }
 
   async set(patch: PatchConfigRequest): Promise<ConfigResponse> {
     const camelPatch = convertKeysSnakeToCamel(patch) as Record<string, unknown>;
-    const updated = await this.core.rpc.setKimiConfig(camelPatch);
+    const updated = await this.core.rpc.setMultiAIConfig(camelPatch);
     const response = toConfigResponse(updated);
 
     this.eventService.publish({
@@ -38,7 +38,7 @@ export class ConfigService extends Disposable implements IConfigService {
   }
 }
 
-function toConfigResponse(config: KimiConfig): ConfigResponse {
+function toConfigResponse(config: MultiAIConfig): ConfigResponse {
   const providers: Record<string, { type: string; base_url?: string; default_model?: string; has_api_key: boolean }> = {};
   for (const [providerId, provider] of Object.entries(config.providers ?? {})) {
     providers[providerId] = {

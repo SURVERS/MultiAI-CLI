@@ -14,7 +14,7 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import type { Event, KimiHarness, Session } from '@moonshot-ai/kimi-code-sdk';
+import type { Event, MultiAIHarness, Session } from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS } from './_helpers/harness-stubs';
@@ -28,7 +28,7 @@ import {
  * Phase 9.3 — end-to-end + helper-unit coverage for:
  *   - `available_commands_update` emitted ONCE on `session/new` and
  *     ONCE on `session/load` (empty list — the slash-command registry
- *     lives in `apps/kimi-code` and is intentionally out-of-scope for
+ *     lives in `apps/multiai-cli` and is intentionally out-of-scope for
  *     the adapter; see STATUS for the registry-gap note).
  *   - `plan` session_update derived from the kimi-code TodoList
  *     `display.kind === 'todo_list'` payload attached to a
@@ -197,7 +197,7 @@ describe('Phase 9.3 e2e · newSession emits available_commands_update once', () 
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -250,7 +250,7 @@ describe('Phase 9.3 e2e · loadSession emits available_commands_update once', ()
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       resumeSession: async (_opts: { id: string }) => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -297,7 +297,7 @@ describe('Phase 9.3 e2e · todo_list display block becomes a plan session_update
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -342,7 +342,7 @@ describe('Phase 9.3 e2e · todo_list display block becomes a plan session_update
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);

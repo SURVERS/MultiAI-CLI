@@ -45,7 +45,7 @@
  * refresh lives in `app/kosongConfig`, not here.
  */
 
-import { parseKimiCodeCustomHeaders } from '@moonshot-ai/kimi-code-oauth';
+import { parseMultiAICustomHeaders } from '@multiai/oauth';
 
 import { Disposable } from '#/_base/di/lifecycle';
 import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/di/scope';
@@ -371,13 +371,6 @@ export class ModelCatalog extends Disposable implements IModelCatalog {
         `Model "${id}" must define a wire-facing name in config.toml.`,
       );
     }
-    if (model.maxContextSize === undefined) {
-      throw new Error2(
-        CONFIG_INVALID_ERROR_CODE,
-        `Model "${id}" must define a positive max_context_size in config.toml.`,
-      );
-    }
-
     const explainedCapability = this.protocolRegistry.explainCapability(
       protocol,
       wireName,
@@ -589,7 +582,7 @@ export function resolveOutboundHeaders(
     providerType !== undefined &&
     getProviderDefinition(providerType)?.hostHeaders === 'full';
   const hostLayer = forwardsAll ? hostHeaders : userAgentOnly(hostHeaders);
-  return { ...parseKimiCodeCustomHeaders(), ...hostLayer, ...customHeaders };
+  return { ...parseMultiAICustomHeaders(), ...hostLayer, ...customHeaders };
 }
 
 function userAgentOnly(headers: Readonly<Record<string, string>>): Record<string, string> {
@@ -600,7 +593,7 @@ function userAgentOnly(headers: Readonly<Record<string, string>>): Record<string
 function resolveModelCapabilities(
   declaredCapabilities: readonly string[] | undefined,
   detected: ModelCapability,
-  maxContextSize: number,
+  maxContextSize: number | undefined,
   maxInputSize: number | undefined,
 ): ModelCapability {
   const declared = new Set((declaredCapabilities ?? []).map((c) => c.trim().toLowerCase()));
@@ -610,7 +603,7 @@ function resolveModelCapabilities(
     audio_in: declared.has('audio_in') || detected.audio_in,
     thinking: declared.has('thinking') || declared.has('always_thinking') || detected.thinking,
     tool_use: declared.has('tool_use') || detected.tool_use,
-    max_context_tokens: maxContextSize,
+    max_context_tokens: maxContextSize ?? detected.max_context_tokens,
     max_input_tokens: maxInputSize,
     dynamically_loaded_tools:
       declared.has('dynamically_loaded_tools') ||

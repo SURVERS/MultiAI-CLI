@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'pathe';
 
 import { testKaos } from '../fixtures/test-kaos';
-import { APIStatusError, type Message, type ToolCall } from '@moonshot-ai/kosong';
+import { APIStatusError, type Message, type ToolCall } from '@multiai/kosong';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Agent, AgentOptions } from '../../src/agent';
@@ -41,7 +41,7 @@ afterEach(async () => {
   }
 });
 
-const SUBAGENT_TIMEOUT_ENV = 'KIMI_SUBAGENT_TIMEOUT_MS';
+const SUBAGENT_TIMEOUT_ENV = 'MULTIAI_SUBAGENT_TIMEOUT_MS';
 
 describe('resolveSubagentTimeoutMs', () => {
   const saved: { value: string | undefined } = { value: process.env[SUBAGENT_TIMEOUT_ENV] };
@@ -1312,7 +1312,7 @@ describe('Session.createAgent', () => {
             `${workDir}/.github`,
             `${workDir}/.github/workflows`,
             `${workDir}/src`,
-            `${workDir}/.kimi-code`,
+            `${workDir}/.multiai`,
           ].includes(path)
         ) {
           return stat('dir');
@@ -1320,7 +1320,7 @@ describe('Session.createAgent', () => {
         if (
           [
             '/repo/AGENTS.md',
-            `${workDir}/.kimi-code/AGENTS.md`,
+            `${workDir}/.multiai/AGENTS.md`,
             `${workDir}/AGENTS.md`,
             `${workDir}/package.json`,
             `${workDir}/src/index.ts`,
@@ -1360,7 +1360,7 @@ describe('Session.createAgent', () => {
       },
       readText: vi.fn(async (path: string) => {
         if (path === '/repo/AGENTS.md') return 'root instructions';
-        if (path === `${workDir}/.kimi-code/AGENTS.md`) return 'brand instructions';
+        if (path === `${workDir}/.multiai/AGENTS.md`) return 'brand instructions';
         if (path === `${workDir}/AGENTS.md`) return 'leaf instructions';
         throw new Error(`ENOENT ${path}`);
       }),
@@ -1386,7 +1386,7 @@ describe('Session.createAgent', () => {
     expect(created.agent.config.systemPrompt).toContain('<!-- From: /repo/AGENTS.md -->');
     expect(created.agent.config.systemPrompt).toContain('root instructions');
     expect(created.agent.config.systemPrompt).toContain(
-      '<!-- From: /repo/packages/app/.kimi-code/AGENTS.md -->',
+      '<!-- From: /repo/packages/app/.multiai/AGENTS.md -->',
     );
     expect(created.agent.config.systemPrompt).toContain('brand instructions');
     expect(created.agent.config.systemPrompt).toContain(
@@ -1395,9 +1395,9 @@ describe('Session.createAgent', () => {
     expect(created.agent.config.systemPrompt).toContain('leaf instructions');
   });
 
-  it('uses the kimi home for global branded AGENTS.md files', async () => {
+  it('uses the MultiAI home for global branded AGENTS.md files', async () => {
     const realHome = '/real-home';
-    const kimiHome = '/kimi-home';
+    const multiaiHome = '/multiai-home';
     const workDir = '/repo/packages/app';
     const kaos = createFakeKaos({
       gethome: () => realHome,
@@ -1407,7 +1407,7 @@ describe('Session.createAgent', () => {
         if (['/repo', '/repo/.git', '/repo/packages', workDir].includes(path)) {
           return stat('dir');
         }
-        if ([`${kimiHome}/AGENTS.md`, `${realHome}/.kimi-code/AGENTS.md`].includes(path)) {
+        if ([`${multiaiHome}/AGENTS.md`, `${realHome}/.multiai/AGENTS.md`].includes(path)) {
           return stat('file');
         }
         throw new Error(`ENOENT ${path}`);
@@ -1417,8 +1417,8 @@ describe('Session.createAgent', () => {
         return;
       },
       readText: vi.fn(async (path: string) => {
-        if (path === `${kimiHome}/AGENTS.md`) return 'kimi home instructions';
-        if (path === `${realHome}/.kimi-code/AGENTS.md`) return 'stale real-home instructions';
+        if (path === `${multiaiHome}/AGENTS.md`) return 'MultiAI home instructions';
+        if (path === `${realHome}/.multiai/AGENTS.md`) return 'stale real-home instructions';
         throw new Error(`ENOENT ${path}`);
       }),
     });
@@ -1426,14 +1426,14 @@ describe('Session.createAgent', () => {
       id: 'test-kimi-home-agents-md',
       kaos: kaos.withCwd(workDir),
       homedir: '/tmp/kimi-session',
-      kimiHomeDir: kimiHome,
+      multiaiHomeDir: multiaiHome,
       rpc: createSessionRpc(),
       initializeMainAgent: false,
     });
 
     const created = await session.createAgent({ type: 'main' }, { profile: contextProfile() });
 
-    expect(created.agent.config.systemPrompt).toContain('kimi home instructions');
+    expect(created.agent.config.systemPrompt).toContain('MultiAI home instructions');
     expect(created.agent.config.systemPrompt).not.toContain('stale real-home instructions');
   });
 
@@ -1587,7 +1587,7 @@ function fakeSession(
   }
   return {
     agents,
-    options: { kimiHomeDir: undefined },
+    options: { multiaiHomeDir: undefined },
     metadata: {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',

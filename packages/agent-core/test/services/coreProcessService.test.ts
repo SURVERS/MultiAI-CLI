@@ -126,15 +126,15 @@ let prevHome: string | undefined;
 
 beforeEach(() => {
   tmpHome = mkdtempSync(join(tmpdir(), 'kimi-services-test-'));
-  prevHome = process.env['KIMI_HOME'];
-  process.env['KIMI_HOME'] = tmpHome;
+  prevHome = process.env['MULTIAI_HOME'];
+  process.env['MULTIAI_HOME'] = tmpHome;
 });
 
 afterEach(() => {
   if (prevHome === undefined) {
-    delete process.env['KIMI_HOME'];
+    delete process.env['MULTIAI_HOME'];
   } else {
-    process.env['KIMI_HOME'] = prevHome;
+    process.env['MULTIAI_HOME'] = prevHome;
   }
   try {
     rmSync(tmpHome, { recursive: true, force: true });
@@ -226,7 +226,7 @@ describe('CoreProcessService direct construction', () => {
     }
   });
 
-  it('rpc round-trip through createRPC reaches KimiCore (getCoreInfo smoke)', async () => {
+  it('rpc round-trip through createRPC reaches MultiAICore (getCoreInfo smoke)', async () => {
     const { eventService, approvalService, questionService, logService, workspaceRegistry } = makePeers();
     const core = new CoreProcessService(
       {},
@@ -268,36 +268,36 @@ describe('CoreProcessService direct construction', () => {
   it('default-wires a resolveOAuthTokenProvider when caller omits one', () => {
     const resolver = CoreProcessService._defaultOAuthTokenResolver(tmpHome, join(tmpHome, 'config.toml'));
     expect(typeof resolver).toBe('function');
-    const tokenProvider = resolver('managed:kimi-code');
+    const tokenProvider = resolver('managed:multiai');
     expect(tokenProvider).toBeDefined();
     expect(typeof tokenProvider?.getAccessToken).toBe('function');
   });
 
-  it('default-wires kimiRequestHeaders from identity when caller omits headers', () => {
-    const headers = CoreProcessService._defaultKimiRequestHeaders(
+  it('default-wires multiAIRequestHeaders from identity when caller omits headers', () => {
+    const headers = CoreProcessService._defaultMultiAIRequestHeaders(
       tmpHome,
-      { userAgentProduct: 'kimi-code-cli', version: '9.9.9' },
+      { userAgentProduct: 'multiai-cli', version: '9.9.9' },
     );
     expect(headers).toBeDefined();
-    expect(headers!['User-Agent']).toMatch(/^kimi-code-cli\/9\.9\.9/);
-    expect(headers!['X-Msh-Platform']).toBe('kimi_code_cli');
-    expect(headers!['X-Msh-Version']).toBe('9.9.9');
-    expect(headers!['X-Msh-Device-Id']).toMatch(
+    expect(headers!['User-Agent']).toMatch(/^multiai-cli\/9\.9\.9/);
+    expect(headers!['X-MultiAI-Platform']).toBe('multiai_cli');
+    expect(headers!['X-MultiAI-Version']).toBe('9.9.9');
+    expect(headers!['X-MultiAI-Device-Id']).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
   });
 
   it('returns undefined headers when no identity is provided (back-compat)', () => {
-    const headers = CoreProcessService._defaultKimiRequestHeaders(tmpHome);
+    const headers = CoreProcessService._defaultMultiAIRequestHeaders(tmpHome);
     expect(headers).toBeUndefined();
   });
 
-  it('caller-supplied kimiRequestHeaders win over identity-derived defaults', () => {
+  it('caller-supplied multiAIRequestHeaders win over identity-derived defaults', () => {
     const explicit = { 'User-Agent': 'override/1.0' };
     const picked =
-      explicit ?? CoreProcessService._defaultKimiRequestHeaders(
+      explicit ?? CoreProcessService._defaultMultiAIRequestHeaders(
         tmpHome,
-        { userAgentProduct: 'kimi-code-cli', version: '9.9.9' },
+        { userAgentProduct: 'multiai-cli', version: '9.9.9' },
       );
     expect(picked).toBe(explicit);
   });

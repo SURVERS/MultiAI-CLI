@@ -3,7 +3,7 @@
  *
  * The provider video-upload attempt and its graceful fallbacks run in two
  * places — the `ReadMediaFile` tool (a model tool call) and the request-time
- * video resolver (a prompt's `kimi-file://` part) — and must agree on which
+ * video resolver (a prompt's `multiai-file://` part) — and must agree on which
  * failures are auth failures (surfaced, never masked into a fallback) and
  * which protocols carry inline `video_url` on the wire. Pure helpers; no
  * scoped service.

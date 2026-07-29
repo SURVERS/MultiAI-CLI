@@ -51,7 +51,7 @@ describe('Session.close stops cron', () => {
     // `session.close()`. Anything short of `unbindSigusr1` running
     // would leak a listener.
     if (process.platform === 'win32') return;
-    vi.stubEnv('KIMI_CRON_MANUAL_TICK', '1');
+    vi.stubEnv('MULTIAI_CRON_MANUAL_TICK', '1');
 
     const before = process.listenerCount('SIGUSR1');
     const { sessionDir, workDir } = await sessionFixture();
@@ -74,7 +74,7 @@ async function sessionFixture(): Promise<{
   readonly sessionDir: string;
   readonly workDir: string;
 }> {
-  const dir = await mkdtemp(join(tmpdir(), 'kimi-session-cron-stop-'));
+  const dir = await mkdtemp(join(tmpdir(), 'multiai-session-cron-stop-'));
   tempDirs.push(dir);
   const workDir = join(dir, 'work');
   const sessionDir = join(dir, 'session');

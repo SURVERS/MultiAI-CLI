@@ -3,7 +3,7 @@
  * and the AgentFileDefinition → AgentProfile factory (template substitution,
  * `${base_prompt}`, tool pass-through, explicit override intent).
  * Pure-function level, no IO.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/app/agentFileCatalog/agentFile.test.ts`.
  */
 

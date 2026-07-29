@@ -10,9 +10,9 @@
  * On Windows the probe expects bash from Git for Windows or MSYS2. If it
  * cannot be located the function throws a plain `Error` with the checked paths
  * in the message; the App-scope host-environment service catches that at first
- * resolution. Set `KIMI_SHELL_PATH` to override.
+ * resolution. Set `MULTIAI_SHELL_PATH` to override.
  *
- * Vendored from `@moonshot-ai/kaos` `environment.ts` — kept as a pure helper
+ * Vendored from `@multiai/kaos` `environment.ts` — kept as a pure helper
  * with no DI dependencies.
  */
 
@@ -127,7 +127,7 @@ export async function probeHostEnvironment(
 async function locateWindowsGitBash(deps: HostEnvironmentProbeDeps): Promise<string> {
   const checked: string[] = [];
 
-  const override = deps.env['KIMI_SHELL_PATH']?.trim();
+  const override = deps.env['MULTIAI_SHELL_PATH']?.trim();
   if (override !== undefined && override.length > 0) {
     checked.push(override);
     if (await deps.isFile(override)) {
@@ -184,7 +184,7 @@ async function locateWindowsGitBash(deps: HostEnvironmentProbeDeps): Promise<str
   }
 
   throw new Error(
-    `Git Bash was not found on this Windows host. Install Git for Windows from https://gitforwindows.org/ or set KIMI_SHELL_PATH to a bash.exe. Checked: ${checked.join(', ')}.`,
+    `Git Bash was not found on this Windows host. Install Git for Windows from https://gitforwindows.org/ or set MULTIAI_SHELL_PATH to a bash.exe. Checked: ${checked.join(', ')}.`,
   );
 }
 

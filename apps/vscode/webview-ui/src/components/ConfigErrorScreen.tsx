@@ -13,7 +13,7 @@ import {
 
 import { bridge } from "@/services";
 import { Button } from "@/components/ui/button";
-import { KimiMascot } from "./KimiMascot";
+import { MultiAIMascot } from "./MultiAIMascot";
 
 interface Props {
   type: "loading" | "runtime-error" | "no-models" | "no-workspace";
@@ -66,17 +66,17 @@ function NoModelsContent({ onRefresh, onBackToLogin }: Pick<Props, "onRefresh" |
           <span className="text-sm font-medium">Model setup required</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Sign in with a Kimi account, or configure a provider and model in your shared Kimi Code <code className="bg-muted px-1 rounded">config.toml</code>.
+          Sign in with a MultiAI account, or configure a provider and model in your shared MultiAI CLI <code className="bg-muted px-1 rounded">config.toml</code>.
         </p>
       </div>
 
       <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2">
         <div className="flex items-center gap-2 text-xs font-medium">
           <IconFileSettings className="size-4" />
-          Shared Kimi Code configuration
+          Shared MultiAI CLI configuration
         </div>
         <p className="text-xs text-muted-foreground">
-          VS Code and the terminal UI use the same Kimi Code home, configuration, credentials, and sessions.
+          VS Code and the terminal UI use the same MultiAI home, configuration, credentials, and sessions.
         </p>
       </div>
 
@@ -103,10 +103,10 @@ export function ConfigErrorScreen({ type, errorMessage, onRefresh, onBackToLogin
     return (
       <div className="h-full flex items-center justify-center p-6">
         <div className="text-center space-y-4">
-          <KimiMascot className="h-10 mx-auto opacity-50" />
+          <MultiAIMascot className="h-10 mx-auto opacity-50" />
           <div className="inline-flex items-center gap-2 text-muted-foreground">
             <IconLoader2 className="size-4 animate-spin" />
-            <span className="text-sm">Starting Kimi Code...</span>
+            <span className="text-sm">Starting MultiAI CLI...</span>
           </div>
         </div>
       </div>
@@ -117,13 +117,13 @@ export function ConfigErrorScreen({ type, errorMessage, onRefresh, onBackToLogin
     return (
       <div className="h-full flex items-center justify-center p-6">
         <div className="max-w-sm text-center space-y-6">
-          <KimiMascot className="h-10 mx-auto opacity-50" />
+          <MultiAIMascot className="h-10 mx-auto opacity-50" />
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 text-amber-500">
               <IconFolderOpen className="size-5" />
               <span className="text-sm font-medium">No workspace open</span>
             </div>
-            <p className="text-xs text-muted-foreground">Open a folder to start using Kimi Code.</p>
+            <p className="text-xs text-muted-foreground">Open a folder to start using MultiAI CLI.</p>
           </div>
           <Button
             onClick={() => {
@@ -143,7 +143,7 @@ export function ConfigErrorScreen({ type, errorMessage, onRefresh, onBackToLogin
     return (
       <div className="h-full flex items-center justify-center p-6">
         <div className="max-w-sm text-center space-y-6">
-          <KimiMascot className="h-10 mx-auto opacity-50" />
+          <MultiAIMascot className="h-10 mx-auto opacity-50" />
           <NoModelsContent onRefresh={onRefresh} onBackToLogin={onBackToLogin} />
         </div>
       </div>
@@ -153,13 +153,13 @@ export function ConfigErrorScreen({ type, errorMessage, onRefresh, onBackToLogin
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-6">
       <div className="max-w-sm mx-auto text-center space-y-6">
-        <KimiMascot className="h-10 mx-auto opacity-50" />
+        <MultiAIMascot className="h-10 mx-auto opacity-50" />
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 text-red-500">
             <IconAlertTriangle className="size-5" />
-            <span className="text-sm font-medium">Kimi Code could not start</span>
+            <span className="text-sm font-medium">MultiAI CLI could not start</span>
           </div>
-          <p className="text-xs text-muted-foreground">Check the error below. Full diagnostics are available in the Kimi Code output channel.</p>
+          <p className="text-xs text-muted-foreground">Check the error below. Full diagnostics are available in the MultiAI CLI output channel.</p>
         </div>
         <ErrorDetails message={errorMessage} />
         <div className="flex gap-2 justify-center">

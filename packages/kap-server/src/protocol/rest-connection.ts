@@ -8,7 +8,7 @@
  */
 import { z } from 'zod';
 
-import { isoDateTimeSchema } from '@moonshot-ai/agent-core-v2/_base/utils/isoDateTime';
+import { isoDateTimeSchema } from '@multiai/agent-core-v2/_base/utils/isoDateTime';
 
 export const connectionSchema = z.object({
   /** Server-assigned connection id (`conn_<ulid>`). */

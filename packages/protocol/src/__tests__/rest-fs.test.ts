@@ -402,7 +402,7 @@ describe('fsGitStatusResponseSchema (W11.2)', () => {
       pullRequest: {
         number: 625,
         state: 'open' as const,
-        url: 'https://github.com/MoonshotAI/kimi-code/pull/625',
+        url: 'https://github.com/SURVERS/MultiAI-CLI/pull/625',
       },
     };
     expect(fsGitStatusResponseSchema.parse(r)).toEqual(r);

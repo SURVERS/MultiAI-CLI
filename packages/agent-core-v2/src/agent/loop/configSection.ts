@@ -6,8 +6,8 @@
  * limits) consumed by `AgentLoopService` (step + retry budgets) and `AgentProfileService`
  * (context sizing), plus the snake_case ↔ camelCase TOML transforms (including
  * the legacy `max_steps_per_run` → `maxStepsPerTurn` rename). The step and retry
- * budgets also accept operational env overrides (`KIMI_LOOP_MAX_STEPS_PER_TURN`
- * / `KIMI_LOOP_MAX_RETRIES_PER_STEP`); `config` resolves each field as
+ * budgets also accept operational env overrides (`MULTIAI_LOOP_MAX_STEPS_PER_TURN`
+ * / `MULTIAI_LOOP_MAX_RETRIES_PER_STEP`); `config` resolves each field as
  * `env > config.toml > default` and re-applies the env binding on every read.
  * Self-registered at module load via `registerConfigSection`.
  *
@@ -24,8 +24,8 @@ import { plainObjectToToml, transformPlainObject } from '#/app/config/toml';
 
 export const LOOP_CONTROL_SECTION = 'loopControl';
 
-export const LOOP_MAX_STEPS_PER_TURN_ENV = 'KIMI_LOOP_MAX_STEPS_PER_TURN';
-export const LOOP_MAX_RETRIES_PER_STEP_ENV = 'KIMI_LOOP_MAX_RETRIES_PER_STEP';
+export const LOOP_MAX_STEPS_PER_TURN_ENV = 'MULTIAI_LOOP_MAX_STEPS_PER_TURN';
+export const LOOP_MAX_RETRIES_PER_STEP_ENV = 'MULTIAI_LOOP_MAX_RETRIES_PER_STEP';
 
 export const LoopControlSchema = z.object({
   maxStepsPerTurn: z.number().int().min(0).optional(),

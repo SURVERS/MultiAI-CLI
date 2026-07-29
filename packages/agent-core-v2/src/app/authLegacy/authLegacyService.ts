@@ -11,7 +11,7 @@
  * `IAuthSummaryService` (which serves `/api/v2`) is not involved.
  */
 
-import { KIMI_CODE_PROVIDER_NAME } from '@moonshot-ai/kimi-code-oauth';
+import { MULTIAI_PROVIDER_NAME } from '@multiai/oauth';
 import type { AuthSummary } from './authLegacy';
 
 import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/di/scope';
@@ -21,7 +21,7 @@ import { IProviderService } from '#/kosong/provider/provider';
 
 import { IAuthLegacyService } from './authLegacy';
 
-const MANAGED_PROVIDER_NAME = KIMI_CODE_PROVIDER_NAME;
+const MANAGED_PROVIDER_NAME = MULTIAI_PROVIDER_NAME;
 
 export class AuthLegacyService implements IAuthLegacyService {
   declare readonly _serviceBrand: undefined;

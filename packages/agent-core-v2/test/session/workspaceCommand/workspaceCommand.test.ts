@@ -272,11 +272,11 @@ describe('SessionWorkspaceCommandService', () => {
     const result = await svc.addAdditionalDir({ path: 'extra', persist: true });
 
     expect(result.persisted).toBe(true);
-    expect(result.configPath).toBe(`${WORK_DIR}/.kimi-code/local.toml`);
+    expect(result.configPath).toBe(`${WORK_DIR}/.multiai/local.toml`);
     expect(result.additionalDirs).toContain(EXTRA_DIR);
     expect(workspace.additionalDirs).toContain(EXTRA_DIR);
 
-    const written = fs.files.get(`${WORK_DIR}/.kimi-code/local.toml`);
+    const written = fs.files.get(`${WORK_DIR}/.multiai/local.toml`);
     expect(written).toContain('additional_dir');
     expect(written).toContain(EXTRA_DIR);
 
@@ -284,7 +284,7 @@ describe('SessionWorkspaceCommandService', () => {
     expect(agents.mainContext.messages[0]?.content).toEqual([
       {
         type: 'text',
-        text: `<local-command-stdout>\nAdded workspace directory:\n  extra\n  Saved to:\n  ${WORK_DIR}/.kimi-code/local.toml\n</local-command-stdout>`,
+        text: `<local-command-stdout>\nAdded workspace directory:\n  extra\n  Saved to:\n  ${WORK_DIR}/.multiai/local.toml\n</local-command-stdout>`,
       },
     ]);
     expect(agents.mainContext.messages[0]?.origin).toEqual({
@@ -300,7 +300,7 @@ describe('SessionWorkspaceCommandService', () => {
 
     expect(result.persisted).toBe(false);
     expect(workspace.additionalDirs).toContain(EXTRA_DIR);
-    expect(fs.files.has(`${WORK_DIR}/.kimi-code/local.toml`)).toBe(false);
+    expect(fs.files.has(`${WORK_DIR}/.multiai/local.toml`)).toBe(false);
 
     expect(agents.mainContext.messages).toHaveLength(1);
     expect(agents.mainContext.messages[0]?.content).toEqual([
@@ -332,7 +332,7 @@ describe('SessionWorkspaceCommandService', () => {
     await svc.addAdditionalDir({ path: 'extra', persist: true });
     await svc.addAdditionalDir({ path: 'extra', persist: true });
 
-    const written = fs.files.get(`${WORK_DIR}/.kimi-code/local.toml`);
+    const written = fs.files.get(`${WORK_DIR}/.multiai/local.toml`);
     expect(written).toBeDefined();
     const matches = written?.match(new RegExp(EXTRA_DIR.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'));
     expect(matches).toHaveLength(1);
@@ -356,7 +356,7 @@ describe('SessionWorkspaceCommandService', () => {
     expect(secondResult.additionalDirs).toEqual([DIR_A, DIR_B]);
     expect(workspace.additionalDirs).toEqual([DIR_A, DIR_B]);
 
-    const written = fs.files.get(`${WORK_DIR}/.kimi-code/local.toml`);
+    const written = fs.files.get(`${WORK_DIR}/.multiai/local.toml`);
     expect(written).toContain(DIR_A);
     expect(written).toContain(DIR_B);
   });
@@ -370,10 +370,10 @@ describe('SessionWorkspaceCommandService', () => {
     const result = await svc.addAdditionalDir({ path: 'shared', persist: true });
 
     expect(result.projectRoot).toBe(projectRoot);
-    expect(result.configPath).toBe(`${projectRoot}/.kimi-code/local.toml`);
+    expect(result.configPath).toBe(`${projectRoot}/.multiai/local.toml`);
     expect(result.additionalDirs).toEqual([sharedDir]);
     expect(workspace.additionalDirs).toEqual([sharedDir]);
-    expect(fs.files.get(`${projectRoot}/.kimi-code/local.toml`)).toContain(sharedDir);
+    expect(fs.files.get(`${projectRoot}/.multiai/local.toml`)).toContain(sharedDir);
   });
 
   it('keeps a dangling .git symlink as the local project-root marker', async () => {
@@ -386,8 +386,8 @@ describe('SessionWorkspaceCommandService', () => {
     const result = await svc.addAdditionalDir({ path: 'shared', persist: true });
 
     expect(result.projectRoot).toBe(workDir);
-    expect(result.configPath).toBe(`${workDir}/.kimi-code/local.toml`);
-    expect(fs.files.get(`${workDir}/.kimi-code/local.toml`)).toContain(sharedDir);
+    expect(result.configPath).toBe(`${workDir}/.multiai/local.toml`);
+    expect(fs.files.get(`${workDir}/.multiai/local.toml`)).toContain(sharedDir);
   });
 
   it('resolves session-only relative dirs against the session workDir when project root is above it', async () => {
@@ -399,10 +399,10 @@ describe('SessionWorkspaceCommandService', () => {
     const result = await svc.addAdditionalDir({ path: 'shared', persist: false });
 
     expect(result.projectRoot).toBe(projectRoot);
-    expect(result.configPath).toBe(`${projectRoot}/.kimi-code/local.toml`);
+    expect(result.configPath).toBe(`${projectRoot}/.multiai/local.toml`);
     expect(result.additionalDirs).toEqual([sharedDir]);
     expect(workspace.additionalDirs).toEqual([sharedDir]);
-    expect(fs.files.has(`${projectRoot}/.kimi-code/local.toml`)).toBe(false);
+    expect(fs.files.has(`${projectRoot}/.multiai/local.toml`)).toBe(false);
   });
 
   it('expands home-relative dirs against the OS home like v1', async () => {
@@ -425,7 +425,7 @@ describe('SessionWorkspaceCommandService', () => {
     const result = await svc.addAdditionalDir({ path: 'extra', persist: true });
 
     expect(result.projectRoot).toBe(projectRoot);
-    expect(result.configPath).toBe(`${projectRoot}/.kimi-code/local.toml`);
+    expect(result.configPath).toBe(`${projectRoot}/.multiai/local.toml`);
   });
 
   it('rejects a relative path that does not resolve to an existing directory', async () => {
@@ -440,7 +440,7 @@ describe('SessionWorkspaceCommandService', () => {
     const { svc, fs } = build([EXTRA_DIR], true);
     const error = new Error('EACCES: permission denied') as NodeJS.ErrnoException;
     error.code = 'EACCES';
-    fs.readErrors.set(`${WORK_DIR}/.kimi-code/local.toml`, error);
+    fs.readErrors.set(`${WORK_DIR}/.multiai/local.toml`, error);
 
     await expect(svc.addAdditionalDir({ path: 'extra', persist: true })).rejects.toMatchObject({
       code: 'storage.io_failed',
@@ -449,7 +449,7 @@ describe('SessionWorkspaceCommandService', () => {
 
   it('surfaces invalid TOML in the config as storage.decode_failed', async () => {
     const { svc, fs } = build([EXTRA_DIR], true);
-    fs.files.set(`${WORK_DIR}/.kimi-code/local.toml`, 'not [valid toml');
+    fs.files.set(`${WORK_DIR}/.multiai/local.toml`, 'not [valid toml');
 
     await expect(svc.addAdditionalDir({ path: 'extra', persist: true })).rejects.toMatchObject({
       code: 'storage.decode_failed',

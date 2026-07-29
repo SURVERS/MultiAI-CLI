@@ -4,7 +4,7 @@
  * Host cannot discover the developer's real legacy Kimi home.
  * Wiring: real smoke orchestration and filesystem; @vscode/test-electron is the
  * external process/download boundary.
- * Run: pnpm --filter kimi-code exec vitest run --config vitest.config.ts test/extension-host-smoke.test.ts
+ * Run: pnpm --filter multiai-cli exec vitest run --config vitest.config.ts test/extension-host-smoke.test.ts
  */
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -29,7 +29,7 @@ beforeEach(() => {
   });
   vscodeTest.runTests.mockImplementation(async (options) => {
     await writeFile(
-      options.extensionTestsEnv.KIMI_VSCODE_SMOKE_REPORT,
+      options.extensionTestsEnv.MULTIAI_VSCODE_SMOKE_REPORT,
       JSON.stringify({ vscode: options.version === 'stable' ? '1.127.0' : options.version }),
       'utf8',
     );
@@ -72,15 +72,15 @@ describe('installed VSIX Extension Host smoke', () => {
 
     const options = vscodeTest.runTests.mock.calls[0]?.[0];
     const env = options.extensionTestsEnv;
-    expect(env.KIMI_CODE_HOME).not.toBe(env.KIMI_VSCODE_SMOKE_OS_HOME);
-    expect(env.KIMI_VSCODE_SMOKE_OS_HOME).toContain('os-home');
+    expect(env.MULTIAI_HOME).not.toBe(env.MULTIAI_VSCODE_SMOKE_OS_HOME);
+    expect(env.MULTIAI_VSCODE_SMOKE_OS_HOME).toContain('os-home');
   });
 
   it('rejects a cached host that does not match an exact requested version', async () => {
     const fixture = await makeFixture();
     vscodeTest.runTests.mockImplementationOnce(async (options) => {
       await writeFile(
-        options.extensionTestsEnv.KIMI_VSCODE_SMOKE_REPORT,
+        options.extensionTestsEnv.MULTIAI_VSCODE_SMOKE_REPORT,
         JSON.stringify({ vscode: '1.99.3' }),
         'utf8',
       );
@@ -98,7 +98,7 @@ async function makeFixture(): Promise<{ vsixPath: string; cachePath: string }> {
   const root = await mkdtemp(join(tmpdir(), 'kimi-extension-host-smoke-'));
   tempDirs.push(root);
   const cachePath = join(root, 'cache');
-  const vsixPath = join(root, 'kimi-code-test.vsix');
+  const vsixPath = join(root, 'multiai-cli-test.vsix');
   await mkdir(cachePath, { recursive: true });
   await writeFile(vsixPath, 'fixture', 'utf8');
   return { vsixPath, cachePath };

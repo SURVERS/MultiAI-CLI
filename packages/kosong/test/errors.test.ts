@@ -578,7 +578,7 @@ describe('isImageFormatError', () => {
     ).toBe(true);
     // Anthropic decode failure
     expect(isImageFormatError(new APIStatusError(400, 'Could not process image'))).toBe(true);
-    // Moonshot/Kimi (from the Kimi Code error reference)
+    // Moonshot/Kimi (from the MultiAI CLI error reference)
     expect(
       isImageFormatError(
         new APIStatusError(400, 'Invalid request: unsupported image url: /tmp/photo.avif'),

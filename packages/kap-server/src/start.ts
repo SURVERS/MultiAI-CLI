@@ -1,5 +1,5 @@
 /**
- * Server bootstrap — wires `@moonshot-ai/agent-core-v2` (DI × Scope engine) into
+ * Server bootstrap — wires `@multiai/agent-core-v2` (DI × Scope engine) into
  * a Fastify HTTP server that speaks the same `/api/v1` interface as the v1
  * server.
  *
@@ -16,13 +16,13 @@ import {
   IWorkspaceService,
   logSeed,
   resolveConfigPath,
-  resolveKimiHome,
+  resolveMultiAIHome,
   resolveLoggingConfig,
   skillCatalogRuntimeOptionsSeed,
   type HostIdentityOverrides,
   type Scope,
   type ScopeSeed,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { createAsyncApiDocument } from './protocol/asyncapi';
 import Fastify, { type FastifyInstance } from 'fastify';
 
@@ -127,7 +127,7 @@ export interface ServerStartOptions {
    */
   readonly skillDirs?: readonly string[];
   /**
-   * Directory of the built Kimi web UI (`dist-web`). When set, `GET /` and the
+   * Directory of the built MultiAI web UI (`dist-web`). When set, `GET /` and the
    * `/*` SPA fallback serve these assets (auth-exempt, matching v1). Omit to run
    * the API server without the web UI.
    */
@@ -144,7 +144,7 @@ export interface ServerStartOptions {
    * true, a `CloudAppender` is attached at startup (still gated by the config
    * `telemetry` toggle) and flushed on close. Defaults to false so tests and
    * embedding hosts that wire their own telemetry never post to the real
-   * endpoint unintentionally; the CLI's `kimi web` host passes true.
+   * endpoint unintentionally; the CLI's `multiai web` host passes true.
    */
   readonly telemetry?: boolean;
 }
@@ -165,10 +165,10 @@ const DEFAULT_PORT = 58627;
 export async function startServer(opts: ServerStartOptions = {}): Promise<RunningServer> {
   const host = opts.host ?? DEFAULT_HOST;
   const port = opts.port ?? DEFAULT_PORT;
-  const homeDir = resolveKimiHome(opts.homeDir);
+  const homeDir = resolveMultiAIHome(opts.homeDir);
   // Instance discovery: every server registers itself under
   // `<home>/server/instances/<serverId>.json`, so multiple servers can share
-  // one homeDir and consumers (the CLI's `server ps/kill`, `kimi web`, dev
+  // one homeDir and consumers (the CLI's `server ps/kill`, `multiai web`, dev
   // tooling) can discover the live instances. Port conflicts between siblings
   // are resolved by the `port + 1` retry below. The registration is released
   // on close and on any boot refusal below.
@@ -229,9 +229,9 @@ export async function startServer(opts: ServerStartOptions = {}): Promise<Runnin
     ...logSeed(logging),
     // Default host identity so outbound requests (model, WebSearch, registry
     // refresh) carry a product User-Agent even when the embedding host did not
-    // seed its own headers. Hosts like the CLI pass full Kimi identity headers
+    // seed its own headers. Hosts like the CLI pass full MultiAI identity headers
     // through `opts.seeds`, which override this entry (last seed wins).
-    ...hostRequestHeadersSeed({ 'User-Agent': `kimi-code-cli/${hostVersion}` }),
+    ...hostRequestHeadersSeed({ 'User-Agent': `multiai-cli/${hostVersion}` }),
     ...skillCatalogRuntimeOptionsSeed(opts.skillDirs),
     ...hostIdentitySeed(opts.hostIdentity),
     ...(opts.seeds ?? []),
@@ -262,7 +262,7 @@ export async function startServer(opts: ServerStartOptions = {}): Promise<Runnin
     if (!passwordConfigured) {
       logger.warn(
         { host, exposureClass },
-        'binding non-loopback host with token-only auth (no KIMI_CODE_PASSWORD) — the bearer token printed in the startup banner is the only credential protecting this server',
+        'binding non-loopback host with token-only auth (no MULTIAI_PASSWORD) — the bearer token printed in the startup banner is the only credential protecting this server',
       );
     }
   }
@@ -374,9 +374,9 @@ export async function startServer(opts: ServerStartOptions = {}): Promise<Runnin
     await app.register(swagger, {
       openapi: {
         info: {
-          title: 'Kimi Code Server API',
+          title: 'MultiAI CLI Server API',
           description:
-            'REST API for the Kimi Code local server. All JSON responses are wrapped in a uniform envelope `{ code, msg, data, request_id }`.',
+            'REST API for the MultiAI CLI local server. All JSON responses are wrapped in a uniform envelope `{ code, msg, data, request_id }`.',
           version: serverVersion,
         },
         tags: [

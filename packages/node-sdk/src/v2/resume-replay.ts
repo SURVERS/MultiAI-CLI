@@ -60,8 +60,8 @@ import {
   type AgentRecord,
   type AgentRecordPersistence,
   type AgentReplayRecord,
-} from '@moonshot-ai/agent-core';
-import { LocalKaos } from '@moonshot-ai/kaos';
+} from '@multiai/agent-core';
+import { LocalKaos } from '@multiai/kaos';
 
 export interface FoldedAgentReplay {
   readonly replay: readonly AgentReplayRecord[];
@@ -76,7 +76,7 @@ const EMPTY_FOLD: FoldedAgentReplay = { replay: [], toolStore: {} };
  * records `finishResume` appends) land here and go nowhere — the on-disk
  * journal is never mutated. `InMemoryAgentRecordPersistence` would do, but
  * the package root only exports the interface, and node-sdk's vitest aliases
- * `@moonshot-ai/agent-core` to its index, which swallows every deep subpath.
+ * `@multiai/agent-core` to its index, which swallows every deep subpath.
  */
 class ReadOnlyAgentRecordPersistence implements AgentRecordPersistence {
   constructor(private readonly records: readonly AgentRecord[]) {}

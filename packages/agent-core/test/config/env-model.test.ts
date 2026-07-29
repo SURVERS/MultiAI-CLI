@@ -10,7 +10,7 @@ import {
   stripEnvModelConfig,
 } from '../../src/config/env-model';
 import { getDefaultConfig, loadRuntimeConfig, readConfigFile, writeConfigFile } from '../../src/config';
-import { KimiError } from '../../src/errors';
+import { MultiAIError } from '../../src/errors';
 
 function apply(env: Record<string, string | undefined>) {
   return applyEnvModelConfig(getDefaultConfig(), env);
@@ -20,32 +20,32 @@ function expectConfigInvalid(fn: () => unknown): void {
   try {
     fn();
   } catch (error) {
-    expect(error).toBeInstanceOf(KimiError);
-    expect((error as KimiError).code).toBe('config.invalid');
+    expect(error).toBeInstanceOf(MultiAIError);
+    expect((error as MultiAIError).code).toBe('config.invalid');
     return;
   }
   throw new Error('expected function to throw');
 }
 
 const MIN = {
-  KIMI_MODEL_NAME: 'kimi-for-coding',
-  KIMI_MODEL_API_KEY: 'sk-test',
-  KIMI_MODEL_MAX_CONTEXT_SIZE: '262144',
+  MULTIAI_MODEL_NAME: 'kimi-for-coding',
+  MULTIAI_MODEL_API_KEY: 'sk-test',
+  MULTIAI_MODEL_MAX_CONTEXT_SIZE: '262144',
 } as const;
 
 describe('applyEnvModelConfig', () => {
-  it('returns the config unchanged when KIMI_MODEL_NAME is absent', () => {
+  it('returns the config unchanged when MULTIAI_MODEL_NAME is absent', () => {
     const base = getDefaultConfig();
     expect(applyEnvModelConfig(base, {})).toBe(base);
   });
 
-  it('throws when KIMI_MODEL_NAME is set but API key is missing', () => {
-    expectConfigInvalid(() => apply({ KIMI_MODEL_NAME: 'm' }));
+  it('throws when MULTIAI_MODEL_NAME is set but API key is missing', () => {
+    expectConfigInvalid(() => apply({ MULTIAI_MODEL_NAME: 'm' }));
   });
 
   it('defaults max_context_size to 262144 (256K) when unset', () => {
     expect(
-      apply({ KIMI_MODEL_NAME: 'm', KIMI_MODEL_API_KEY: 'k' })
+      apply({ MULTIAI_MODEL_NAME: 'm', MULTIAI_MODEL_API_KEY: 'k' })
         .models?.[ENV_MODEL_ALIAS_KEY]?.maxContextSize,
     ).toBe(262144);
   });
@@ -54,7 +54,7 @@ describe('applyEnvModelConfig', () => {
     'throws when max_context_size is %s',
     (value) => {
       expectConfigInvalid(() =>
-        apply({ ...MIN, KIMI_MODEL_MAX_CONTEXT_SIZE: value }),
+        apply({ ...MIN, MULTIAI_MODEL_MAX_CONTEXT_SIZE: value }),
       );
     },
   );
@@ -76,12 +76,12 @@ describe('applyEnvModelConfig', () => {
   });
 
   it('applies provider type and its default base url', () => {
-    expect(apply({ ...MIN, KIMI_MODEL_PROVIDER_TYPE: 'openai' })
+    expect(apply({ ...MIN, MULTIAI_MODEL_PROVIDER_TYPE: 'openai' })
       .providers[ENV_MODEL_PROVIDER_KEY]).toMatchObject({
       type: 'openai',
       baseUrl: 'https://api.openai.com/v1',
     });
-    const anthropic = apply({ ...MIN, KIMI_MODEL_PROVIDER_TYPE: 'anthropic' })
+    const anthropic = apply({ ...MIN, MULTIAI_MODEL_PROVIDER_TYPE: 'anthropic' })
       .providers[ENV_MODEL_PROVIDER_KEY];
     expect(anthropic).toBeDefined();
     expect(anthropic?.type).toBe('anthropic');
@@ -90,20 +90,20 @@ describe('applyEnvModelConfig', () => {
 
   it('rejects unsupported provider types', () => {
     expectConfigInvalid(() =>
-      apply({ ...MIN, KIMI_MODEL_PROVIDER_TYPE: 'google-genai' }),
+      apply({ ...MIN, MULTIAI_MODEL_PROVIDER_TYPE: 'google-genai' }),
     );
   });
 
   it('lets an explicit base url override the default', () => {
     expect(
-      apply({ ...MIN, KIMI_MODEL_BASE_URL: 'https://api.example.com/v1' })
+      apply({ ...MIN, MULTIAI_MODEL_BASE_URL: 'https://api.example.com/v1' })
         .providers[ENV_MODEL_PROVIDER_KEY]?.baseUrl,
     ).toBe('https://api.example.com/v1');
   });
 
   it('parses comma-separated capabilities (trimmed, lowercased)', () => {
     expect(
-      apply({ ...MIN, KIMI_MODEL_CAPABILITIES: 'Image_In, thinking ,' })
+      apply({ ...MIN, MULTIAI_MODEL_CAPABILITIES: 'Image_In, thinking ,' })
         .models?.[ENV_MODEL_ALIAS_KEY]?.capabilities,
     ).toEqual(['image_in', 'thinking']);
   });
@@ -113,7 +113,7 @@ describe('applyEnvModelConfig', () => {
     expect(withoutName).toBeDefined();
     expect(withoutName?.displayName).toBeUndefined();
     expect(
-      apply({ ...MIN, KIMI_MODEL_DISPLAY_NAME: 'Custom Model' })
+      apply({ ...MIN, MULTIAI_MODEL_DISPLAY_NAME: 'Custom Model' })
         .models?.[ENV_MODEL_ALIAS_KEY]?.displayName,
     ).toBe('Custom Model');
   });
@@ -121,33 +121,33 @@ describe('applyEnvModelConfig', () => {
   it('writes type-specific fields and validates max_output_size', () => {
     const alias = apply({
       ...MIN,
-      KIMI_MODEL_PROVIDER_TYPE: 'anthropic',
-      KIMI_MODEL_MAX_OUTPUT_SIZE: '8192',
-      KIMI_MODEL_REASONING_KEY: 'reasoning',
+      MULTIAI_MODEL_PROVIDER_TYPE: 'anthropic',
+      MULTIAI_MODEL_MAX_OUTPUT_SIZE: '8192',
+      MULTIAI_MODEL_REASONING_KEY: 'reasoning',
     }).models?.[ENV_MODEL_ALIAS_KEY];
     expect(alias?.maxOutputSize).toBe(8192);
     expect(alias?.reasoningKey).toBe('reasoning');
     expectConfigInvalid(() =>
-      apply({ ...MIN, KIMI_MODEL_MAX_OUTPUT_SIZE: 'nope' }),
+      apply({ ...MIN, MULTIAI_MODEL_MAX_OUTPUT_SIZE: 'nope' }),
     );
   });
 
   it('maps the thinking effort variable', () => {
     const config = apply({
       ...MIN,
-      KIMI_MODEL_THINKING_EFFORT: 'high',
+      MULTIAI_MODEL_THINKING_EFFORT: 'high',
     });
     expect(config.thinking).toMatchObject({ effort: 'high' });
     expect(config.thinking?.enabled).toBeUndefined();
   });
 
-  it('maps KIMI_MODEL_ADAPTIVE_THINKING onto the alias', () => {
+  it('maps MULTIAI_MODEL_ADAPTIVE_THINKING onto the alias', () => {
     expect(
-      apply({ ...MIN, KIMI_MODEL_ADAPTIVE_THINKING: 'true' })
+      apply({ ...MIN, MULTIAI_MODEL_ADAPTIVE_THINKING: 'true' })
         .models?.[ENV_MODEL_ALIAS_KEY]?.adaptiveThinking,
     ).toBe(true);
     expect(
-      apply({ ...MIN, KIMI_MODEL_ADAPTIVE_THINKING: 'false' })
+      apply({ ...MIN, MULTIAI_MODEL_ADAPTIVE_THINKING: 'false' })
         .models?.[ENV_MODEL_ALIAS_KEY]?.adaptiveThinking,
     ).toBe(false);
     expect(
@@ -155,9 +155,9 @@ describe('applyEnvModelConfig', () => {
     ).toBeUndefined();
   });
 
-  it('rejects an invalid KIMI_MODEL_ADAPTIVE_THINKING', () => {
+  it('rejects an invalid MULTIAI_MODEL_ADAPTIVE_THINKING', () => {
     expectConfigInvalid(() =>
-      apply({ ...MIN, KIMI_MODEL_ADAPTIVE_THINKING: 'maybe' }),
+      apply({ ...MIN, MULTIAI_MODEL_ADAPTIVE_THINKING: 'maybe' }),
     );
   });
 
@@ -235,7 +235,7 @@ describe('writeConfigFile never persists the env model', () => {
       // model AND env thinking overrides is written back and must persist none.
       const runtime = loadRuntimeConfig(path, {
         ...MIN,
-        KIMI_MODEL_THINKING_EFFORT: 'high',
+        MULTIAI_MODEL_THINKING_EFFORT: 'high',
       });
       // Sanity: env overrides are active at runtime.
       expect(runtime.providers[ENV_MODEL_PROVIDER_KEY]).toBeDefined();
@@ -266,7 +266,7 @@ describe('writeConfigFile never persists the env model', () => {
     try {
       const runtime = loadRuntimeConfig(path, {
         ...MIN,
-        KIMI_MODEL_THINKING_EFFORT: 'low',
+        MULTIAI_MODEL_THINKING_EFFORT: 'low',
       });
       await writeConfigFile(path, runtime);
       const text = readFileSync(path, 'utf-8');

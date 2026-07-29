@@ -2,7 +2,7 @@ import { Readable } from 'node:stream';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { buildKimiFileUrl, parseKimiFileUrl } from '#/agent/media/kimiFileUrl';
+import { buildMultiAIFileUrl, parseMultiAIFileUrl } from '#/agent/media/multiaiFileUrl';
 import { AgentVideoResolverService } from '#/agent/media/videoResolverService';
 import { AgentStateService } from '#/agent/state/agentStateService';
 import type { GetResult, IFileService } from '#/app/file/fileService';
@@ -105,22 +105,22 @@ function msPart(id: string): VideoURLPart {
   return { type: 'video_url', videoUrl: { url: `ms://${id}`, id } };
 }
 
-describe('kimiFileUrl', () => {
+describe('multiaiFileUrl', () => {
   it('round-trips a file id and an escaped materialization path', () => {
-    const url = buildKimiFileUrl('file_1', '/a b/clip.mp4');
-    expect(url).toBe(`kimi-file://file_1?path=${encodeURIComponent('/a b/clip.mp4')}`);
-    expect(parseKimiFileUrl(url)).toEqual({ fileId: 'file_1', path: '/a b/clip.mp4' });
+    const url = buildMultiAIFileUrl('file_1', '/a b/clip.mp4');
+    expect(url).toBe(`multiai-file://file_1?path=${encodeURIComponent('/a b/clip.mp4')}`);
+    expect(parseMultiAIFileUrl(url)).toEqual({ fileId: 'file_1', path: '/a b/clip.mp4' });
   });
 
   it('omits the query when no path is given', () => {
-    expect(buildKimiFileUrl('file_1')).toBe('kimi-file://file_1');
-    expect(parseKimiFileUrl('kimi-file://file_1')).toEqual({ fileId: 'file_1' });
+    expect(buildMultiAIFileUrl('file_1')).toBe('multiai-file://file_1');
+    expect(parseMultiAIFileUrl('multiai-file://file_1')).toEqual({ fileId: 'file_1' });
   });
 
   it('returns undefined for any non-kimi-file url', () => {
-    expect(parseKimiFileUrl('ms://prov-1')).toBeUndefined();
-    expect(parseKimiFileUrl('data:video/mp4;base64,AAAA')).toBeUndefined();
-    expect(parseKimiFileUrl('https://example.com/clip.mp4')).toBeUndefined();
+    expect(parseMultiAIFileUrl('ms://prov-1')).toBeUndefined();
+    expect(parseMultiAIFileUrl('data:video/mp4;base64,AAAA')).toBeUndefined();
+    expect(parseMultiAIFileUrl('https://example.com/clip.mp4')).toBeUndefined();
   });
 });
 
@@ -134,7 +134,7 @@ describe('AgentVideoResolverService', () => {
       new AgentStateService(),
     );
     const req = requester({ uploadVideo: upload });
-    const message = videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH));
+    const message = videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH));
 
     const first = await resolver.resolve([message], req);
     const second = await resolver.resolve([message], req);
@@ -147,7 +147,7 @@ describe('AgentVideoResolverService', () => {
   it('reuses a persisted upload across resolver instances without re-uploading', async () => {
     const files = new Map([[FILE_ID, { name: 'clip.mp4', bytes: VIDEO_BYTES }]]);
     const blobs = blobStore();
-    const message = videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH));
+    const message = videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH));
 
     const upload1 = vi.fn(async (): Promise<VideoURLPart> => msPart('prov-1'));
     await new AgentVideoResolverService(fileService(files), blobs, telemetry, new AgentStateService()).resolve(
@@ -173,7 +173,7 @@ describe('AgentVideoResolverService', () => {
       blobStore(),
       telemetry,
       new AgentStateService(),
-    ).resolve([videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH))], requester({ videoIn: false, uploadVideo: upload }));
+    ).resolve([videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH))], requester({ videoIn: false, uploadVideo: upload }));
 
     expect(firstPart(out)).toEqual({ type: 'text', text: `<video path="${FALLBACK_PATH}"></video>` });
     expect(upload).not.toHaveBeenCalled();
@@ -185,7 +185,7 @@ describe('AgentVideoResolverService', () => {
       blobStore(),
       telemetry,
       new AgentStateService(),
-    ).resolve([videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH))], requester({ protocol: 'anthropic', uploadVideo: undefined }));
+    ).resolve([videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH))], requester({ protocol: 'anthropic', uploadVideo: undefined }));
 
     expect(firstPart(out)).toEqual({
       type: 'video_url',
@@ -199,7 +199,7 @@ describe('AgentVideoResolverService', () => {
       blobStore(),
       telemetry,
       new AgentStateService(),
-    ).resolve([videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH))], requester({ protocol: 'openai', uploadVideo: undefined }));
+    ).resolve([videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH))], requester({ protocol: 'openai', uploadVideo: undefined }));
 
     expect(firstPart(out)).toEqual({ type: 'text', text: `<video path="${FALLBACK_PATH}"></video>` });
   });
@@ -216,7 +216,7 @@ describe('AgentVideoResolverService', () => {
     );
 
     await expect(
-      resolver.resolve([videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH))], requester({ uploadVideo: upload })),
+      resolver.resolve([videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH))], requester({ uploadVideo: upload })),
     ).rejects.toThrow('unauthorized');
   });
 
@@ -234,7 +234,7 @@ describe('AgentVideoResolverService', () => {
       telemetry,
       new AgentStateService(),
     );
-    const message = videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH));
+    const message = videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH));
 
     await expect(
       resolver.resolve([message], requester({ uploadVideo: interrupted }), controller.signal),
@@ -259,7 +259,7 @@ describe('AgentVideoResolverService', () => {
       telemetry,
       new AgentStateService(),
     );
-    const message = videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH));
+    const message = videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH));
     const req = requester({ uploadVideo: upload });
 
     const failed = await resolver.resolve([message], req);
@@ -280,7 +280,7 @@ describe('AgentVideoResolverService', () => {
       blobStore(),
       telemetry,
       new AgentStateService(),
-    ).resolve([videoMessage(buildKimiFileUrl(FILE_ID, FALLBACK_PATH))], requester({ uploadVideo: upload }));
+    ).resolve([videoMessage(buildMultiAIFileUrl(FILE_ID, FALLBACK_PATH))], requester({ uploadVideo: upload }));
 
     expect(firstPart(out)).toEqual({ type: 'text', text: `<video path="${FALLBACK_PATH}"></video>` });
     expect(upload).not.toHaveBeenCalled();
@@ -288,7 +288,7 @@ describe('AgentVideoResolverService', () => {
 
   it('tags a stale reference by its materialization path', async () => {
     const out = await new AgentVideoResolverService(fileService(new Map()), blobStore(), telemetry, new AgentStateService()).resolve(
-      [videoMessage(buildKimiFileUrl('missing', FALLBACK_PATH))],
+      [videoMessage(buildMultiAIFileUrl('missing', FALLBACK_PATH))],
       requester({ uploadVideo: vi.fn() }),
     );
 
@@ -297,7 +297,7 @@ describe('AgentVideoResolverService', () => {
 
   it('emits an unavailable placeholder when a stale reference has no fallback path', async () => {
     const out = await new AgentVideoResolverService(fileService(new Map()), blobStore(), telemetry, new AgentStateService()).resolve(
-      [videoMessage(buildKimiFileUrl('missing'))],
+      [videoMessage(buildMultiAIFileUrl('missing'))],
       requester({ uploadVideo: vi.fn() }),
     );
 

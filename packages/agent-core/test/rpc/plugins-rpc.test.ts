@@ -4,9 +4,9 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { KimiCore } from '../../src/rpc/core-impl';
+import { MultiAICore } from '../../src/rpc/core-impl';
 
-describe('KimiCore plugin RPCs', () => {
+describe('MultiAICore plugin RPCs', () => {
   it('install → list → setEnabled → remove round trip', async () => {
     const home = await mkdtemp(path.join(tmpdir(), 'kimi-home-'));
     const pluginRoot = await mkdtemp(path.join(tmpdir(), 'plugin-'));
@@ -16,7 +16,7 @@ describe('KimiCore plugin RPCs', () => {
       'utf8',
     );
 
-    const core = new KimiCore(async () => ({}) as never, { homeDir: home });
+    const core = new MultiAICore(async () => ({}) as never, { homeDir: home });
     await new Promise((r) => setImmediate(r));
 
     const installed = await core.installPlugin({ source: pluginRoot });
@@ -43,7 +43,7 @@ describe('KimiCore plugin RPCs', () => {
       'utf8',
     );
 
-    const core = new KimiCore(async () => ({}) as never, { homeDir: home });
+    const core = new MultiAICore(async () => ({}) as never, { homeDir: home });
     await new Promise((r) => setImmediate(r));
 
     const installed = await core.installPlugin({
@@ -68,7 +68,7 @@ describe('KimiCore plugin RPCs', () => {
       'utf8',
     );
 
-    const core = new KimiCore(async () => ({}) as never, { homeDir: home });
+    const core = new MultiAICore(async () => ({}) as never, { homeDir: home });
     await new Promise((r) => setImmediate(r));
 
     await core.installPlugin({ source: pluginRoot });
@@ -83,13 +83,13 @@ describe('KimiCore plugin RPCs', () => {
     );
   });
 
-  it('injects persisted managed Kimi Code environment into the datasource plugin MCP server', async () => {
-    const previousBaseUrl = process.env['KIMI_CODE_BASE_URL'];
-    const previousCodeOAuthHost = process.env['KIMI_CODE_OAUTH_HOST'];
-    const previousOAuthHost = process.env['KIMI_OAUTH_HOST'];
-    delete process.env['KIMI_CODE_BASE_URL'];
-    delete process.env['KIMI_CODE_OAUTH_HOST'];
-    delete process.env['KIMI_OAUTH_HOST'];
+  it('injects persisted managed MultiAI CLI environment into the datasource plugin MCP server', async () => {
+    const previousBaseUrl = process.env['MULTIAI_BASE_URL'];
+    const previousCodeOAuthHost = process.env['MULTIAI_OAUTH_HOST'];
+    const previousOAuthHost = process.env['MULTIAI_OAUTH_HOST'];
+    delete process.env['MULTIAI_BASE_URL'];
+    delete process.env['MULTIAI_OAUTH_HOST'];
+    delete process.env['MULTIAI_OAUTH_HOST'];
 
     const home = await mkdtemp(path.join(tmpdir(), 'kimi-home-'));
     const pluginRoot = await mkdtemp(path.join(tmpdir(), 'plugin-'));
@@ -97,11 +97,11 @@ describe('KimiCore plugin RPCs', () => {
       await writeFile(
         path.join(home, 'config.toml'),
         `
-[providers."managed:kimi-code"]
+[providers."managed:multiai"]
 type = "kimi"
 base_url = "https://api.dev.example.test/coding/v1"
 api_key = ""
-oauth = { storage = "file", key = "oauth/kimi-code-env-1234", oauth_host = "https://auth.dev.example.test" }
+oauth = { storage = "keyring", key = "oauth/multiai-env-1234", oauth_host = "https://auth.dev.example.test" }
 `,
         'utf8',
       );
@@ -116,7 +116,7 @@ oauth = { storage = "file", key = "oauth/kimi-code-env-1234", oauth_host = "http
         'utf8',
       );
 
-      const core = new KimiCore(async () => ({}) as never, { homeDir: home });
+      const core = new MultiAICore(async () => ({}) as never, { homeDir: home });
       await new Promise((r) => setImmediate(r));
       await core.installPlugin({ source: pluginRoot });
 
@@ -130,14 +130,14 @@ oauth = { storage = "file", key = "oauth/kimi-code-env-1234", oauth_host = "http
 
       expect(mcpConfig.servers['plugin-kimi-datasource:data']?.env).toEqual(
         expect.objectContaining({
-          KIMI_CODE_BASE_URL: 'https://api.dev.example.test/coding/v1',
-          KIMI_CODE_OAUTH_HOST: 'https://auth.dev.example.test',
+          MULTIAI_BASE_URL: 'https://api.dev.example.test/coding/v1',
+          MULTIAI_OAUTH_HOST: 'https://auth.dev.example.test',
         }),
       );
     } finally {
-      restoreEnv('KIMI_CODE_BASE_URL', previousBaseUrl);
-      restoreEnv('KIMI_CODE_OAUTH_HOST', previousCodeOAuthHost);
-      restoreEnv('KIMI_OAUTH_HOST', previousOAuthHost);
+      restoreEnv('MULTIAI_BASE_URL', previousBaseUrl);
+      restoreEnv('MULTIAI_OAUTH_HOST', previousCodeOAuthHost);
+      restoreEnv('MULTIAI_OAUTH_HOST', previousOAuthHost);
     }
   });
 
@@ -146,7 +146,7 @@ oauth = { storage = "file", key = "oauth/kimi-code-env-1234", oauth_host = "http
     await mkdir(path.join(home, 'plugins'), { recursive: true });
     await writeFile(path.join(home, 'plugins', 'installed.json'), '{ not json', 'utf8');
 
-    const core = new KimiCore(async () => ({}) as never, { homeDir: home });
+    const core = new MultiAICore(async () => ({}) as never, { homeDir: home });
 
     // Driving an awaiting RPC first ensures the load promise has settled
     // and captured pluginsLoadError before the read RPCs run.
@@ -200,7 +200,7 @@ oauth = { storage = "file", key = "oauth/kimi-code-env-1234", oauth_host = "http
       'utf8',
     );
 
-    const core = new KimiCore(async () => ({}) as never, { homeDir: home });
+    const core = new MultiAICore(async () => ({}) as never, { homeDir: home });
 
     await expect(core.listPlugins({})).resolves.toContainEqual(
       expect.objectContaining({ id: 'demo' }),

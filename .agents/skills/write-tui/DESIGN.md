@@ -41,7 +41,7 @@
                                             ④ 空行
  Search: gpt                                ⑤ 搜索行：仅在有 query 时出现（` Search: ` primary + query text）
   ❯ GPT-5            openai                  ⑥ 列表项：指针 + 名称（左）+ 次要列（右，textMuted）
-    Kimi K2          Kimi Code ← current        当前项行尾 ` ← current`（success）
+    Kimi K2          MultiAI CLI ← current        当前项行尾 ` ← current`（success）
                                             ⑦ 空行
  ▼ 3 more                                   ⑧ 滚动 / 匹配指示：无 query 时 `▼ N more`，有 query 时 `x / y`
 ─────────────────────────────────────────  ⑨ 底部边框（primary，整宽 ─）
@@ -83,7 +83,7 @@
  Select a model  (type to search)
  Tab toggle provider · ↑↓ navigate · Enter select · Esc cancel   ← hint 首项即 Tab 切换
                                             ← 空行
- All   Kimi Code   openai                   ← tab 条：激活项填充背景（primary 底 + text 字 + bold），其余 textMuted
+ All   MultiAI CLI   openai                   ← tab 条：激活项填充背景（primary 底 + text 字 + bold），其余 textMuted
                                             ← 空行
   ❯ ...
 ```
@@ -119,10 +119,10 @@
  ↑↓ navigate · Space toggle · Enter details · Esc cancel
                                             ← 空行
  Installed plugins (2)                      ← 分区标题（textStrong / 加粗）
-  ❯ Kimi Datasource  enabled                ← 选中行（❯ + primary+bold 名称）+ 状态标签（success）
-    id kimi-datasource · 1 skill · MCP 1/1 · via code.kimi.com · official   ← 次要信息行（textMuted，` · ` 分隔）
+  ❯ Example Plugin  enabled                 ← 选中行（❯ + primary+bold 名称）+ 状态标签（success）
+    id example-plugin · 1 skill · MCP 1/1 · via plugins.example.test · third-party   ← 次要信息行（textMuted，` · ` 分隔）
     Superpowers  disabled                   ← 未选中行（text 名称）+ 关态标签（textDim）
-    id superpowers · 14 skills · via code.kimi.com · curated
+    id superpowers · 14 skills · via github.com · third-party
 ```
 
 约定：

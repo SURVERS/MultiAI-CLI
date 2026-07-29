@@ -7,7 +7,7 @@
  * sensitive-file detection (env / credential / SSH key patterns with
  * explicit exemptions like `.env.example`) — and `PathSecurityError`.
  * `extendWorkspaceWithSkillRoots` merges skill-catalog roots into a tool
- * workspace so skill directories outside the cwd (e.g. `~/.kimi-code/skills`)
+ * workspace so skill directories outside the cwd (e.g. `~/.multiai/skills`)
  * stay reachable — the v2 port of v1's `skill/scanner.ts` helper.
  * Canonicalization is **lexical** only (no `realpath` / symlink following).
  * The guard stays host-aware: callers pass the active `IHostEnvironment`

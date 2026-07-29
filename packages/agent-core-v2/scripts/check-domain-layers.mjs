@@ -5,7 +5,7 @@
  * Enforces three rules over `packages/agent-core-v2/src/**` (and the v1-import
  * ban over `test/**` too):
  *
- *  1. **No v1 imports** — v2 must never `import '@moonshot-ai/agent-core'`
+ *  1. **No v1 imports** — v2 must never `import '@multiai/agent-core'`
  *     (or any subpath). v2 ports logic; it never depends on v1.
  *  2. **Domain layering** — a domain at layer L may only import domains at
  *     layer `<= L`. Lower layers must not reach upward. See
@@ -30,7 +30,7 @@
  *
  * Intra-package relative imports and `#/`-alias imports are resolved to a
  * domain by the first path segment under `src/`. Sibling packages
- * (`@moonshot-ai/*` other than v1) and third-party imports are out of scope
+ * (`@multiai/*` other than v1) and third-party imports are out of scope
  * (except for the kosong purity bans above).
  *
  * Run: `node scripts/check-domain-layers.mjs`. Exits non-zero on violation.
@@ -109,7 +109,7 @@ const DOMAIN_LAYER = new Map([
   // domain may hold its plain-data state through it; sits in L1 beside `event`.
   ['state', 1],
   // `bashParser` is the App-scope adapter over the pure
-  // `@moonshot-ai/tree-sitter-bash` package (bash source → syntax tree DTO).
+  // `@multiai/tree-sitter-bash` package (bash source → syntax tree DTO).
   // It injects no services, so it sits in L1 beside the other pure
   // capabilities.
   ['bashParser', 1],
@@ -287,7 +287,7 @@ const DOMAIN_LAYER = new Map([
   ['kosongConfig', 3],
 ]);
 
-const V1_PACKAGE = '@moonshot-ai/agent-core';
+const V1_PACKAGE = '@multiai/agent-core';
 
 /**
  * Scope directories introduced by the `src/{scope}/{domain}` layout. A path's
@@ -438,7 +438,7 @@ const ALLOWED_EXCEPTIONS = new Set([
   // bootstrap instantiates the kosong persistence bridge eagerly so kosong's
   // registries are hydrated before any consumer can await their `ready`.
   'bootstrap>kosongConfig',
-  // `auth` (KimiOAuth, L2) owns the OAuth-backed `WebSearch` tool and registers
+  // `auth` (MultiAIOAuth, L2) owns the OAuth-backed `WebSearch` tool and registers
   // it through the tool contribution API, so it reaches up to the L3 tool
   // contract and registry. Surfaced for review: the tool needs an authenticated
   // backend, which is why it lives beside the OAuth toolkit rather than in the
@@ -471,7 +471,7 @@ const ALLOWED_EXCEPTIONS = new Set([
   // `swarm` (L4) drives sub-agent runs through the `subagent` domain (L6) —
   // same shape as the `swarm>agentLifecycle` spawn exception above.
   'swarm>subagent',
-  // `agentTask` (L5) owns the print-mode (`kimi -p`) policy; filling its
+  // `agentTask` (L5) owns the print-mode (`multiai -p`) policy; filling its
   // config defaults reaches the `subagent` section (L6) for the subagent
   // timeout — same cross-scope config-fill shape as `swarm>subagent`.
   'agentTask>subagent',

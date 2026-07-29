@@ -9,7 +9,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createKimiHarness, type KimiError } from '#/index';
+import { createMultiAIHarness, type MultiAIError } from '#/index';
 
 import {
   makeTempDir,
@@ -30,7 +30,7 @@ describe('Session context', () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-additional-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-additional-work-');
     const additionalDir = await makeTempDir(tempDirs, 'kimi-sdk-additional-dir-');
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       const session = await harness.createSession({ id: 'ses_additional_resume', workDir });
@@ -49,7 +49,7 @@ describe('Session context', () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-context-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-context-work-');
     const additionalDir = await makeTempDir(tempDirs, 'kimi-sdk-context-additional-');
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       const session = await harness.createSession({ id: 'ses_context_clear', workDir });
@@ -71,7 +71,7 @@ describe('Session context', () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-context-import-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-context-import-work-');
     await writeTestConfig(homeDir, 200_000);
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       const session = await harness.createSession({ id: 'ses_context_import', workDir });
@@ -113,7 +113,7 @@ describe('Session context', () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-context-status-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-context-status-work-');
     await writeTestConfig(homeDir, 200_000);
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       const session = await harness.createSession({ id: 'ses_context_status', workDir });
@@ -141,7 +141,7 @@ describe('Session context', () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-context-resume-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-context-resume-work-');
     await writeTestConfig(homeDir, 200_000);
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       const session = await harness.createSession({ id: 'ses_context_resume', workDir });
@@ -166,16 +166,16 @@ describe('Session context', () => {
   it('rejects whitespace-only imported content without mutating context', async () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-context-empty-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-context-empty-work-');
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       const session = await harness.createSession({ id: 'ses_context_empty', workDir });
 
       await expect(session.importContext(' \n\t ', "file 'empty.md'")).rejects.toMatchObject({
-        name: 'KimiError',
+        name: 'MultiAIError',
         code: 'request.invalid',
         details: { reason: 'import_content_empty' },
-      } satisfies Partial<KimiError>);
+      } satisfies Partial<MultiAIError>);
       await expect(session.getContext()).resolves.toEqual({ history: [], tokenCount: 0 });
     } finally {
       await harness.close();
@@ -186,7 +186,7 @@ describe('Session context', () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-context-overflow-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-context-overflow-work-');
     await writeTestConfig(homeDir, 100);
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       const session = await harness.createSession({ id: 'ses_context_overflow', workDir });
@@ -196,14 +196,14 @@ describe('Session context', () => {
       await expect(
         session.importContext('Second import.', "file 'second.md'"),
       ).rejects.toMatchObject({
-        name: 'KimiError',
+        name: 'MultiAIError',
         code: 'context.overflow',
         details: {
           reason: 'import_context_overflow',
           currentTokenCount: expect.any(Number),
           maxContextTokens: 100,
         },
-      } satisfies Partial<KimiError>);
+      } satisfies Partial<MultiAIError>);
       await expect(session.getContext()).resolves.toEqual(contextBeforeRejectedImport);
     } finally {
       await harness.close();

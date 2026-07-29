@@ -4,22 +4,21 @@ const os = require("node:os");
 const path = require("node:path");
 const vscode = require("vscode");
 
-const EXTENSION_ID = "moonshot-ai.kimi-code";
+const EXTENSION_ID = "multiai.multiai-cli";
 const EXPECTED_COMMANDS = [
-  "kimi.clearAllState",
-  "kimi.focusInput",
-  "kimi.insertMention",
-  "kimi.logout",
-  "kimi.migrateLegacyData",
-  "kimi.newConversation",
-  "kimi.openInSideBar",
-  "kimi.openInTab",
-  "kimi.resetKimi",
-  "kimi.showLogs",
+  "multiai.clearAllState",
+  "multiai.focusInput",
+  "multiai.insertMention",
+  "multiai.logout",
+  "multiai.newConversation",
+  "multiai.openInSideBar",
+  "multiai.openInTab",
+  "multiai.reset",
+  "multiai.showLogs",
 ];
 
 exports.run = async function run() {
-  const isolatedHome = process.env.KIMI_VSCODE_SMOKE_OS_HOME;
+  const isolatedHome = process.env.MULTIAI_VSCODE_SMOKE_OS_HOME;
   assert.ok(isolatedHome, "isolated OS home must be provided");
   process.env.HOME = isolatedHome;
   process.env.USERPROFILE = isolatedHome;
@@ -31,12 +30,12 @@ exports.run = async function run() {
 
   const extension = vscode.extensions.getExtension(EXTENSION_ID);
   assert.ok(extension, `${EXTENSION_ID} is not installed in the isolated Extension Host`);
-  const sourceManifest = JSON.parse(
-    await readFile(path.join(__dirname, "..", "..", "package.json"), "utf8"),
-  );
+  const sourceManifestPath = process.env.MULTIAI_VSCODE_SMOKE_SOURCE_MANIFEST
+    ?? path.join(__dirname, "..", "..", "package.json");
+  const sourceManifest = JSON.parse(await readFile(sourceManifestPath, "utf8"));
   assert.equal(extension.packageJSON.version, sourceManifest.version);
   assert.equal(extension.packageJSON.main, "./dist/extension.js");
-  assert.ok(process.env.KIMI_CODE_HOME, "KIMI_CODE_HOME must point at the isolated test home");
+  assert.ok(process.env.MULTIAI_HOME, "MULTIAI_HOME must point at the isolated test home");
   assert.equal(process.env.HOME, isolatedHome);
   assert.equal(process.env.USERPROFILE, isolatedHome);
   assert.equal(os.homedir(), isolatedHome);
@@ -49,20 +48,20 @@ exports.run = async function run() {
     assert.ok(commands.has(command), `missing registered command: ${command}`);
   }
 
-  const config = vscode.workspace.getConfiguration("kimi");
+  const config = vscode.workspace.getConfiguration("multiai");
   assert.equal(config.get("autosave"), true);
   assert.equal(config.get("executablePath"), undefined, "removed Python CLI setting is still contributed");
   assert.equal(config.get("environmentVariables"), undefined, "removed global CLI env setting is still contributed");
 
-  await vscode.commands.executeCommand("kimi.openInTab");
+  await vscode.commands.executeCommand("multiai.openInTab");
   await waitFor(() => {
     return vscode.window.tabGroups.all.some((group) =>
       group.tabs.some((tab) =>
-        tab.input instanceof vscode.TabInputWebview && isKimiPanelViewType(tab.input.viewType)));
-  }, 5_000, () => `Kimi Webview tab did not open; tabs=${describeTabs()}`);
+        tab.input instanceof vscode.TabInputWebview && isMultiAIPanelViewType(tab.input.viewType)));
+  }, 5_000, () => `MultiAI Webview tab did not open; tabs=${describeTabs()}`);
 
-  await vscode.commands.executeCommand("kimi.showLogs");
-  await vscode.commands.executeCommand("kimi.resetKimi");
+  await vscode.commands.executeCommand("multiai.showLogs");
+  await vscode.commands.executeCommand("multiai.reset");
   await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
 
   console.log(
@@ -75,9 +74,9 @@ exports.run = async function run() {
       webview: "opened",
     }),
   );
-  assert.ok(process.env.KIMI_VSCODE_SMOKE_REPORT, "Extension Host report path must be provided");
+  assert.ok(process.env.MULTIAI_VSCODE_SMOKE_REPORT, "Extension Host report path must be provided");
   await writeFile(
-    process.env.KIMI_VSCODE_SMOKE_REPORT,
+    process.env.MULTIAI_VSCODE_SMOKE_REPORT,
     JSON.stringify({ vscode: vscode.version }),
     "utf8",
   );
@@ -102,8 +101,8 @@ function describeTabs() {
     }))));
 }
 
-function isKimiPanelViewType(viewType) {
+function isMultiAIPanelViewType(viewType) {
   // VS Code 1.100 exposes the internal `mainThreadWebview-` prefix here;
   // newer hosts expose the extension's original view type.
-  return viewType === "kimiPanel" || viewType.endsWith("-kimiPanel");
+  return viewType === "multiaiPanel" || viewType.endsWith("-multiaiPanel");
 }

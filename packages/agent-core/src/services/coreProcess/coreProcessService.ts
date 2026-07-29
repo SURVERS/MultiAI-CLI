@@ -2,16 +2,16 @@
  * `CoreProcessService` — implementation of `ICoreProcessService`.
  */
 
-import { createRPC, KimiCore } from '../../rpc';
+import { createRPC, MultiAICore } from '../../rpc';
 import type { ImageLimits } from '../../tools/support/image-limits';
 import { Disposable, registerSingleton, SyncDescriptor } from '../../di';
 import type { CoreAPI, CoreRPC, SDKAPI } from '../../rpc';
 import type { OAuthTokenProviderResolver } from '../../session/provider-manager';
 import { noopTelemetryClient, type TelemetryClient } from '../../telemetry';
 import {
-  createKimiDefaultHeaders,
-  type KimiHostIdentity,
-} from '@moonshot-ai/kimi-code-oauth';
+  createMultiAIDefaultHeaders,
+  type MultiAIHostIdentity,
+} from '@multiai/oauth';
 
 import { createManagedAuthFacade } from '../auth/managedAuth';
 import { BridgeClientAPI } from './coreProcessClient';
@@ -34,7 +34,7 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
    */
   public readonly rpc: CoreRPC;
 
-  public readonly kimiRequestHeaders: Record<string, string> | undefined;
+  public readonly multiAIRequestHeaders: Record<string, string> | undefined;
 
   public readonly telemetry: TelemetryClient;
 
@@ -44,10 +44,10 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
   }
 
   /**
-   * The in-process `KimiCore` instance. Kept private so daemon-side code can't
+   * The in-process `MultiAICore` instance. Kept private so daemon-side code can't
    * grab it and bypass the peer-service indirection.
    */
-  private readonly _core: KimiCore;
+  private readonly _core: MultiAICore;
 
   /**
    * Promise that resolves to the resolved RPC methods. The `rpc` proxy awaits
@@ -58,7 +58,7 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
 
   /**
    * Cached readiness signal. We treat "SDK-side RPC bound" as the readiness
-   * marker today; once `KimiCore.pluginsReady` is publicly exposed we can
+   * marker today; once `MultiAICore.pluginsReady` is publicly exposed we can
    * combine them here.
    */
   private readonly _ready: Promise<void>;
@@ -75,10 +75,10 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
     super();
 
     // 1. Build the in-process RPC pair. Left/Right are typed; `coreRpc` is the
-    //    function KimiCore receives, `sdkRpc` is the one we satisfy.
+    //    function MultiAICore receives, `sdkRpc` is the one we satisfy.
     const [coreRpc, sdkRpc] = createRPC<CoreAPI, SDKAPI>();
 
-    // Default-wire the OAuth token resolver. Without this, KimiCore's
+    // Default-wire the OAuth token resolver. Without this, MultiAICore's
     // `ProviderManager.resolveAuth` sees `resolveOAuthTokenProvider ===
     // undefined` and synthesizes a closure that ALWAYS throws
     // `AUTH_LOGIN_REQUIRED` — even after a successful device-code login that
@@ -87,26 +87,26 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
     // it stays green; the failure only surfaces inside the prompt turn, as
     // an `auth.login_required` error after `turn.step.started`. We bridge
     // the gap by default-constructing a managed auth facade against the same
-    // home + config paths KimiCore will use, and handing its
+    // home + config paths MultiAICore will use, and handing its
     // `resolveOAuthTokenProvider` into the core. Callers (e.g. node-sdk
     // tests) can still override via `options.resolveOAuthTokenProvider`.
     const resolveOAuthTokenProvider: OAuthTokenProviderResolver =
       options.resolveOAuthTokenProvider ??
       CoreProcessService._defaultOAuthTokenResolver(env.homeDir, env.configPath);
 
-    // Default-wire the Kimi request headers (User-Agent + X-Msh-* device
-    // identity). Without this, KimiCore's outbound fetch carries the
-    // default Node fetch User-Agent and the managed Kimi-for-Coding
+    // Default-wire the MultiAI request headers (User-Agent + X-MultiAI-* device
+    // identity). Without this, MultiAICore's outbound fetch carries the
+    // default Node fetch User-Agent and the managed MultiAI
     // endpoint rejects with 40340 ("only available for Coding Agents
-    // such as Kimi CLI, Claude Code, …"). Mirrors what `SDKRpcClient`
+    // such as MultiAI CLI, Claude Code, …"). Mirrors what `SDKRpcClient`
     // does for the in-process TUI path (node-sdk's sdk-rpc-client.ts).
-    // Caller-supplied `kimiRequestHeaders` always wins; absent that, we
+    // Caller-supplied `multiAIRequestHeaders` always wins; absent that, we
     // synthesize from `options.identity`. Hosts that pass neither
     // (no identity, no headers) still construct — but their requests will
     // trip the 40340 guard.
-    this.kimiRequestHeaders =
-      options.kimiRequestHeaders ??
-      CoreProcessService._defaultKimiRequestHeaders(env.homeDir, options.identity);
+    this.multiAIRequestHeaders =
+      options.multiAIRequestHeaders ??
+      CoreProcessService._defaultMultiAIRequestHeaders(env.homeDir, options.identity);
     this.telemetry = options.telemetry ?? noopTelemetryClient;
 
     // `appVersion` flows into Session records (`app_version`) and tool
@@ -115,7 +115,7 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
     const appVersion: string | undefined =
       options.appVersion ?? options.identity?.version;
 
-    // Default-wire the workspace-id resolver. Without it, KimiCore's session
+    // Default-wire the workspace-id resolver. Without it, MultiAICore's session
     // store mints a bucket hash from the workDir string as-is, so a case/slash
     // variant of a registered Windows root splits sessions into a second
     // bucket that the registered workspace cannot page. The registry's
@@ -126,13 +126,13 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
       options.resolveWorkspaceId ??
       ((workDir: string) => workspaceRegistry.findWorkspaceIdByRoot(workDir));
 
-    // 2. Construct the core. KimiCore's ctor wires itself into `coreRpc` and
+    // 2. Construct the core. MultiAICore's ctor wires itself into `coreRpc` and
     //    exposes `this.sdk: Promise<SDKRPC>` for the reverse direction.
-    this._core = new KimiCore(coreRpc, {
+    this._core = new MultiAICore(coreRpc, {
       ...options,
       homeDir: env.homeDir,
       configPath: env.configPath,
-      kimiRequestHeaders: this.kimiRequestHeaders,
+      multiAIRequestHeaders: this.multiAIRequestHeaders,
       appVersion,
       resolveOAuthTokenProvider,
       resolveWorkspaceId,
@@ -150,7 +150,7 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
     this._coreRpcPromise = sdkRpc(clientApi);
 
     // 4. Readiness is "the RPC pair is bound on both sides". Plugin load
-    //    happens inside KimiCore's ctor and self-heals (the worker captures
+    //    happens inside MultiAICore's ctor and self-heals (the worker captures
     //    the error rather than surfacing it; see core-impl.ts:170-172).
     this._ready = this._coreRpcPromise.then(() => undefined);
 
@@ -165,10 +165,10 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
 
   override dispose(): void {
     if (this._store.isDisposed) return;
-    // KimiCore does not currently expose a dispose() — when it does, we'll
+    // MultiAICore does not currently expose a dispose() — when it does, we'll
     // await/call it here BEFORE super.dispose(). For now, disposing the
     // service flips _disposed, which makes future rpc.* invocations reject
-    // before they reach KimiCore.
+    // before they reach MultiAICore.
     super.dispose();
   }
 
@@ -207,10 +207,10 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
 
   /**
    * Build the default `resolveOAuthTokenProvider` from the same home + config
-   * paths KimiCore resolves internally. Mirrors `SDKRpcClient`'s default in
+   * paths MultiAICore resolves internally. Mirrors `SDKRpcClient`'s default in
    * `packages/node-sdk/src/sdk-rpc-client.ts` so the daemon and the SDK
    * runtimes share OAuth credentials when both run against the same
-   * `~/.kimi-code`.
+   * `~/.multiai`.
    *
    * Exposed as `static` so tests can assert the wiring without exercising the
    * full agent-core turn loop.
@@ -224,29 +224,29 @@ export class CoreProcessService extends Disposable implements ICoreProcessServic
   }
 
   /**
-   * Build the default `kimiRequestHeaders` from `options.identity` so the
+   * Build the default `multiAIRequestHeaders` from `options.identity` so the
    * outbound `User-Agent` + device-identity headers identify this process
-   * as a real Coding Agent host (e.g. `kimi-code-cli/<ver>`). Without
-   * these, the managed Kimi-for-Coding endpoint rejects with 40340.
+   * as a real Coding Agent host (e.g. `multiai-cli/<ver>`). Without
+   * these, managed MultiAI requests may be rejected.
    *
    * Returns `undefined` when no identity is provided — preserves the
    * pre-fix contract for hosts that pass headers explicitly via
-   * `options.kimiRequestHeaders` (or for legacy callers / tests that
+   * `options.multiAIRequestHeaders` (or for legacy callers / tests that
    * don't talk to the managed endpoint at all).
    *
-   * `homeDir` resolution matches KimiCore's so the per-device id (minted
+   * `homeDir` resolution matches MultiAICore's so the per-device id (minted
    * + cached at `<homeDir>/device_id` on first call) lives in the same
-   * root as everything else KimiCore touches.
+   * root as everything else MultiAICore touches.
    *
    * Exposed as `static` so tests can assert the wiring without booting
    * the service.
    */
-  static _defaultKimiRequestHeaders(
+  static _defaultMultiAIRequestHeaders(
     homeDir: string,
-    identity?: KimiHostIdentity,
+    identity?: MultiAIHostIdentity,
   ): Record<string, string> | undefined {
     if (identity === undefined) return undefined;
-    return createKimiDefaultHeaders({
+    return createMultiAIDefaultHeaders({
       homeDir,
       ...identity,
     });

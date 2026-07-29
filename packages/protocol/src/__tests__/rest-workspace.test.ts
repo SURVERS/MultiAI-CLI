@@ -10,9 +10,9 @@ import {
 import { workspaceIdSchema, workspaceSchema, type Workspace } from '../workspace';
 
 const sampleWorkspace: Workspace = {
-  id: 'wd_kimi-code_0123456789ab',
-  root: '/Users/foo/code/kimi-code',
-  name: 'kimi-code',
+  id: 'wd_multiai_0123456789ab',
+  root: '/Users/example/code/multiai',
+  name: 'multiai',
   created_at: '2026-06-08T09:00:00.000Z',
   last_opened_at: '2026-06-08T09:30:00.000Z',
   session_count: 3,
@@ -24,8 +24,8 @@ describe('workspaceIdSchema', () => {
   });
 
   it('accepts dots, dashes, underscores in slug', () => {
-    expect(workspaceIdSchema.parse('wd_kimi-code.v2_0123456789ab')).toBe(
-      'wd_kimi-code.v2_0123456789ab',
+    expect(workspaceIdSchema.parse('wd_multiai.v2_0123456789ab')).toBe(
+      'wd_multiai.v2_0123456789ab',
     );
   });
 

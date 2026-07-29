@@ -2,7 +2,7 @@
  * `FileProjectLocalConfigService` — node-fs backend for `IProjectLocalConfigService`.
  *
  * Discovers project roots, parses and writes project-local
- * `.kimi-code/local.toml`, resolves additional directories with
+ * `.multiai/local.toml`, resolves additional directories with
  * v1-compatible OS-home expansion through `bootstrap`, and accesses the local
  * filesystem through `hostFs`. Works purely by path (project-root discovery
  * via the nearest `.git` ancestor); it never touches the workspace catalog or
@@ -97,7 +97,7 @@ export class FileProjectLocalConfigService implements IProjectLocalConfigService
   }
 
   private getProjectLocalConfigPath(projectRoot: string): string {
-    return join(projectRoot, '.kimi-code', 'local.toml');
+    return join(projectRoot, '.multiai', 'local.toml');
   }
 
   private async findProjectRoot(workDir: string): Promise<string> {

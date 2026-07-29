@@ -12,7 +12,7 @@ import {
   type IProviderDiscoveryService as IProviderDiscoveryServiceType,
   type ModelCatalogConfig,
   type ScopeSeed,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type RunningServer, startServer } from '../src/start';
@@ -66,8 +66,8 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
     // Disable the background refresh scheduler so its startup refresh never
     // races the route-level assertions below (it shares the IProviderDiscoveryService
     // binding that the stub tests override).
-    process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START'] = '0';
-    process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS'] = '0';
+    process.env['MULTIAI_MODEL_CATALOG_REFRESH_ON_START'] = '0';
+    process.env['MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS'] = '0';
   });
 
   afterEach(async () => {
@@ -79,8 +79,8 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
       await rm(home, { recursive: true, force: true });
       home = undefined;
     }
-    delete process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START'];
-    delete process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS'];
+    delete process.env['MULTIAI_MODEL_CATALOG_REFRESH_ON_START'];
+    delete process.env['MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS'];
   });
 
   async function boot(toml?: string, seeds?: ScopeSeed): Promise<void> {
@@ -319,7 +319,9 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
       },
       status: async () => ({ loggedIn: false }),
       refreshOAuthProviderModels,
-      getManagedUsage: async () => ({ kind: 'error' as const, message: 'unused' }),
+      getAccount: async () => {
+        throw new Error('unused');
+      },
       resolveTokenProvider: () => undefined,
       getCachedAccessToken: async () => undefined,
     };
@@ -328,7 +330,7 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
   it('refreshes OAuth provider models through POST /providers:refresh_oauth', async () => {
     const refreshOAuthProviderModels = vi.fn(async () => ({
       changed: [
-        { provider_id: 'managed:kimi-code', provider_name: 'Kimi Code', added: 1, removed: 0 },
+        { provider_id: 'managed:multiai', provider_name: 'MultiAI CLI', added: 1, removed: 0 },
       ],
       unchanged: [],
       failed: [],
@@ -346,7 +348,7 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
     expect(body.code).toBe(0);
     expect(body.data).toEqual({
       changed: [
-        { provider_id: 'managed:kimi-code', provider_name: 'Kimi Code', added: 1, removed: 0 },
+        { provider_id: 'managed:multiai', provider_name: 'MultiAI CLI', added: 1, removed: 0 },
       ],
       unchanged: [],
       failed: [],
@@ -357,7 +359,7 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
   it('refreshes all provider models through POST /providers:refresh', async () => {
     const refreshProviderModels = vi.fn(async () => ({
       changed: [
-        { provider_id: 'managed:kimi-code', provider_name: 'Kimi Code', added: 2, removed: 1 },
+        { provider_id: 'managed:multiai', provider_name: 'MultiAI CLI', added: 2, removed: 1 },
       ],
       unchanged: ['moonshot-cn'],
       failed: [],
@@ -383,7 +385,7 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
     const { status, body } = await postJson('/api/v1/providers/managed%3Akimi-code:refresh', {});
     expect(status).toBe(200);
     expect(body.code).toBe(0);
-    expect(refreshProviderModels).toHaveBeenCalledWith({ providerId: 'managed:kimi-code' });
+    expect(refreshProviderModels).toHaveBeenCalledWith({ providerId: 'managed:multiai' });
   });
 
   it('rejects unsupported provider actions with 40001', async () => {

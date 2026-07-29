@@ -6,12 +6,12 @@
  * configs continue to load while callers migrate; effective values use legacy
  * fields as the base and let `[task]` override matching fields.
  * `keepAliveOnExit` and `maxRunningTasks` also
- * accept the v1 env overrides `KIMI_CODE_BACKGROUND_KEEP_ALIVE_ON_EXIT` /
- * `KIMI_CODE_BACKGROUND_MAX_RUNNING_TASKS`
+ * accept the v1 env overrides `MULTIAI_BACKGROUND_KEEP_ALIVE_ON_EXIT` /
+ * `MULTIAI_BACKGROUND_MAX_RUNNING_TASKS`
  * (applied live by the config env overlay; while a field's env var is set,
  * `stripEnvBoundFields` restores its env-free raw value before persistence, so
  * env values never leak into `config.toml`). Also owns the
- * `kimi -p` print-mode background policy (`printBackgroundMode` /
+ * `multiai -p` print-mode background policy (`printBackgroundMode` /
  * `printWaitCeilingS` / `printMaxTurns`), resolved with v1 semantics by
  * `resolvePrintBackgroundMode`. Self-registered
  * at module load via `registerConfigSection`, so the `config` domain never
@@ -63,8 +63,8 @@ export function resolvePrintBackgroundMode(config: IConfigService): PrintBackgro
   return section?.keepAliveOnExit === true ? 'drain' : 'steer';
 }
 
-export const KEEP_ALIVE_ON_EXIT_ENV = 'KIMI_CODE_BACKGROUND_KEEP_ALIVE_ON_EXIT';
-export const MAX_RUNNING_TASKS_ENV = 'KIMI_CODE_BACKGROUND_MAX_RUNNING_TASKS';
+export const KEEP_ALIVE_ON_EXIT_ENV = 'MULTIAI_BACKGROUND_KEEP_ALIVE_ON_EXIT';
+export const MAX_RUNNING_TASKS_ENV = 'MULTIAI_BACKGROUND_MAX_RUNNING_TASKS';
 
 function parsePositiveInt(raw: string): number | undefined {
   const value = raw.trim();

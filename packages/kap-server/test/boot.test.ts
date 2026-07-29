@@ -22,7 +22,7 @@ import {
   IOAuthToolkit,
   ITelemetryService,
   noopTelemetryService,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 
 import { listLiveServerInstances } from '../src/instanceRegistry';
 import { listenWithPortRetry, type RunningServer, startServer } from '../src/start';
@@ -121,7 +121,7 @@ describe('server-v2 boot', () => {
 
     // ... and it backs the default product User-Agent.
     const defaults = server.core.accessor.get(IHostRequestHeaders);
-    expect(defaults.headers['User-Agent']).toBe('kimi-code-cli/9.9.9-host');
+    expect(defaults.headers['User-Agent']).toBe('multiai-cli/9.9.9-host');
     expect(server.core.accessor.get(IBootstrapService).clientVersion).toBe('9.9.9-host');
   });
 
@@ -134,7 +134,7 @@ describe('server-v2 boot', () => {
       logLevel: 'silent',
     });
     const defaults = server.core.accessor.get(IHostRequestHeaders);
-    expect(defaults.headers['User-Agent']).toBe(`kimi-code-cli/${getServerVersion()}`);
+    expect(defaults.headers['User-Agent']).toBe(`multiai-cli/${getServerVersion()}`);
 
     // Restart on the same homeDir with a host-provided seed; it must win over
     // the default (the CLI passes full Kimi identity headers this way).

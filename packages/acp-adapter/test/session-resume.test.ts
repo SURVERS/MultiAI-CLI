@@ -13,7 +13,7 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import { KimiError, ErrorCodes, type Event, type KimiHarness, type Session } from '@moonshot-ai/kimi-code-sdk';
+import { MultiAIError, ErrorCodes, type Event, type MultiAIHarness, type Session } from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS, UNAUTHED_STATUS, makeModelsMap } from './_helpers/harness-stubs';
@@ -101,7 +101,7 @@ function makeHarness(opts: {
   hasUsableToken?: boolean;
   session?: Session;
   resumeError?: Error;
-}): KimiHarness {
+}): MultiAIHarness {
   const authed = opts.hasUsableToken ?? true;
   return {
     auth: {
@@ -123,7 +123,7 @@ function makeHarness(opts: {
         { id: 'kimi-plain', name: 'Kimi Plain', thinkingSupported: false },
       ]),
     }),
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
 }
 
 describe('AcpServer.resumeSession', () => {
@@ -238,7 +238,7 @@ describe('AcpServer.resumeSession', () => {
   it('maps SDK session.not_found error to invalidParams (-32602)', async () => {
     const harness = makeHarness({
       hasUsableToken: true,
-      resumeError: new KimiError(ErrorCodes.SESSION_NOT_FOUND, 'Session "ghost" was not found'),
+      resumeError: new MultiAIError(ErrorCodes.SESSION_NOT_FOUND, 'Session "ghost" was not found'),
     });
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);

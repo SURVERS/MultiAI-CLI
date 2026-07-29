@@ -1,4 +1,4 @@
-import type { ContentPart, Message } from '@moonshot-ai/kosong';
+import type { ContentPart, Message } from '@multiai/kosong';
 
 import type { SkillSource } from '../../skill';
 import type { ToolInputDisplay } from '../../tools/display';

@@ -14,7 +14,7 @@ import {
   isImageFormatError,
   isRecoverableRequestStructureError,
   type TokenUsage,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 import type { Logger } from '#/logging/types';
 
 import type { LoopEventDispatcher } from './events';

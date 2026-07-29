@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Recursively resolve workspace dependencies starting from apps/kimi-code
+ * Recursively resolve workspace dependencies starting from apps/multiai-cli
  * and verify they are all present in flake.nix workspaceNames/workspacePaths.
  *
  * Exit code 0 if everything is in sync, 1 otherwise.
@@ -11,7 +11,11 @@ import { resolve, join } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const FLAKE_NIX = join(ROOT, "flake.nix");
-const START_PKG = "@moonshot-ai/kimi-code";
+const START_PKG = "@multiai/cli";
+
+function toWorkspacePath(value) {
+  return value.replaceAll("\\", "/");
+}
 
 /**
  * Parse pnpm-workspace.yaml to get workspace directory globs.
@@ -51,13 +55,13 @@ function expandGlobsSafe(globs) {
       if (!existsSync(basePath)) continue;
       for (const entry of readdirSync(basePath, { withFileTypes: true })) {
         if (entry.isDirectory()) {
-          dirs.push(join(base, entry.name));
+          dirs.push(toWorkspacePath(join(base, entry.name)));
         }
       }
     } else {
       const p = join(ROOT, g);
       if (existsSync(p)) {
-        dirs.push(g);
+        dirs.push(toWorkspacePath(g));
       }
     }
   }

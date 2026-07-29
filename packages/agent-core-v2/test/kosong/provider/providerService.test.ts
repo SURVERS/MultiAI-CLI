@@ -38,7 +38,7 @@ describe('providers TOML transforms', () => {
         base_url: 'https://api.moonshot.ai/v1',
         custom_headers: { 'x-a': 'b' },
         default_model: 'kimi-k2',
-        oauth: { storage: 'file', key: 'k', oauth_host: 'example.com' },
+        oauth: { storage: 'keyring', key: 'k', oauth_host: 'example.com' },
       },
     }) as Record<string, Record<string, unknown>>;
     expect(from['my-provider']).toEqual({
@@ -46,7 +46,7 @@ describe('providers TOML transforms', () => {
       baseUrl: 'https://api.moonshot.ai/v1',
       customHeaders: { 'x-a': 'b' },
       defaultModel: 'kimi-k2',
-      oauth: { storage: 'file', key: 'k', oauthHost: 'example.com' },
+      oauth: { storage: 'keyring', key: 'k', oauthHost: 'example.com' },
     });
 
     const back = providersToToml(from, undefined) as Record<string, Record<string, unknown>>;
@@ -55,7 +55,7 @@ describe('providers TOML transforms', () => {
       base_url: 'https://api.moonshot.ai/v1',
       custom_headers: { 'x-a': 'b' },
       default_model: 'kimi-k2',
-      oauth: { storage: 'file', key: 'k', oauth_host: 'example.com' },
+      oauth: { storage: 'keyring', key: 'k', oauth_host: 'example.com' },
     });
   });
 });

@@ -1,10 +1,10 @@
 /**
  * Scenario: v2 wiring MVP — the harness talks to the in-process agent-core-v2
- * engine (klient memory transport) instead of the v1 KimiCore RPC pair.
+ * engine (klient memory transport) instead of the v1 MultiAICore RPC pair.
  * Responsibilities: `getExperimentalFeatures` is migrated end-to-end; every
  * not-yet-migrated method fails loudly with `not_implemented` instead of
  * silently hitting a v1 core.
- * Wiring: real v2 engine bootstrapped on a temp KIMI_CODE_HOME; no provider calls.
+ * Wiring: real v2 engine bootstrapped on a temp MULTIAI_HOME; no provider calls.
  * Run: pnpm exec vitest run test/sdk-rpc-client-v2.test.ts
  */
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createKimiHarnessV2, ErrorCodes, KimiError, KimiHarness, SDKRpcClientV2 } from '#/index';
+import { createMultiAIHarnessV2, ErrorCodes, MultiAIError, MultiAIHarness, SDKRpcClientV2 } from '#/index';
 import { foldAgentWireReplay } from '#/v2/resume-replay';
 
 import { TEST_IDENTITY } from './test-identity';
@@ -27,10 +27,10 @@ afterEach(async () => {
   }
 });
 
-async function makeHarness(): Promise<{ harness: KimiHarness; homeDir: string }> {
+async function makeHarness(): Promise<{ harness: MultiAIHarness; homeDir: string }> {
   const homeDir = await mkdtemp(join(tmpdir(), 'kimi-sdk-v2-'));
   tempDirs.push(homeDir);
-  return { harness: createKimiHarnessV2({ homeDir, identity: TEST_IDENTITY }), homeDir };
+  return { harness: createMultiAIHarnessV2({ homeDir, identity: TEST_IDENTITY }), homeDir };
 }
 
 describe('SDKRpcClientV2 (agent-core-v2 wiring MVP)', () => {
@@ -57,7 +57,7 @@ describe('SDKRpcClientV2 (agent-core-v2 wiring MVP)', () => {
     const workDir = await mkdtemp(join(tmpdir(), 'kimi-sdk-v2-work-'));
     tempDirs.push(workDir);
     await writeSkill(join(homeDir, 'skills', 'demo-user-skill'), 'demo-user-skill');
-    await writeSkill(join(workDir, '.kimi-code', 'skills', 'demo-project-skill'), 'demo-project-skill');
+    await writeSkill(join(workDir, '.multiai', 'skills', 'demo-project-skill'), 'demo-project-skill');
     try {
       const skills = await harness.listWorkspaceSkills(workDir);
       const byName = new Map(skills.map((skill) => [skill.name, skill]));
@@ -83,9 +83,9 @@ describe('SDKRpcClientV2 (agent-core-v2 wiring MVP)', () => {
     tempDirs.push(explicitBase);
     const explicitDir = join(explicitBase, 'skills');
     await writeSkill(join(homeDir, 'skills', 'demo-user-skill'), 'demo-user-skill');
-    await writeSkill(join(workDir, '.kimi-code', 'skills', 'demo-project-skill'), 'demo-project-skill');
+    await writeSkill(join(workDir, '.multiai', 'skills', 'demo-project-skill'), 'demo-project-skill');
     await writeSkill(join(explicitDir, 'demo-explicit-skill'), 'demo-explicit-skill');
-    const harness = createKimiHarnessV2({
+    const harness = createMultiAIHarnessV2({
       homeDir,
       identity: TEST_IDENTITY,
       skillDirs: [explicitDir],
@@ -132,7 +132,7 @@ describe('SDKRpcClientV2 (agent-core-v2 wiring MVP)', () => {
       // `deleteSession` is the permanent case: the v2 engine has no
       // session-deletion capability, so it stays not_implemented by design
       // (tracked in `.tmp/v2-migration-tracker.md`).
-      await expect(harness.deleteSession('session_missing')).rejects.toThrowError(KimiError);
+      await expect(harness.deleteSession('session_missing')).rejects.toThrowError(MultiAIError);
       await expect(harness.deleteSession('session_missing')).rejects.toMatchObject({
         code: ErrorCodes.NOT_IMPLEMENTED,
       });
@@ -218,7 +218,7 @@ describe('SDKRpcClientV2 engine telemetry', () => {
     const workDir = await mkdtemp(join(tmpdir(), 'kimi-sdk-v2-tel-work-'));
     tempDirs.push(workDir);
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarnessV2({
+    const harness = createMultiAIHarnessV2({
       homeDir,
       identity: TEST_IDENTITY,
       telemetry: recordingTelemetry(records),
@@ -240,7 +240,7 @@ describe('SDKRpcClientV2 engine telemetry', () => {
     tempDirs.push(workDir);
     await writeFile(join(homeDir, 'config.toml'), 'telemetry = false\n', 'utf-8');
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarnessV2({
+    const harness = createMultiAIHarnessV2({
       homeDir,
       identity: TEST_IDENTITY,
       telemetry: recordingTelemetry(records),

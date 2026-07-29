@@ -18,7 +18,7 @@ import {
   isError2,
   Error2,
   type Scope,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import {
   fsDiffRequestSchema,
   fsGitStatusRequestSchema,
@@ -30,7 +30,7 @@ import {
   fsSearchRequestSchema,
   fsStatManyRequestSchema,
   fsStatRequestSchema,
-} from '@moonshot-ai/agent-core-v2/session/sessionFs/fs';
+} from '@multiai/agent-core-v2/session/sessionFs/fs';
 import { z } from 'zod';
 
 import { errEnvelope, okEnvelope } from '../envelope';

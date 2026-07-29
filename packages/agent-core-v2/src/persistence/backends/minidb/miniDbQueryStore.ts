@@ -3,7 +3,7 @@
  *
  * A rebuildable, in-process derived read-model. The store is a `ClusterDb`
  * of 16 shards rooted at `<cacheDir>/query-store`: keys are hash-routed over
- * ordinary `MiniDb` directories, so multiple kimi processes can read and
+ * ordinary `MiniDb` directories, so multiple MultiAI processes can read and
  * write the same read model concurrently (a single writer per shard, readers
  * that never take write locks) instead of failing against a database-wide
  * single-writer lock. Authoritative data lives in `IAppendLogStore` /
@@ -46,8 +46,8 @@ import { promises as fsp } from 'node:fs';
 
 import { join } from 'pathe';
 
-import { type QueryOptions } from '@moonshot-ai/minidb';
-import { ClusterDb } from '@moonshot-ai/minidb/cluster';
+import { type QueryOptions } from '@multiai/minidb';
+import { ClusterDb } from '@multiai/minidb/cluster';
 
 import { Disposable, toDisposable } from '#/_base/di/lifecycle';
 import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/di/scope';

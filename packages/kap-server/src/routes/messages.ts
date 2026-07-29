@@ -17,8 +17,8 @@
  *   - invalid query     → `40001` (validation.failed, via defineRoute)
  */
 
-import { IMessageLegacyService, isError2, type Scope } from '@moonshot-ai/agent-core-v2';
-import { messageRoleSchema } from '@moonshot-ai/agent-core-v2/agent/contextMemory/protocolMessage';
+import { IMessageLegacyService, isError2, type Scope } from '@multiai/agent-core-v2';
+import { messageRoleSchema } from '@multiai/agent-core-v2/agent/contextMemory/protocolMessage';
 import { ErrorCode } from '../protocol/error-codes';
 import { getMessageResponseSchema, listMessagesResponseSchema } from '../protocol/rest-message';
 import { z } from 'zod';

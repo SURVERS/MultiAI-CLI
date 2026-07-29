@@ -5,16 +5,16 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@moonshot-ai/agent-core': fileURLToPath(new URL('../agent-core/src/index.ts', import.meta.url)),
-      '@moonshot-ai/kimi-code-oauth': fileURLToPath(
+      '@multiai/agent-core': fileURLToPath(new URL('../agent-core/src/index.ts', import.meta.url)),
+      '@multiai/oauth': fileURLToPath(
         new URL('../oauth/src/index.ts', import.meta.url),
       ),
     },
   },
   test: {
-    name: 'kimi-sdk',
+    name: 'multiai-sdk',
     env: {
-      KIMI_LOG_LEVEL: 'off',
+      MULTIAI_LOG_LEVEL: 'off',
     },
     include: ['test/**/*.test.ts'],
   },

@@ -1,12 +1,12 @@
 import { homedir } from 'node:os';
 import { join } from 'pathe';
-import type { Kaos } from '@moonshot-ai/kaos';
-import type { SessionWarning } from '@moonshot-ai/protocol';
+import type { Kaos } from '@multiai/kaos';
+import type { SessionWarning } from '@multiai/protocol';
 
-import { ErrorCodes, KimiError } from '#/errors';
+import { ErrorCodes, MultiAIError } from '#/errors';
 import { getRootLogger, log } from '#/logging/logger';
 import type { Logger, SessionLogHandle } from '#/logging/types';
-import type { KimiConfig, SDKSessionRPC } from '#/rpc';
+import type { MultiAIConfig, SDKSessionRPC } from '#/rpc';
 import { proxyWithExtraPayload } from '#/rpc/types';
 
 import { Agent, type AgentOptions, type AgentType } from '../agent';
@@ -62,10 +62,10 @@ import { abortError } from '../utils/abort';
 export interface SessionOptions {
   readonly kaos: Kaos;
   readonly persistenceKaos?: Kaos;
-  readonly config?: KimiConfig;
+  readonly config?: MultiAIConfig;
   readonly id?: string | undefined;
   readonly homedir: string;
-  readonly kimiHomeDir?: string;
+  readonly multiaiHomeDir?: string;
   readonly rpc: SDKSessionRPC;
   readonly toolServices?: ToolServices;
   readonly initializeMainAgent?: boolean | undefined;
@@ -84,7 +84,7 @@ export interface SessionOptions {
   readonly imageLimits?: ImageLimits;
   readonly additionalDirs?: readonly string[];
   /**
-   * Print-mode (`kimi -p`) only: hold the main turn open while background
+   * Print-mode (`multiai -p`) only: hold the main turn open while background
    * subagents (`kind === 'agent'`) are still running, idle-waiting until they
    * finish before the run exits. Set via the SDK `createSession` option.
    */
@@ -93,7 +93,7 @@ export interface SessionOptions {
 
 export interface SessionSkillConfig {
   readonly userHomeDir?: string;
-  /** Brand data dir (KIMI_CODE_HOME); user brand skills live under `<brandHomeDir>/skills`. */
+  /** Brand data dir (MULTIAI_HOME); user brand skills live under `<brandHomeDir>/skills`. */
   readonly brandHomeDir?: string;
   readonly explicitDirs?: readonly string[];
   readonly extraDirs?: readonly string[];
@@ -142,7 +142,7 @@ export interface SessionMeta {
   custom: Record<string, any>;
 }
 
-const BACKGROUND_KEEP_ALIVE_ON_EXIT_ENV = 'KIMI_CODE_BACKGROUND_KEEP_ALIVE_ON_EXIT';
+const BACKGROUND_KEEP_ALIVE_ON_EXIT_ENV = 'MULTIAI_BACKGROUND_KEEP_ALIVE_ON_EXIT';
 const ACTIVE_TURN_CLOSE_TIMEOUT_MS = 8_000;
 
 async function waitForSettlementOrTimeout(
@@ -231,7 +231,7 @@ export class Session {
       sessionId: options.id,
     });
     this.mcp = new McpConnectionManager({
-      oauthService: new McpOAuthService({ kimiHomeDir: options.kimiHomeDir }),
+      oauthService: new McpOAuthService({ multiaiHomeDir: options.multiaiHomeDir }),
       log: this.log,
       stdioCwd: options.kaos.getcwd(),
       defaultStartupTimeoutMs: resolveMcpStartupTimeoutMs(options.config?.mcp?.startupTimeoutMs),
@@ -483,7 +483,7 @@ export class Session {
 
   /**
    * Wait for all still-running background tasks (across every agent) to reach a
-   * terminal state before a `kimi -p` (print) run exits.
+   * terminal state before a `multiai -p` (print) run exits.
    *
    * Only runs when the resolved print background mode is `'drain'` (see
    * `resolvePrintBackgroundMode`): `print_background_mode = "drain"`, or the
@@ -552,7 +552,7 @@ export class Session {
   }
 
   /**
-   * Resolve the effective print-mode (`kimi -p`) background-task policy.
+   * Resolve the effective print-mode (`multiai -p`) background-task policy.
    *
    * `background.print_background_mode` is authoritative when set. Otherwise we
    * fall back to the legacy `background.keep_alive_on_exit` mapping so existing
@@ -583,7 +583,7 @@ export class Session {
   }
 
   /**
-   * Decide what the `kimi -p` driver should do after the main agent's turn ends
+   * Decide what the `multiai -p` driver should do after the main agent's turn ends
    * with `reason === 'completed'`. Returns `'finish'` when the run may exit, or
    * `'continue'` when the driver must stay alive so a background-task completion
    * can `turn.steer` the main agent into a new turn.
@@ -656,7 +656,7 @@ export class Session {
     const entry = this.agents.get(id);
     if (entry !== undefined) return (await this.resolveAgentEntry(entry)).agent;
     if (this.metadata.agents[id] === undefined) {
-      throw new KimiError(ErrorCodes.AGENT_NOT_FOUND, `Agent "${id}" was not found`);
+      throw new MultiAIError(ErrorCodes.AGENT_NOT_FOUND, `Agent "${id}" was not found`);
     }
     return (await this.resumeAgent(id)).agent;
   }
@@ -672,10 +672,10 @@ export class Session {
   ): Promise<void> {
     const context = await prepareSystemPromptContext(
       this.systemContextKaos(agent.kaos.getcwd()),
-      this.options.kimiHomeDir,
+      this.options.multiaiHomeDir,
       { additionalDirs: this.additionalDirs },
     );
-    agent.useProfile(profile, context, this.options.kimiHomeDir);
+    agent.useProfile(profile, context, this.options.multiaiHomeDir);
     const { agentsMdWarning } = context;
     if (agentsMdWarning !== undefined) {
       this.agentsMdWarning = agentsMdWarning;
@@ -711,7 +711,7 @@ export class Session {
     try {
       const context = await prepareSystemPromptContext(
         this.systemContextKaos(this.toolKaos.getcwd()),
-        this.options.kimiHomeDir,
+        this.options.multiaiHomeDir,
         { additionalDirs: this.additionalDirs },
       );
       this.agentsMdWarning = context.agentsMdWarning;
@@ -736,14 +736,14 @@ export class Session {
       });
       await handle.completion;
 
-      const agentsMd = await loadAgentsMd(mainAgent.kaos, this.options.kimiHomeDir);
+      const agentsMd = await loadAgentsMd(mainAgent.kaos, this.options.multiaiHomeDir);
       mainAgent.context.appendSystemReminder(initCompletionReminder(agentsMd), {
         kind: 'injection',
         variant: 'init',
       });
       await mainAgent.records.flush();
     } catch (error) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.SESSION_INIT_FAILED,
         error instanceof Error ? error.message : 'Init failed',
         { cause: error },
@@ -847,7 +847,7 @@ export class Session {
     const roots = await resolveSkillRoots({
       paths: {
         userHomeDir: this.options.skills?.userHomeDir ?? homedir(),
-        brandHomeDir: this.options.skills?.brandHomeDir ?? this.options.kimiHomeDir,
+        brandHomeDir: this.options.skills?.brandHomeDir ?? this.options.multiaiHomeDir,
         workDir: this.options.kaos.getcwd(),
       },
       explicitDirs: this.options.skills?.explicitDirs,
@@ -955,7 +955,7 @@ export class Session {
       systemPromptContextProvider: () =>
         prepareSystemPromptContext(
           this.systemContextKaos(agent.kaos.getcwd()),
-          this.options.kimiHomeDir,
+          this.options.multiaiHomeDir,
           { additionalDirs: agent.getAdditionalDirs() },
         ),
     });
@@ -999,7 +999,7 @@ export class Session {
     stack: readonly string[] = [],
   ): Promise<ResumedAgent> {
     if (stack.includes(id)) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.SESSION_STATE_INVALID,
         `Session agent parent chain contains a cycle: ${[...stack, id].join(' -> ')}`,
       );
@@ -1020,7 +1020,7 @@ export class Session {
     await this.skillsReady;
     const meta = this.metadata.agents[id];
     if (meta === undefined) {
-      throw new KimiError(ErrorCodes.SESSION_STATE_INVALID, `Session agent "${id}" is missing`);
+      throw new MultiAIError(ErrorCodes.SESSION_STATE_INVALID, `Session agent "${id}" is missing`);
     }
 
     const parentAgentId = meta.parentAgentId ?? null;
@@ -1058,7 +1058,7 @@ export class Session {
     if (agent.config.systemPrompt === '') return;
     const profile = this.resolvePersistedProfile(agent, meta, parentAgent);
     if (profile === undefined) return;
-    agent.setActiveProfile(profile, this.options.kimiHomeDir);
+    agent.setActiveProfile(profile, this.options.multiaiHomeDir);
   }
 
   private resolvePersistedProfile(
@@ -1090,7 +1090,7 @@ export class Session {
   private requireMainAgent(): Agent {
     const agent = this.getReadyAgent('main');
     if (agent === undefined) {
-      throw new KimiError(ErrorCodes.AGENT_NOT_FOUND, 'Main agent was not found');
+      throw new MultiAIError(ErrorCodes.AGENT_NOT_FOUND, 'Main agent was not found');
     }
     return agent;
   }

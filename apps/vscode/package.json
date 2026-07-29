@@ -1,15 +1,15 @@
 {
-  "name": "kimi-code",
-  "publisher": "moonshot-ai",
-  "displayName": "Kimi Code",
-  "description": "Official Kimi Code plugin for VS Code",
+  "name": "multiai-cli",
+  "publisher": "multiai",
+  "displayName": "MultiAI CLI",
+  "description": "MultiAI coding agent for VS Code",
   "version": "0.6.5",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MoonshotAI/kimi-code.git",
+    "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",
     "directory": "apps/vscode"
   },
   "engines": {
@@ -39,49 +39,47 @@
     "skills",
     "json",
     "autocomplete",
-    "moonshot",
-    "kimi",
-    "moonshot-ai"
+    "multiai"
   ],
   "pricing": "Free",
   "activationEvents": [],
   "main": "./dist/extension.js",
-  "icon": "resources/kimi-icon-storefront.png",
+  "icon": "resources/multiai-icon-storefront.png",
   "contributes": {
     "configuration": {
-      "title": "Kimi Code",
+      "title": "MultiAI CLI",
       "properties": {
-        "kimi.yoloMode": {
+        "multiai.yoloMode": {
           "type": "boolean",
           "default": false,
           "description": "Auto-approve regular tool calls; the agent may still ask questions"
         },
-        "kimi.autosave": {
+        "multiai.autosave": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically save files before Kimi reads or writes them"
+          "description": "Automatically save files before MultiAI reads or writes them"
         },
-        "kimi.enableNewConversationShortcut": {
+        "multiai.enableNewConversationShortcut": {
           "type": "boolean",
           "default": false,
-          "description": "Use Cmd/Ctrl+N to start a new conversation when Kimi is focused"
+          "description": "Use Cmd/Ctrl+N to start a new conversation when MultiAI is focused"
         },
-        "kimi.useCtrlEnterToSend": {
+        "multiai.useCtrlEnterToSend": {
           "type": "boolean",
           "default": false,
           "description": "Use Ctrl/Cmd+Enter to send prompts instead of Enter"
         },
-        "kimi.showThinkingContent": {
+        "multiai.showThinkingContent": {
           "type": "boolean",
           "default": true,
           "description": "Show thinking/reasoning content in the chat UI"
         },
-        "kimi.showThinkingExpanded": {
+        "multiai.showThinkingExpanded": {
           "type": "boolean",
           "default": false,
           "description": "Auto-expand thinking/reasoning sections when shown (requires 'Show Thinking Content' to be enabled)"
         },
-        "kimi.editorContext": {
+        "multiai.editorContext": {
           "type": "string",
           "default": "never",
           "enum": [
@@ -94,68 +92,64 @@
             "Share once when conversation starts",
             "Share when active file changes"
           ],
-          "description": "Control when to share the active editor's file and cursor position with Kimi"
+          "description": "Control when to share the active editor's file and cursor position with MultiAI"
         }
       }
     },
     "commands": [
       {
-        "command": "kimi.clearAllState",
-        "title": "Kimi Code: [DEBUG] Clear All State"
+        "command": "multiai.clearAllState",
+        "title": "MultiAI CLI: [DEBUG] Clear All State"
       },
       {
-        "command": "kimi.openInTab",
-        "title": "Kimi Code: Open in New Tab",
+        "command": "multiai.openInTab",
+        "title": "MultiAI CLI: Open in New Tab",
         "icon": "$(link-external)"
       },
       {
-        "command": "kimi.openInSideBar",
-        "title": "Kimi Code: Open in Side Panel",
+        "command": "multiai.openInSideBar",
+        "title": "MultiAI CLI: Open in Side Panel",
         "icon": "$(layout-sidebar-left)"
       },
       {
-        "command": "kimi.focusInput",
-        "title": "Kimi Code: Focus Input",
+        "command": "multiai.focusInput",
+        "title": "MultiAI CLI: Focus Input",
         "icon": "$(edit)"
       },
       {
-        "command": "kimi.insertMention",
-        "title": "Kimi Code: Insert Current File",
+        "command": "multiai.insertMention",
+        "title": "MultiAI CLI: Insert Current File",
         "icon": "$(mention)"
       },
       {
-        "command": "kimi.newConversation",
-        "title": "Kimi Code: New Conversation",
+        "command": "multiai.newConversation",
+        "title": "MultiAI CLI: New Conversation",
         "icon": "$(add)"
       },
       {
-        "command": "kimi.showLogs",
-        "title": "Kimi Code: Show Logs",
+        "command": "multiai.showLogs",
+        "title": "MultiAI CLI: Show Logs",
         "icon": "$(output)"
       },
       {
-        "command": "kimi.resetKimi",
-        "title": "Kimi Code: Reset Kimi (in case of any issues/no response)",
+        "command": "multiai.reset",
+        "title": "MultiAI CLI: Reset (in case of any issues/no response)",
         "icon": "$(refresh)"
       },
       {
-        "command": "kimi.logout",
-        "title": "Kimi Code: Logout",
+        "command": "multiai.logout",
+        "title": "MultiAI CLI: Logout",
         "icon": "$(sign-out)"
-      },
-      {
-        "command": "kimi.migrateLegacyData",
-        "title": "Kimi Code: Migrate Legacy Data"
       }
     ],
     "keybindings": [
       {
-        "command": "kimi.focusInput",
+        "command": "multiai.focusInput",
         "key": "ctrl+shift+k",
         "mac": "cmd+shift+k"
       },
       {
-        "command": "kimi.insertMention",
+        "command": "multiai.insertMention",
         "key": "alt+k",
         "mac": "alt+k",
         "when": "editorTextFocus"
@@ -164,80 +158,76 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "kimi-sidebar",
-          "title": "Kimi Code",
-          "icon": "resources/kimi-icon.svg"
+          "id": "multiai-sidebar",
+          "title": "MultiAI CLI",
+          "icon": "resources/multiai-icon.svg"
         }
       ]
     },
     "views": {
-      "kimi-sidebar": [
+      "multiai-sidebar": [
         {
           "type": "webview",
-          "id": "kimi.webview",
-          "name": "Kimi Code"
+          "id": "multiai.webview",
+          "name": "MultiAI CLI"
         }
       ]
     },
     "menus": {
       "view/title": [
         {
-          "command": "kimi.openInTab",
-          "when": "view == kimi.webview",
+          "command": "multiai.openInTab",
+          "when": "view == multiai.webview",
           "group": "navigation"
         },
         {
-          "command": "kimi.newConversation",
-          "when": "view == kimi.webview",
+          "command": "multiai.newConversation",
+          "when": "view == multiai.webview",
           "group": "navigation"
         }
       ],
       "commandPalette": [
         {
-          "command": "kimi.clearAllState",
+          "command": "multiai.clearAllState",
           "when": "isDevelopment"
         },
         {
-          "command": "kimi.openInTab",
+          "command": "multiai.openInTab",
           "when": "true"
         },
         {
-          "command": "kimi.openInSideBar",
+          "command": "multiai.openInSideBar",
           "when": "true"
         },
         {
-          "command": "kimi.focusInput",
+          "command": "multiai.focusInput",
           "when": "true"
         },
         {
-          "command": "kimi.insertMention",
+          "command": "multiai.insertMention",
           "when": "true"
         },
         {
-          "command": "kimi.newConversation",
+          "command": "multiai.newConversation",
           "when": "true"
         },
         {
-          "command": "kimi.showLogs",
+          "command": "multiai.showLogs",
           "when": "true"
         },
         {
-          "command": "kimi.resetKimi",
+          "command": "multiai.reset",
           "when": "true"
         },
         {
-          "command": "kimi.logout",
-          "when": "kimi.isLoggedIn"
-        },
-        {
-          "command": "kimi.migrateLegacyData",
-          "when": "true"
+          "command": "multiai.logout",
+          "when": "multiai.isLoggedIn"
         }
       ],
       "editor/context": [
         {
-          "command": "kimi.insertMention",
-          "group": "moonshot-ai",
+          "command": "multiai.insertMention",
+          "group": "multiai",
           "when": "editorTextFocus"
         }
       ]
@@ -284,8 +274,7 @@
   "dependencies": {
     "@base-ui/react": "^1.0.0",
     "@fontsource-variable/inter": "5.2.8",
-    "@moonshot-ai/kimi-code-sdk": "workspace:^",
-    "@moonshot-ai/migration-legacy": "workspace:^",
+    "@multiai/sdk": "workspace:^",
     "@radix-ui/react-accordion": "^1.2.12",
     "@tabler/icons-react": "^3.36.0",
     "ahooks": "^3.9.6",

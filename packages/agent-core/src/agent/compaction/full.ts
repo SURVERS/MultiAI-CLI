@@ -1,8 +1,8 @@
 import {
   ErrorCodes,
-  KimiError,
-  isKimiError,
-  toKimiErrorPayload,
+  MultiAIError,
+  isMultiAIError,
+  toMultiAIErrorPayload,
 } from '#/errors';
 import {
   APIEmptyResponseError,
@@ -17,7 +17,7 @@ import {
   APIStatusError,
   createUserMessage,
   isImageFormatError,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 
 import type { Agent } from '..';
 import type { GenerateOptionsWithRequestLogFields } from '../llm-request-logger';
@@ -106,7 +106,7 @@ export class FullCompaction {
         {
           ...DEFAULT_COMPACTION_CONFIG,
           reservedContextSize:
-            agent.kimiConfig?.loopControl?.reservedContextSize ??
+            agent.multiAIConfig?.loopControl?.reservedContextSize ??
             DEFAULT_COMPACTION_CONFIG.reservedContextSize,
         },
       );
@@ -179,7 +179,7 @@ export class FullCompaction {
       return;
     }
     if (this.agent.context.history.length === 0) {
-      throw new KimiError(ErrorCodes.COMPACTION_UNABLE, 'No messages to compact in current history.');
+      throw new MultiAIError(ErrorCodes.COMPACTION_UNABLE, 'No messages to compact in current history.');
     }
     // Manual (SDK/REST) compaction must not start while a turn is running: the
     // turn keeps mutating the context (streaming content, appending messages)
@@ -189,7 +189,7 @@ export class FullCompaction {
     // for the duration. Refuse manual compaction here so it only runs at a clean
     // boundary; the caller can retry once the turn finishes.
     if (data.source === 'manual' && this.agent.turn.hasActiveTurn) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.COMPACTION_UNABLE,
         'Cannot compact while a turn is active. Wait for it to finish, then retry.',
       );
@@ -255,7 +255,7 @@ export class FullCompaction {
     this.consecutiveOverflowCompactions += 1;
     const maxAttempts = this.strategy.maxOverflowCompactionAttempts;
     if (this.consecutiveOverflowCompactions > maxAttempts) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.CONTEXT_OVERFLOW,
         `Compaction failed to bring the context under the model window after ${String(maxAttempts)} attempts.`,
         { cause: error instanceof Error ? error : undefined },
@@ -302,7 +302,7 @@ export class FullCompaction {
     const maxCompactions = this.strategy.maxCompactionPerTurn;
     if (this.compactionCountInTurn >= maxCompactions) {
       if (throwOnLimit) {
-        throw new KimiError(ErrorCodes.CONTEXT_OVERFLOW, `Compaction limit exceeded (${String(maxCompactions)})`, {
+        throw new MultiAIError(ErrorCodes.CONTEXT_OVERFLOW, `Compaction limit exceeded (${String(maxCompactions)})`, {
           details: { maxCompactions },
         });
       }
@@ -370,7 +370,7 @@ export class FullCompaction {
       }
       this.agent.emitEvent({
         type: 'error',
-        ...toKimiErrorPayload(error),
+        ...toMultiAIErrorPayload(error),
       });
     } finally {
       // Replay prompts/steers deferred while compaction held the context — on the
@@ -429,7 +429,7 @@ export class FullCompaction {
         provider: this.agent.config.provider,
         budget: resolveCompletionBudget({
           maxOutputSize: this.agent.config.maxOutputSize ?? defaultCompactionCap,
-          reservedContextSize: this.agent.kimiConfig?.loopControl?.reservedContextSize,
+          reservedContextSize: this.agent.multiAIConfig?.loopControl?.reservedContextSize,
         }),
         capability,
       });
@@ -659,12 +659,12 @@ export class FullCompaction {
         trace_id: this.lastTraceId,
       });
       if (
-        isKimiError(error) &&
+        isMultiAIError(error) &&
         (error.code === ErrorCodes.AUTH_LOGIN_REQUIRED ||
           error.code === ErrorCodes.PROVIDER_AUTH_ERROR)
       )
         throw error;
-      throw new KimiError(ErrorCodes.COMPACTION_FAILED, String(error), { cause: error });
+      throw new MultiAIError(ErrorCodes.COMPACTION_FAILED, String(error), { cause: error });
     }
   }
 

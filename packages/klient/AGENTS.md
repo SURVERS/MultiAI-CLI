@@ -37,7 +37,7 @@ terminal surface are v1-only and live in the legacy suites.
   against every transport — one test file per transport under `test/`. Add
   new **global** facade coverage there, not per-transport.
 - `test/e2e/legacy/` + `test/e2e/harness/` — the legacy `/api/v1` live
-  suites (moved from server-e2e). They skip unless `KIMI_SERVER_URL` points
+  suites (moved from server-e2e). They skip unless `MULTIAI_SERVER_URL` points
   at a running server and **must keep running unchanged**; the v1 surface
   has no in-memory equivalent, so these stay live-server-only — do not try
   to run them against the in-process transports.
@@ -57,21 +57,21 @@ terminal surface are v1-only and live in the legacy suites.
 
 ## Command reference
 
-- `pnpm --filter @moonshot-ai/klient test` — all Vitest suites (unit +
+- `pnpm --filter @multiai/klient test` — all Vitest suites (unit +
   conformance + e2e; live cases skip without their env).
-- `KIMI_SERVER_URL=http://127.0.0.1:58627 pnpm --filter @moonshot-ai/klient test`
+- `MULTIAI_SERVER_URL=http://127.0.0.1:58627 pnpm --filter @multiai/klient test`
   — include the live legacy cases against a running server.
-- `pnpm --filter @moonshot-ai/klient docker:e2e` — docker e2e; the run
+- `pnpm --filter @multiai/klient docker:e2e` — docker e2e; the run
   derives its runner name/namespace from the current workspace to avoid
   cross-workspace conflicts.
-- `pnpm --filter @moonshot-ai/klient typecheck` / `pnpm smoke` (in-process
+- `pnpm --filter @multiai/klient typecheck` / `pnpm smoke` (in-process
   smoke over the memory transport; see `examples/smoke.ts`).
-- `pnpm --filter @moonshot-ai/klient smoke:boundary` — ModelRequester boundary
-  probe: pings every model configured in the real `~/.kimi-code/config.toml`
+- `pnpm --filter @multiai/klient smoke:boundary` — ModelRequester boundary
+  probe: pings every model configured in the real `~/.multiai/config.toml`
   through the in-process engine, then drives deterministic failure modes
   against a local stub to show which errors the ChatProvider layer wraps and
   which the requester owns (see `examples/model-requester-boundary.ts`).
-- `pnpm --filter @moonshot-ai/klient smoke:select-tools` — select_tools
+- `pnpm --filter @multiai/klient smoke:select-tools` — select_tools
   (progressive tool disclosure) probe for kimi-type providers: stub-verifies
   the kimi-only wire encoding of dynamic tool declarations, then runs a live
   two-step select→use flow per real kimi model (see

@@ -27,7 +27,7 @@ import {
   detachGrades,
   transcriptSubscribeV2PayloadSchema,
   type TranscriptGradeSpec,
-} from '@moonshot-ai/transcript';
+} from '@multiai/transcript';
 import { ulid } from 'ulid';
 import type { RawData, WebSocket } from 'ws';
 

@@ -14,7 +14,7 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import type { KimiHarness, Session } from '@moonshot-ai/kimi-code-sdk';
+import type { MultiAIHarness, Session } from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS, makeModelsMap } from './_helpers/harness-stubs';
@@ -55,7 +55,7 @@ function makeHarness(
   statusThinkingEffort?: string | Error,
   fallbackThinking?: { enabled?: boolean; effort?: string },
 ): {
-  harness: KimiHarness;
+  harness: MultiAIHarness;
   fakeSession: Session;
 } {
   const fakeSession = {
@@ -87,7 +87,7 @@ function makeHarness(
       ]),
       thinking: fallbackThinking,
     }),
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
   return { harness, fakeSession };
 }
 
@@ -138,7 +138,7 @@ describe('AcpServer session/new', () => {
       },
       // Phase 14: server.newSession reads these to assemble configOptions.
       getConfig: async () => ({ providers: {}, models: {} }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);

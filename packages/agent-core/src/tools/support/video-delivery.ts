@@ -16,7 +16,7 @@
  * ladder so their delivery and fallback semantics stay identical.
  */
 
-import type { ContentPart, VideoUploadInput, VideoURLPart } from '@moonshot-ai/kosong';
+import type { ContentPart, VideoUploadInput, VideoURLPart } from '@multiai/kosong';
 
 import { ErrorCodes } from '../../errors';
 import { abortReason } from '../../utils/abort';

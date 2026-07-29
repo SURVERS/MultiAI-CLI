@@ -1,5 +1,5 @@
 name: agent
-description: Default Kimi Code agent
+description: Default MultiAI CLI agent
 
 systemPromptPath: ./system.md
 promptVars:

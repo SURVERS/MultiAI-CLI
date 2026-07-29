@@ -6,7 +6,7 @@
  * through the `storage` byte layer. Reads host facts (`clientVersion`, env,
  * platform/arch) from `IBootstrapService`; `createCloudAppender` assembles
  * one from a `ServicesAccessor` so hosts only supply identity facts.
- * App-scoped; independent of `@moonshot-ai/kimi-telemetry`.
+ * App-scoped; independent of `@multiai/telemetry`.
  */
 
 import { randomUUID } from 'node:crypto';

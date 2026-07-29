@@ -4,7 +4,7 @@
  * Constructs `SnapshotReader` with stub core services and a real tmp `homeDir`,
  * writing `state.json` + `agents/main/wire.jsonl` directly — exercising the
  * disk read, the `context.*` reduction, the `(size, mtimeMs)` transcript cache,
- * `state.json` normalization, and `KIMI_SNAPSHOT_*` config parsing without
+ * `state.json` normalization, and `MULTIAI_SNAPSHOT_*` config parsing without
  * booting a Fastify daemon.
  */
 
@@ -19,7 +19,7 @@ import {
   IWorkspaceService,
   type ContextMessage,
   type SessionSummary,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -515,9 +515,9 @@ describe('loadSnapshotConfig', () => {
 
   it('parses legacy mode and integer knobs with floors', () => {
     const c = loadSnapshotConfig({
-      KIMI_SNAPSHOT_READER: 'legacy',
-      KIMI_SNAPSHOT_TIMEOUT_MS: '2500',
-      KIMI_SNAPSHOT_CACHE_LIMIT: '0', // below min → default
+      MULTIAI_SNAPSHOT_READER: 'legacy',
+      MULTIAI_SNAPSHOT_TIMEOUT_MS: '2500',
+      MULTIAI_SNAPSHOT_CACHE_LIMIT: '0', // below min → default
     });
     expect(c.mode).toBe('legacy');
     expect(c.timeoutMs).toBe(2500);
@@ -525,7 +525,7 @@ describe('loadSnapshotConfig', () => {
   });
 
   it('falls back on non-numeric / sub-minimum timeout', () => {
-    expect(loadSnapshotConfig({ KIMI_SNAPSHOT_TIMEOUT_MS: 'abc' }).timeoutMs).toBe(4000);
-    expect(loadSnapshotConfig({ KIMI_SNAPSHOT_TIMEOUT_MS: '50' }).timeoutMs).toBe(4000);
+    expect(loadSnapshotConfig({ MULTIAI_SNAPSHOT_TIMEOUT_MS: 'abc' }).timeoutMs).toBe(4000);
+    expect(loadSnapshotConfig({ MULTIAI_SNAPSHOT_TIMEOUT_MS: '50' }).timeoutMs).toBe(4000);
   });
 });

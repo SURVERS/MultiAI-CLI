@@ -3,7 +3,7 @@ import { Methods } from "../../shared/bridge";
 import type { Handler } from "./types";
 import type { WorkspaceStatus } from "shared/types";
 
-const INPUT_HISTORY_KEY = "kimi.inputHistory";
+const INPUT_HISTORY_KEY = "multiai.inputHistory";
 const MAX_HISTORY_SIZE = 100;
 
 const checkWorkspace: Handler<void, WorkspaceStatus> = async (_, ctx) => {

@@ -5,7 +5,7 @@ declare const __EXTENSION_VERSION__: string;
 const EXTENSION_VERSION = typeof __EXTENSION_VERSION__ !== "undefined" ? __EXTENSION_VERSION__ : "0.0.0";
 
 function getConfig() {
-  return vscode.workspace.getConfiguration("kimi");
+  return vscode.workspace.getConfiguration("multiai");
 }
 
 export const VSCodeSettings = {
@@ -52,11 +52,11 @@ export const VSCodeSettings = {
 
 export function onSettingsChange(callback: (changedKeys: string[]) => void): vscode.Disposable {
   return vscode.workspace.onDidChangeConfiguration((e) => {
-    if (!e.affectsConfiguration("kimi")) {
+    if (!e.affectsConfiguration("multiai")) {
       return;
     }
     const keys = ["yoloMode", "autosave", "enableNewConversationShortcut", "useCtrlEnterToSend", "showThinkingContent", "showThinkingExpanded", "editorContext"];
-    const changedKeys = keys.filter((key) => e.affectsConfiguration(`kimi.${key}`));
+    const changedKeys = keys.filter((key) => e.affectsConfiguration(`multiai.${key}`));
     if (changedKeys.length > 0) {
       callback(changedKeys);
     }

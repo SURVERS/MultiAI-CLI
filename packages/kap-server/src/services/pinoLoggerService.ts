@@ -24,7 +24,7 @@ export interface CreateLoggerOptions {
 export function createServerLogger(opts: CreateLoggerOptions): ServerLogger {
   const base: LoggerOptions = {
     level: opts.level,
-    base: { name: 'kimi-server-v2' },
+    base: { name: 'multiai-server-v2' },
     timestamp: pino.stdTimeFunctions.isoTime,
   };
   return pino(base);

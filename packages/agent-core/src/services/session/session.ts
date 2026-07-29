@@ -18,7 +18,7 @@ import {
   type SessionUpdate,
   type UndoSessionRequest,
   type UndoSessionResponse,
-} from '@moonshot-ai/protocol';
+} from '@multiai/protocol';
 
 export interface SessionListQuery extends CursorQuery {
   busy?: boolean;

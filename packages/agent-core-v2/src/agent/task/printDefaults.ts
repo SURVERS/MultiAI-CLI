@@ -1,5 +1,5 @@
 /**
- * `task` domain (L5) — print-mode (`kimi -p`) config-section defaults.
+ * `task` domain (L5) — print-mode (`multiai -p`) config-section defaults.
  *
  * Ports v1's `applyPrintModeConfigDefaults`
  * (`packages/agent-core/src/config/print-defaults.ts`): a headless run should

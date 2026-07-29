@@ -9,9 +9,9 @@ import {
   registerScopedService,
   type TerminalProcess,
   type TerminalSpawnOptions,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { ErrorCode } from '../src/protocol/error-codes';
-import type { Terminal } from '@moonshot-ai/agent-core-v2/os/interface/terminal';
+import type { Terminal } from '@multiai/agent-core-v2/os/interface/terminal';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { type RunningServer, startServer } from '../src/start';

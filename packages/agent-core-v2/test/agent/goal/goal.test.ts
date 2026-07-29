@@ -2,7 +2,7 @@
  * Scenario: goal lifecycle, durable wire records, and continuation scheduling.
  * Responsibilities: verify public goal commands, replayable state, and one-turn admission.
  * Wiring: real goal/wire services; loop is stubbed only for focused scheduling cases.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run test/agent/goal/goal.test.ts`.
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run test/agent/goal/goal.test.ts`.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -42,7 +42,7 @@ import { type DomainEvent, IEventBus } from '#/app/event/eventBus';
 import { APIConnectionError, APIStatusError } from '#/kosong/contract/errors';
 import type { ToolCall } from '#/kosong/contract/message';
 import type { TokenUsage } from '#/kosong/contract/usage';
-import { ErrorCodes, Error2, errorInfo, toKimiErrorPayload } from '#/errors';
+import { ErrorCodes, Error2, errorInfo, toMultiAIErrorPayload } from '#/errors';
 import type { ExecutableTool, RunnableToolExecution } from '#/tool/toolContract';
 import type { ToolInputDisplay } from '#/tool/toolInputDisplay';
 
@@ -281,7 +281,7 @@ function endTurn(
   turn: Turn,
   result: TurnEndedInput = { reason: 'completed' },
 ): void {
-  const error = result.error !== undefined ? toKimiErrorPayload(result.error) : undefined;
+  const error = result.error !== undefined ? toMultiAIErrorPayload(result.error) : undefined;
   eventBus.publish({
     type: 'turn.ended',
     turnId: turn.id,

@@ -1,5 +1,5 @@
-import type { Kaos } from '@moonshot-ai/kaos';
-import type { ToolCall } from '@moonshot-ai/kosong';
+import type { Kaos } from '@multiai/kaos';
+import type { ToolCall } from '@multiai/kosong';
 import * as posixPath from 'node:path/posix';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -1610,7 +1610,7 @@ describe('Plan mode tool approve policy', () => {
   it.each(['Write', 'Edit'] as const)(
     'approves %s when it only writes the active plan file',
     async (toolName) => {
-      const planFilePath = '/workspace/.kimi/plans/current.md';
+      const planFilePath = '/workspace/.multiai/plans/current.md';
       const { manager, requestApproval, telemetryTrack } = makePermissionManager(
         async () => ({ decision: 'approved' }),
         { planModeActive: true, planFilePath },
@@ -1643,7 +1643,7 @@ describe('Plan mode tool approve policy', () => {
   );
 
   it('denies active plan-mode writes that have no file write access', async () => {
-    const planFilePath = '/workspace/.kimi/plans/current.md';
+    const planFilePath = '/workspace/.multiai/plans/current.md';
     const args = { path: planFilePath, content: '# Plan' };
     const { manager, requestApproval, telemetryTrack } = makePermissionManager(
       async () => ({ decision: 'approved' }),

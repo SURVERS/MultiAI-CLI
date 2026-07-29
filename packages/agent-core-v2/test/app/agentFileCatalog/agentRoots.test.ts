@@ -2,7 +2,7 @@
  * Scenario: agent-root resolution — user / project / configured roots,
  * .git walk-up, brand-vs-generic ordering, `~` and relative path expansion,
  * and canonical dedup. Exercises the path primitives against real temp dirs.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/app/agentFileCatalog/agentRoots.test.ts`.
  */
 
@@ -38,14 +38,14 @@ describe('agentRoots', () => {
   }
 
   describe('projectRoots', () => {
-    it('resolves the brand .kimi-code/agents directory at the .git root', async () => {
+    it('resolves the brand .multiai/agents directory at the .git root', async () => {
       await markGitRoot();
-      await mkdir(join(root, '.kimi-code/agents'), { recursive: true });
+      await mkdir(join(root, '.multiai/agents'), { recursive: true });
 
       const roots = await projectAgentRoots(hostFs, root);
 
       expect(
-        roots.some((r) => r.path.endsWith('.kimi-code/agents') && r.source === 'project'),
+        roots.some((r) => r.path.endsWith('.multiai/agents') && r.source === 'project'),
       ).toBe(true);
     });
 
@@ -58,27 +58,27 @@ describe('agentRoots', () => {
       expect(roots.some((r) => r.path.endsWith('.agents/agents') && r.source === 'project')).toBe(
         true,
       );
-      expect(roots.some((r) => r.path.endsWith('.kimi-code/agents'))).toBe(false);
+      expect(roots.some((r) => r.path.endsWith('.multiai/agents'))).toBe(false);
     });
 
     it('walks up from a child directory to the .git root', async () => {
       await markGitRoot();
-      await mkdir(join(root, '.kimi-code/agents'), { recursive: true });
+      await mkdir(join(root, '.multiai/agents'), { recursive: true });
       const child = join(root, 'src/pkg');
       await mkdir(child, { recursive: true });
 
       const roots = await projectAgentRoots(hostFs, child);
 
-      expect(roots.some((r) => r.path.endsWith('.kimi-code/agents'))).toBe(true);
+      expect(roots.some((r) => r.path.endsWith('.multiai/agents'))).toBe(true);
     });
 
     it('orders the brand directory before the generic directory', async () => {
       await markGitRoot();
-      await mkdir(join(root, '.kimi-code/agents'), { recursive: true });
+      await mkdir(join(root, '.multiai/agents'), { recursive: true });
       await mkdir(join(root, '.agents/agents'), { recursive: true });
 
       const roots = await projectAgentRoots(hostFs, root);
-      const brandIdx = roots.findIndex((r) => r.path.endsWith('.kimi-code/agents'));
+      const brandIdx = roots.findIndex((r) => r.path.endsWith('.multiai/agents'));
       const genericIdx = roots.findIndex((r) => r.path.endsWith('.agents/agents'));
 
       expect(brandIdx).toBeGreaterThanOrEqual(0);

@@ -2,8 +2,8 @@ import { EventEmitter } from 'node:events';
 import { Readable, type Writable } from 'node:stream';
 
 import { createControlledPromise } from '@antfu/utils';
-import { type Environment, type Kaos, type KaosProcess } from '@moonshot-ai/kaos';
-import type { ModelCapability, ProviderConfig } from '@moonshot-ai/kosong';
+import { type Environment, type Kaos, type KaosProcess } from '@multiai/kaos';
+import type { ModelCapability, ProviderConfig } from '@multiai/kosong';
 import { expect, onTestFinished, vi } from 'vitest';
 
 import {
@@ -19,7 +19,7 @@ import {
   AGENT_WIRE_PROTOCOL_VERSION,
   InMemoryAgentRecordPersistence,
 } from '../../../src/agent/records';
-import type { KimiConfig } from '../../../src/config';
+import type { MultiAIConfig } from '../../../src/config';
 import type { ExecutableToolResult } from '../../../src/loop';
 import type { Logger } from '../../../src/logging';
 import { ProviderManager } from '../../../src/session/provider-manager';
@@ -99,7 +99,7 @@ export interface TestAgentOptions {
   readonly permission?: AgentOptions['permission'];
   readonly goal?: GoalMode;
   readonly providerManager?: ProviderManager;
-  readonly initialConfig?: KimiConfig;
+  readonly initialConfig?: MultiAIConfig;
   readonly providerManagerOverrides?: Omit<ConstructorParameters<typeof ProviderManager>[0], 'config'>;
   readonly sessionId?: string;
   readonly subagentHost?: AgentOptions['subagentHost'];
@@ -162,14 +162,14 @@ export class AgentTestContext {
   readonly mockNextResponse = this.scriptedGenerate.mockNextResponse;
   readonly mockNextProviderResponse = this.scriptedGenerate.mockNextProviderResponse;
 
-  private kimiConfig: KimiConfig;
+  private multiAIConfig: MultiAIConfig;
 
   constructor(options: TestAgentOptions = {}) {
     this.options = options;
     this.emitter.on('error', () => {});
-    this.kimiConfig = options.initialConfig ?? emptyConfig();
+    this.multiAIConfig = options.initialConfig ?? emptyConfig();
     const providerManager = options.providerManager ?? new ProviderManager({
-      config: () => this.kimiConfig,
+      config: () => this.multiAIConfig,
       ...(options.sessionId !== undefined ? { promptCacheKey: options.sessionId } : {}),
       ...options.providerManagerOverrides,
     });
@@ -182,7 +182,7 @@ export class AgentTestContext {
     this.agent = new Agent({
       kaos,
       toolServices,
-      config: this.kimiConfig,
+      config: this.multiAIConfig,
       rpc: this.createRpcProxy(),
       homedir: options.homedir,
       persistence,
@@ -239,7 +239,7 @@ export class AgentTestContext {
     modelCapabilities?: ModelCapability | undefined,
   ): void {
     if (this.options.providerManager === undefined) {
-      this.kimiConfig = configWithProvider(this.kimiConfig, provider, modelCapabilities);
+      this.multiAIConfig = configWithProvider(this.multiAIConfig, provider, modelCapabilities);
     }
     this.agent.config.update({ modelAlias: provider.model });
   }
@@ -743,7 +743,7 @@ export class AgentTestContext {
         webSearcher: this.agent.toolServices?.webSearcher,
       },
       providerManager: this.options.providerManager,
-      initialConfig: this.kimiConfig,
+      initialConfig: this.multiAIConfig,
       providerManagerOverrides: this.options.providerManagerOverrides,
       generate: failOnResumeGenerate,
       compactionStrategy: this.options.compactionStrategy,
@@ -1048,15 +1048,15 @@ function configStateSnapshot(agent: Agent): ResumeStateSnapshot['config'] {
   };
 }
 
-function emptyConfig(): KimiConfig {
+function emptyConfig(): MultiAIConfig {
   return configWithProvider({ providers: {} }, MOCK_PROVIDER, undefined);
 }
 
 function configWithProvider(
-  config: KimiConfig,
+  config: MultiAIConfig,
   provider: ProviderConfig,
   modelCapabilities: ModelCapability | undefined,
-): KimiConfig {
+): MultiAIConfig {
   const providerName = 'test-provider';
   const maxContextSize = modelCapabilities?.max_context_tokens;
   return {
@@ -1078,7 +1078,7 @@ function configWithProvider(
   };
 }
 
-function providerConfigForAlias(provider: ProviderConfig): KimiConfig['providers'][string] {
+function providerConfigForAlias(provider: ProviderConfig): MultiAIConfig['providers'][string] {
   return {
     type: provider.type,
     apiKey: 'apiKey' in provider ? provider.apiKey : undefined,

@@ -407,7 +407,7 @@ describe('normalizeAPIStatusError thinking effort guidance', () => {
 
     expect(error.message).toContain('Non-Kimi providers receive effort strings');
     expect(error.message).toContain(
-      'https://moonshotai.github.io/kimi-code/en/configuration/config-files.html#thinking',
+      'https://survers.github.io/MultiAI-CLI/en/configuration/config-files.html#thinking',
     );
   });
 });
@@ -441,6 +441,19 @@ describe('convertOpenAIError: quota-exhausted 429', () => {
     const result = convertOpenAIError(err);
     expect(result).toBeInstanceOf(APIProviderQuotaExhaustedError);
     expect((result as APIProviderQuotaExhaustedError).statusCode).toBe(429);
+    expect(isRetryableGenerateError(result)).toBe(false);
+  });
+
+  it('preserves a MultiAI 402 insufficient_quota response as signed-in quota exhaustion', () => {
+    const err = new OpenAIAPIError(
+      402,
+      { message: 'Balance exhausted.', type: 'insufficient_quota' },
+      '402 Balance exhausted.',
+      new Headers(),
+    );
+    const result = convertOpenAIError(err);
+    expect(result).toBeInstanceOf(APIProviderQuotaExhaustedError);
+    expect((result as APIProviderQuotaExhaustedError).statusCode).toBe(402);
     expect(isRetryableGenerateError(result)).toBe(false);
   });
 

@@ -9,7 +9,7 @@ Gate not-yet-public features behind `IFlagService.enabled(id)`, per the reposito
 - `src/flag/flagRegistry.ts` — `IFlagRegistry` token + `FlagDefinitionInput` / `FlagId` / `FlagSurface` types + `registerFlagDefinition` / `getContributedFlags` (import-time contribution queue).
 - `src/flag/flagRegistryService.ts` — `FlagRegistryService` impl; in-memory catalog seeded from import-time contributions; App scope.
 - `src/flag/flag.ts` — `IFlagService` token + resolver types (`ExperimentalFlagMap`, `ExperimentalFlagConfig`, `ExperimentalFlagSource`, `ExperimentalFeatureState`) + `ExperimentalConfigSchema` / `ExperimentalConfig` (zod).
-- `src/flag/flagService.ts` — `FlagService` impl + `MASTER_ENV` (`KIMI_CODE_EXPERIMENTAL_FLAG`) + `EXPERIMENTAL_SECTION` (`experimental`); reads definitions from `IFlagRegistry`; self-registers at App scope.
+- `src/flag/flagService.ts` — `FlagService` impl + `MASTER_ENV` (`MULTIAI_EXPERIMENTAL_FLAG`) + `EXPERIMENTAL_SECTION` (`experimental`); reads definitions from `IFlagRegistry`; self-registers at App scope.
 - `src/flag/index.ts` — **removed (no barrel)**; `src/index.ts` imports the `flag` leafs precisely instead (e.g. `import './flag/flagService'`).
 - `src/<domain>/flag.ts` — each domain that owns a flag declares it here and calls `registerFlagDefinition` at the module top level (e.g. `src/agent/toolSelect/flag.ts` or `src/agent/faultInjection/flag.ts`). The directory already names the domain, so the file is just `flag.ts`.
 
@@ -24,8 +24,8 @@ Gate not-yet-public features behind `IFlagService.enabled(id)`, per the reposito
 
 Highest wins; env is read live on every call (nothing cached):
 
-1. Master env `KIMI_CODE_EXPERIMENTAL_FLAG` truthy → every flag on.
-2. Per-feature `def.env` (e.g. `KIMI_CODE_EXPERIMENTAL_MY_FEATURE`) → forces on/off.
+1. Master env `MULTIAI_EXPERIMENTAL_FLAG` truthy → every flag on.
+2. Per-feature `def.env` (e.g. `MULTIAI_EXPERIMENTAL_MY_FEATURE`) → forces on/off.
 3. `[experimental]` config section per-flag override.
 4. Registry `default`.
 
@@ -60,7 +60,7 @@ export const myFeatureFlag: FlagDefinitionInput = {
   id: 'my_feature',
   title: 'My feature',
   description: '...',
-  env: 'KIMI_CODE_EXPERIMENTAL_MY_FEATURE',
+  env: 'MULTIAI_EXPERIMENTAL_MY_FEATURE',
   default: false,
   surface: 'both',
 };
@@ -77,7 +77,7 @@ import './<domain>/flag';
 
 `src/index.ts` imports every domain's leaf files precisely (one line per leaf), so the contribution runs during bootstrap, before any scope is created — and therefore before any consumer resolves `IFlagService`.
 
-- `env` must start with `KIMI_CODE_EXPERIMENTAL_`, be unique, and not equal `KIMI_CODE_EXPERIMENTAL_FLAG`.
+- `env` must start with `MULTIAI_EXPERIMENTAL_`, be unique, and not equal `MULTIAI_EXPERIMENTAL_FLAG`.
 - `id` must not be `flag`. A duplicate `id` throws when `FlagRegistryService` drains the contributions.
 - `FlagId` is `string`, not a literal union: with no central catalog there is nothing to derive it from, so `enabled()` has no compile-time typo-checking. Cover gated behavior with tests instead.
 - `surface`: `core` | `tui` | `both` (documentation/grouping only; not used in resolution).
@@ -103,6 +103,6 @@ if (!this.flags.enabled('my_feature')) return;
 
 - Gate unreleased behavior behind a registered flag; no ad-hoc env toggles.
 - Contribute each flag from the **owning domain's** `flag.ts` (`src/<domain>/flag.ts`) via a top-level `registerFlagDefinition` call; there is no central catalog to edit. The directory names the domain, so the file is just `flag.ts`.
-- `env` must start with `KIMI_CODE_EXPERIMENTAL_`, be unique, and not equal `KIMI_CODE_EXPERIMENTAL_FLAG`; `id` must not be `flag`.
+- `env` must start with `MULTIAI_EXPERIMENTAL_`, be unique, and not equal `MULTIAI_EXPERIMENTAL_FLAG`; `id` must not be `flag`.
 - `FlagId` is `string` (decentralized registration) — do not reintroduce a central `FLAG_DEFINITIONS` array or a derived literal union.
 - `flag` lives at L3 and `App` scope — never in `_base`, never per-session.

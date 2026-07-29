@@ -5,18 +5,17 @@
 import { Disposable, DisposableMap, InstantiationType, registerSingleton } from '../../di';
 import type { IDisposable } from '../../di';
 import {
-  DeviceCodeTimeoutError,
-  KIMI_CODE_PROVIDER_NAME,
-  OAuthError,
-  type DeviceAuthorization,
-} from '@moonshot-ai/kimi-code-oauth';
+  MULTIAI_PROVIDER_NAME,
+  MultiAIOAuthError,
+  type MultiAIDeviceAuthorization,
+} from '@multiai/oauth';
 import type {
   OAuthFlowSnapshot,
   OAuthFlowStart,
   OAuthFlowStatus,
   OAuthLoginCancelResponse,
   OAuthLogoutResponse,
-} from '@moonshot-ai/protocol';
+} from '@multiai/protocol';
 import { ulid } from 'ulid';
 
 import { createManagedAuthFacade, type ServicesAuthFacade } from '../auth/managedAuth';
@@ -46,7 +45,7 @@ class FlowState implements IDisposable {
   constructor(
     readonly flowId: string,
     readonly provider: string,
-    readonly deviceAuth: DeviceAuthorization,
+    readonly deviceAuth: MultiAIDeviceAuthorization,
     /** Resolved seconds-until-expiry (may differ from `deviceAuth.expiresIn` if that was null). */
     readonly expiresInSec: number,
     readonly startedAt: number,
@@ -94,7 +93,7 @@ export class OAuthService extends Disposable implements IOAuthService {
   }
 
   async startLogin(providerName?: string): Promise<OAuthFlowStart> {
-    const name = providerName ?? KIMI_CODE_PROVIDER_NAME;
+    const name = providerName ?? MULTIAI_PROVIDER_NAME;
 
     // Supersede any existing pending flow.
     const existing = this._flows.get(name);
@@ -110,9 +109,9 @@ export class OAuthService extends Disposable implements IOAuthService {
     // calls `onDeviceCode` exactly once, then starts polling. We resolve the
     // deferred from inside the callback so this method can return as soon as
     // the URLs are known — well before the polling completes.
-    let resolveAuth: (d: DeviceAuthorization) => void;
+    let resolveAuth: (d: MultiAIDeviceAuthorization) => void;
     let rejectAuth: (e: unknown) => void;
-    const authPromise = new Promise<DeviceAuthorization>((resolve, reject) => {
+    const authPromise = new Promise<MultiAIDeviceAuthorization>((resolve, reject) => {
       resolveAuth = resolve;
       rejectAuth = reject;
     });
@@ -120,9 +119,11 @@ export class OAuthService extends Disposable implements IOAuthService {
     // Background login — DO NOT await. We hand the controller's signal in so
     // `cancelLogin()` and the supersede path can interrupt mid-poll.
     const loginPromise = this._authFacade.login(name, {
+      method: 'device',
+      persistence: 'keyring',
       signal: controller.signal,
-      onDeviceCode: (auth) => {
-        resolveAuth(auth);
+      onAuthorization: (authorization) => {
+        if (authorization.method === 'device') resolveAuth(authorization);
       },
     });
 
@@ -132,7 +133,7 @@ export class OAuthService extends Disposable implements IOAuthService {
       rejectAuth(err);
     });
 
-    let deviceAuth: DeviceAuthorization;
+    let deviceAuth: MultiAIDeviceAuthorization;
     try {
       deviceAuth = await authPromise;
     } catch (err) {
@@ -140,7 +141,7 @@ export class OAuthService extends Disposable implements IOAuthService {
       // No flow state was registered yet; just surface the error to the
       // REST handler → 50001.
       const msg = err instanceof Error ? err.message : String(err);
-      throw new OAuthError(`failed to start device flow: ${msg}`);
+      throw new MultiAIOAuthError('authorization_failed', `Failed to start device flow: ${msg}`);
     }
 
     const startedAt = Date.now();
@@ -148,7 +149,7 @@ export class OAuthService extends Disposable implements IOAuthService {
     // omission). Fall back to the local 15-min budget enforced by
     // `OAuthManager.login`, so the `expires_at` we surface to clients is
     // never further out than the deadline that's actually being enforced.
-    const expiresInSec = deviceAuth.expiresIn ?? 15 * 60;
+    const expiresInSec = deviceAuth.expiresIn;
     const state = new FlowState(
       flowId,
       name,
@@ -181,14 +182,14 @@ export class OAuthService extends Disposable implements IOAuthService {
   }
 
   getFlow(providerName?: string): OAuthFlowSnapshot | undefined {
-    const name = providerName ?? KIMI_CODE_PROVIDER_NAME;
+    const name = providerName ?? MULTIAI_PROVIDER_NAME;
     const state = this._flows.get(name);
     if (state === undefined) return undefined;
     return this._toSnapshot(state);
   }
 
   async cancelLogin(providerName?: string): Promise<OAuthLoginCancelResponse> {
-    const name = providerName ?? KIMI_CODE_PROVIDER_NAME;
+    const name = providerName ?? MULTIAI_PROVIDER_NAME;
     const state = this._flows.get(name);
     if (state === undefined) {
       // No flow at all → treat as "already cancelled" (idempotent).
@@ -203,7 +204,7 @@ export class OAuthService extends Disposable implements IOAuthService {
   }
 
   async logout(providerName?: string): Promise<OAuthLogoutResponse> {
-    const name = providerName ?? KIMI_CODE_PROVIDER_NAME;
+    const name = providerName ?? MULTIAI_PROVIDER_NAME;
     // Also cancel any in-flight flow so the next `GET /v1/auth` sees a clean
     // slate.
     const pending = this._flows.get(name);
@@ -293,11 +294,9 @@ export class OAuthService extends Disposable implements IOAuthService {
  *   the `error_message` field carries the diagnostic detail for the UI)
  */
 function classifyFailure(err: unknown): OAuthFlowStatus {
-  if (err instanceof DeviceCodeTimeoutError) return 'expired';
-  if (err instanceof OAuthError) {
-    const msg = err.message.toLowerCase();
-    if (msg.includes('aborted')) return 'cancelled';
-    if (msg.includes('denied')) return 'denied';
+  if (err instanceof MultiAIOAuthError) {
+    if (err.code === 'expired_token') return 'expired';
+    if (err.code === 'cancelled') return 'cancelled';
     return 'denied';
   }
   return 'denied';

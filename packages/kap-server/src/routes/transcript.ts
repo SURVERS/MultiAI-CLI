@@ -44,7 +44,7 @@
  * the `plan.revision` reference records carry no tool-call linkage.
  */
 
-import { MAIN_AGENT_ID, type Scope } from '@moonshot-ai/agent-core-v2';
+import { MAIN_AGENT_ID, type Scope } from '@multiai/agent-core-v2';
 import {
   isPlainAgentId,
   paginateTurns,
@@ -58,7 +58,7 @@ import {
   type TranscriptItem,
   type TurnOrigin,
   type TurnState,
-} from '@moonshot-ai/transcript';
+} from '@multiai/transcript';
 import { z } from 'zod';
 
 import { errEnvelope, okEnvelope } from '../envelope';

@@ -101,7 +101,7 @@ export const ErrorCodes = {
 } as const;
 
 /**
- * The closed union of every error code a Kimi domain may throw — derived from
+ * The closed union of every error code a MultiAI domain may throw — derived from
  * the `ErrorCodes` aggregate rather than declared centrally, so each domain's
  * `errors.ts` is the single source of truth: adding or renaming a code is a
  * domain-local change with no central list to keep in sync.

@@ -1,6 +1,8 @@
 # 平台与模型
 
-Kimi Code CLI 支持同时接入多家 LLM 平台——用 Kimi Code 托管服务一键登录、用 Anthropic API key 接 Claude、用 OpenAI 兼容协议连接第三方推理服务。每个供应商对应一种 API 协议，模型在供应商之上声明自己的名称、上下文长度和能力。本页介绍如何在 `config.toml` 里配置各种供应商。
+MultiAI CLI 支持同时接入多家 LLM 平台——通过 OAuth 使用 MultiAI 托管模型、
+把 Kimi 作为外部供应商接入、用 Anthropic API key 接 Claude，或通过兼容协议
+连接第三方推理服务。
 
 ## 支持的供应商类型
 
@@ -8,7 +10,7 @@ Kimi Code CLI 支持同时接入多家 LLM 平台——用 Kimi Code 托管服�
 
 | 类型 | 协议 | 典型用途 |
 | --- | --- | --- |
-| `kimi` | OpenAI 兼容 | Kimi Code 托管服务、Kimi Platform API 密钥 |
+| `kimi` | OpenAI 兼容 | Kimi / Moonshot API 密钥 |
 | `anthropic` | Anthropic Messages | Claude 系列模型 |
 | `openai` | OpenAI Chat Completions | OpenAI 及兼容服务、DeepSeek、Qwen 等 |
 | `openai_responses` | OpenAI Responses API | OpenAI 较新的 Responses 接口 |
@@ -35,14 +37,17 @@ Kimi Code CLI 支持同时接入多家 LLM 平台——用 Kimi Code 托管服�
 - **Custom registry (api.json)**：粘贴自定义 registry 地址和 Bearer token，CLI 自动创建 `providers` / `models` 条目。后续启动时，同一个 registry 地址下的供应商会一起刷新，因此上游新增、删除供应商以及模型元数据变化都会同步。
 
 ::: warning
-通过 `/login` 登录的 Kimi Code OAuth 托管账号不会在 `/provider` 里显示，请用 `/login` 和 `/logout` 管理。
+通过 `/login` 登录的 MultiAI OAuth 托管账号不会在 `/provider` 里显示，请用
+`/login`、`/account` 和 `/logout` 管理。
 :::
 
-非交互环境下也可以用 shell 命令完成同样操作：[`kimi provider`](../reference/kimi-command.md#kimi-provider)。
+非交互环境下也可以用 shell 命令完成同样操作：
+[`multiai provider`](../reference/multiai-command.md#multiai-provider)。
 
 ## `kimi`
 
-用于对接 Moonshot AI 的 OpenAI 兼容接口，包括 Kimi Code 托管服务和 Kimi Platform API 密钥。
+用于通过 API 密钥对接 Kimi / Moonshot AI 的 OpenAI 兼容接口。Kimi 保持为
+外部供应商；MultiAI 账号登录不会修改其真实 model ID 或 provider protocol。
 
 - 默认 `base_url`：`https://api.moonshot.ai/v1`
 - 凭证键名：`KIMI_API_KEY`、`KIMI_BASE_URL`
@@ -54,8 +59,6 @@ type = "kimi"
 base_url = "https://api.moonshot.ai/v1"
 api_key = "sk-xxxxx"
 ```
-
-> 使用 Kimi Code 托管服务时，`/login` 登录后会自动配置 `base_url` 和凭证，无需手动填写。
 
 ## `anthropic`
 
@@ -134,7 +137,7 @@ base_url = "https://your-gateway.example"
 
 与 `google-genai` 共用实现，`type = "vertexai"` 时切换到 Vertex AI 访问路径。
 
-认证走 Google Cloud 标准 ADC 流程（`gcloud auth application-default login` 或 `GOOGLE_APPLICATION_CREDENTIALS` 服务账号 JSON），这部分与 Kimi Code 无关。**项目 ID 和区域必须写在 `[providers.vertexai.env]` 子表里**——直接在 shell 里 `export GOOGLE_CLOUD_PROJECT` 不会被 CLI 读取。
+认证走 Google Cloud 标准 ADC 流程（`gcloud auth application-default login` 或 `GOOGLE_APPLICATION_CREDENTIALS` 服务账号 JSON）。**项目 ID 和区域必须写在 `[providers.vertexai.env]` 子表里**——直接在 shell 里 `export GOOGLE_CLOUD_PROJECT` 不会被 CLI 读取。
 
 ```toml
 [providers.vertexai]
@@ -147,14 +150,17 @@ GOOGLE_CLOUD_LOCATION = "us-central1"
 
 ```sh
 gcloud auth application-default login   # 一次性完成认证
-kimi
+multiai
 ```
 
 如需让 Vertex 请求走自定义（如代理）端点，可设置 `base_url`（或 `GOOGLE_VERTEX_BASE_URL` 环境变量）；不填时使用 SDK 默认的区域化 `*-aiplatform.googleapis.com` 地址。与 `google-genai` 一样，只填主机根地址——SDK 会自行追加 `/v1beta1/publishers/google/models/…`。
 
 ## OAuth 与凭证注入
 
-Kimi Code 托管服务使用 OAuth 而非静态 API 密钥。运行 `/login` 后，内置的认证工具链会自动写入并刷新凭证，`config.toml` 里无需手动配置这部分内容。
+MultiAI 托管服务使用 OAuth 而非静态 API 密钥。运行 `/login` 后，CLI 会注入
+`managed:multiai`，并根据实时 `/v1/models` 响应创建 `multiai/<model-id>` 别名；
+请求通过 `/v1/responses`。Refresh token 只存系统 keyring，access token 和账号
+数据只驻留内存。详见[账号与 OAuth](../guides/account-and-oauth.md)。
 
 ## 下一步
 

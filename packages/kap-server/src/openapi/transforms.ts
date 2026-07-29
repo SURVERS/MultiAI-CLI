@@ -7,7 +7,7 @@
  * session-action dispatcher only serves `::archive` in v2, so this module
  * projects `/sessions/{tail}` into a single `/sessions/{session_id}:archive`
  * operation — unlike v1, which clones it into fork / compact / undo. Wire
- * schemas are re-used from the local `protocol/` tree and `@moonshot-ai/agent-core-v2`; none are re-declared here.
+ * schemas are re-used from the local `protocol/` tree and `@multiai/agent-core-v2`; none are re-declared here.
  */
 
 import {
@@ -15,7 +15,7 @@ import {
   fsDiffResponseSchema,
   fsGitStatusRequestSchema,
   fsGitStatusResponseSchema,
-} from '@moonshot-ai/agent-core-v2/app/git/git';
+} from '@multiai/agent-core-v2/app/git/git';
 import {
   fsGrepRequestSchema,
   fsGrepResponseSchema,
@@ -33,7 +33,7 @@ import {
   fsStatManyResponseSchema,
   fsStatRequestSchema,
   fsStatResponseSchema,
-} from '@moonshot-ai/agent-core-v2/session/sessionFs/fs';
+} from '@multiai/agent-core-v2/session/sessionFs/fs';
 import { z } from 'zod';
 
 import {

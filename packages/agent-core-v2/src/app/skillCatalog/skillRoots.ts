@@ -3,7 +3,7 @@
  *
  * Resolves the ordered `SkillRoot` list a discovery backend should scan for the
  * user (home) and project (workspace) skill locations. Brand directories are
- * preferred over generic ones (`.kimi-code/skills` before `.agents/skills`),
+ * preferred over generic ones (`.multiai/skills` before `.agents/skills`),
  * and the project root is found by walking up to `.git`. Plugin roots are no
  * longer folded in here — plugins are a separate `ISkillSource`. These helpers
  * are exported so the edge can compose a workspace's skills without a Session.
@@ -17,7 +17,7 @@ import type { SkillRoot, SkillSource } from './types';
 
 const USER_BRAND_DIRS = ['skills'] as const;
 const USER_GENERIC_DIRS = ['.agents/skills'] as const;
-const PROJECT_BRAND_DIRS = ['.kimi-code/skills'] as const;
+const PROJECT_BRAND_DIRS = ['.multiai/skills'] as const;
 const PROJECT_GENERIC_DIRS = ['.agents/skills'] as const;
 
 export interface SkillRootsOptions {

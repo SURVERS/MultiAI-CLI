@@ -2,7 +2,7 @@ import {
   APIProviderRateLimitError,
   isProviderRateLimitError,
   type TokenUsage,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 
 import type { Agent } from '../agent';
 import type { PromptOrigin } from '../agent/context';
@@ -33,11 +33,11 @@ import SUMMARY_CONTINUATION_PROMPT from './summary-continuation.md?raw';
 export const DEFAULT_SUBAGENT_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 export const DEFAULT_SUBAGENT_TIMEOUT_DESCRIPTION = '2 hours';
 
-const SUBAGENT_TIMEOUT_ENV = 'KIMI_SUBAGENT_TIMEOUT_MS';
+const SUBAGENT_TIMEOUT_ENV = 'MULTIAI_SUBAGENT_TIMEOUT_MS';
 
 /**
  * Resolve the effective subagent per-task timeout. Precedence:
- * `KIMI_SUBAGENT_TIMEOUT_MS` (integer ms) → `configMs` →
+ * `MULTIAI_SUBAGENT_TIMEOUT_MS` (integer ms) → `configMs` →
  * `DEFAULT_SUBAGENT_TIMEOUT_MS` (2 hours). `0` means no timeout: the value
  * feeds the background-task manager's per-task timeout (where `0` arms no
  * timer), so it governs foreground and background subagents (and AgentSwarm).
@@ -410,16 +410,16 @@ export class SessionSubagentHost {
 
     const context = await prepareSystemPromptContext(
       this.session.systemContextKaos(child.kaos.getcwd()),
-      this.session.options.kimiHomeDir,
+      this.session.options.multiaiHomeDir,
       { additionalDirs: child.getAdditionalDirs() },
     );
-    child.useProfile(profile, context, this.session.options.kimiHomeDir);
+    child.useProfile(profile, context, this.session.options.multiaiHomeDir);
     child.tools.inheritUserTools(parent.tools);
   }
 
   /**
    * Hold the run open until the child agent's background tasks (background
-   * Bash, nested background agents) settle — the print-mode (`kimi -p`)
+   * Bash, nested background agents) settle — the print-mode (`multiai -p`)
    * drain semantics applied to subagent completion. Drained tasks get their
    * terminal notifications suppressed: without that, a task outliving the
    * child's final turn steers a fresh turn on the finished subagent

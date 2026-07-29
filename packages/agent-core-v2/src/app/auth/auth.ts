@@ -11,13 +11,17 @@
  */
 
 import type {
-  AuthManagedUsageResult,
-  BearerTokenProvider,
-  KimiOAuthLoginOptions,
-  KimiOAuthLoginResult,
-  KimiOAuthLogoutResult,
-  KimiOAuthTokenRef,
-} from '@moonshot-ai/kimi-code-oauth';
+  MultiAIAccountSnapshot,
+  MultiAIAuthorization,
+  MultiAIBearerTokenProvider,
+  MultiAIIdentity,
+  MultiAIAuthStatus,
+  MultiAILoginResult,
+  MultiAILogoutResult,
+  MultiAIModelInfo,
+  MultiAIOAuthPersistence,
+  MultiAIOAuthTokenRef,
+} from '@multiai/oauth';
 import { createDecorator, type ServiceIdentifier } from '#/_base/di/instantiation';
 import { Error2 } from '#/_base/errors/errors';
 
@@ -35,19 +39,30 @@ import type {
 export interface AuthStatus {
   readonly loggedIn: boolean;
   readonly provider?: string;
+  readonly identity?: MultiAIIdentity;
+  readonly persistence?: MultiAIOAuthPersistence;
+}
+
+export interface OAuthLoginRequest {
+  readonly provider?: string;
+  readonly method: 'browser' | 'device';
+  readonly persistence: MultiAIOAuthPersistence;
 }
 
 export interface IOAuthService {
   readonly _serviceBrand: undefined;
 
-  startLogin(provider?: string): Promise<OAuthFlowStart>;
+  startLogin(request: OAuthLoginRequest | string): Promise<OAuthFlowStart>;
   getFlow(provider?: string): OAuthFlowSnapshot | undefined;
   cancelLogin(provider?: string): Promise<OAuthLoginCancelResponse>;
   logout(provider?: string): Promise<OAuthLogoutResponse>;
   status(provider?: string): Promise<AuthStatus>;
   refreshOAuthProviderModels(): Promise<RefreshOAuthProviderModelsResponse>;
-  getManagedUsage(provider?: string): Promise<AuthManagedUsageResult>;
-  resolveTokenProvider(provider: string, oauthRef?: OAuthRef): BearerTokenProvider | undefined;
+  getAccount(provider?: string): Promise<MultiAIAccountSnapshot>;
+  resolveTokenProvider(
+    provider: string,
+    oauthRef?: OAuthRef,
+  ): MultiAIBearerTokenProvider | undefined;
   getCachedAccessToken(provider: string, oauthRef?: OAuthRef): Promise<string | undefined>;
 }
 
@@ -57,17 +72,19 @@ export const IOAuthService: ServiceIdentifier<IOAuthService> =
 export interface IOAuthToolkit {
   readonly _serviceBrand: undefined;
 
-  login(providerName?: string, options?: KimiOAuthLoginOptions): Promise<KimiOAuthLoginResult>;
-  logout(providerName?: string, oauthRef?: KimiOAuthTokenRef): Promise<KimiOAuthLogoutResult>;
-  getCachedAccessToken(
-    providerName?: string,
-    oauthRef?: KimiOAuthTokenRef,
-  ): Promise<string | undefined>;
-  tokenProvider(providerName?: string, oauthRef?: KimiOAuthTokenRef): BearerTokenProvider;
-  getManagedUsage(
-    providerName?: string,
-    options?: { readonly oauthRef?: KimiOAuthTokenRef; readonly baseUrl?: string },
-  ): Promise<AuthManagedUsageResult>;
+  status(): Promise<MultiAIAuthStatus>;
+  login(options: {
+    readonly method: 'browser' | 'device';
+    readonly persistence: MultiAIOAuthPersistence;
+    readonly signal?: AbortSignal;
+    readonly onAuthorization?: (authorization: MultiAIAuthorization) => Promise<void> | void;
+  }): Promise<MultiAILoginResult>;
+  logout(oauthRef?: MultiAIOAuthTokenRef): Promise<MultiAILogoutResult>;
+  getCachedAccessToken(): string | undefined;
+  tokenProvider(oauthRef?: MultiAIOAuthTokenRef): MultiAIBearerTokenProvider;
+  getAccountSnapshot(): Promise<MultiAIAccountSnapshot>;
+  getModels(): Promise<readonly MultiAIModelInfo[]>;
+  invalidate(): Promise<void>;
 }
 
 export const IOAuthToolkit: ServiceIdentifier<IOAuthToolkit> =

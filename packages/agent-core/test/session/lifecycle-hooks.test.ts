@@ -4,7 +4,7 @@ import { join } from 'pathe';
 import { Readable } from 'node:stream';
 import type { Writable } from 'node:stream';
 
-import type { KaosProcess } from '@moonshot-ai/kaos';
+import type { KaosProcess } from '@multiai/kaos';
 
 import { testKaos } from '../fixtures/test-kaos';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -527,7 +527,7 @@ describe('Session lifecycle hooks', () => {
   });
 
   it('lets the environment override config when deciding background task cleanup', async () => {
-    vi.stubEnv('KIMI_CODE_BACKGROUND_KEEP_ALIVE_ON_EXIT', '0');
+    vi.stubEnv('MULTIAI_BACKGROUND_KEEP_ALIVE_ON_EXIT', '0');
     const { sessionDir, workDir } = await hookFixture();
     const session = new Session({
       kaos: testKaos.withCwd(workDir),
@@ -726,7 +726,7 @@ async function hookFixture(): Promise<{
 }
 
 async function makeTempDir(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'kimi-session-hooks-'));
+  const dir = await mkdtemp(join(tmpdir(), 'multiai-session-hooks-'));
   tempDirs.push(dir);
   return dir;
 }

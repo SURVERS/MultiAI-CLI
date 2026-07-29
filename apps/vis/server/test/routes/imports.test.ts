@@ -27,10 +27,10 @@ const PROMPT = JSON.stringify({ type: 'turn.prompt', time: 2, input: [{ type: 't
 
 function bundle(): Record<string, string> {
   return {
-    'manifest.json': JSON.stringify({ sessionId: 'session_orig', kimiCodeVersion: '0.20.2', workspaceDir: '/w/proj', title: 'demo' }),
+    'manifest.json': JSON.stringify({ sessionId: 'session_orig', multiAIVersion: '0.20.2', workspaceDir: '/w/proj', title: 'demo' }),
     'state.json': JSON.stringify({ createdAt: '2026-06-01T00:00:00.000Z', updatedAt: '2026-06-01T01:00:00.000Z', title: 'demo', agents: { main: { homedir: '/orig/agents/main', type: 'main', parentAgentId: null } }, custom: {} }),
     'agents/main/wire.jsonl': `${META}\n${PROMPT}\n`,
-    'logs/kimi-code.log': '2026-06-01T00:00:00.000Z INFO  boot  step=0\n2026-06-01T00:00:01.000Z ERROR  oops  code=500\n',
+    'logs/multiai.log': '2026-06-01T00:00:00.000Z INFO  boot  step=0\n2026-06-01T00:00:01.000Z ERROR  oops  code=500\n',
   };
 }
 
@@ -51,11 +51,11 @@ describe('imports + logs routes', () => {
 
     const list = sessionsRoute(home);
     const res = await list.request('/');
-    const body = (await res.json()) as { sessions: { sessionId: string; imported: boolean; importMeta: { manifest: { kimiCodeVersion: string } | null } | null }[] };
+    const body = (await res.json()) as { sessions: { sessionId: string; imported: boolean; importMeta: { manifest: { multiAIVersion: string } | null } | null }[] };
     const imported = body.sessions.find((s) => s.sessionId === importId);
     expect(imported).toBeDefined();
     expect(imported!.imported).toBe(true);
-    expect(imported!.importMeta?.manifest?.kimiCodeVersion).toBe('0.20.2');
+    expect(imported!.importMeta?.manifest?.multiAIVersion).toBe('0.20.2');
   });
 
   it('serves the imported session wire through the existing wire route', async () => {
@@ -132,21 +132,21 @@ describe('imports + logs routes', () => {
   it('sanitizes type-corrupt manifest fields so the session list cannot crash', async () => {
     home = await mkdtemp(join(tmpdir(), 'vis-imp-route-'));
     const corrupt: Record<string, string> = {
-      // workspaceDir / kimiCodeVersion are the wrong type — must not reach workDir.
-      'manifest.json': JSON.stringify({ sessionId: 'session_orig', workspaceDir: 123, kimiCodeVersion: 7, title: 'demo' }),
+      // workspaceDir / multiAIVersion are the wrong type — must not reach workDir.
+      'manifest.json': JSON.stringify({ sessionId: 'session_orig', workspaceDir: 123, multiAIVersion: 7, title: 'demo' }),
       'state.json': JSON.stringify({ createdAt: '2026-06-01T00:00:00.000Z', updatedAt: '2026-06-01T01:00:00.000Z', title: 'demo', agents: { main: { homedir: '/o', type: 'main', parentAgentId: null } }, custom: {} }),
       'agents/main/wire.jsonl': `${META}\n${PROMPT}\n`,
     };
     const importId = ((await (await importsRoute(home).request('/?name=x.zip', { method: 'POST', body: await buildZip(corrupt) })).json()) as { sessionId: string }).sessionId;
 
     const body = (await (await sessionsRoute(home).request('/')).json()) as {
-      sessions: { sessionId: string; workDir: unknown; importMeta: { manifest: { workspaceDir?: unknown; kimiCodeVersion?: unknown; sessionId?: unknown } | null } | null }[];
+      sessions: { sessionId: string; workDir: unknown; importMeta: { manifest: { workspaceDir?: unknown; multiAIVersion?: unknown; sessionId?: unknown } | null } | null }[];
     };
     const s = body.sessions.find((x) => x.sessionId === importId)!;
     expect(typeof s.workDir).toBe('string'); // not the number 123
     expect(s.workDir).toBe('');
     expect(s.importMeta?.manifest?.workspaceDir).toBeUndefined(); // dropped
-    expect(s.importMeta?.manifest?.kimiCodeVersion).toBeUndefined(); // dropped
+    expect(s.importMeta?.manifest?.multiAIVersion).toBeUndefined(); // dropped
     expect(s.importMeta?.manifest?.sessionId).toBe('session_orig'); // valid string kept
   });
 });

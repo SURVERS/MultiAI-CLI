@@ -9,31 +9,31 @@
 import type {
   SessionListQuery,
   SessionSummary,
-} from '@moonshot-ai/agent-core-v2/app/sessionIndex/sessionIndex';
-import type { SessionMeta } from '@moonshot-ai/agent-core-v2/session/sessionMetadata/sessionMetadata';
-import type { Page } from '@moonshot-ai/agent-core-v2/persistence/interface/queryStore';
+} from '@multiai/agent-core-v2/app/sessionIndex/sessionIndex';
+import type { SessionMeta } from '@multiai/agent-core-v2/session/sessionMetadata/sessionMetadata';
+import type { Page } from '@multiai/agent-core-v2/persistence/interface/queryStore';
 import type {
   Workspace,
   WorkspaceUpdate,
-} from '@moonshot-ai/agent-core-v2/app/workspace/workspace';
+} from '@multiai/agent-core-v2/app/workspace/workspace';
 import type {
   ConfigDiagnostic,
   ConfigInspectValue,
   ConfigTarget,
-} from '@moonshot-ai/agent-core-v2/app/config/config';
-import type { ProviderConfig } from '@moonshot-ai/agent-core-v2/kosong/provider/provider';
+} from '@multiai/agent-core-v2/app/config/config';
+import type { ProviderConfig } from '@multiai/agent-core-v2/kosong/provider/provider';
 import type {
   AuthStatus,
   IOAuthService,
-} from '@moonshot-ai/agent-core-v2/app/auth/auth';
-import type { ExperimentalFeatureState } from '@moonshot-ai/agent-core-v2/app/flag/flag';
+} from '@multiai/agent-core-v2/app/auth/auth';
+import type { ExperimentalFeatureState } from '@multiai/agent-core-v2/app/flag/flag';
 import type {
   FsBrowseResponse,
   FsHomeResponse,
-} from '@moonshot-ai/agent-core-v2/app/hostFolderBrowser/hostFolderBrowser';
-import type { ModelRecord } from '@moonshot-ai/agent-core-v2/kosong/model/model';
-import type { IModelCatalog } from '@moonshot-ai/agent-core-v2/kosong/model/catalog';
-import type { IProviderDiscoveryService } from '@moonshot-ai/agent-core-v2/app/kosongConfig/discovery';
+} from '@multiai/agent-core-v2/app/hostFolderBrowser/hostFolderBrowser';
+import type { ModelRecord } from '@multiai/agent-core-v2/kosong/model/model';
+import type { IModelCatalog } from '@multiai/agent-core-v2/kosong/model/catalog';
+import type { IProviderDiscoveryService } from '@multiai/agent-core-v2/app/kosongConfig/discovery';
 
 import type { AnonymousProviderInput, GenerateEvent, GenerateInput, GenerateParams, ProviderInput } from './kosong-types.js';
 import type {
@@ -42,7 +42,7 @@ import type {
   PluginSummary,
   PluginUpdateStatus,
   ReloadSummary,
-} from '@moonshot-ai/agent-core-v2/app/plugin/types';
+} from '@multiai/agent-core-v2/app/plugin/types';
 
 /** Low-level caller the klient factory builds: routes + validates one service call. */
 export type Caller = (service: string, method: string, args: unknown[]) => Promise<unknown>;
@@ -64,7 +64,7 @@ export type ScopedStreamCaller = (
 ) => AsyncIterable<unknown>;
 
 // ---------------------------------------------------------------------------
-// Wire-type aliases for shapes the engine sources from `@moonshot-ai/protocol`
+// Wire-type aliases for shapes the engine sources from `@multiai/protocol`
 // (not a direct klient dependency) — derived through the service interfaces.
 // ---------------------------------------------------------------------------
 
@@ -75,6 +75,7 @@ export type OAuthFlowStart = Awaited<ReturnType<IOAuthService['startLogin']>>;
 export type OAuthFlowSnapshot = NonNullable<Awaited<ReturnType<IOAuthService['getFlow']>>>;
 export type OAuthLoginCancelResponse = Awaited<ReturnType<IOAuthService['cancelLogin']>>;
 export type OAuthLogoutResponse = Awaited<ReturnType<IOAuthService['logout']>>;
+export type AccountSnapshot = Awaited<ReturnType<IOAuthService['getAccount']>>;
 
 export type ModelCatalogItem = Awaited<ReturnType<IModelCatalog['listModels']>>[number];
 export type ProviderCatalogItem = Awaited<
@@ -157,10 +158,15 @@ export interface GlobalKosongFacade {
 export interface GlobalAuthFacade {
   status(provider?: string): Promise<AuthStatus>;
   summarize(): Promise<readonly AuthStatus[]>;
-  startLogin(provider?: string): Promise<OAuthFlowStart>;
+  startLogin(input?: {
+    provider?: string;
+    method?: 'browser' | 'device';
+    persistence?: 'keyring' | 'session';
+  }): Promise<OAuthFlowStart>;
   flow(provider?: string): Promise<OAuthFlowSnapshot | undefined>;
   cancelLogin(provider?: string): Promise<OAuthLoginCancelResponse>;
   logout(provider?: string): Promise<OAuthLogoutResponse>;
+  account(provider?: string): Promise<AccountSnapshot>;
   /**
    * @deprecated Use `kosong.refreshProviders({ scope: 'oauth' })` — the
    * kosong facade owns provider-model refresh; this alias remains for one
@@ -369,14 +375,22 @@ export function createGlobalFacade(scoped: ScopedCaller, scopedStream: ScopedStr
     auth: {
       status: (provider) => call('oauthService', 'status', [provider]) as Promise<AuthStatus>,
       summarize: () => call('authSummaryService', 'summarize', []) as Promise<readonly AuthStatus[]>,
-      startLogin: (provider) =>
-        call('oauthService', 'startLogin', [provider]) as Promise<OAuthFlowStart>,
+      startLogin: (input = {}) =>
+        call('oauthService', 'startLogin', [
+          {
+            provider: input.provider,
+            method: input.method ?? 'browser',
+            persistence: input.persistence ?? 'keyring',
+          },
+        ]) as Promise<OAuthFlowStart>,
       flow: (provider) =>
         call('oauthService', 'getFlow', [provider]) as Promise<OAuthFlowSnapshot | undefined>,
       cancelLogin: (provider) =>
         call('oauthService', 'cancelLogin', [provider]) as Promise<OAuthLoginCancelResponse>,
       logout: (provider) =>
         call('oauthService', 'logout', [provider]) as Promise<OAuthLogoutResponse>,
+      account: (provider) =>
+        call('oauthService', 'getAccount', [provider]) as Promise<AccountSnapshot>,
       refreshProviderModels: () =>
         call('oauthService', 'refreshOAuthProviderModels', []) as Promise<RefreshProviderModelsResponse>,
     },

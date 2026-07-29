@@ -18,13 +18,13 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, open, readdir, readFile, rename, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { resolveKimiHome } from '@moonshot-ai/agent-core-v2';
+import { resolveMultiAIHome } from '@multiai/agent-core-v2';
 import { ulid } from 'ulid';
 
 /** Default cadence for refreshing `heartbeat_at`. */
 export const HEARTBEAT_INTERVAL_MS = 15_000;
 
-export const DEFAULT_SERVER_DIR = join(resolveKimiHome(), 'server');
+export const DEFAULT_SERVER_DIR = join(resolveMultiAIHome(), 'server');
 export const DEFAULT_SERVER_INSTANCES_DIR = join(DEFAULT_SERVER_DIR, 'instances');
 
 /** In-memory shape of a registered instance. camelCase for TS consumers. */
@@ -70,7 +70,7 @@ export interface IInstanceRegistry {
 }
 
 export interface InstanceRegistryOptions {
-  /** Directory holding `<serverId>.json` files. Defaults to `<KIMI_CODE_HOME>/server/instances`. */
+  /** Directory holding `<serverId>.json` files. Defaults to `<MULTIAI_HOME>/server/instances`. */
   readonly instancesDir?: string;
   /** Override `Date.now` — used in tests for deterministic timestamps. */
   readonly now?: () => number;
@@ -315,7 +315,7 @@ export function createInstanceRegistry(options: InstanceRegistryOptions = {}): I
   };
 }
 
-/** Resolve the instances directory for a given home (or the default kimi home). */
+/** Resolve the instances directory for a given home (or the default MultiAI home). */
 export function resolveServerInstancesDir(homeDir?: string): string {
   return homeDir === undefined
     ? DEFAULT_SERVER_INSTANCES_DIR
@@ -332,7 +332,7 @@ export async function listLiveServerInstances(
 /**
  * Convenience one-shot read: return the longest-running live instance, or
  * `undefined` when none exist. For callers that only need a single daemon to
- * talk to (e.g. the CLI's `server ps/kill` and the `kimi web` spawner).
+ * talk to (e.g. the CLI's `server ps/kill` and the `multiai web` spawner).
  */
 export async function getLiveServerInstance(
   homeDir?: string,

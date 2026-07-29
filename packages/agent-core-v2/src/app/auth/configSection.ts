@@ -7,7 +7,7 @@
  * snake_case ↔ camelCase TOML transforms (including the nested `oauth` and
  * `custom_headers` normalization, with `custom_headers` record keys preserved
  * verbatim). Both entries' `base_url` / `api_key` are env-overridable
- * (`KIMI_WEB_SEARCH_*` / `KIMI_WEB_FETCH_*`, env wins over the file). Its
+ * (`MULTIAI_WEB_SEARCH_*` / `MULTIAI_WEB_FETCH_*`, env wins over the file). Its
  * effective overlay treats an env base URL as a new credential boundary and
  * prevents persisted API keys, OAuth refs, or custom headers from crossing
  * into that endpoint; the composed `stripEnv` keeps env-derived values from
@@ -15,10 +15,9 @@
  * Self-registered at module load via `registerConfigSection`, so the
  * `config` domain never imports this domain's types.
  *
- * The `auth` domain owns this section because its OAuth login/logout flows
- * provision and clear it (see `authService`) and its `WebSearchProviderService`
- * consumes `moonshot_search`; the `web` domain reads `moonshot_fetch` from the
- * same section. Bound at App scope.
+ * MultiAI OAuth never provisions or mutates these user-supplied services.
+ * `WebSearchProviderService` consumes `moonshot_search`; the `web` domain reads
+ * `moonshot_fetch` from the same section. Bound at App scope.
  */
 
 import { z } from 'zod';
@@ -41,28 +40,14 @@ import {
   snakeToCamel,
   transformPlainObject,
 } from '#/app/config/toml';
-import { type AssertExact, type Equal } from '#/_base/utils/typeEquality';
-import type { OAuthRef } from '#/kosong/provider/provider';
 
 export const SERVICES_SECTION = 'services';
 
 const StringRecordSchema = z.record(z.string(), z.string());
 
-// Local re-derivation of kosong's `OAuthRef` type: the canonical section
-// schema lives in `app/kosongConfig` (L3), which this L2 domain must not
-// import. The `AssertExact` pin keeps this copy in lockstep with the type.
-const OAuthRefSchema = z.object({
-  storage: z.enum(['file', 'keyring']),
-  key: z.string().min(1),
-  oauthHost: z.string().min(1).optional(),
-});
-
-type _AssertOAuthRef = AssertExact<Equal<z.infer<typeof OAuthRefSchema>, OAuthRef>>;
-
 export const MoonshotServiceConfigSchema = z.object({
   baseUrl: z.string().optional(),
   apiKey: z.string().optional(),
-  oauth: OAuthRefSchema.optional(),
   customHeaders: StringRecordSchema.optional(),
 });
 
@@ -77,10 +62,10 @@ export const ServicesConfigSchema = z
 
 export type ServicesConfig = z.infer<typeof ServicesConfigSchema>;
 
-export const WEB_SEARCH_BASE_URL_ENV = 'KIMI_WEB_SEARCH_BASE_URL';
-export const WEB_SEARCH_API_KEY_ENV = 'KIMI_WEB_SEARCH_API_KEY';
-export const WEB_FETCH_BASE_URL_ENV = 'KIMI_WEB_FETCH_BASE_URL';
-export const WEB_FETCH_API_KEY_ENV = 'KIMI_WEB_FETCH_API_KEY';
+export const WEB_SEARCH_BASE_URL_ENV = 'MULTIAI_WEB_SEARCH_BASE_URL';
+export const WEB_SEARCH_API_KEY_ENV = 'MULTIAI_WEB_SEARCH_API_KEY';
+export const WEB_FETCH_BASE_URL_ENV = 'MULTIAI_WEB_FETCH_BASE_URL';
+export const WEB_FETCH_API_KEY_ENV = 'MULTIAI_WEB_FETCH_API_KEY';
 
 const nonBlankEnv = (raw: string): string | undefined => {
   const trimmed = raw.trim();

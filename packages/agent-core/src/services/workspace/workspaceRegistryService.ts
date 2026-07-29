@@ -10,7 +10,7 @@ import { readSessionIndex } from '../../session/store/session-index';
 import { IEnvironmentService } from '../environment/environment';
 import { IEventService } from '../event/event';
 
-import type { Workspace } from '@moonshot-ai/protocol';
+import type { Workspace } from '@multiai/protocol';
 
 import { ILogService } from '../logger/logger';
 import {

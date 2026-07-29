@@ -9,7 +9,7 @@
  * folder picker, the session filesystem, terminals, connections, shutdown).
  */
 
-import type { Scope } from '@moonshot-ai/agent-core-v2';
+import type { Scope } from '@multiai/agent-core-v2';
 import { ulid } from 'ulid';
 
 import { okEnvelope } from '../envelope';

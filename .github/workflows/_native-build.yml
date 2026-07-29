@@ -7,7 +7,7 @@ on:
         description: 'Prefix for uploaded artifact name'
         required: false
         type: string
-        default: 'kimi-code-native'
+        default: 'multiai-cli-native'
       retention-days:
         description: 'Artifact retention in days'
         required: false
@@ -81,30 +81,30 @@ jobs:
         if: inputs.sign-macos
         shell: bash
         run: |
-          CATALOG_FILE="$RUNNER_TEMP/kimi-code-built-in-catalog.json"
-          node apps/kimi-code/scripts/update-catalog.mjs --out "$CATALOG_FILE"
-          echo "KIMI_CODE_BUILT_IN_CATALOG_FILE=$CATALOG_FILE" >> "$GITHUB_ENV"
+          CATALOG_FILE="$RUNNER_TEMP/multiai-cli-built-in-catalog.json"
+          node apps/multiai-cli/scripts/update-catalog.mjs --out "$CATALOG_FILE"
+          echo "MULTIAI_BUILT_IN_CATALOG_FILE=$CATALOG_FILE" >> "$GITHUB_ENV"
 
-      - name: Build Kimi web assets
-        # The SEA blob step embeds apps/kimi-code/dist-web; build the web app
+      - name: Build MultiAI web assets
+        # The SEA blob step embeds apps/multiai-cli/dist-web; build the web app
         # and stage its assets before producing the native executable.
         run: |
-          pnpm --filter @moonshot-ai/kimi-web run build
-          node apps/kimi-code/scripts/copy-web-assets.mjs
+          pnpm --filter @multiai/web run build
+          node apps/multiai-cli/scripts/copy-web-assets.mjs
 
       - name: Build native executable (release profile, macOS signed)
         if: runner.os == 'macOS' && inputs.sign-macos
-        run: pnpm --filter @moonshot-ai/kimi-code run build:native:release
+        run: pnpm --filter @multiai/cli run build:native:release
 
       - name: Build native executable (local profile)
         if: '!(runner.os == ''macOS'' && inputs.sign-macos)'
-        run: pnpm --filter @moonshot-ai/kimi-code run build:native:sea
+        run: pnpm --filter @multiai/cli run build:native:sea
 
       - name: Notarize macOS binary
         if: runner.os == 'macOS' && inputs.sign-macos
         uses: ./.github/actions/macos-notarize
         with:
-          binary-path: ${{ github.workspace }}/apps/kimi-code/dist-native/bin/${{ matrix.target }}/kimi
+          binary-path: ${{ github.workspace }}/apps/multiai-cli/dist-native/bin/${{ matrix.target }}/multiai
           notarization-key-p8: ${{ secrets.APPLE_NOTARIZATION_KEY_P8 }}
           notarization-key-id: ${{ secrets.APPLE_NOTARIZATION_KEY_ID }}
           notarization-issuer-id: ${{ secrets.APPLE_NOTARIZATION_ISSUER_ID }}
@@ -114,10 +114,10 @@ jobs:
         uses: ./.github/actions/macos-keychain-cleanup
 
       - name: Smoke test native executable
-        run: pnpm --filter @moonshot-ai/kimi-code run test:native:smoke
+        run: pnpm --filter @multiai/cli run test:native:smoke
 
       - name: Package native artifact
-        run: pnpm --filter @moonshot-ai/kimi-code run package:native
+        run: pnpm --filter @multiai/cli run package:native
 
       - name: Upload native artifact
         uses: actions/upload-artifact@v7
@@ -125,6 +125,6 @@ jobs:
           name: ${{ inputs.upload-artifact-prefix }}-${{ matrix.target }}
           retention-days: ${{ inputs.retention-days }}
           path: |
-            apps/kimi-code/dist-native/artifacts/kimi-code-${{ matrix.target }}.zip
-            apps/kimi-code/dist-native/artifacts/kimi-code-${{ matrix.target }}.zip.sha256
+            apps/multiai-cli/dist-native/artifacts/multiai-cli-${{ matrix.target }}.zip
+            apps/multiai-cli/dist-native/artifacts/multiai-cli-${{ matrix.target }}.zip.sha256
           if-no-files-found: ignore

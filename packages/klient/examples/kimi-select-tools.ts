@@ -1,7 +1,7 @@
 /**
  * Probe the `select_tools` (progressive tool disclosure) capability of the
  * kimi-type providers, based on the real providers/auth in
- * `~/.kimi-code/config.toml`.
+ * `~/.multiai/config.toml`.
  *
  * Feature recap (from the Tool Select guide): with the `tool-select`
  * experimental flag + `tool_use` + `dynamically_loaded_tools` capabilities,
@@ -42,10 +42,10 @@
  *     --import ../../build/register-raw-text-loader.mjs examples/kimi-select-tools.ts
  *
  * Env:
- *   KIMI_CODE_HOME              — default `~/.kimi-code`
- *   KIMI_SELECT_TOOLS_MODELS    — comma-separated model ids for the live parts (default: all kimi-type)
- *   KIMI_SELECT_TOOLS_SKIP_LIVE — set to `1` to skip part B (no real API calls)
- *   KIMI_SELECT_TOOLS_TAP       — set to `1` to run part C instead of B: route
+ *   MULTIAI_HOME              — default `~/.multiai`
+ *   MULTIAI_SELECT_TOOLS_MODELS    — comma-separated model ids for the live parts (default: all kimi-type)
+ *   MULTIAI_SELECT_TOOLS_SKIP_LIVE — set to `1` to skip part B (no real API calls)
+ *   MULTIAI_SELECT_TOOLS_TAP       — set to `1` to run part C instead of B: route
  *                                 the flow through a logging proxy and dump
  *                                 the actual wire Context of each request.
  */
@@ -54,21 +54,21 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 
-import { bootstrap, logSeed, resolveLoggingConfig } from '@moonshot-ai/agent-core-v2';
-import { IConfigService } from '@moonshot-ai/agent-core-v2/app/config/config';
-import { renderLoadableToolsAnnouncement } from '@moonshot-ai/agent-core-v2/agent/toolSelect/dynamicTools';
-import { UNKNOWN_CAPABILITY } from '@moonshot-ai/agent-core-v2/kosong/contract/capability';
-import type { Message } from '@moonshot-ai/agent-core-v2/kosong/contract/message';
-import type { Tool } from '@moonshot-ai/agent-core-v2/kosong/contract/tool';
-import type { AuthProvider, Model } from '@moonshot-ai/agent-core-v2/kosong/model/catalog';
-import { IModelCatalog } from '@moonshot-ai/agent-core-v2/kosong/model/catalog';
+import { bootstrap, logSeed, resolveLoggingConfig } from '@multiai/agent-core-v2';
+import { IConfigService } from '@multiai/agent-core-v2/app/config/config';
+import { renderLoadableToolsAnnouncement } from '@multiai/agent-core-v2/agent/toolSelect/dynamicTools';
+import { UNKNOWN_CAPABILITY } from '@multiai/agent-core-v2/kosong/contract/capability';
+import type { Message } from '@multiai/agent-core-v2/kosong/contract/message';
+import type { Tool } from '@multiai/agent-core-v2/kosong/contract/tool';
+import type { AuthProvider, Model } from '@multiai/agent-core-v2/kosong/model/catalog';
+import { IModelCatalog } from '@multiai/agent-core-v2/kosong/model/catalog';
 import type {
   ModelRequestInput,
   ModelRequester,
-} from '@moonshot-ai/agent-core-v2/kosong/model/modelRequester';
-import { ModelRequesterImpl } from '@moonshot-ai/agent-core-v2/kosong/model/modelRequesterImpl';
-import { IProtocolAdapterRegistry } from '@moonshot-ai/agent-core-v2/kosong/protocol/protocol';
-import { ProtocolAdapterRegistry } from '@moonshot-ai/agent-core-v2/kosong/provider/protocolAdapterRegistry';
+} from '@multiai/agent-core-v2/kosong/model/modelRequester';
+import { ModelRequesterImpl } from '@multiai/agent-core-v2/kosong/model/modelRequesterImpl';
+import { IProtocolAdapterRegistry } from '@multiai/agent-core-v2/kosong/protocol/protocol';
+import { ProtocolAdapterRegistry } from '@multiai/agent-core-v2/kosong/provider/protocolAdapterRegistry';
 
 function assert(cond: boolean, message: string): asserts cond {
   if (!cond) throw new Error(`assertion failed: ${message}`);
@@ -513,7 +513,7 @@ async function step2UseLoadedTool(
 }
 
 async function probeLiveKimiProviders(): Promise<void> {
-  const homeDir = process.env['KIMI_CODE_HOME'] ?? join(homedir(), '.kimi-code');
+  const homeDir = process.env['MULTIAI_HOME'] ?? join(homedir(), '.multiai');
   console.log(`\n=== part B: live select_tools flow on real kimi providers (${homeDir}) ===`);
   const { app } = bootstrap({ homeDir }, [
     ...logSeed(resolveLoggingConfig({ homeDir, env: process.env })),
@@ -522,7 +522,7 @@ async function probeLiveKimiProviders(): Promise<void> {
     await app.accessor.get(IConfigService).ready;
     const catalog = app.accessor.get(IModelCatalog);
 
-    const filter = process.env['KIMI_SELECT_TOOLS_MODELS']?.split(',').map((s) => s.trim());
+    const filter = process.env['MULTIAI_SELECT_TOOLS_MODELS']?.split(',').map((s) => s.trim());
     const models = await catalog.listModels();
     const targets = models.filter((m) => {
       if (filter !== undefined && !filter.includes(m.model)) return false;
@@ -621,7 +621,7 @@ function describeWireBody(raw: Buffer): string[] {
 }
 
 async function probeTappedContext(): Promise<void> {
-  const homeDir = process.env['KIMI_CODE_HOME'] ?? join(homedir(), '.kimi-code');
+  const homeDir = process.env['MULTIAI_HOME'] ?? join(homedir(), '.multiai');
   console.log(`\n=== part C: tapped wire context (${homeDir}) ===`);
   const { app } = bootstrap({ homeDir }, [
     ...logSeed(resolveLoggingConfig({ homeDir, env: process.env })),
@@ -631,7 +631,7 @@ async function probeTappedContext(): Promise<void> {
     const catalog = app.accessor.get(IModelCatalog);
     const registry = app.accessor.get(IProtocolAdapterRegistry);
 
-    const filter = process.env['KIMI_SELECT_TOOLS_MODELS']?.split(',').map((s) => s.trim());
+    const filter = process.env['MULTIAI_SELECT_TOOLS_MODELS']?.split(',').map((s) => s.trim());
     const models = await catalog.listModels();
     const targets = models.filter((m) => {
       if (filter !== undefined && !filter.includes(m.model)) return false;
@@ -720,9 +720,9 @@ async function probeTappedContext(): Promise<void> {
 
 async function main(): Promise<void> {
   await probeWireEncoding();
-  if (process.env['KIMI_SELECT_TOOLS_TAP'] === '1') {
+  if (process.env['MULTIAI_SELECT_TOOLS_TAP'] === '1') {
     await probeTappedContext();
-  } else if (process.env['KIMI_SELECT_TOOLS_SKIP_LIVE'] !== '1') {
+  } else if (process.env['MULTIAI_SELECT_TOOLS_SKIP_LIVE'] !== '1') {
     await probeLiveKimiProviders();
   }
   console.log('\nselect-tools: OK');

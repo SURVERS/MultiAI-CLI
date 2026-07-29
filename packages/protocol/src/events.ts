@@ -211,7 +211,7 @@ export interface GoalChange {
   readonly actor?: GoalActor;
 }
 
-export type KimiErrorCode =
+export type MultiAIErrorCode =
   | 'config.invalid'
   | 'session.not_found'
   | 'session.already_exists'
@@ -324,13 +324,13 @@ export type KimiErrorCode =
   | 'not_implemented'
   | 'internal';
 
-export interface KimiErrorPayload {
-  readonly code: KimiErrorCode;
+export interface MultiAIErrorPayload {
+  readonly code: MultiAIErrorCode;
   readonly message: string;
   readonly name?: string;
   readonly details?: Record<string, unknown>;
   readonly retryable: boolean;
-  readonly cause?: KimiErrorPayload;
+  readonly cause?: MultiAIErrorPayload;
 }
 
 export interface TaskInfoBase {
@@ -589,7 +589,7 @@ export interface PluginCommandActivatedEvent {
   readonly trigger: 'user-slash';
 }
 
-export interface ErrorEvent extends KimiErrorPayload {
+export interface ErrorEvent extends MultiAIErrorPayload {
   readonly type: 'error';
 }
 
@@ -610,7 +610,7 @@ export interface TurnEndedEvent {
   readonly type: 'turn.ended';
   readonly turnId: number;
   readonly reason: TurnEndReason;
-  readonly error?: KimiErrorPayload;
+  readonly error?: MultiAIErrorPayload;
   readonly durationMs?: number;
 }
 
@@ -1239,9 +1239,9 @@ export const kimiErrorCodeSchema = z.enum([
   'validation.failed',
   'not_implemented',
   'internal',
-]) satisfies z.ZodType<KimiErrorCode>;
+]) satisfies z.ZodType<MultiAIErrorCode>;
 
-export const kimiErrorPayloadSchema: z.ZodType<KimiErrorPayload> = z.lazy(
+export const kimiErrorPayloadSchema: z.ZodType<MultiAIErrorPayload> = z.lazy(
   () => kimiErrorPayloadObjectSchema,
 );
 
@@ -1252,7 +1252,7 @@ const kimiErrorPayloadObjectSchema = z.object({
   details: z.record(z.string(), z.unknown()).optional(),
   retryable: z.boolean(),
   cause: kimiErrorPayloadSchema.optional(),
-}) satisfies z.ZodType<KimiErrorPayload>;
+}) satisfies z.ZodType<MultiAIErrorPayload>;
 
 export const taskInfoBaseSchema = z.object({
   taskId: z.string(),

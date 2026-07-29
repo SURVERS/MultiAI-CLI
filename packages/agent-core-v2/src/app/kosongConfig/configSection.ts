@@ -52,14 +52,14 @@ export const PROVIDERS_SECTION = 'providers';
 
 export const DEFAULT_PROVIDER_SECTION = 'defaultProvider';
 
-export const ENV_MODEL_PROVIDER_KEY = '__kimi_env__';
+export const ENV_MODEL_PROVIDER_KEY = '__multiai_env__';
 
 export const ProviderTypeSchema = z.string();
 
 export const OAuthRefSchema = z.object({
-  storage: z.enum(['file', 'keyring']),
+  storage: z.literal('keyring'),
   key: z.string().min(1),
-  oauthHost: z.string().min(1).optional(),
+  issuer: z.string().url().optional(),
 });
 
 export const ModelSourceSchema = z.enum(['static', 'discover', 'oauth-catalog']);
@@ -92,13 +92,13 @@ type _AssertProvidersSection = AssertExact<
   Equal<z.infer<typeof ProvidersSectionSchema>, ProvidersSection>
 >;
 
-// The `KIMI_MODEL_PROVIDER_TYPE` / `KIMI_MODEL_API_KEY` / `KIMI_MODEL_BASE_URL`
-// environment bindings synthesize the reserved `__kimi_env__` provider entry.
+// The `MULTIAI_MODEL_PROVIDER_TYPE` / `MULTIAI_MODEL_API_KEY` / `MULTIAI_MODEL_BASE_URL`
+// environment bindings synthesize the reserved `__multiai_env__` provider entry.
 export const providersEnvBindings = envBindings(ProvidersSectionSchema, {
   [ENV_MODEL_PROVIDER_KEY]: envBindings(ProviderConfigSchema, {
-    apiKey: 'KIMI_MODEL_API_KEY',
-    type: 'KIMI_MODEL_PROVIDER_TYPE',
-    baseUrl: 'KIMI_MODEL_BASE_URL',
+    apiKey: 'MULTIAI_MODEL_API_KEY',
+    type: 'MULTIAI_MODEL_PROVIDER_TYPE',
+    baseUrl: 'MULTIAI_MODEL_BASE_URL',
   }),
 });
 
@@ -324,10 +324,10 @@ type _AssertThinkingConfig = AssertExact<
   Equal<z.infer<typeof ThinkingConfigSchema>, ThinkingConfig>
 >;
 
-// The `KIMI_MODEL_THINKING_EFFORT` env binding is an env-only forcedEffort
+// The `MULTIAI_MODEL_THINKING_EFFORT` env binding is an env-only forcedEffort
 // override; the strip keeps it out of `config.toml`.
 export const thinkingEnvBindings = envBindings(ThinkingConfigSchema, {
-  forcedEffort: 'KIMI_MODEL_THINKING_EFFORT',
+  forcedEffort: 'MULTIAI_MODEL_THINKING_EFFORT',
 });
 
 export const stripThinkingEnv: ConfigStripEnv<ThinkingConfig> = (value) => {
@@ -348,8 +348,8 @@ registerConfigSection(THINKING_SECTION, ThinkingConfigSchema, {
 // thinking effort. No kosong-side type — derived from the schema.
 export const SECONDARY_MODEL_SECTION = 'secondaryModel';
 
-export const SECONDARY_MODEL_ENV = 'KIMI_SECONDARY_MODEL';
-export const SECONDARY_MODEL_EFFORT_ENV = 'KIMI_SECONDARY_EFFORT';
+export const SECONDARY_MODEL_ENV = 'MULTIAI_SECONDARY_MODEL';
+export const SECONDARY_MODEL_EFFORT_ENV = 'MULTIAI_SECONDARY_EFFORT';
 
 export const SecondaryModelConfigSchema = ModelOverrideSchema.extend({
   model: z.string().min(1).optional(),
@@ -378,8 +378,8 @@ registerConfigSection(SECONDARY_MODEL_SECTION, SecondaryModelConfigSchema, {
 
 // Read by the kap-server model-catalog refresh scheduler to decide the
 // refresh interval and whether to refresh once on start. Env vars
-// (`KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS`,
-// `KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START`) override these values at the
+// (`MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS`,
+// `MULTIAI_MODEL_CATALOG_REFRESH_ON_START`) override these values at the
 // scheduler edge.
 export const MODEL_CATALOG_SECTION = 'modelCatalog';
 

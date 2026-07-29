@@ -4,11 +4,11 @@ import {
   APIProviderRateLimitError,
   emptyUsage,
   isRetryableGenerateError,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 import { describe, expect, it } from 'vitest';
 
-import type { KimiConfig } from '#/config';
-import { ErrorCodes, KimiError } from '#/errors';
+import type { MultiAIConfig } from '#/config';
+import { ErrorCodes, MultiAIError } from '#/errors';
 import type { LLM, LLMChatParams, LLMChatResponse } from '#/loop/llm';
 import { chatWithRetry, DEFAULT_MAX_RETRY_ATTEMPTS, retryBackoffDelays } from '#/loop/retry';
 import { ProviderManager } from '#/session/provider-manager';
@@ -114,9 +114,9 @@ describe('chatWithRetry: terminated stream drops', () => {
       resolveOAuthTokenProvider: () => ({
         async getAccessToken() {
           tokenCalls += 1;
-          throw new KimiError(
+          throw new MultiAIError(
             ErrorCodes.PROVIDER_CONNECTION_ERROR,
-            'OAuth provider "managed:kimi-code" failed to fetch an access token: fetch failed',
+            'OAuth provider "managed:multiai" failed to fetch an access token: fetch failed',
           );
         },
       }),
@@ -281,20 +281,20 @@ describe('chatWithRetry: honors server retry-after', () => {
   });
 });
 
-function oauthConfig(): KimiConfig {
+function oauthConfig(): MultiAIConfig {
   return {
     defaultModel: 'kimi-code/kimi-for-coding',
     providers: {
-      'managed:kimi-code': {
+      'managed:multiai': {
         type: 'kimi',
         apiKey: '',
         baseUrl: 'https://api.example/v1',
-        oauth: { storage: 'file', key: 'oauth/kimi-code' },
+        oauth: { storage: 'keyring', key: 'oauth/multiai' },
       },
     },
     models: {
       'kimi-code/kimi-for-coding': {
-        provider: 'managed:kimi-code',
+        provider: 'managed:multiai',
         model: 'kimi-for-coding',
         maxContextSize: 1_000_000,
       },

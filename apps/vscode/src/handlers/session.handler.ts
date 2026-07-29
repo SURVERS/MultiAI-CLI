@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
-import type { SessionSummary } from "@moonshot-ai/kimi-code-sdk";
+import type { SessionSummary } from "@multiai/sdk";
 
 import { Events, Methods } from "../../shared/bridge";
 import type { SessionInfo } from "../../shared/legacy-sdk";
@@ -16,7 +16,7 @@ import type { Handler } from "./types";
 const SESSION_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 
 interface LoadHistoryParams {
-  kimiSessionId: string;
+  multiaiSessionId: string;
 }
 
 interface DeleteSessionParams {
@@ -29,12 +29,12 @@ interface ForkSessionParams {
 }
 
 export const sessionHandlers: Record<string, Handler<any, any>> = {
-  [Methods.GetKimiSessions]: async (_, ctx): Promise<SessionInfo[]> => {
+  [Methods.GetMultiAISessions]: async (_, ctx): Promise<SessionInfo[]> => {
     if (!ctx.workDir) return [];
     return (await ctx.harness.listSessions({ workDir: ctx.workDir })).map(toSessionInfo);
   },
 
-  [Methods.GetAllKimiSessions]: async (_, ctx): Promise<SessionInfo[]> => {
+  [Methods.GetAllMultiAISessions]: async (_, ctx): Promise<SessionInfo[]> => {
     if (!ctx.workspaceRoot) return [];
     return (await ctx.harness.listSessions())
       .filter((session) => isInsideOrEqual(ctx.workspaceRoot!, session.workDir))
@@ -125,9 +125,9 @@ export const sessionHandlers: Record<string, Handler<any, any>> = {
     return { ok: true, workDir: selected };
   },
 
-  [Methods.LoadKimiSessionHistory]: async (params: LoadHistoryParams, ctx) => {
-    if (!ctx.workDir || !isSessionId(params.kimiSessionId)) return [];
-    const runtime = await ctx.resumeSession(params.kimiSessionId);
+  [Methods.LoadMultiAISessionHistory]: async (params: LoadHistoryParams, ctx) => {
+    if (!ctx.workDir || !isSessionId(params.multiaiSessionId)) return [];
+    const runtime = await ctx.resumeSession(params.multiaiSessionId);
     if (!areSameFsPath(runtime.session.workDir, ctx.workDir)) {
       await ctx.closeSession();
       throw new Error("The selected session belongs to a different working directory.");
@@ -161,7 +161,7 @@ export const sessionHandlers: Record<string, Handler<any, any>> = {
       ctx.broadcast(Events.FileChangesUpdated, [], ctx.webviewId);
       void Promise.resolve(
         vscode.window.showWarningMessage(
-          "Kimi: This conversation opened, but its file change history is unavailable.",
+          "MultiAI: This conversation opened, but its file change history is unavailable.",
           "Show Logs",
         ),
       )
@@ -175,7 +175,7 @@ export const sessionHandlers: Record<string, Handler<any, any>> = {
     return history;
   },
 
-  [Methods.DeleteKimiSession]: async (params: DeleteSessionParams, ctx): Promise<{ ok: boolean }> => {
+  [Methods.DeleteMultiAISession]: async (params: DeleteSessionParams, ctx): Promise<{ ok: boolean }> => {
     if (!isSessionId(params.sessionId) || !ctx.workspaceRoot) return { ok: false };
     const summary = (await ctx.harness.listSessions({ sessionId: params.sessionId }))[0];
     if (summary === undefined || !isInsideOrEqual(ctx.workspaceRoot, summary.workDir)) {
@@ -194,7 +194,7 @@ export const sessionHandlers: Record<string, Handler<any, any>> = {
     return { ok: true };
   },
 
-  [Methods.ForkKimiSession]: async (params: ForkSessionParams, ctx) => {
+  [Methods.ForkMultiAISession]: async (params: ForkSessionParams, ctx) => {
     if (!ctx.workDir || !isSessionId(params.sessionId) || !Number.isInteger(params.turnIndex) || params.turnIndex < 0) {
       return null;
     }

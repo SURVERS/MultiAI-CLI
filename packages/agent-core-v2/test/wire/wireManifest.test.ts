@@ -4,7 +4,7 @@
  *
  * Rebuilds `docs/wire-manifest.d.ts` from the actual `defineOp` registrations
  * and fails when the file is stale. Regenerate with
- * `pnpm --filter @moonshot-ai/agent-core-v2 gen:wire-manifest`.
+ * `pnpm --filter @multiai/agent-core-v2 gen:wire-manifest`.
  */
 
 import { readFileSync } from 'node:fs';

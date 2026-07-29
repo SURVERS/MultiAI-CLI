@@ -1,10 +1,10 @@
 {
-  description = "Kimi Code CLI";
+  description = "MultiAI CLI";
 
   inputs = {
     # Pinned to the 25.11 release channel because nixpkgs-unstable currently
     # ships nodejs_24 = 24.14.1, which trips the >= 24.15.0 floor that the
-    # native SEA build enforces (see apps/kimi-code/scripts/native/build.mjs).
+    # native SEA build enforces (see apps/multiai-cli/scripts/native/build.mjs).
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
   };
 
@@ -42,7 +42,7 @@
           node
         else
           throw ''
-            Kimi Code requires Node.js >= ${minNodeVersion},
+            MultiAI CLI requires Node.js >= ${minNodeVersion},
             but nixpkgs only offers ${node.version}.
             Pin a newer nixpkgs revision or update minNodeVersion in flake.nix.
           '';
@@ -69,7 +69,6 @@
         ./packages/kaos
         ./packages/klient
         ./packages/kosong
-        ./packages/migration-legacy
         ./packages/minidb
         ./packages/node-sdk
         ./packages/oauth
@@ -78,10 +77,10 @@
         ./packages/telemetry
         ./packages/transcript
         ./packages/tree-sitter-bash
-        ./apps/kimi-code
+        ./apps/multiai-cli
         ./apps/vscode
-        ./apps/kimi-inspect
-        ./apps/kimi-web
+        ./apps/multiai-inspect
+        ./apps/multiai-web
         ./apps/vis
         ./apps/vis/server
         ./apps/vis/web
@@ -89,30 +88,29 @@
       ];
 
       workspaceNames = [
-        "@moonshot-ai/acp-adapter"
-        "@moonshot-ai/agent-core"
-        "@moonshot-ai/agent-core-v2"
-        "@moonshot-ai/kap-server"
-        "@moonshot-ai/kaos"
-        "@moonshot-ai/kosong"
-        "@moonshot-ai/migration-legacy"
-        "@moonshot-ai/minidb"
-        "@moonshot-ai/kimi-code-sdk"
-        "@moonshot-ai/kimi-code-oauth"
-        "@moonshot-ai/klient"
-        "@moonshot-ai/pi-tui"
-        "@moonshot-ai/protocol"
-        "@moonshot-ai/kimi-telemetry"
-        "@moonshot-ai/transcript"
-        "@moonshot-ai/tree-sitter-bash"
-        "@moonshot-ai/kimi-code"
-        "kimi-code"
-        "@moonshot-ai/kimi-inspect"
-        "@moonshot-ai/kimi-web"
-        "@moonshot-ai/vis"
-        "@moonshot-ai/vis-server"
-        "@moonshot-ai/vis-web"
-        "kimi-code-docs"
+        "@multiai/acp-adapter"
+        "@multiai/agent-core"
+        "@multiai/agent-core-v2"
+        "@multiai/kap-server"
+        "@multiai/kaos"
+        "@multiai/kosong"
+        "@multiai/minidb"
+        "@multiai/sdk"
+        "@multiai/oauth"
+        "@multiai/klient"
+        "@multiai/pi-tui"
+        "@multiai/protocol"
+        "@multiai/telemetry"
+        "@multiai/transcript"
+        "@multiai/tree-sitter-bash"
+        "@multiai/cli"
+        "multiai-cli"
+        "@multiai/inspect"
+        "@multiai/web"
+        "@multiai/vis"
+        "@multiai/vis-server"
+        "@multiai/vis-web"
+        "@multiai/docs"
       ];
     in
     {
@@ -121,7 +119,7 @@
         let
           nodejs = nodejsFor pkgs;
           pnpm = pnpmFor pkgs;
-          appPackageJson = builtins.fromJSON (builtins.readFile ./apps/kimi-code/package.json);
+          appPackageJson = builtins.fromJSON (builtins.readFile ./apps/multiai-cli/package.json);
           nativeTarget =
             if pkgs.stdenv.hostPlatform.isLinux && pkgs.stdenv.hostPlatform.isAarch64 then
               "linux-arm64"
@@ -132,10 +130,10 @@
             else if pkgs.stdenv.hostPlatform.isDarwin then
               "darwin-x64"
             else
-              throw "Unsupported Kimi Code native target for ${pkgs.stdenv.hostPlatform.system}";
+              throw "Unsupported MultiAI CLI native target for ${pkgs.stdenv.hostPlatform.system}";
 
-          kimi-code = pkgs.stdenv.mkDerivation (finalAttrs: {
-            pname = "kimi-code";
+          multiai = pkgs.stdenv.mkDerivation (finalAttrs: {
+            pname = "multiai-cli";
             version = appPackageJson.version;
 
             src = lib.fileset.toSource {
@@ -188,24 +186,24 @@
 
             buildPhase = ''
               runHook preBuild
-              export KIMI_CODE_BUILD_TARGET=${nativeTarget}
+              export MULTIAI_BUILD_TARGET=${nativeTarget}
               ${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
                 # pkgs.darwin.sigtool's codesign supports `--sign -` (ad-hoc)
                 # but not the inspection mode (`-dv`) that 05-verify.mjs runs
                 # afterwards. Disable the verify step for the Nix build; the
                 # release CI keeps it via the unmodified script.
-                substituteInPlace apps/kimi-code/scripts/native/build.mjs \
+                substituteInPlace apps/multiai-cli/scripts/native/build.mjs \
                   --replace-fail \
                     "await runVerifyStep({ requireGatekeeper: false });" \
                     "// runVerifyStep skipped in nix sandbox (sigtool lacks -dv)"
               ''}
               # The SEA blob step (scripts/native/02-sea-blob.mjs) embeds the
-              # Kimi web assets from apps/kimi-code/dist-web and fails if that
+              # MultiAI web assets from apps/multiai-cli/dist-web and fails if that
               # directory is missing. Build the web app and stage its assets
               # before producing the native executable.
-              pnpm --filter=@moonshot-ai/kimi-web run build
-              node apps/kimi-code/scripts/copy-web-assets.mjs
-              pnpm --filter=@moonshot-ai/kimi-code run build:native:sea
+              pnpm --filter=@multiai/web run build
+              node apps/multiai-cli/scripts/copy-web-assets.mjs
+              pnpm --filter=@multiai/cli run build:native:sea
               runHook postBuild
             '';
 
@@ -213,37 +211,37 @@
               runHook preInstall
 
               install -Dm755 \
-                "apps/kimi-code/dist-native/bin/${nativeTarget}/kimi" \
-                "$out/bin/kimi"
+                "apps/multiai-cli/dist-native/bin/${nativeTarget}/multiai" \
+                "$out/bin/multiai"
 
               runHook postInstall
             '';
 
             postInstall = ''
-              wrapProgram $out/bin/kimi --prefix PATH : ${lib.makeBinPath [ pkgs.ripgrep pkgs.fd ]}
+              wrapProgram $out/bin/multiai --prefix PATH : ${lib.makeBinPath [ pkgs.ripgrep pkgs.fd ]}
             '';
 
             meta = {
-              description = "Kimi Code CLI";
-              homepage = "https://github.com/MoonshotAI/kimi-code";
+              description = "MultiAI CLI";
+              homepage = "https://github.com/SURVERS/MultiAI-CLI";
               license = lib.licenses.mit;
-              mainProgram = "kimi";
+              mainProgram = "multiai";
               platforms = systems;
             };
           });
         in
         {
-          inherit kimi-code;
-          default = kimi-code;
+          inherit multiai;
+          default = multiai;
         }
       );
 
       apps = forAllSystems (pkgs: {
-        kimi-code = {
+        multiai = {
           type = "app";
-          program = "${self.packages.${pkgs.system}.kimi-code}/bin/kimi";
+          program = "${self.packages.${pkgs.system}.multiai}/bin/multiai";
         };
-        default = self.apps.${pkgs.system}.kimi-code;
+        default = self.apps.${pkgs.system}.multiai;
       });
 
       devShells = forAllSystems (pkgs: {

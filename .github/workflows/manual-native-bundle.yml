@@ -10,7 +10,7 @@ jobs:
   build:
     uses: ./.github/workflows/_native-build.yml
     with:
-      upload-artifact-prefix: kimi-code-native
+      upload-artifact-prefix: multiai-cli-native
       retention-days: 3
       sign-macos: true
     secrets:

@@ -3,7 +3,7 @@ import type { KaosProcess } from './process';
 import type { StatResult } from './types';
 
 /**
- * Kimi Agent Operating System (KAOS) interface.
+ * MultiAI agent operating-system abstraction.
  *
  * This is the core abstraction that allows the agent to interact with
  * different execution environments (local, SSH, containers, etc.)

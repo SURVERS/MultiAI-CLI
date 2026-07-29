@@ -55,7 +55,7 @@ import { IEventBus } from '#/app/event/eventBus';
 import { type FinishReason } from '#/kosong/contract/provider';
 import { type StreamedMessagePart } from '#/kosong/contract/message';
 import { type TokenUsage } from '#/kosong/contract/usage';
-import { BugIndicatingError, ErrorCodes, Error2, isError2, toKimiErrorPayload } from '#/errors';
+import { BugIndicatingError, ErrorCodes, Error2, isError2, toMultiAIErrorPayload } from '#/errors';
 import { OrderedHookSlot } from '#/hooks';
 
 import { IAgentContextMemoryService } from '#/agent/contextMemory/contextMemory';
@@ -505,7 +505,7 @@ export class AgentLoopService extends Disposable implements IAgentLoopService {
           ? this.lastRequestTraceId
           : this.activeRequestTrace?.traceId;
       if (result !== undefined) {
-        const error = result.type === 'failed' ? toKimiErrorPayload(result.error) : undefined;
+        const error = result.type === 'failed' ? toMultiAIErrorPayload(result.error) : undefined;
         this.eventBus.publish({
           type: 'turn.ended',
           turnId: turn.id,

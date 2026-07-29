@@ -55,7 +55,7 @@ export class FaultInjectionService implements IFaultInjectionService {
       throw new Error2(
         ErrorCodes.REQUEST_INVALID,
         'Fault injection is disabled; enable the fault-injection experimental flag ' +
-          '(KIMI_CODE_EXPERIMENTAL_FAULT_INJECTION=1, the master flag, or the ' +
+          '(MULTIAI_EXPERIMENTAL_FAULT_INJECTION=1, the master flag, or the ' +
           '[experimental] config section).',
       );
     }

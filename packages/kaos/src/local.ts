@@ -215,7 +215,7 @@ export class LocalKaos implements Kaos {
   static async create(): Promise<LocalKaos> {
     // Enrich process.env.PATH from the user's login shell so spawned
     // commands find user-installed tools (e.g. Homebrew's gh) even when
-    // kimi-code itself was launched without the full profile PATH. Both
+    // MultiAI CLI itself was launched without the full profile PATH. Both
     // probes are memoised, independent, and run concurrently.
     const [osEnv] = await Promise.all([detectEnvironmentFromNode(), applyLoginShellPathFromNode()]);
     return new LocalKaos(osEnv);

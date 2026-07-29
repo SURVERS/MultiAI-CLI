@@ -19,7 +19,7 @@ export interface AgentRootWarn {
 
 const USER_BRAND_DIRS = ['agents'] as const;
 const USER_GENERIC_DIRS = ['.agents/agents'] as const;
-const PROJECT_BRAND_DIRS = ['.kimi-code/agents'] as const;
+const PROJECT_BRAND_DIRS = ['.multiai/agents'] as const;
 const PROJECT_GENERIC_DIRS = ['.agents/agents'] as const;
 
 export async function userAgentRoots(

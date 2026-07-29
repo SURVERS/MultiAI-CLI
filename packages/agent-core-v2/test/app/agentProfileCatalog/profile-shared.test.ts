@@ -4,7 +4,7 @@
  * `${base_prompt}` (`renderPromptTemplate`), and the builtin template renderer
  * (`renderSystemPrompt`) including its code-composed conditional sections
  * (Windows notes, additional directories, skills). Pure functions, no IO.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/app/agentProfileCatalog/profile-shared.test.ts`.
  */
 
@@ -88,7 +88,7 @@ describe('systemPromptVars', () => {
   it('defaults host-identity variables to the CLI text', () => {
     const vars = systemPromptVars({}, { skillActive: true });
 
-    expect(vars['product_name']).toBe('Kimi Code CLI');
+    expect(vars['product_name']).toBe('MultiAI CLI');
     expect(vars['reply_style_guide']).toContain("render as Markdown in the user's terminal");
   });
 
@@ -203,7 +203,7 @@ describe('renderSystemPrompt', () => {
 
   it('renders the host identity from the context, defaulting to the CLI text', () => {
     const fallback = renderSystemPrompt('', {}, { skillActive: true });
-    expect(fallback).toContain('You are Kimi Code CLI,');
+    expect(fallback).toContain('You are MultiAI CLI,');
     expect(fallback).toContain("render as Markdown in the user's terminal");
 
     const overridden = renderSystemPrompt(
@@ -213,6 +213,6 @@ describe('renderSystemPrompt', () => {
     );
     expect(overridden).toContain('You are Kimi Desktop,');
     expect(overridden).toContain('GUI_STYLE');
-    expect(overridden).not.toContain('Kimi Code CLI');
+    expect(overridden).not.toContain('MultiAI CLI');
   });
 });

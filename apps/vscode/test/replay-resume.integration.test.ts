@@ -2,7 +2,7 @@
  * Scenario: persisted Node SDK sessions are reopened and rendered by the VS Code replay adapter.
  * Responsibilities: restored tool displays and child-agent steps through the public resume state.
  * Wiring: Node SDK, core, storage, and HTTP provider adapter are real; only the remote provider is local.
- * Run: pnpm --filter kimi-code exec vitest run --config vitest.config.ts test/replay-resume.integration.test.ts
+ * Run: pnpm --filter multiai-cli exec vitest run --config vitest.config.ts test/replay-resume.integration.test.ts
  */
 
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -10,11 +10,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
-  createKimiHarness,
+  createMultiAIHarness,
   type Event,
-  type KimiHarness,
+  type MultiAIHarness,
   type Session,
-} from "@moonshot-ai/kimi-code-sdk";
+} from "@multiai/sdk";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -28,7 +28,7 @@ const MODEL_ALIAS = "vscode-replay-test";
 interface ReplayRig {
   readonly rootDir: string;
   readonly workDir: string;
-  readonly harness: KimiHarness;
+  readonly harness: MultiAIHarness;
   readonly provider: FakeProviderHarness;
 }
 
@@ -39,14 +39,14 @@ afterEach(async () => {
 });
 
 async function createReplayRig(): Promise<ReplayRig> {
-  const rootDir = await mkdtemp(join(tmpdir(), "kimi-vscode-replay-"));
+  const rootDir = await mkdtemp(join(tmpdir(), "multiai-vscode-replay-"));
   const homeDir = join(rootDir, "home");
   const workDir = join(rootDir, "workspace");
   await Promise.all([mkdir(homeDir), mkdir(workDir)]);
   const provider = await createFakeProviderHarness();
-  const harness = createKimiHarness({
+  const harness = createMultiAIHarness({
     homeDir,
-    identity: { userAgentProduct: "kimi-code-vscode", version: "test" },
+    identity: { userAgentProduct: "multiai-vscode", version: "test" },
   });
   await harness.setConfig({
     providers: {
@@ -203,7 +203,7 @@ describe("VS Code replay from a public Node SDK resume state", () => {
           return_value: expect.objectContaining({
             display: [{
               type: "diff",
-              path: join(rig.workDir, "created.txt"),
+              path: join(rig.workDir, "created.txt").replaceAll("\\", "/"),
               old_text: "",
               new_text: "created content\n",
             }],
@@ -217,7 +217,12 @@ describe("VS Code replay from a public Node SDK resume state", () => {
         payload: expect.objectContaining({
           tool_call_id: "edit-call-1",
           return_value: expect.objectContaining({
-            display: [{ type: "diff", path: filePath, old_text: "before", new_text: "after" }],
+            display: [{
+              type: "diff",
+              path: filePath.replaceAll("\\", "/"),
+              old_text: "before",
+              new_text: "after",
+            }],
           }),
         }),
       }),

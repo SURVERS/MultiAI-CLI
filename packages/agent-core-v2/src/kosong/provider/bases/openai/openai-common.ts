@@ -110,7 +110,7 @@ export function isOpenAIInsufficientQuotaCode(code: string | null | undefined): 
 }
 
 function isOpenAIInsufficientQuotaError(error: OpenAIAPIError): boolean {
-  if (error.status !== 429) return false;
+  if (error.status !== 402 && error.status !== 429) return false;
   if (typeof error.code === 'string' && isOpenAIInsufficientQuotaCode(error.code)) return true;
   if (typeof error.type === 'string' && isOpenAIInsufficientQuotaCode(error.type)) return true;
   return error.message.toLowerCase().includes('insufficient_quota');
@@ -142,7 +142,13 @@ export function convertOpenAIError(
     const retryAfterMs = parseRetryAfterMs(error.headers);
     const traceId = parseTraceId(error.headers);
     if (isOpenAIInsufficientQuotaError(error)) {
-      return new APIProviderQuotaExhaustedError(error.message, reqId, retryAfterMs, traceId);
+      return new APIProviderQuotaExhaustedError(
+        error.message,
+        reqId,
+        retryAfterMs,
+        traceId,
+        error.status,
+      );
     }
     return normalizeAPIStatusError(error.status, error.message, reqId, retryAfterMs, traceId);
   }

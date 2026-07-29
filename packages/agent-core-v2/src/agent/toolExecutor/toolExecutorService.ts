@@ -19,7 +19,7 @@ import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/
 import { AsyncEmitter, type Event } from '#/_base/event';
 import { defineState } from '#/_base/state/stateRegistry';
 import type { ContentPart, ToolCall } from '#/kosong/contract/message';
-import type { ToolInputDisplay } from '@moonshot-ai/protocol';
+import type { ToolInputDisplay } from '@multiai/protocol';
 
 import {
   compileToolArgsValidator,

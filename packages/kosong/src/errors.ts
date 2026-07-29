@@ -113,8 +113,9 @@ export class APIProviderRateLimitError extends APIStatusError {
     requestId?: string | null,
     retryAfterMs?: number | null,
     traceId?: string | null,
+    statusCode = 429,
   ) {
-    super(429, message, requestId, retryAfterMs, traceId);
+    super(statusCode, message, requestId, retryAfterMs, traceId);
     this.name = 'APIProviderRateLimitError';
   }
 }
@@ -140,8 +141,9 @@ export class APIProviderQuotaExhaustedError extends APIStatusError {
     requestId?: string | null,
     retryAfterMs?: number | null,
     traceId?: string | null,
+    statusCode = 429,
   ) {
-    super(429, message, requestId, retryAfterMs, traceId);
+    super(statusCode, message, requestId, retryAfterMs, traceId);
     this.name = 'APIProviderQuotaExhaustedError';
   }
 }
@@ -390,7 +392,7 @@ const REQUEST_TOO_LARGE_MESSAGE_PATTERNS = [
 ] as const;
 
 const THINKING_EFFORT_CONFIG_DOCS_URL =
-  'https://moonshotai.github.io/kimi-code/en/configuration/config-files.html#thinking';
+  'https://survers.github.io/MultiAI-CLI/en/configuration/config-files.html#thinking';
 
 const THINKING_EFFORT_STATUS_MESSAGE_PATTERNS = [
   /reasoning[_ .-]?effort/,

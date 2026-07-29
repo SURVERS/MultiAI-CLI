@@ -26,15 +26,9 @@ import {
   vsixFileName,
 } from './vsix-targets.mjs';
 
-const REQUIRED_WEBVIEW_FILES = [
-  'dist/webview.js',
-  'dist/kimi-banner-dark.svg',
-  'dist/kimi-banner-light.svg',
-  'dist/kimi-logo.png',
-];
+const REQUIRED_WEBVIEW_FILES = ['dist/webview.js'];
 const FORBIDDEN_PATH_SEGMENTS = new Set([
-  '.kimi',
-  '.kimi-code',
+  '.multiai',
   '.vscode',
   '__tests__',
   'cache',
@@ -98,7 +92,7 @@ const CONTRIBUTE_FIELDS = [
 ];
 
 export async function verifyVsix(vsixPath, target, options = {}) {
-  const extractionRoot = await mkdtemp(join(tmpdir(), 'kimi-vsix-audit-'));
+  const extractionRoot = await mkdtemp(join(tmpdir(), 'multiai-vsix-audit-'));
   try {
     await extractZip(vsixPath, extractionRoot);
     return await auditExtractedVsix(extractionRoot, target, options);
@@ -124,7 +118,7 @@ export async function auditExtractedVsix(extractionRoot, target, options = {}) {
   verifyRequiredFiles(fileSet, packagedManifest);
   verifyForbiddenFiles(files);
   await verifyNoSensitiveContent(extractionRoot, files, sourceRoot, options.forbiddenText ?? []);
-  await verifyRuntimeImports(extensionDir, files);
+  await verifyRuntimeImports(extensionDir, files, target);
   await verifyEntryImport(extensionDir, packagedManifest.main);
 
   const bytes = await totalSize(extractionRoot, files);
@@ -222,12 +216,13 @@ async function verifyNoSensitiveContent(extractionRoot, files, sourceRoot, extra
   }
 }
 
-async function verifyRuntimeImports(extensionDir, files) {
+async function verifyRuntimeImports(extensionDir, files, target) {
   const distFiles = files.filter(
     (file) => file.startsWith('extension/dist/') && ['.cjs', '.js', '.mjs'].includes(extname(file)),
   );
   if (distFiles.length === 0) throw new Error('No JavaScript extension bundle files were packaged.');
 
+  let keyringLoaderDetected = false;
   for (const archivePath of distFiles) {
     const localPath = join(dirname(extensionDir), archivePath);
     const source = await readFile(localPath, 'utf8');
@@ -241,14 +236,48 @@ async function verifyRuntimeImports(extensionDir, files) {
         }
         const dependencyPath = resolve(dirname(localPath), stripImportSuffix(specifier));
         if (!runtimeImportExists(dependencyPath)) {
+          if (isOptionalKeyringNativeImport(specifier)) {
+            keyringLoaderDetected = true;
+            continue;
+          }
           throw new Error(`Missing relative runtime import "${specifier}" in ${archivePath}.`);
         }
         continue;
       }
       if (specifier.startsWith('data:') || specifier.startsWith('file:')) continue;
+      if (isOptionalKeyringNativeImport(specifier)) {
+        keyringLoaderDetected = true;
+        continue;
+      }
       throw new Error(`Bare runtime dependency "${specifier}" remains in ${archivePath}.`);
     }
   }
+  if (keyringLoaderDetected) verifyTargetKeyringAsset(files, target);
+}
+
+function isOptionalKeyringNativeImport(specifier) {
+  return (
+    /^\.\/keyring\.(?:[a-z0-9-]+\.node|wasi\.cjs)$/i.test(specifier) ||
+    /^@napi-rs\/keyring-[a-z0-9-]+(?:\/package\.json)?$/i.test(specifier)
+  );
+}
+
+function verifyTargetKeyringAsset(files, target) {
+  const stem = {
+    'darwin-x64': 'keyring.darwin-x64-',
+    'darwin-arm64': 'keyring.darwin-arm64-',
+    'linux-x64': 'keyring.linux-x64-gnu-',
+    'linux-arm64': 'keyring.linux-arm64-gnu-',
+    'win32-x64': 'keyring.win32-x64-msvc-',
+    'win32-arm64': 'keyring.win32-arm64-msvc-',
+  }[target];
+  if (
+    stem !== undefined &&
+    files.some((file) => file.startsWith('extension/dist/assets/') && file.includes(stem) && file.endsWith('.node'))
+  ) {
+    return;
+  }
+  throw new Error(`Target keyring native asset is missing for ${target}.`);
 }
 
 function collectLiteralImports(source) {
@@ -297,7 +326,11 @@ function walkSyntax(value, visit) {
 function isRuntimeRequire(callee) {
   if (callee?.type === 'Identifier') return /^(?:__)?require\d*$/.test(callee.name);
   if (callee?.type !== 'MemberExpression' || callee.computed === true) return false;
-  return callee.property?.type === 'Identifier' && callee.property.name === 'require';
+  return (
+    callee.object?.type === 'Identifier' &&
+    callee.property?.type === 'Identifier' &&
+    callee.property.name === 'require'
+  );
 }
 
 function literalString(node) {

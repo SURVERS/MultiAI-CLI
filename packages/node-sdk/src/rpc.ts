@@ -18,8 +18,8 @@ import {
   type ToolCallRequest,
   type ToolCallResponse,
   type SwarmModeTrigger,
-} from '@moonshot-ai/agent-core';
-import type { Kaos } from '@moonshot-ai/kaos';
+} from '@multiai/agent-core';
+import type { Kaos } from '@multiai/kaos';
 
 import type { ApprovalHandler, QuestionHandler } from '#/events';
 import type {
@@ -37,8 +37,8 @@ import type {
   GoalSnapshot,
   GoalToolResult,
   JsonObject,
-  KimiConfig,
-  KimiConfigPatch,
+  MultiAIConfig,
+  MultiAIConfigPatch,
   ListSessionsOptions,
   McpServerInfo,
   McpStartupMetrics,
@@ -240,9 +240,9 @@ export abstract class SDKRpcClientBase {
     });
   }
 
-  async getConfig(input?: GetConfigOptions): Promise<KimiConfig> {
+  async getConfig(input?: GetConfigOptions): Promise<MultiAIConfig> {
     const rpc = await this.getRpc();
-    return rpc.getKimiConfig(input ?? {});
+    return rpc.getMultiAIConfig(input ?? {});
   }
 
   async getConfigDiagnostics(): Promise<ConfigDiagnostics> {
@@ -255,14 +255,14 @@ export abstract class SDKRpcClientBase {
     return rpc.getExperimentalFeatures({});
   }
 
-  async setConfig(input: KimiConfigPatch): Promise<KimiConfig> {
+  async setConfig(input: MultiAIConfigPatch): Promise<MultiAIConfig> {
     const rpc = await this.getRpc();
-    return rpc.setKimiConfig(input);
+    return rpc.setMultiAIConfig(input);
   }
 
-  async removeProvider(providerId: string): Promise<KimiConfig> {
+  async removeProvider(providerId: string): Promise<MultiAIConfig> {
     const rpc = await this.getRpc();
-    return rpc.removeKimiProvider({ providerId });
+    return rpc.removeProvider({ providerId });
   }
 
   async listGlobalMcpServers(): Promise<readonly McpServerConfig[]> {

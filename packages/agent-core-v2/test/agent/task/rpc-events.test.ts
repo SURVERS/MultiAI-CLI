@@ -149,7 +149,7 @@ function persistedAgent(
 interface FakeTaskAgent {
   emitEvent: ReturnType<typeof vi.fn>;
   emittedEvents: Array<{ type: string; info?: unknown }>;
-  kimiConfig?: { task?: { maxRunningTasks?: number } };
+  multiAIConfig?: { task?: { maxRunningTasks?: number } };
   context: { appendUserMessage: ReturnType<typeof vi.fn> };
   hooks?: { fireAndForgetTrigger: FireAndForgetTrigger };
 }
@@ -216,7 +216,7 @@ function createAgentTaskService(options: {
     emitEvent: vi.fn((event: { type: string; info?: unknown }) => {
       emittedEvents.push(event);
     }),
-    kimiConfig:
+    multiAIConfig:
       options.maxRunningTasks === undefined
         ? undefined
         : { task: { maxRunningTasks: options.maxRunningTasks } },

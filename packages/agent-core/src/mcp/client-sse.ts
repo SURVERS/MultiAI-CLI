@@ -5,8 +5,8 @@ import { SSEClientTransport, SseError } from '@modelcontextprotocol/sdk/client/s
 
 import {
   buildRequestOptions,
-  KIMI_MCP_CLIENT_NAME,
-  KIMI_MCP_CLIENT_VERSION,
+  MULTIAI_MCP_CLIENT_NAME,
+  MULTIAI_MCP_CLIENT_VERSION,
   toMcpToolDefinition,
   toMcpToolResult,
   type UnexpectedCloseListener,
@@ -68,8 +68,8 @@ export class SseMcpClient implements MCPClient {
       authProvider: options.oauthProvider,
     });
     this.client = new Client({
-      name: options.clientName ?? KIMI_MCP_CLIENT_NAME,
-      version: options.clientVersion ?? KIMI_MCP_CLIENT_VERSION,
+      name: options.clientName ?? MULTIAI_MCP_CLIENT_NAME,
+      version: options.clientVersion ?? MULTIAI_MCP_CLIENT_VERSION,
     });
     this.startupTimeoutMs = options.startupTimeoutMs;
     this.toolCallTimeoutMs = options.toolCallTimeoutMs;

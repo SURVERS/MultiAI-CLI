@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { KimiHarness, ModelAlias } from '@moonshot-ai/kimi-code-sdk';
+import type { MultiAIHarness, ModelAlias } from '@multiai/sdk';
 
 import {
   deriveAlwaysThinking,
@@ -90,7 +90,7 @@ describe('listModelsFromHarness', () => {
           },
         },
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     await expect(listModelsFromHarness(harness)).resolves.toEqual([
       {
@@ -119,7 +119,7 @@ describe('listModelsFromHarness', () => {
           },
         },
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     await expect(listModelsFromHarness(harness)).resolves.toEqual([
       {
@@ -144,7 +144,7 @@ describe('listModelsFromHarness', () => {
           },
         },
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     await expect(listModelsFromHarness(harness)).resolves.toEqual([
       {
@@ -162,18 +162,18 @@ describe('listModelsFromHarness', () => {
     const harness = {
       getConfig: async () => ({
         providers: {
-          'managed:kimi-code': { type: 'kimi' },
+          'managed:multiai': { type: 'kimi' },
         },
         models: {
           custom: {
-            provider: 'managed:kimi-code',
+            provider: 'managed:multiai',
             model: 'custom-anthropic-model',
             maxContextSize: 200000,
             protocol: 'anthropic',
           },
         },
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     await expect(listModelsFromHarness(harness)).resolves.toEqual([
       {
@@ -207,7 +207,7 @@ describe('listModelsFromHarness', () => {
           },
         },
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     await expect(listModelsFromHarness(harness)).resolves.toEqual([
       {

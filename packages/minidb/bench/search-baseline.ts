@@ -1,13 +1,13 @@
 // bench/search-baseline.ts
 //
-// "Without minidb" search baseline over the SAME real ~/.kimi-code sessions
-// used by import-kimi-code.ts. Loads every session's extracted text into an
+// "Without minidb" search baseline over the SAME real ~/.multiai sessions
+// used by import-multiai.ts. Loads every session's extracted text into an
 // in-memory array, then answers the same queries with a naive full scan
 // (substring token-AND for text, linear Array.filter for secondary index / dt
-// range). Paired with import-kimi-code.ts, this shows what minidb's indexes
+// range). Paired with import-multiai.ts, this shows what minidb's indexes
 // buy you on real data.
 //
-// Run:  node --import tsx bench/search-baseline.ts [--data ~/.kimi-code]
+// Run:  node --import tsx bench/search-baseline.ts [--data ~/.multiai]
 
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -18,8 +18,8 @@ const arg = (name: string, def: string) => {
   const i = argv.indexOf(`--${name}`);
   return i === -1 ? def : argv[i + 1]!;
 };
-const DATA = path.resolve(arg('data', path.join(os.homedir(), '.kimi-code')));
-const FULL = argv.includes('--full'); // also index full tool results (matches import-kimi-code --full)
+const DATA = path.resolve(arg('data', path.join(os.homedir(), '.multiai')));
+const FULL = argv.includes('--full'); // also index full tool results (matches import-multiai --full)
 
 const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
 const mib = (n: number) => (n / 1024 / 1024).toFixed(1) + ' MiB';

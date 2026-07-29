@@ -75,7 +75,7 @@ export const exportSessionRequestSchema = z
       })
       .optional(),
     // Desktop hosts set this to bundle the on-disk desktop app log
-    // (`<home>/logs/kimi-code-desktop.log`) into the archive; the server reads
+    // (`<home>/logs/multiai-desktop.log`) into the archive; the server reads
     // the file itself, so no log content crosses the request.
     desktop: z.boolean().optional(),
   })

@@ -5,7 +5,7 @@
  *
  * Rebuilds `docs/state-manifest.d.ts` from the `defineState` key constants and
  * their register call sites and fails when the file is stale. Regenerate with
- * `pnpm --filter @moonshot-ai/agent-core-v2 gen:state-manifest`.
+ * `pnpm --filter @multiai/agent-core-v2 gen:state-manifest`.
  */
 
 import { readFileSync } from 'node:fs';

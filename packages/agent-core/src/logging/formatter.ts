@@ -20,6 +20,16 @@ const REDACTED_KEYS: ReadonlySet<string> = new Set([
   'cookie',
   'setcookie',
   'bearer',
+  'authorizationuri',
+  'redirecturi',
+  'callbackurl',
+  'authorizationcode',
+  'devicecode',
+  'usercode',
+  'verifier',
+  'codeverifier',
+  'state',
+  'nonce',
 ]);
 
 const SAFE_KEY_RE = /^[\w.-]+$/;
@@ -30,6 +40,9 @@ const RAW_SECRET_PATTERNS: readonly RegExp[] = [
   /\b(authorization\s*[:=]\s*bearer\s+)[^\s"'`]+/gi,
   /\b((?:api[_-]?key|access[_-]?token|refresh[_-]?token|id[_-]?token|token|password|secret)\s*[:=]\s*)[^\s"'`]+/gi,
   /\b(cookie\s*[:=]\s*)[^\r\n]+/gi,
+  /\b((?:code|state|nonce|code_verifier|device_code|user_code)=)[^&\s"'`]+/gi,
+  /(\bma-oauth-)[a-z0-9._~-]+/gi,
+  /(\b)https?:\/\/127\.0\.0\.1:\d+\/oauth\/callback[^\s"'`]*/gi,
 ];
 
 const LEVEL_LABEL: Record<Exclude<LogEntry['level'], never>, string> = {

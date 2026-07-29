@@ -1,40 +1,43 @@
-# Migrating from kimi-cli
+# Legacy data
 
-::: info
-Kimi Code CLI has gone through a major version upgrade — moving from Python/uv to Node.js, bringing a simpler install experience, faster startup, and a redesigned terminal UI. The legacy version will gradually be phased out, so we recommend upgrading as soon as possible.
+MultiAI CLI starts with a new product identity, command, package namespace, and home
+directory. It does not import settings or history from Kimi Code or `kimi-cli`.
+
+::: warning Removed
+The legacy migration workspace and the `migrate` command are not included in MultiAI CLI
+1.0.0.
 :::
 
-If you are migrating from the legacy version, follow the steps below — a single command migrates your config, MCP servers, and session history to the new version.
+## What MultiAI CLI uses
 
-## What's new
+New data is written only to MultiAI locations:
 
-- **No more Python / uv**: Rebuilt on Node.js — no Python environment needed, simpler to install
-- **Native binary, works out of the box**: Faster startup, lighter footprint
-- **Redesigned terminal UI**: Smoother, more responsive experience
-- **Full data migration**: Config, MCP servers, and session history all carry over seamlessly
+- global data and configuration: `~/.multiai`;
+- workspace configuration: `.multiai/local.toml`;
+- command: `multiai`;
+- environment variables: `MULTIAI_*`.
 
-## How to migrate
+The former `kimi` command, `~/.kimi-code`, `.kimi-code/local.toml`, and product-level
+`KIMI_*` settings are not aliases and are not read.
 
-There are two ways to migrate.
+## Legacy credential cleanup
 
-The **first time you run `kimi`** after installing kimi-code, it automatically checks whether kimi-cli data exists under `~/.kimi/`. If it finds any, a migration prompt appears, and you can choose to migrate now, do it later, or never be asked again.
+On first launch, MultiAI CLI checks only
+`~/.kimi-code/credentials/kimi-code.json`. If it is recognized as the former managed
+OAuth credential file, it is deleted so an obsolete plaintext token is not left behind.
 
-You can also **run it manually at any time**:
+No other file or directory under `~/.kimi-code` is modified. Keep, archive, or remove
+that directory yourself after confirming that you no longer need the old application.
+
+## Set up MultiAI
+
+Install MultiAI CLI, then sign in as a new native OAuth client:
 
 ```sh
-kimi migrate
+multiai login
 ```
 
-You can choose whether to migrate chat sessions as well. If you don't need the history yet, pick **Config only**; otherwise pick **Config + N sessions** to bring everything across in one go. A summary is printed at the end.
-
-## What happens during migration
-
-**What gets migrated**: configuration (`config.toml`), MCP server configuration, input history, and whichever chat sessions you chose to migrate.
-
-**What does not get migrated**: OAuth login credentials and MCP service authorizations are not copied, so you will need to run `/login` again and re-authorize MCP servers after migrating. kimi-cli plugins are also out of scope.
-
-::: tip
-Migration **never modifies or deletes** any of the old data under `~/.kimi/`. kimi-cli keeps working as before, and the two do not interfere with each other. Migration can also be run repeatedly — sessions that have already been migrated are not imported again.
-:::
-
-After migration, sessions imported from kimi-cli are tagged with `[imported]` in the session picker so you can tell them apart from new ones.
+Configure custom providers and local plugins again under `~/.multiai`. MultiAI keeps
+support for the external Kimi model provider, but that provider is separate from the
+removed Kimi product account and migration flow. For account setup and token behavior,
+read [OAuth and account](./account-and-oauth.md).

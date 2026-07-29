@@ -1,24 +1,10 @@
-import { join } from 'node:path';
-
-import { FileTokenStorage, type TokenInfo } from '@moonshot-ai/kimi-code-oauth';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createKimiHarness, type KimiError, type KimiHarness } from '#/index';
+import { createMultiAIHarness, type MultiAIError, type MultiAIHarness } from '#/index';
 import { makeTempDir, removeTempDirs, waitForAgentWireEvent } from './session-runtime-helpers';
 import { TEST_IDENTITY } from './test-identity';
 
 const tempDirs: string[] = [];
-
-function freshToken(): TokenInfo {
-  return {
-    accessToken: 'oauth-access-token',
-    refreshToken: 'oauth-refresh-token',
-    expiresAt: Math.floor(Date.now() / 1000) + 3600,
-    scope: '',
-    tokenType: 'Bearer',
-    expiresIn: 3600,
-  };
-}
 
 afterEach(async () => {
   await removeTempDirs(tempDirs);
@@ -28,7 +14,7 @@ describe('Session.setModel', () => {
   it('updates the runtime model and sends config.update with the resolved model', async () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-model-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-model-work-');
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       await configureLocalProvider(harness);
@@ -60,53 +46,52 @@ describe('Session.setModel', () => {
   it('resolves managed OAuth aliases before updating the runtime provider', async () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-model-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-model-work-');
-    await new FileTokenStorage(join(homeDir, 'credentials')).save('kimi-code', freshToken());
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       await harness.setConfig({
         providers: {
-          'managed:kimi-code': {
-            type: 'kimi',
-            baseUrl: 'https://api.kimi.com/coding/v1',
+          'managed:multiai': {
+            type: 'openai_responses',
+            baseUrl: 'https://multiai.store/v1',
             apiKey: '',
-            oauth: { storage: 'file', key: 'oauth/kimi-code' },
+            oauth: { storage: 'keyring', key: 'oauth/multiai', issuer: 'https://multiai.store' },
           },
         },
         models: {
-          'kimi-code/initial': {
-            provider: 'managed:kimi-code',
-            model: 'kimi-initial',
+          'multiai/initial': {
+            provider: 'managed:multiai',
+            model: 'initial',
             maxContextSize: 262144,
           },
-          'kimi-code/kimi-for-coding': {
-            provider: 'managed:kimi-code',
-            model: 'kimi-for-coding',
+          'multiai/next': {
+            provider: 'managed:multiai',
+            model: 'next',
             maxContextSize: 262144,
           },
         },
-        defaultModel: 'kimi-code/initial',
+        defaultModel: 'multiai/initial',
       });
       const session = await harness.createSession({
         id: 'ses_model_oauth_wire',
         workDir,
-        model: 'kimi-code/initial',
+        model: 'multiai/initial',
       });
 
-      await session.setModel('kimi-code/kimi-for-coding');
+      await session.setModel('multiai/next');
 
       await expect(session.getStatus()).resolves.toMatchObject({
-        model: 'kimi-code/kimi-for-coding',
+        model: 'multiai/next',
       });
       const configEvent = await waitForAgentWireEvent(
         homeDir,
         session.id,
         'config.update',
-        (event) => event['modelAlias'] === 'kimi-code/kimi-for-coding',
+        (event) => event['modelAlias'] === 'multiai/next',
       );
       expect(configEvent).toMatchObject({
         type: 'config.update',
-        modelAlias: 'kimi-code/kimi-for-coding',
+        modelAlias: 'multiai/next',
       });
       expect(configEvent).not.toHaveProperty('provider');
     } finally {
@@ -117,16 +102,16 @@ describe('Session.setModel', () => {
   it('rejects empty model names', async () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-model-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-model-work-');
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       await configureLocalProvider(harness);
       const session = await harness.createSession({ id: 'ses_model_empty', workDir });
 
       await expect(session.setModel('   ')).rejects.toMatchObject({
-        name: 'KimiError',
+        name: 'MultiAIError',
         code: 'session.model_empty',
-      } satisfies Partial<KimiError>);
+      } satisfies Partial<MultiAIError>);
     } finally {
       await harness.close();
     }
@@ -135,7 +120,7 @@ describe('Session.setModel', () => {
   it('rejects after the session is closed', async () => {
     const homeDir = await makeTempDir(tempDirs, 'kimi-sdk-model-home-');
     const workDir = await makeTempDir(tempDirs, 'kimi-sdk-model-work-');
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       await configureLocalProvider(harness);
@@ -143,16 +128,16 @@ describe('Session.setModel', () => {
       await session.close();
 
       await expect(session.setModel('next-model')).rejects.toMatchObject({
-        name: 'KimiError',
+        name: 'MultiAIError',
         code: 'session.closed',
-      } satisfies Partial<KimiError>);
+      } satisfies Partial<MultiAIError>);
     } finally {
       await harness.close();
     }
   });
 });
 
-async function configureLocalProvider(harness: KimiHarness): Promise<void> {
+async function configureLocalProvider(harness: MultiAIHarness): Promise<void> {
   await harness.setConfig({
     providers: {
       local: {

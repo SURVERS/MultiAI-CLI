@@ -3,7 +3,7 @@
  *
  * Exercises `AgentLifecycleService` through its DI contract with controlled
  * persistence and MCP boundaries, including completion ordering.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/session/agentLifecycle/agentLifecycle.test.ts`.
  */
 

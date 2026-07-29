@@ -14,7 +14,7 @@ import type {
   SessionActivityCause,
   SessionActivityChangedEvent,
   SessionActivityState,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import {
   ContextSizeModel,
   IAgentActivityView,
@@ -32,7 +32,7 @@ import {
   MAIN_AGENT_ID,
   SessionInteractionService,
   StateRegistry,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import type { AgentEvent } from '../src/transport/ws/v1/events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -867,7 +867,7 @@ describe('SessionEventBroadcaster', () => {
     // Regression: v2 publishes `event.session.created` on the core bus but the
     // broadcaster did not forward it, so clients that didn't issue the create
     // never learned the session exists. Without it, a later sessionStatusChanged
-    // reducer is a no-op for the unknown session and kimi-web's Stop button
+    // reducer is a no-op for the unknown session and multiai-web's Stop button
     // (gated on session.status === 'running') never renders.
     sessions.set('s1', new FakeLifecycle());
     sessions.set('s2', new FakeLifecycle());
@@ -993,7 +993,7 @@ describe('SessionEventBroadcaster', () => {
   it('emits a durable event.session.work_changed(busy) trailing turn.started', async () => {
     // Regression: the session's busy fact exists only as the agents' activity
     // state (nothing is published session-wide), so the WS stream never
-    // carried the busy transition and kimi-web's Stop button never rendered.
+    // carried the busy transition and multiai-web's Stop button never rendered.
     // The broadcaster re-emits the aggregate off the activity fold — under
     // the bus's two-phase dispatch the fold reports after the edge's own
     // turn.started handling, so the work_changed trails the turn frame on
@@ -1026,7 +1026,7 @@ describe('SessionEventBroadcaster', () => {
   });
 
   it('emits a durable event.session.work_changed after turn.ended with the main turn outcome', async () => {
-    // Regression: kimi-web's turn.ended projector deliberately does NOT
+    // Regression: multiai-web's turn.ended projector deliberately does NOT
     // synthesize a busy flip — the daemon's `event.session.work_changed` is
     // its only turn-end signal (it drives onSessionIdle queue flush and
     // clears the Stop/loading state). Without it the session stayed busy
@@ -1179,7 +1179,7 @@ describe('SessionEventBroadcaster', () => {
     // counts every agent), but only the MAIN agent feeds `last_turn_reason`:
     // a sub-agent's cancelled turn must not mark the session aborted, and its
     // work does not clear a pending outcome. While the main turn is in flight
-    // the sub-agent's boundaries dedup to no-ops (busy stays true), so kimi-web
+    // the sub-agent's boundaries dedup to no-ops (busy stays true), so multiai-web
     // never reads them as "the turn finished" (browser notification,
     // completion sound, unread dot, queued message drain).
     const lc = new FakeLifecycle();

@@ -4,7 +4,7 @@
  */
 import { z } from 'zod';
 
-import { isoDateTimeSchema } from '@moonshot-ai/agent-core-v2/_base/utils/isoDateTime';
+import { isoDateTimeSchema } from '@multiai/agent-core-v2/_base/utils/isoDateTime';
 
 import { fsOpenInAppIdSchema } from './rest-fs';
 
@@ -34,7 +34,7 @@ export const metaResponseSchema = z.object({
   dangerous_bypass_auth: z.boolean(),
   /**
    * Backend engine generation serving this API. `'v2'` is the DI × Scope
-   * engine (`@moonshot-ai/kap-server` / `agent-core-v2`); older servers omit
+   * engine (`@multiai/kap-server` / `agent-core-v2`); older servers omit
    * the field (treat absence as v1). Lets clients identify the backend without
    * probing routes.
    */

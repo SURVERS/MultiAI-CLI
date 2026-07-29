@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconSettings, IconServer, IconLogout, IconLogin, IconLoader2, IconRefresh, IconFileText, IconFolder } from "@tabler/icons-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { useSettingsStore } from "@/stores";
 import { bridge } from "@/services";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import type { AccountSnapshot } from "shared/types";
 
 interface ActionMenuProps {
   className?: string;
@@ -44,6 +45,7 @@ function MenuItem({ onClick, disabled, danger, children }: { onClick: () => void
 export function ActionMenu({ className, onAuthAction }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [account, setAccount] = useState<AccountSnapshot | null>(null);
   const { setMCPModalOpen, isLoggedIn, setIsLoggedIn, extensionConfig } = useSettingsStore();
 
   const handleOpenSettings = () => {
@@ -77,10 +79,12 @@ export function ActionMenu({ className, onAuthAction }: ActionMenuProps) {
       if (isLoggedIn) {
         await bridge.logout();
         setIsLoggedIn(false);
+        setAccount(null);
       } else {
         const result = await bridge.login();
         if (result.success) {
           setIsLoggedIn(true);
+          setAccount(await bridge.getAccount());
         } else {
           toast.error(result.error ?? "Sign-in failed. Check the logs for details.");
         }
@@ -91,6 +95,15 @@ export function ActionMenu({ className, onAuthAction }: ActionMenuProps) {
     }
     onAuthAction?.();
   };
+
+  useEffect(() => {
+    if (!open || !isLoggedIn || account) return;
+    void bridge.getAccount()
+      .then(setAccount)
+      .catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : "Unable to load the MultiAI account.");
+      });
+  }, [account, isLoggedIn, open]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -125,13 +138,35 @@ export function ActionMenu({ className, onAuthAction }: ActionMenuProps) {
           </MenuItem>
           <MenuItem onClick={handleReset}>
             <IconRefresh className="size-4 text-muted-foreground" />
-            <span className="flex-1">Reset Kimi</span>
+            <span className="flex-1">Reset MultiAI</span>
           </MenuItem>
         </MenuSection>
 
         <Separator className="my-px" />
 
         <MenuSection title="Account">
+          {isLoggedIn && account && (
+            <div className="px-2.5 py-2 text-[11px] text-muted-foreground space-y-1 border-b border-border/60">
+              <div className="font-medium text-foreground truncate">
+                {account.user.display_name || account.user.email || "MultiAI account"}
+              </div>
+              {account.user.email && <div className="truncate">{account.user.email}</div>}
+              <div>Balance: {formatBalance(account.account.wallet.total)}</div>
+              <div className="truncate">
+                Scopes: {account.connection.scopes.join(", ") || "none"}
+              </div>
+              {account.keys.length > 0 && (
+                <div className="space-y-0.5 pt-0.5">
+                  <div>API keys:</div>
+                  {account.keys.slice(0, 3).map((key) => (
+                    <div key={key.id} className="truncate">
+                      {key.name}: {key.key}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <MenuItem
             onClick={() => {
               void handleAuthAction();
@@ -146,4 +181,8 @@ export function ActionMenu({ className, onAuthAction }: ActionMenuProps) {
       </PopoverContent>
     </Popover>
   );
+}
+
+function formatBalance(value: number): string {
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value);
 }

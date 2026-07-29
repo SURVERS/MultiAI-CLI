@@ -58,14 +58,14 @@ const DANGLING_DEFAULT_TOML = [
 ].join('\n');
 
 const MANAGED_TOML = [
-  '[providers."managed:kimi-code"]',
+  '[providers."managed:multiai"]',
   'type = "kimi"',
   'api_key = ""',
   'base_url = "https://api.example.test/v1"',
-  'oauth = { storage = "file", key = "oauth/kimi-code" }',
+  'oauth = { storage = "keyring", key = "oauth/multiai" }',
   '',
-  '[models."managed:kimi-code/kimi-k2"]',
-  'provider = "managed:kimi-code"',
+  '[models."managed:multiai/kimi-k2"]',
+  'provider = "managed:multiai"',
   'model = "kimi-k2"',
   'max_context_size = 131072',
   '',
@@ -109,8 +109,8 @@ describe('server-v2 /api/v1 provider write endpoints', () => {
     home = await mkdtemp(join(tmpdir(), 'kimi-server-v2-provider-write-'));
     // Disable the background refresh scheduler so it never rewrites config
     // underneath the write-path assertions below.
-    process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START'] = '0';
-    process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS'] = '0';
+    process.env['MULTIAI_MODEL_CATALOG_REFRESH_ON_START'] = '0';
+    process.env['MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS'] = '0';
   });
 
   afterEach(async () => {
@@ -122,8 +122,8 @@ describe('server-v2 /api/v1 provider write endpoints', () => {
       await rm(home, { recursive: true, force: true });
       home = undefined;
     }
-    delete process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START'];
-    delete process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS'];
+    delete process.env['MULTIAI_MODEL_CATALOG_REFRESH_ON_START'];
+    delete process.env['MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS'];
   });
 
   async function boot(toml?: string): Promise<void> {
@@ -478,7 +478,7 @@ describe('server-v2 /api/v1 provider write endpoints', () => {
     expect(body?.msg).toContain('/oauth/logout');
 
     const providers = await getJson<{ items: Array<{ id: string }> }>('/api/v1/providers');
-    expect(providers.body.data.items.map((p) => p.id)).toEqual(['managed:kimi-code']);
+    expect(providers.body.data.items.map((p) => p.id)).toEqual(['managed:multiai']);
   });
 
   it('maps an unknown provider id to 40412 on delete', async () => {
@@ -764,9 +764,9 @@ describe('server-v2 /api/v1 provider write endpoints', () => {
 
     // The managed provider and its alias are left untouched.
     const providers = await getJson<{ items: Array<{ id: string }> }>('/api/v1/providers');
-    expect(providers.body.data.items.map((p) => p.id)).toEqual(['managed:kimi-code']);
+    expect(providers.body.data.items.map((p) => p.id)).toEqual(['managed:multiai']);
     const models = await getJson<{ items: Array<{ model: string }> }>('/api/v1/models');
-    expect(models.body.data.items.map((m) => m.model)).toEqual(['managed:kimi-code/kimi-k2']);
+    expect(models.body.data.items.map((m) => m.model)).toEqual(['managed:multiai/kimi-k2']);
   });
 
   it('maps an unknown provider id to 40412 on replace', async () => {

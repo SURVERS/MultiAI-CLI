@@ -14,7 +14,7 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import type { Event, KimiHarness, Session } from '@moonshot-ai/kimi-code-sdk';
+import type { Event, MultiAIHarness, Session } from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS } from './_helpers/harness-stubs';
@@ -147,7 +147,7 @@ describe('AcpSession slash routing', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     // The CLI wires `slashCommands` to a resolver that returns both the
@@ -191,7 +191,7 @@ describe('AcpSession slash routing', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection(
@@ -230,7 +230,7 @@ describe('AcpSession slash routing', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection(
@@ -278,7 +278,7 @@ describe('AcpSession slash routing', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -305,7 +305,7 @@ describe('AcpSession slash routing', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -348,7 +348,7 @@ describe('AcpSession slash routing', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);

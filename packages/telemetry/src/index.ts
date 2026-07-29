@@ -1,4 +1,5 @@
 import {
+  disable,
   flushSync,
   setContext,
   shutdown,
@@ -10,6 +11,10 @@ import type { TelemetryContextIds, TelemetryClient } from './client';
 
 export function track(event: string, properties: TelemetryPropertiesType = {}): void {
   trackEvent(event, properties);
+}
+
+export function disableTelemetry(): void {
+  disable();
 }
 
 export function setTelemetryContext(patch: TelemetryContextIds): void {

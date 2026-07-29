@@ -30,7 +30,7 @@ export interface ExportSessionPayload {
 export interface ExportSessionManifest {
   readonly sessionId: string;
   readonly exportedAt: string;
-  readonly kimiCodeVersion: string;
+  readonly multiAIVersion: string;
   readonly wireProtocolVersion: string;
   readonly os: string;
   readonly nodejsVersion: string;

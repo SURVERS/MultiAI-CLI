@@ -1,12 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
-import { ErrorCodes, KimiError } from '#/errors';
+import { ErrorCodes, MultiAIError } from '#/errors';
 import { getRootLogger, log } from '#/logging/logger';
 import { PluginManager } from '#/plugin';
 import { LocalFetchURLProvider } from '#/tools/providers/local-fetch-url';
-import { MoonshotFetchURLProvider } from '#/tools/providers/moonshot-fetch-url';
-import { MoonshotWebSearchProvider } from '#/tools/providers/moonshot-web-search';
 import { ImageLimits } from '#/tools/support/image-limits';
 import type { PromisableMethods } from '#/utils/types';
 import { getCoreVersion } from '#/version';
@@ -15,7 +13,7 @@ import { Agent } from '../agent';
 import { limitAgentReplayByTurns } from '../agent/replay/turns';
 import {
   applyPrintModeConfigDefaults,
-  ensureKimiHome,
+  ensureMultiAIHome,
   loadRuntimeConfigSafe,
   mergeConfigPatch,
   migrateThinkingEffortMaxToHigh,
@@ -24,12 +22,11 @@ import {
   readWorkspaceAdditionalDirs,
   resolveWorkspaceAdditionalDirs,
   resolveConfigPath,
-  resolveKimiHome,
+  resolveMultiAIHome,
   writeConfigFile,
-  type KimiConfig,
+  type MultiAIConfig,
   type McpRemoteServerConfig,
   type McpServerConfig,
-  type MoonshotServiceConfig,
 } from '../config';
 import {
   FLAG_DEFINITIONS,
@@ -57,10 +54,7 @@ import {
   resolveSkillRoots,
   summarizeSkill,
 } from '../skill';
-import {
-  ProviderManager, type BearerTokenProvider,
-  type OAuthTokenProviderResolver
-} from '../session/provider-manager';
+import { ProviderManager, type OAuthTokenProviderResolver } from '../session/provider-manager';
 import { SessionAPIImpl } from '../session/rpc';
 import { normalizeWorkDir, SessionStore } from '../session/store/index';
 import { touchWorkspaceRegistry } from '../session/store/workspace-registry-file';
@@ -107,7 +101,7 @@ import type {
   GetBackgroundOutputPayload,
   GetBackgroundPayload,
   GetCronTasksResult,
-  GetKimiConfigPayload,
+  GetMultiAIConfigPayload,
   GetPluginInfoPayload,
   InstallPluginPayload,
   ImportContextPayload,
@@ -124,13 +118,13 @@ import type {
   RegisterToolPayload,
   ReloadSessionPayload,
   ReloadPluginsResult,
-  RemoveKimiProviderPayload,
+  RemoveProviderPayload,
   RemovePluginPayload,
   RenameSessionPayload,
   ResumeSessionPayload,
   SessionSummary,
   SetActiveToolsPayload,
-  SetKimiConfigPayload,
+  SetMultiAIConfigPayload,
   SetModelPayload,
   SetModelResult,
   SetPermissionPayload,
@@ -148,19 +142,11 @@ import type {
 } from './core-api';
 import type { ResumedAgentState, ResumeSessionResult } from './resumed';
 import type { SDKRPC } from './sdk-api';
-import type { SessionWarning } from '@moonshot-ai/protocol';
+import type { SessionWarning } from '@multiai/protocol';
 import { proxyWithExtraPayload } from './types';
-import { KaosShellNotFoundError, LocalKaos, type Kaos } from '@moonshot-ai/kaos';
+import { KaosShellNotFoundError, LocalKaos, type Kaos } from '@multiai/kaos';
 import type { ToolServices } from '../tools/support/services';
 
-const KIMI_CODE_PROVIDER_NAME = 'managed:kimi-code';
-const KIMI_CODE_BASE_URL_ENV = 'KIMI_CODE_BASE_URL';
-const KIMI_CODE_OAUTH_HOST_ENV = 'KIMI_CODE_OAUTH_HOST';
-const KIMI_OAUTH_HOST_ENV = 'KIMI_OAUTH_HOST';
-const WEB_SEARCH_BASE_URL_ENV = 'KIMI_WEB_SEARCH_BASE_URL';
-const WEB_SEARCH_API_KEY_ENV = 'KIMI_WEB_SEARCH_API_KEY';
-const WEB_FETCH_BASE_URL_ENV = 'KIMI_WEB_FETCH_BASE_URL';
-const WEB_FETCH_API_KEY_ENV = 'KIMI_WEB_FETCH_API_KEY';
 const DEFAULT_GLOBAL_MCP_AUTH_TIMEOUT_MS = 15 * 60 * 1000;
 type AgentScopedPayload<T> = T & { readonly agentId: string };
 type SessionScopedPayload<T> = T & { readonly sessionId: string };
@@ -171,11 +157,11 @@ interface GlobalMcpOAuthFlow {
   readonly flow: BeginAuthorizationResult;
 }
 
-export interface KimiCoreOptions {
+export interface MultiAICoreOptions {
   readonly homeDir?: string | undefined;
   readonly configPath?: string | undefined;
   readonly runtime?: ToolServices | undefined;
-  readonly kimiRequestHeaders?: Record<string, string> | undefined;
+  readonly multiAIRequestHeaders?: Record<string, string> | undefined;
   readonly resolveOAuthTokenProvider?: OAuthTokenProviderResolver | undefined;
   /**
    * Workspace-id resolver handed to the session store: the registered
@@ -190,14 +176,14 @@ export interface KimiCoreOptions {
   readonly telemetry?: TelemetryClient | undefined;
   readonly appVersion?: string;
   /**
-   * Host UI mode (`'print'` for `kimi -p`, `'cli'` for the TUI, ...). When
+   * Host UI mode (`'print'` for `multiai -p`, `'cli'` for the TUI, ...). When
    * `'print'`, sessions are created with the print-mode config defaults from
    * `applyPrintModeConfigDefaults` (user-set values still win).
    */
   readonly uiMode?: string | undefined;
 }
 
-export class KimiCore implements PromisableMethods<CoreAPI> {
+export class MultiAICore implements PromisableMethods<CoreAPI> {
   readonly sdk: Promise<SDKRPC>;
   readonly homeDir: string;
   readonly configPath: string;
@@ -206,11 +192,11 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
 
   private kaos: Promise<Kaos> | undefined;
   private runtime: ToolServices | undefined;
-  private config: KimiConfig;
+  private config: MultiAIConfig;
   private configWarnings: readonly string[] = [];
   private readonly runtimeOverride: ToolServices | undefined;
   private readonly userHomeDir: string;
-  private readonly kimiRequestHeaders: Record<string, string> | undefined;
+  private readonly multiAIRequestHeaders: Record<string, string> | undefined;
   private readonly resolveOAuthTokenProvider: OAuthTokenProviderResolver | undefined;
   private readonly skillDirs: readonly string[];
   private readonly sessionStore: SessionStore;
@@ -222,16 +208,16 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
   private pluginsLoadError: Error | undefined;
   private readonly appVersion: string | undefined;
   private readonly experimentalFlags: FlagResolver;
-  /** `true` when the host runs `kimi -p` (v1 print mode); see `withPrintModeDefaults`. */
+  /** `true` when the host runs `multiai -p` (v1 print mode); see `withPrintModeDefaults`. */
   private readonly printMode: boolean;
   /** Owner-scoped [image] limits; reload pushes the new config via setConfig. */
   readonly imageLimits: ImageLimits;
 
   constructor(
     protected readonly rpcClient: CoreRPCClient,
-    options: KimiCoreOptions = {},
+    options: MultiAICoreOptions = {},
   ) {
-    this.homeDir = resolveKimiHome(options.homeDir);
+    this.homeDir = resolveMultiAIHome(options.homeDir);
     this.userHomeDir = homedir();
     this.configPath = resolveConfigPath({
       homeDir: this.homeDir,
@@ -239,13 +225,13 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     });
     this.runtimeOverride = options.runtime;
     this.runtime = options.runtime;
-    this.kimiRequestHeaders = options.kimiRequestHeaders;
+    this.multiAIRequestHeaders = options.multiAIRequestHeaders;
     this.resolveOAuthTokenProvider = options.resolveOAuthTokenProvider;
     this.skillDirs = options.skillDirs ?? [];
     this.telemetry = options.telemetry ?? noopTelemetryClient;
     this.appVersion = options.appVersion;
     this.printMode = options.uiMode === 'print';
-    ensureKimiHome(this.homeDir);
+    ensureMultiAIHome(this.homeDir);
     // One-shot config migrations, before the first load (best-effort, never
     // throws): rewrites a persisted thinking.effort "max" to "high" once.
     migrateThinkingEffortMaxToHigh(this.configPath, this.homeDir);
@@ -272,8 +258,8 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
       resolveWorkspaceId: options.resolveWorkspaceId,
     });
     this.globalMcpConfig = new GlobalMcpConfigStore(this.homeDir);
-    this.globalMcpOAuth = new McpOAuthService({ kimiHomeDir: this.homeDir });
-    this.plugins = new PluginManager({ kimiHomeDir: this.homeDir });
+    this.globalMcpOAuth = new McpOAuthService({ multiaiHomeDir: this.homeDir });
+    this.plugins = new PluginManager({ multiaiHomeDir: this.homeDir });
     // Capture the error rather than swallow it: mutators and explicit /plugins
     // reads rethrow so the user sees what's wrong; createSession/resumeSession
     // degrade silently (no plugin skills, no sessionStart injections) so the harness still
@@ -318,11 +304,11 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     const withCallerMcp = mergeCallerMcpServers(baseMcpConfig, options.mcpServers);
     const parentKaos = overrides.kaos ?? (await this.getKaos());
     const persistenceKaos = overrides.persistenceKaos ?? parentKaos;
-    // Read the workspace local config (`.kimi-code/local.toml`) through the
+    // Read the workspace local config (`.multiai/local.toml`) through the
     // persistence (local) kaos, not the tool kaos. In ACP mode the tool kaos is
     // the reverse-RPC bridge and the client does not know the session yet during
     // `session/new`, so reading through it fails with "unknown session"
-    // (https://github.com/MoonshotAI/kimi-code/issues/988). The local config is
+    // (https://github.com/SURVERS/MultiAI-CLI/issues/988). The local config is
     // a system file and must not depend on the tool bridge — same reason
     // `Session.systemContextKaos` is backed by the persistence sink.
     const localWorkspaceDirs = await readWorkspaceAdditionalDirs(persistenceKaos, workDir);
@@ -371,7 +357,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
       config: sessionConfig,
       id,
       homedir: summary.sessionDir,
-      kimiHomeDir: this.homeDir,
+      multiaiHomeDir: this.homeDir,
       rpc: proxyWithExtraPayload(await this.sdk, { sessionId: summary.id }),
       providerManager: this.resolveProviderManager(summary.id),
       background: sessionConfig.background,
@@ -468,7 +454,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
   ): Promise<ResumeSessionResult> {
     const summary = await this.sessionStore.get(input.sessionId);
     const parentKaosForRead = overrides.kaos ?? (await this.getKaos());
-    // Read `.kimi-code/local.toml` through the persistence (local) kaos, not the
+    // Read `.multiai/local.toml` through the persistence (local) kaos, not the
     // tool kaos — see createSessionWithOverrides and issue #988.
     const localWorkspaceDirs = await readWorkspaceAdditionalDirs(
       overrides.persistenceKaos ?? parentKaosForRead,
@@ -522,7 +508,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
       config: sessionConfig,
       id: summary.id,
       homedir: summary.sessionDir,
-      kimiHomeDir: this.homeDir,
+      multiaiHomeDir: this.homeDir,
       rpc: proxyWithExtraPayload(await this.sdk, { sessionId: summary.id }),
       providerManager: this.resolveProviderManager(summary.id),
       background: sessionConfig.background,
@@ -570,7 +556,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     const summary = await this.sessionStore.get(input.sessionId);
     const active = this.sessions.get(summary.id);
     if (active?.hasActiveTurn === true) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.TURN_AGENT_BUSY,
         `Session "${summary.id}" cannot be reloaded while a turn is running`,
         { details: { sessionId: summary.id } },
@@ -595,7 +581,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     const source = await this.sessionStore.get(input.sessionId);
     const active = this.sessions.get(source.id);
     if (active?.hasActiveTurn === true) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.SESSION_FORK_ACTIVE_TURN,
         `Session "${source.id}" cannot be forked while a turn is running`,
         { details: { sessionId: source.id } },
@@ -661,7 +647,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     return result;
   }
 
-  async getKimiConfig(input?: GetKimiConfigPayload): Promise<KimiConfig> {
+  async getMultiAIConfig(input?: GetMultiAIConfigPayload): Promise<MultiAIConfig> {
     if (input?.reload) {
       this.reloadRuntimeConfig();
     }
@@ -672,13 +658,13 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     return { warnings: this.configWarnings };
   }
 
-  async setKimiConfig(input: SetKimiConfigPayload): Promise<KimiConfig> {
+  async setMultiAIConfig(input: SetMultiAIConfigPayload): Promise<MultiAIConfig> {
     const config = mergeConfigPatch(this.readConfigForWrite(), input);
     await writeConfigFile(this.configPath, config);
     return this.reloadRuntimeConfig();
   }
 
-  async removeKimiProvider(input: RemoveKimiProviderPayload): Promise<KimiConfig> {
+  async removeProvider(input: RemoveProviderPayload): Promise<MultiAIConfig> {
     const config = this.readConfigForWrite();
     delete config.providers[input.providerId];
 
@@ -759,7 +745,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
   ): Promise<void> {
     const active = this.globalMcpOAuthFlows.get(flowId);
     if (active === undefined) {
-      throw new KimiError(ErrorCodes.REQUEST_INVALID, `Unknown MCP OAuth flow: ${flowId}`);
+      throw new MultiAIError(ErrorCodes.REQUEST_INVALID, `Unknown MCP OAuth flow: ${flowId}`);
     }
     try {
       await active.flow.complete({
@@ -1137,10 +1123,10 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
       return summary;
     } catch (error) {
       this.pluginsLoadError = error instanceof Error ? error : new Error(String(error));
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.PLUGIN_LOAD_FAILED,
         `Failed to reload plugins: ${this.pluginsLoadError.message}`,
-        { cause: error, details: { kimiHomeDir: this.homeDir } },
+        { cause: error, details: { multiaiHomeDir: this.homeDir } },
       );
     }
   }
@@ -1150,7 +1136,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     this.assertPluginsLoaded();
     const info = this.plugins.info(id);
     if (info === undefined) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.PLUGIN_NOT_FOUND,
         `Plugin "${id}" is not installed`,
         { details: { id } },
@@ -1161,19 +1147,19 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
 
   private assertPluginsLoaded(): void {
     if (this.pluginsLoadError === undefined) return;
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.PLUGIN_LOAD_FAILED,
       `Plugin state failed to load: ${this.pluginsLoadError.message}. ` +
         `Fix the file at ${this.homeDir}/plugins/installed.json and run /plugins reload.`,
-      { cause: this.pluginsLoadError, details: { kimiHomeDir: this.homeDir } },
+      { cause: this.pluginsLoadError, details: { multiaiHomeDir: this.homeDir } },
     );
   }
 
-  private async resolveRuntime(config: KimiConfig): Promise<ToolServices> {
+  private async resolveRuntime(config: MultiAIConfig): Promise<ToolServices> {
     if (this.runtime !== undefined) return this.runtime;
     const runtime = await createRuntimeConfig({
       config,
-      kimiRequestHeaders: this.kimiRequestHeaders,
+      multiAIRequestHeaders: this.multiAIRequestHeaders,
       resolveOAuthTokenProvider: this.resolveOAuthTokenProvider,
     });
     this.runtime = runtime;
@@ -1183,14 +1169,14 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
   private getKaos(): Promise<Kaos> {
     this.kaos ??= LocalKaos.create().catch((error: unknown) => {
       if (error instanceof KaosShellNotFoundError) {
-        throw new KimiError(ErrorCodes.SHELL_GIT_BASH_NOT_FOUND, error.message);
+        throw new MultiAIError(ErrorCodes.SHELL_GIT_BASH_NOT_FOUND, error.message);
       }
       throw error;
     });
     return this.kaos;
   }
 
-  private resolveSessionSkillConfig(config: KimiConfig): SessionSkillConfig {
+  private resolveSessionSkillConfig(config: MultiAIConfig): SessionSkillConfig {
     const explicitDirs = this.skillDirs.length > 0 ? this.skillDirs : undefined;
     return {
       userHomeDir: this.userHomeDir,
@@ -1205,14 +1191,14 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
   private resolveProviderManager(sessionId: string): ProviderManager {
     return new ProviderManager({
       config: () => this.config,
-      kimiRequestHeaders: this.kimiRequestHeaders,
+      multiAIRequestHeaders: this.multiAIRequestHeaders,
       resolveOAuthTokenProvider: this.resolveOAuthTokenProvider,
       promptCacheKey: sessionId,
     });
   }
 
   private mergePluginMcpConfig(base: SessionMcpConfig | undefined): SessionMcpConfig | undefined {
-    const pluginServers = this.withManagedKimiPluginEnv(this.plugins.enabledMcpServers());
+    const pluginServers = this.plugins.enabledMcpServers();
     if (Object.keys(pluginServers).length === 0) return base;
     return {
       servers: {
@@ -1222,40 +1208,10 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     };
   }
 
-  private withManagedKimiPluginEnv(
-    pluginServers: Record<string, McpServerConfig>,
-  ): Record<string, McpServerConfig> {
-    const managedEnv = this.managedKimiCodeEnvForPlugins();
-    if (Object.keys(managedEnv).length === 0) return pluginServers;
-
-    const out: Record<string, McpServerConfig> = {};
-    for (const [name, server] of Object.entries(pluginServers)) {
-      out[name] =
-        server.transport === 'stdio'
-          ? { ...server, env: { ...server.env, ...managedEnv } }
-          : server;
-    }
-    return out;
-  }
-
-  private managedKimiCodeEnvForPlugins(): Record<string, string> {
-    const provider = this.config.providers[KIMI_CODE_PROVIDER_NAME];
-    const envBaseUrl = process.env[KIMI_CODE_BASE_URL_ENV];
-    const envOAuthHost = process.env[KIMI_CODE_OAUTH_HOST_ENV] ?? process.env[KIMI_OAUTH_HOST_ENV];
-    const hasEnvOverride = envBaseUrl !== undefined || envOAuthHost !== undefined;
-    const baseUrl =
-      envBaseUrl !== undefined ? envBaseUrl.replace(/\/+$/, '') : provider?.baseUrl;
-    const oauthHost = hasEnvOverride ? envOAuthHost : provider?.oauth?.oauthHost;
-    const env: Record<string, string> = {};
-    if (baseUrl !== undefined) env[KIMI_CODE_BASE_URL_ENV] = baseUrl;
-    if (oauthHost !== undefined) env[KIMI_CODE_OAUTH_HOST_ENV] = oauthHost;
-    return env;
-  }
-
   private requireSession(sessionId: string): Session {
     const session = this.sessions.get(sessionId);
     if (session === undefined) {
-      throw new KimiError(ErrorCodes.SESSION_NOT_FOUND, `Session "${sessionId}" was not found`, {
+      throw new MultiAIError(ErrorCodes.SESSION_NOT_FOUND, `Session "${sessionId}" was not found`, {
         details: { sessionId },
       });
     }
@@ -1266,15 +1222,15 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     return new SessionAPIImpl(this.requireSession(sessionId));
   }
 
-  private reloadProviderManager(): KimiConfig {
+  private reloadProviderManager(): MultiAIConfig {
     return this.reloadRuntimeConfig();
   }
 
-  private readConfigForWrite(): KimiConfig {
+  private readConfigForWrite(): MultiAIConfig {
     return readConfigFileForUpdate(this.configPath);
   }
 
-  private reloadRuntimeConfig(): KimiConfig {
+  private reloadRuntimeConfig(): MultiAIConfig {
     const loaded = loadRuntimeConfigSafe(this.configPath);
     if (loaded.fileWarnings.length > 0) {
       // Keep the last good config: adopting a salvaged config mid-run could
@@ -1293,7 +1249,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
     return this.setRuntimeConfig(loaded.config);
   }
 
-  private setRuntimeConfig(config: KimiConfig): KimiConfig {
+  private setRuntimeConfig(config: MultiAIConfig): MultiAIConfig {
     this.config = config;
     this.experimentalFlags.setConfigOverrides(config.experimental);
     this.imageLimits.setConfig(config.image);
@@ -1301,12 +1257,12 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
   }
 
   /**
-   * Config bound to a newly created/resumed session. In print mode (`kimi -p`,
+   * Config bound to a newly created/resumed session. In print mode (`multiai -p`,
    * v1) the print-mode defaults are merged in; explicit user config wins. The
-   * raw `this.config` is left untouched so `getKimiConfig` and config writes
+   * raw `this.config` is left untouched so `getMultiAIConfig` and config writes
    * still round-trip the user's file values.
    */
-  private withPrintModeDefaults(config: KimiConfig): KimiConfig {
+  private withPrintModeDefaults(config: MultiAIConfig): MultiAIConfig {
     return this.printMode ? applyPrintModeConfigDefaults(config) : config;
   }
 
@@ -1317,7 +1273,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
 
   private async refreshSessionRuntimeConfig(
     session: Session,
-    config: KimiConfig,
+    config: MultiAIConfig,
   ): Promise<void> {
     const api = new SessionAPIImpl(session);
     // A session migrated from an external tool carries no model, and any
@@ -1341,7 +1297,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
         const aliasMissing = config.models?.[model] === undefined;
         if (
           aliasMissing &&
-          error instanceof KimiError &&
+          error instanceof MultiAIError &&
           error.code === ErrorCodes.CONFIG_INVALID
         ) {
           continue;
@@ -1355,7 +1311,7 @@ export class KimiCore implements PromisableMethods<CoreAPI> {
 function requireRemoteMcpServer(server: GlobalMcpServerConfig): McpRemoteServerConfig {
   const config = mcpConfigWithoutName(server);
   if (config.transport !== 'stdio') return config;
-  throw new KimiError(
+  throw new MultiAIError(
     ErrorCodes.REQUEST_INVALID,
     `MCP server "${server.name}" does not use a remote transport`,
   );
@@ -1364,13 +1320,13 @@ function requireRemoteMcpServer(server: GlobalMcpServerConfig): McpRemoteServerC
 function requireOAuthMcpServer(server: GlobalMcpServerConfig): McpRemoteServerConfig {
   const config = requireRemoteMcpServer(server);
   if (config.bearerTokenEnvVar !== undefined) {
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.REQUEST_INVALID,
       `MCP server "${server.name}" uses a static bearer token`,
     );
   }
   if (config.headers !== undefined && config.auth !== 'oauth') {
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.REQUEST_INVALID,
       `MCP server "${server.name}" uses static headers and is not marked for OAuth`,
     );
@@ -1404,94 +1360,20 @@ function standaloneMcpTestResult(
 }
 
 async function createRuntimeConfig(input: {
-  readonly config: KimiConfig;
-  readonly kimiRequestHeaders?: Record<string, string> | undefined;
+  readonly config: MultiAIConfig;
+  readonly multiAIRequestHeaders?: Record<string, string> | undefined;
   readonly resolveOAuthTokenProvider?: OAuthTokenProviderResolver | undefined;
 }): Promise<ToolServices> {
-  const localFetcher = new LocalFetchURLProvider();
-  const searchService = withServiceEnv(
-    input.config.services?.moonshotSearch,
-    WEB_SEARCH_BASE_URL_ENV,
-    WEB_SEARCH_API_KEY_ENV,
-  );
-  const fetchService = withServiceEnv(
-    input.config.services?.moonshotFetch,
-    WEB_FETCH_BASE_URL_ENV,
-    WEB_FETCH_API_KEY_ENV,
-  );
-
+  void input;
   return {
-    urlFetcher:
-      fetchService?.baseUrl === undefined
-        ? localFetcher
-        : new MoonshotFetchURLProvider({
-            baseUrl: fetchService.baseUrl,
-            localFallback: localFetcher,
-            defaultHeaders: input.kimiRequestHeaders,
-            ...serviceCredentials(fetchService, input.resolveOAuthTokenProvider),
-          }),
-    webSearcher:
-      searchService?.baseUrl === undefined
-        ? undefined
-        : new MoonshotWebSearchProvider({
-            baseUrl: searchService.baseUrl,
-            defaultHeaders: input.kimiRequestHeaders,
-            ...serviceCredentials(searchService, input.resolveOAuthTokenProvider),
-          }),
+    urlFetcher: new LocalFetchURLProvider(),
+    webSearcher: undefined,
   };
-}
-
-/**
- * Resolve `KIMI_WEB_SEARCH_*` / `KIMI_WEB_FETCH_*` without mixing credentials
- * across service origins. An env base URL starts a fresh service entry so a
- * persisted API key, OAuth token, or custom header cannot reach the env
- * endpoint. An env API key without an env base URL keeps the configured
- * endpoint and headers, but replaces both configured credential forms.
- * Blank env values are treated as unset.
- */
-function withServiceEnv(
-  service: MoonshotServiceConfig | undefined,
-  baseUrlEnv: string,
-  apiKeyEnv: string,
-): MoonshotServiceConfig | undefined {
-  const envBaseUrl = nonEmptyString(process.env[baseUrlEnv]);
-  const envApiKey = nonEmptyString(process.env[apiKeyEnv]);
-  if (envBaseUrl !== undefined) {
-    return { baseUrl: envBaseUrl, apiKey: envApiKey };
-  }
-  if (envApiKey === undefined) return service;
-  if (service === undefined) return { apiKey: envApiKey };
-  const { apiKey: _apiKey, oauth: _oauth, ...rest } = service;
-  return { ...rest, apiKey: envApiKey };
-}
-
-function serviceCredentials(
-  service: MoonshotServiceConfig,
-  resolveOAuthTokenProvider: OAuthTokenProviderResolver | undefined,
-): {
-  readonly apiKey?: string | undefined;
-  readonly tokenProvider?: BearerTokenProvider | undefined;
-  readonly customHeaders?: Record<string, string> | undefined;
-} {
-  const apiKey = nonEmptyString(service.apiKey);
-  return {
-    apiKey,
-    tokenProvider:
-      service.oauth !== undefined
-        ? resolveOAuthTokenProvider?.(KIMI_CODE_PROVIDER_NAME, service.oauth)
-        : undefined,
-    customHeaders: service.customHeaders,
-  };
-}
-
-function nonEmptyString(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 }
 
 function requiredWorkDir(operation: string, value: string): string {
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new KimiError(ErrorCodes.REQUEST_WORK_DIR_REQUIRED, `${operation} requires workDir`);
+    throw new MultiAIError(ErrorCodes.REQUEST_WORK_DIR_REQUIRED, `${operation} requires workDir`);
   }
   return normalizeWorkDir(value);
 }
@@ -1511,7 +1393,7 @@ function withAdditionalDirs<T>(
 }
 
 function telemetryErrorReason(error: unknown): string {
-  if (error instanceof KimiError) return error.code;
+  if (error instanceof MultiAIError) return error.code;
   if (error instanceof Error && error.name.length > 0) return error.name;
   return typeof error;
 }
@@ -1520,7 +1402,7 @@ function clientTelemetryProperties(client: ClientTelemetryInfo | undefined): Tel
   if (client === undefined) return {};
   // Emit a fixed key set (null when the client did not provide a field) so
   // `session_started` has a stable schema across clients, matching the harness
-  // producer in `kimi-harness.ts`. Other session events also inherit these as
+  // producer in `multiai-harness.ts`. Other session events also inherit these as
   // context properties, so they share the same stable client-attribution shape.
   return {
     client_id: client.id ?? null,

@@ -10,8 +10,14 @@
 import { z } from 'zod';
 
 export const oauthLoginStartRequestSchema = z.object({
+  method: z.literal('browser'),
   provider: z.string().min(1).optional(),
-});
+  persistence: z.enum(['keyring', 'session']).default('keyring'),
+}).or(z.object({
+  method: z.literal('device'),
+  provider: z.string().min(1).optional(),
+  persistence: z.enum(['keyring', 'session']).default('keyring'),
+}));
 export type OAuthLoginStartRequest = z.infer<typeof oauthLoginStartRequestSchema>;
 
 export const oauthLoginQuerySchema = z.object({

@@ -8,7 +8,6 @@ import {
   realpath,
   rename,
   rm,
-  stat,
   unlink,
   writeFile,
 } from 'node:fs/promises';
@@ -35,14 +34,12 @@ interface BaselineManifestV1 {
   readonly version: 1;
   readonly sessionId: string;
   readonly entries: Readonly<Record<string, ManifestEntry>>;
-  readonly acceptedLegacyPaths: readonly string[];
 }
 
 interface MutableManifest {
   version: 1;
   sessionId: string;
   entries: Record<string, ManifestEntry>;
-  acceptedLegacyPaths: string[];
 }
 
 interface ResolvedFile {
@@ -71,7 +68,7 @@ export class BaselineManager {
       throw new BaselineError('The VSCode global storage path is empty');
     }
     if (homeNamespace.length === 0) {
-      throw new BaselineError('The Kimi home namespace is empty');
+      throw new BaselineError('The MultiAI home namespace is empty');
     }
     this.baselinesRoot = path.join(globalStorageRoot, 'baselines', hash(homeNamespace));
   }
@@ -94,23 +91,14 @@ export class BaselineManager {
       );
       if (localPath !== undefined) return;
 
-      const accepted = new Set(manifest.acceptedLegacyPaths);
-      const acceptedPath = equivalentPath(session, accepted, resolved.relativePath);
-      if (acceptedPath === undefined) {
-        const legacyExists = await this.hasLegacyBaseline(session, resolved.relativePath);
-        if (legacyExists) return;
-      }
-
       const snapshot = hash(captured.content);
       await this.writeSnapshot(session.id, snapshot, captured.content);
-      if (acceptedPath !== undefined) accepted.delete(acceptedPath);
 
       const next = mutableManifest(manifest);
       next.entries[resolved.relativePath] = {
         snapshot,
         existedBefore: captured.existedBefore,
       };
-      next.acceptedLegacyPaths = uniquePaths(session, accepted);
       await this.writeManifest(next);
     });
   }
@@ -215,17 +203,10 @@ export class BaselineManager {
         Object.keys(manifest.entries),
         resolved.relativePath,
       );
-      const hadLocal = localPath !== undefined;
-      const hasLegacy = await this.hasLegacyBaseline(session, resolved.relativePath);
-      if (!hadLocal && !hasLegacy) return;
+      if (localPath === undefined) return;
 
       const next = mutableManifest(manifest);
-      if (localPath !== undefined) delete next.entries[localPath];
-      const accepted = new Set(next.acceptedLegacyPaths);
-      const acceptedPath = equivalentPath(session, accepted, resolved.relativePath);
-      if (acceptedPath !== undefined) accepted.delete(acceptedPath);
-      if (hasLegacy) accepted.add(resolved.relativePath);
-      next.acceptedLegacyPaths = uniquePaths(session, accepted);
+      delete next.entries[localPath];
 
       await this.writeManifest(next);
       await this.removeUnreferencedSnapshots(session.id, next);
@@ -235,13 +216,8 @@ export class BaselineManager {
   async keepAll(session: BaselineSession): Promise<void> {
     await this.serialize([session.id], async () => {
       const manifest = await this.readManifest(session);
-      const legacyPaths = await this.listLegacyPaths(session);
       const next = mutableManifest(manifest);
       next.entries = {};
-      next.acceptedLegacyPaths = uniquePaths(session, [
-        ...next.acceptedLegacyPaths,
-        ...legacyPaths,
-      ]);
 
       await this.writeManifest(next);
       await this.removeUnreferencedSnapshots(session.id, next);
@@ -264,10 +240,6 @@ export class BaselineManager {
 
       const targetManifest = await this.readManifest(target);
       const next = mutableManifest(targetManifest);
-      const accepted = uniquePaths(target, [
-        ...next.acceptedLegacyPaths,
-        ...sourceManifest.acceptedLegacyPaths,
-      ]);
 
       for (const [relativePath, baseline] of values) {
         const existingPath = equivalentPath(target, Object.keys(next.entries), relativePath);
@@ -280,7 +252,6 @@ export class BaselineManager {
         };
       }
 
-      next.acceptedLegacyPaths = accepted;
       await this.writeManifest(next);
     });
   }
@@ -293,23 +264,10 @@ export class BaselineManager {
   }
 
   private async effectivePaths(
-    session: BaselineSession,
+    _session: BaselineSession,
     manifest: BaselineManifestV1,
   ): Promise<string[]> {
-    const paths = new Map<string, string>();
-    for (const relativePath of Object.keys(manifest.entries)) {
-      paths.set(pathComparisonKey(session, relativePath), relativePath);
-    }
-    const accepted = new Set(
-      manifest.acceptedLegacyPaths.map((relativePath) =>
-        pathComparisonKey(session, relativePath),
-      ),
-    );
-    for (const relativePath of await this.listLegacyPaths(session)) {
-      const key = pathComparisonKey(session, relativePath);
-      if (!accepted.has(key) && !paths.has(key)) paths.set(key, relativePath);
-    }
-    return [...paths.values()].toSorted();
+    return Object.keys(manifest.entries).toSorted();
   }
 
   private async readEffectiveBaseline(
@@ -324,10 +282,7 @@ export class BaselineManager {
       return { content, existedBefore: local.existedBefore };
     }
 
-    if (equivalentPath(session, manifest.acceptedLegacyPaths, relativePath) !== undefined) {
-      return undefined;
-    }
-    return this.readLegacyBaseline(session, relativePath);
+    return undefined;
   }
 
   private async readManifest(session: BaselineSession): Promise<BaselineManifestV1> {
@@ -354,10 +309,7 @@ export class BaselineManager {
   }
 
   private async writeManifest(manifest: BaselineManifestV1): Promise<void> {
-    if (
-      Object.keys(manifest.entries).length === 0 &&
-      manifest.acceptedLegacyPaths.length === 0
-    ) {
+    if (Object.keys(manifest.entries).length === 0) {
       await rm(this.sessionRoot(manifest.sessionId), { recursive: true, force: true });
       return;
     }
@@ -434,65 +386,6 @@ export class BaselineManager {
     );
   }
 
-  private async listLegacyPaths(session: BaselineSession): Promise<string[]> {
-    const root = legacyBaselineRoot(session);
-    if (root === undefined) return [];
-
-    const result: string[] = [];
-    await walkLegacyBaselines(root, '', result);
-    return result.toSorted();
-  }
-
-  private async hasLegacyBaseline(
-    session: BaselineSession,
-    relativePath: string,
-  ): Promise<boolean> {
-    const legacyPath = legacyBaselinePath(session, relativePath);
-    if (legacyPath === undefined) return false;
-    try {
-      const info = await stat(legacyPath);
-      if (!info.isFile()) {
-        throw new BaselineError(`Legacy baseline "${relativePath}" is not a regular file`);
-      }
-      return true;
-    } catch (error) {
-      if (isErrorCode(error, 'ENOENT')) return false;
-      if (error instanceof BaselineError) throw error;
-      throw new BaselineError(`Unable to inspect legacy baseline "${relativePath}"`, {
-        cause: error,
-      });
-    }
-  }
-
-  private async readLegacyBaseline(
-    session: BaselineSession,
-    relativePath: string,
-  ): Promise<BaselineValue | undefined> {
-    const legacyPath = legacyBaselinePath(session, relativePath);
-    if (legacyPath === undefined) return undefined;
-
-    let info;
-    try {
-      info = await stat(legacyPath);
-    } catch (error) {
-      if (isErrorCode(error, 'ENOENT')) return undefined;
-      throw new BaselineError(`Unable to inspect legacy baseline "${relativePath}"`, {
-        cause: error,
-      });
-    }
-    if (!info.isFile()) {
-      throw new BaselineError(`Legacy baseline "${relativePath}" is not a regular file`);
-    }
-
-    try {
-      const content = await readFile(legacyPath, 'utf-8');
-      return { content, existedBefore: content.length > 0 };
-    } catch (error) {
-      throw new BaselineError(`Unable to read legacy baseline "${relativePath}"`, {
-        cause: error,
-      });
-    }
-  }
 
   private async serialize<T>(sessionIds: readonly string[], operation: () => Promise<T>): Promise<T> {
     const ids = [...new Set(sessionIds)].toSorted();
@@ -538,7 +431,7 @@ export class BaselineManager {
 }
 
 function emptyManifest(sessionId: string): BaselineManifestV1 {
-  return { version: MANIFEST_VERSION, sessionId, entries: {}, acceptedLegacyPaths: [] };
+  return { version: MANIFEST_VERSION, sessionId, entries: {} };
 }
 
 function mutableManifest(manifest: BaselineManifestV1): MutableManifest {
@@ -546,7 +439,6 @@ function mutableManifest(manifest: BaselineManifestV1): MutableManifest {
     version: MANIFEST_VERSION,
     sessionId: manifest.sessionId,
     entries: { ...manifest.entries },
-    acceptedLegacyPaths: [...manifest.acceptedLegacyPaths],
   };
 }
 
@@ -559,8 +451,7 @@ function parseManifest(value: unknown, session: BaselineSession): BaselineManife
   }
 
   const rawEntries = value['entries'];
-  const rawAccepted = value['acceptedLegacyPaths'];
-  if (!isRecord(rawEntries) || !Array.isArray(rawAccepted)) {
+  if (!isRecord(rawEntries)) {
     throw new BaselineError(`Invalid baseline manifest for session "${session.id}"`);
   }
 
@@ -587,25 +478,10 @@ function parseManifest(value: unknown, session: BaselineSession): BaselineManife
     };
   }
 
-  const acceptedLegacyPaths: string[] = [];
-  for (const rawPath of rawAccepted) {
-    if (typeof rawPath !== 'string') {
-      throw new BaselineError(`Invalid accepted legacy path in session "${session.id}"`);
-    }
-    const relativePath = resolveSessionFile(session, rawPath).relativePath;
-    if (relativePath !== rawPath) {
-      throw new BaselineError(`Unsafe accepted legacy path "${rawPath}" in session "${session.id}"`);
-    }
-    if (equivalentPath(session, acceptedLegacyPaths, relativePath) === undefined) {
-      acceptedLegacyPaths.push(relativePath);
-    }
-  }
-
   return {
     version: MANIFEST_VERSION,
     sessionId: session.id,
     entries,
-    acceptedLegacyPaths: uniquePaths(session, acceptedLegacyPaths),
   };
 }
 
@@ -619,15 +495,6 @@ function equivalentPath(
     if (pathComparisonKey(session, existing) === candidateKey) return existing;
   }
   return undefined;
-}
-
-function uniquePaths(session: BaselineSession, paths: Iterable<string>): string[] {
-  const unique = new Map<string, string>();
-  for (const relativePath of paths) {
-    const key = pathComparisonKey(session, relativePath);
-    if (!unique.has(key)) unique.set(key, relativePath);
-  }
-  return [...unique.values()].toSorted();
 }
 
 function pathComparisonKey(session: BaselineSession, relativePath: string): string {
@@ -665,53 +532,6 @@ function resolveSessionFile(session: BaselineSession, filePath: string): Resolve
 
 function isWindowsAbsolute(value: string): boolean {
   return /^[a-zA-Z]:[\\/]/.test(value) || /^[\\/]{2}[^\\/]+[\\/][^\\/]+/.test(value);
-}
-
-function legacyBaselineRoot(session: BaselineSession): string | undefined {
-  const source = session.metadata?.['kimi_cli_source_path'];
-  if (typeof source !== 'string' || source.length === 0) return undefined;
-
-  const sourceIsWindows = isWindowsAbsolute(source);
-  if (sourceIsWindows !== (process.platform === 'win32')) return undefined;
-  if (!path.isAbsolute(source)) return undefined;
-  return path.join(source, 'baseline');
-}
-
-function legacyBaselinePath(
-  session: BaselineSession,
-  relativePath: string,
-): string | undefined {
-  const root = legacyBaselineRoot(session);
-  if (root === undefined) return undefined;
-  const resolved = resolveSessionFile(session, relativePath);
-  return path.join(root, ...resolved.relativePath.split('/'));
-}
-
-async function walkLegacyBaselines(
-  directory: string,
-  relativeDirectory: string,
-  result: string[],
-): Promise<void> {
-  let entries;
-  try {
-    entries = await readdir(directory, { withFileTypes: true });
-  } catch (error) {
-    if (isErrorCode(error, 'ENOENT') && relativeDirectory.length === 0) return;
-    throw new BaselineError(`Unable to list legacy baseline directory "${directory}"`, {
-      cause: error,
-    });
-  }
-
-  for (const entry of entries) {
-    const relativePath = relativeDirectory
-      ? `${relativeDirectory}/${entry.name}`
-      : entry.name;
-    if (entry.isDirectory()) {
-      await walkLegacyBaselines(path.join(directory, entry.name), relativePath, result);
-    } else if (entry.isFile()) {
-      result.push(relativePath);
-    }
-  }
 }
 
 function captureOriginal(absolutePath: string): BaselineValue {

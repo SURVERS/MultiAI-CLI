@@ -1,7 +1,7 @@
 /**
  * `media` domain (L4) — `IAgentVideoResolverService` implementation.
  *
- * Resolves each `kimi-file://` video reference in the projected wire messages
+ * Resolves each `multiai-file://` video reference in the projected wire messages
  * to a provider-acceptable part right before the request leaves for the wire.
  * Reads the uploaded bytes through the `file` domain (`IFileService`), uploads
  * them through the bound model's `ModelRequester.uploadVideo` (wrapped for
@@ -35,7 +35,7 @@ import type { ModelRequester } from '#/kosong/model/modelRequester';
 import { IBlobStore } from '#/persistence/interface/blobStore';
 
 import { detectFileType, MEDIA_SNIFF_BYTES } from './file-type';
-import { type KimiFileRef, isKimiFileUrl, parseKimiFileUrl } from './kimiFileUrl';
+import { type MultiAIFileRef, isMultiAIFileUrl, parseMultiAIFileUrl } from './multiaiFileUrl';
 import { createVideoUploader } from './registerMediaTools';
 import {
   inlineVideoPart,
@@ -79,19 +79,19 @@ export class AgentVideoResolverService implements IAgentVideoResolverService {
     requester: ModelRequester,
     signal?: AbortSignal,
   ): Promise<readonly Message[]> {
-    if (!messages.some(hasKimiFileVideoPart)) return messages;
+    if (!messages.some(hasMultiAIFileVideoPart)) return messages;
 
     let changed = false;
     const out: Message[] = [];
     for (const message of messages) {
-      if (!hasKimiFileVideoPart(message)) {
+      if (!hasMultiAIFileVideoPart(message)) {
         out.push(message);
         continue;
       }
       const content: ContentPart[] = [];
       for (const part of message.content) {
         const ref =
-          part.type === 'video_url' ? parseKimiFileUrl(part.videoUrl.url) : undefined;
+          part.type === 'video_url' ? parseMultiAIFileUrl(part.videoUrl.url) : undefined;
         content.push(ref === undefined ? part : await this.resolvePart(ref, requester, signal));
       }
       out.push({ ...message, content });
@@ -101,7 +101,7 @@ export class AgentVideoResolverService implements IAgentVideoResolverService {
   }
 
   private async resolvePart(
-    ref: KimiFileRef,
+    ref: MultiAIFileRef,
     requester: ModelRequester,
     signal: AbortSignal | undefined,
   ): Promise<ContentPart> {
@@ -118,7 +118,7 @@ export class AgentVideoResolverService implements IAgentVideoResolverService {
   }
 
   private async resolveUncached(
-    ref: KimiFileRef,
+    ref: MultiAIFileRef,
     requester: ModelRequester,
     cacheKey: string,
     signal: AbortSignal | undefined,
@@ -197,13 +197,13 @@ export class AgentVideoResolverService implements IAgentVideoResolverService {
   }
 }
 
-function hasKimiFileVideoPart(message: Message): boolean {
+function hasMultiAIFileVideoPart(message: Message): boolean {
   return message.content.some(
-    (part) => part.type === 'video_url' && isKimiFileUrl(part.videoUrl.url),
+    (part) => part.type === 'video_url' && isMultiAIFileUrl(part.videoUrl.url),
   );
 }
 
-function tag(ref: KimiFileRef): ContentPart {
+function tag(ref: MultiAIFileRef): ContentPart {
   if (ref.path === undefined || ref.path.length === 0) {
     return { type: 'text', text: VIDEO_UNAVAILABLE_TEXT };
   }

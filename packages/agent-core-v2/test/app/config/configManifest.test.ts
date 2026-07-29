@@ -3,7 +3,7 @@
  *
  * Rebuilds `docs/config-manifest.toml` from the actual `registerConfigSection` /
  * `registerConfigOverlay` contributions and fails when the file is stale.
- * Regenerate with `pnpm --filter @moonshot-ai/agent-core-v2 gen:config-manifest`.
+ * Regenerate with `pnpm --filter @multiai/agent-core-v2 gen:config-manifest`.
  */
 
 import { readFileSync } from 'node:fs';

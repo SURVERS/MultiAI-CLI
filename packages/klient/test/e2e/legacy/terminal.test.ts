@@ -4,7 +4,7 @@
  * observe `terminal_output`, resize, close with `terminal_exit`.
  *
  * Converted from the retired scenario `11-terminal.ts`. Skips when no server
- * is reachable at `KIMI_SERVER_URL`.
+ * is reachable at `MULTIAI_SERVER_URL`.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -12,12 +12,12 @@ import { DaemonClient, type AnyFrame } from '../harness/index.js';
 import { fetchWithReport } from '../harness/report.js';
 import { createCaseLogger } from './log.js';
 
-const BASE_URL = process.env['KIMI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
+const BASE_URL = process.env['MULTIAI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
 const API_PREFIX = '/api/v1';
-const TERMINAL_SHELL = process.env['KIMI_SERVER_E2E_TERMINAL_SHELL'] ?? '/bin/sh';
+const TERMINAL_SHELL = process.env['MULTIAI_SERVER_E2E_TERMINAL_SHELL'] ?? '/bin/sh';
 const OUTPUT_TIMEOUT_MS = 20_000;
 const EXIT_TIMEOUT_MS = 5_000;
-const CANARY = `KIMI_KLIENT_E2E_TERMINAL_${process.pid}_${Date.now()}`;
+const CANARY = `MULTIAI_KLIENT_E2E_TERMINAL_${process.pid}_${Date.now()}`;
 
 async function daemonReachable(): Promise<boolean> {
   try {

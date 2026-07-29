@@ -5,7 +5,7 @@
  *   - no `Origin` header → non-CORS / same-origin request → proceeds untouched;
  *   - same-origin (`Origin` host === `Host`, port stripped both sides) → allowed;
  *   - cross-origin → allowed only if the full origin (scheme + host) is in the
- *     explicit whitelist (`KIMI_CODE_CORS_ORIGINS`, no `*` wildcard — PLAN
+ *     explicit whitelist (`MULTIAI_CORS_ORIGINS`, no `*` wildcard — PLAN
  *     §3.4). Allowed origins get `Access-Control-Allow-Origin/-Methods` echoed
  *     and `Access-Control-Allow-Headers` reflected from the preflight's
  *     `Access-Control-Request-Headers` (so new client headers need no server
@@ -25,7 +25,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { stripPort } from './hostnames';
 
 const CORS_ALLOW_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
-const CORS_ALLOW_HEADERS = 'Content-Type, Authorization, X-Kimi-Client-Id, X-Kimi-Client-Name, X-Kimi-Client-Version, X-Kimi-Client-Ui-Mode';
+const CORS_ALLOW_HEADERS = 'Content-Type, Authorization, X-MultiAI-Client-Id, X-MultiAI-Client-Name, X-MultiAI-Client-Version, X-MultiAI-Client-Ui-Mode';
 
 export interface OriginHookOptions {
   /** Explicit cross-origin allowlist (full origin strings, scheme + host). */
@@ -33,13 +33,13 @@ export interface OriginHookOptions {
 }
 
 /**
- * Parse `KIMI_CODE_CORS_ORIGINS` into an allowlist.
+ * Parse `MULTIAI_CORS_ORIGINS` into an allowlist.
  *
  * Comma-separated, trimmed, empties dropped. No `*` wildcard — every entry is
  * an explicit origin (PLAN §3.4).
  */
 export function parseCorsOrigins(env: NodeJS.ProcessEnv = process.env): string[] {
-  const raw = env['KIMI_CODE_CORS_ORIGINS'];
+  const raw = env['MULTIAI_CORS_ORIGINS'];
   if (raw === undefined) {
     return [];
   }

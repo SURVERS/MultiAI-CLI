@@ -3,7 +3,7 @@
  *
  * Exercises the real scoped catalog and source services with filesystem or
  * in-memory discovery boundaries, including controlled concurrent refreshes.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/session/sessionSkillCatalog/skillCatalog.test.ts`.
  */
 
@@ -199,7 +199,7 @@ async function withSkillCatalogWorkspace(
   run: (fixture: { readonly workDir: string; readonly skillRoot: string }) => Promise<void>,
 ): Promise<void> {
   const workDir = await mkdtemp(join(tmpdir(), 'skill-catalog-'));
-  const skillRoot = join(workDir, '.kimi-code', 'skills');
+  const skillRoot = join(workDir, '.multiai', 'skills');
   await mkdir(skillRoot, { recursive: true });
   try {
     await run({ workDir, skillRoot: await realpath(skillRoot) });
@@ -522,7 +522,7 @@ describe('SessionSkillCatalogService', () => {
   it('feeds skipped skills from file sources into the merged catalog', async () => {
     await withSkillCatalogWorkspace(async ({ workDir }) => {
       const skippedEntry = {
-        path: join(workDir, '.kimi-code', 'skills', 'bad', 'SKILL.md'),
+        path: join(workDir, '.multiai', 'skills', 'bad', 'SKILL.md'),
         type: 'nope',
         reason: 'unsupported skill type "nope"',
       };

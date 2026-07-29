@@ -8,7 +8,7 @@ Base classes and serialization are **centralized** in `_base/errors`; error **co
 
 - `src/_base/errors/errors.ts`: base classes — `Error2`, `ExpectedError`, `ErrorNoTelemetry`, `BugIndicatingError`, `NotImplementedError`, plus `isError2` and `unwrapErrorCause`.
 - `src/_base/errors/codes.ts`: the `ErrorDomain` contract, the registry (`registerErrorDomain` / `errorInfo` / `isErrorCode`), and `CoreErrors` (`internal`, `not_implemented`). The `ErrorCode` union type is derived by `#/errors` from the aggregated domain definitions.
-- `src/_base/errors/serialize.ts`: `ErrorPayload`, `isCodedError`, `toErrorPayload`, `fromErrorPayload`. Wire-facing names (`KimiErrorPayload`, `toKimiErrorPayload`) mirror the protocol and are kept as-is.
+- `src/_base/errors/serialize.ts`: `ErrorPayload`, `isCodedError`, `toErrorPayload`, `fromErrorPayload`. Wire-facing names (`MultiAIErrorPayload`, `toMultiAIErrorPayload`) mirror the protocol and are kept as-is.
 - `src/_base/errors/unexpectedError.ts`: `onUnexpectedError` / `setUnexpectedErrorHandler` (global handler).
 - `src/<domain>/errors.ts`: the domain's `XxxErrors` descriptor (codes + retryable list + per-code info overrides), self-registered on import.
 - `src/errors.ts`: the **facade** — imports every domain's `errors.ts`, builds `ErrorCodes`, re-exports the primitives. Throw sites import from here.

@@ -22,7 +22,7 @@ const createdDirs: string[] = [];
 const running: RunningServer[] = [];
 
 beforeEach(() => {
-  prevPassword = process.env['KIMI_CODE_PASSWORD'];
+  prevPassword = process.env['MULTIAI_PASSWORD'];
 });
 
 afterEach(async () => {
@@ -37,9 +37,9 @@ afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
   }
   if (prevPassword === undefined) {
-    delete process.env['KIMI_CODE_PASSWORD'];
+    delete process.env['MULTIAI_PASSWORD'];
   } else {
-    process.env['KIMI_CODE_PASSWORD'] = prevPassword;
+    process.env['MULTIAI_PASSWORD'] = prevPassword;
   }
 });
 
@@ -59,7 +59,7 @@ async function probeDebug(server: RunningServer): Promise<number> {
 
 describe('debug endpoints are not exposed on a non-loopback bind', () => {
   it('returns 404 for /api/v1/debug/* on a 0.0.0.0 bind even when requested', async () => {
-    process.env['KIMI_CODE_PASSWORD'] = 'test-pw';
+    process.env['MULTIAI_PASSWORD'] = 'test-pw';
     const home = await tmpHome();
     const server = await startServer({
       host: '0.0.0.0',

@@ -62,7 +62,7 @@ import type {
   ISessionScopeHandle,
   Scope,
   SessionActivityState,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import {
   IAgentLifecycleService,
   IEventBus,
@@ -72,7 +72,7 @@ import {
   ISessionIndex,
   ISessionLifecycleService,
   MAIN_AGENT_ID,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import type { SessionCreatedEvent, SessionMetaUpdatedEvent, Event } from './events';
 import { isVolatileEventType } from './events';
 import type { SessionCursor } from '../../../protocol/ws-control';
@@ -90,7 +90,7 @@ import {
   type TranscriptOpsEvent,
   type TranscriptResetEvent,
   type TranscriptStore,
-} from '@moonshot-ai/transcript';
+} from '@multiai/transcript';
 
 import { toWireApproval } from '../../../routes/approvals';
 import { toWireQuestion } from '../../../routes/questions';
@@ -841,7 +841,7 @@ export class SessionEventBroadcaster {
       // like `session.meta.updated` below. Without this, clients that didn't
       // issue the create never learn the session exists, so a later
       // `sessionStatusChanged` reducer is a no-op for the unknown session and
-      // kimi-web's Stop button (gated on session.status === 'running') never
+      // multiai-web's Stop button (gated on session.status === 'running') never
       // renders. Mirrors v1's `isGlobalSessionEvent` broadcast of creation.
       void this.dispatchSessionEvent(payload.sessionId, {
         type: 'event.session.created',
@@ -1287,8 +1287,8 @@ function isVolatileSignal(type: string): boolean {
  * byte-identical and `agentId`/`sessionId` are re-stamped so the alias flows
  * through the same dispatch / journal / agent-filter path as the native event.
  *
- * Exists so unchanged v1 consumers (kimi-code TUI / `kimi -p`, node-sdk) keep
- * working while v2-shaped consumers (kimi-web) keep the native event and ignore
+ * Exists so unchanged v1 consumers (MultiAI TUI / `multiai -p`, Node SDK) keep
+ * working while v2-shaped consumers (multiai-web) keep the native event and ignore
  * the alias (registered as known, no handler). Remove once every consumer has
  * migrated to `task.*`.
  */

@@ -1,6 +1,6 @@
 # Agent Skills
 
-Agent Skills are a lightweight mechanism for extending model capabilities in Kimi Code CLI. A Skill is a Markdown document with YAML frontmatter that describes a specialized area of knowledge or a workflow — for example, a project's code style guidelines, a PR review process, or a commit message format.
+Agent Skills are a lightweight mechanism for extending model capabilities in MultiAI CLI. A Skill is a Markdown document with YAML frontmatter that describes a specialized area of knowledge or a workflow — for example, a project's code style guidelines, a PR review process, or a commit message format.
 
 Compared to pasting the same instructions into a prompt every time, Skills offer the advantage of keeping content in a file, enabling reuse across projects and teams, allowing instant loading via a slash command, and letting the model invoke them automatically when needed.
 
@@ -57,22 +57,22 @@ Before the body is sent to the model, a small set of placeholders are expanded:
 - `$ARGUMENTS`: The full raw argument string passed at invocation
 - `$ARGUMENTS[0]`, `$ARGUMENTS[1]` and shorthand `$0`, `$1`: Positional arguments after whitespace tokenization (zero-indexed)
 - `$<name>`: Named parameters declared in `arguments`
-- `${KIMI_SKILL_DIR}`: The directory containing the current Skill file
+- `${MULTIAI_SKILL_DIR}`: The directory containing the current Skill file
 
 Positional arguments support single and double quoting, so in `/skill:commit "fix login" patch`, `$0` expands to `fix login`. If the body contains no argument placeholders, text passed at invocation is appended to the end of the body as `\n\nARGUMENTS: <text>`.
 
 ## Skill Locations
 
-Kimi Code CLI scans four tiers by scope; more specific scopes take higher priority: **Project > User > Extra > Built-in**
+MultiAI CLI scans four tiers by scope; more specific scopes take higher priority: **Project > User > Extra > Built-in**
 
 **User level** (applies to all projects):
-- `$KIMI_CODE_HOME/skills/` (default: `~/.kimi-code/skills/`)
+- `$MULTIAI_HOME/skills/` (default: `~/.multiai/skills/`)
 - `~/.agents/skills/`
 
-The Kimi-specific user Skill directory moves with `KIMI_CODE_HOME`, so isolated data roots also get isolated Kimi-specific Skills. The generic `~/.agents/skills/` directory stays under the real OS home so it can be shared across tools.
+The MultiAI-specific user Skill directory moves with `MULTIAI_HOME`, so isolated data roots also get isolated MultiAI-specific Skills. The generic `~/.agents/skills/` directory stays under the real OS home so it can be shared across tools.
 
 **Project level** (project root = the nearest directory containing `.git`, searching upward from the working directory):
-- `.kimi-code/skills/`
+- `.multiai/skills/`
 - `.agents/skills/`
 
 **Extra directories**: Declared via `extra_skill_dirs` at the top level of `config.toml`:
@@ -122,7 +122,7 @@ Please review the PR the user specified: $pr_ref
    - Noteworthy positives
 ```
 
-Save this as `$KIMI_CODE_HOME/skills/review-pr/SKILL.md` (or `~/.kimi-code/skills/review-pr/SKILL.md` when `KIMI_CODE_HOME` is unset), place the checklist at `references/checklist.md` in the same directory, and after starting a new session you can invoke it with `/skill:review-pr #1234`, where `#1234` is expanded into `$pr_ref`.
+Save this as `$MULTIAI_HOME/skills/review-pr/SKILL.md` (or `~/.multiai/skills/review-pr/SKILL.md` when `MULTIAI_HOME` is unset), place the checklist at `references/checklist.md` in the same directory, and after starting a new session you can invoke it with `/skill:review-pr #1234`, where `#1234` is expanded into `$pr_ref`.
 
 ## Next steps
 

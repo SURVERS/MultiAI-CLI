@@ -74,9 +74,9 @@ describe('extendWorkspaceWithSkillRoots', () => {
   });
 
   it('appends roots outside the workspace and existing additional dirs', () => {
-    expect(extendWorkspaceWithSkillRoots(workspace, ['/home/user/.kimi-code/skills'])).toEqual({
+    expect(extendWorkspaceWithSkillRoots(workspace, ['/home/user/.multiai/skills'])).toEqual({
       workspaceDir: '/repo',
-      additionalDirs: ['/extra', '/home/user/.kimi-code/skills'],
+      additionalDirs: ['/extra', '/home/user/.multiai/skills'],
     });
   });
 

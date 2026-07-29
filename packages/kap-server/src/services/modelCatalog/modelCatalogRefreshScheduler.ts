@@ -9,8 +9,8 @@
  *
  * The cadence is config-driven: the `[model_catalog]` config section
  * (`refresh_interval_ms`, `refresh_on_start`) is read first, with the
- * `KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS` /
- * `KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START` env vars as overrides (matching
+ * `MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS` /
+ * `MULTIAI_MODEL_CATALOG_REFRESH_ON_START` env vars as overrides (matching
  * v1). When the config section is absent, the env vars / built-in defaults
  * apply. Failures are logged and swallowed so one bad tick does not break the
  * schedule.
@@ -21,13 +21,13 @@ import {
   type IProviderDiscoveryService,
   type ModelCatalogConfig,
   MODEL_CATALOG_SECTION,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 
 import type { ServerLogger } from '../pinoLoggerService';
 
 const DEFAULT_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
-const INTERVAL_ENV = 'KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS';
-const REFRESH_ON_START_ENV = 'KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START';
+const INTERVAL_ENV = 'MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS';
+const REFRESH_ON_START_ENV = 'MULTIAI_MODEL_CATALOG_REFRESH_ON_START';
 
 export class ModelCatalogRefreshScheduler {
   private timer: ReturnType<typeof setInterval> | undefined;

@@ -199,10 +199,10 @@ const MOCK_PROVIDER = {
 
 interface TestModelProviderOptions {
   readonly promptCacheKey?: string;
-  readonly kimiRequestHeaders?: Record<string, string>;
+  readonly multiAIRequestHeaders?: Record<string, string>;
 }
 
-interface KimiConfig {
+interface MultiAIConfig {
   readonly providers: Record<string, ProviderConfigForConfig>;
   readonly models?: Record<string, ModelConfigForConfig>;
   readonly defaultProvider?: string;
@@ -225,7 +225,7 @@ interface ProviderConfigForConfig {
   readonly apiKey?: string;
   readonly baseUrl?: string;
   readonly oauth?: {
-    readonly storage: 'file' | 'keyring';
+    readonly storage: 'keyring' | 'keyring';
     readonly key: string;
     readonly oauthHost?: string;
   };
@@ -380,7 +380,7 @@ export interface TestAgentOptions {
   readonly hookEngine?:
   | Pick<IExternalHooksRunnerService, 'trigger' | 'triggerBlock' | 'fireAndForgetTrigger'>
   | undefined;
-  readonly initialConfig?: Partial<KimiConfig> | undefined;
+  readonly initialConfig?: Partial<MultiAIConfig> | undefined;
   readonly autoConfigure?: boolean | undefined;
   readonly cwd?: string | undefined;
   readonly [key: string]: unknown;
@@ -591,7 +591,7 @@ export function modelProviderOptionServices(
   );
 }
 
-export function configServices(readConfig: () => KimiConfig): TestAgentServiceOverride {
+export function configServices(readConfig: () => MultiAIConfig): TestAgentServiceOverride {
   return appService(IConfigService, configService(readConfig));
 }
 
@@ -920,7 +920,7 @@ class ConfigBackedModelCatalog extends ModelCatalog {
   }
 
   /**
-   * The harness mutates `kimiConfig` BEHIND the config services' backs (no
+   * The harness mutates `multiAIConfig` BEHIND the config services' backs (no
    * section-change events fire), so nothing pushes the new values into the
    * kosong registries. Re-hydrate them from the live config view before every
    * read: `loadAll` is deep-equal-aware, so an unchanged config is a no-op
@@ -999,7 +999,7 @@ export class AgentTestContext {
   private readonly disposables: IDisposable[] = [];
   private suppressWireSnapshot = false;
   private pluginSessionStartRegistered = false;
-  kimiConfig: KimiConfig;
+  multiAIConfig: MultiAIConfig;
   private cwd = process.cwd();
   private closed = false;
 
@@ -1018,7 +1018,7 @@ export class AgentTestContext {
     if (options.cwd !== undefined) this.cwd = options.cwd;
     this.serviceOverrides = flattenServiceOverrides(overrides);
     this.emitter.on('error', () => { });
-    this.kimiConfig = applyTestAgentOptionsToConfig(emptyConfig(), options);
+    this.multiAIConfig = applyTestAgentOptionsToConfig(emptyConfig(), options);
 
     const sessionId = 'test-session';
     const agentId = 'main';
@@ -1041,7 +1041,7 @@ export class AgentTestContext {
           reg.define(IBlobStore, BlobStoreService);
           reg.defineInstance(
             IConfigService,
-            configService(() => this.kimiConfig),
+            configService(() => this.multiAIConfig),
           );
           reg.defineInstance(
             IAppendLogStore,
@@ -1056,7 +1056,7 @@ export class AgentTestContext {
             ILogOptions,
             {
               level: 'off',
-              globalLogPath: '/tmp/kimi-code-agent-app-v2-test/logs/kimi-code.log',
+              globalLogPath: '/tmp/kimi-code-agent-app-v2-test/logs/multiai.log',
               globalMaxBytes: 6 * 1024 * 1024,
               globalFiles: 1,
               sessionMaxBytes: 5 * 1024 * 1024,
@@ -1121,7 +1121,7 @@ export class AgentTestContext {
     // Hydrate the kosong registries from the (possibly overridden) config so
     // direct IProviderService/IModelService reads work before the first
     // catalog access; ConfigBackedModelCatalog re-syncs on every read after
-    // that (the harness mutates kimiConfig behind the config events' backs).
+    // that (the harness mutates multiAIConfig behind the config events' backs).
     const initialConfig = this.root.accessor.get(IConfigService);
     this.root.accessor
       .get(IProviderService)
@@ -1409,7 +1409,7 @@ export class AgentTestContext {
     provider: TestProviderConfig,
     modelCapabilities?: ModelCapability | undefined,
   ): void {
-    this.kimiConfig = configWithProvider(this.kimiConfig, provider, modelCapabilities);
+    this.multiAIConfig = configWithProvider(this.multiAIConfig, provider, modelCapabilities);
     // The harness swaps config BEHIND the config services' backs, so no
     // change events fire — drop the assembled-Model cache by hand (the
     // load-bearing ModelCatalog contract), or the next `get` keeps serving
@@ -1420,7 +1420,7 @@ export class AgentTestContext {
   }
 
   /**
-   * The manual cache-drop for tests that mutate `kimiConfig` behind the
+   * The manual cache-drop for tests that mutate `multiAIConfig` behind the
    * config services' backs (no change events fire): the ModelCatalog keeps
    * serving the previously assembled Model until this is called.
    */
@@ -1714,7 +1714,7 @@ export class AgentTestContext {
     await this.waitForSessionMetadata();
     await this.drainWirePersistence();
     const profile = this.get(IAgentProfileService);
-    const configSnapshot = structuredClone(this.get(IConfigService).getAll() as KimiConfig);
+    const configSnapshot = structuredClone(this.get(IConfigService).getAll() as MultiAIConfig);
     let wireHistory = await this.wireHistory();
     let resumedThroughRecord = wireHistory.length;
     const resumed = createTestAgent(
@@ -2330,11 +2330,11 @@ function configStateSnapshot(ctx: AgentTestContext): ResumeStateSnapshot['config
   };
 }
 
-function emptyConfig(): KimiConfig {
+function emptyConfig(): MultiAIConfig {
   return configWithProvider({ providers: {} }, MOCK_PROVIDER, undefined);
 }
 
-function applyTestAgentOptionsToConfig(config: KimiConfig, options: TestAgentOptions): KimiConfig {
+function applyTestAgentOptionsToConfig(config: MultiAIConfig, options: TestAgentOptions): MultiAIConfig {
   const initialConfig = options.initialConfig ?? {};
   return {
     ...config,
@@ -2350,7 +2350,7 @@ function applyTestAgentOptionsToConfig(config: KimiConfig, options: TestAgentOpt
   };
 }
 
-function configService(readConfig: () => KimiConfig): IConfigService {
+function configService(readConfig: () => MultiAIConfig): IConfigService {
   // Mirror the production overlay chain: the secondary-model recipe
   // materializes its derived entry into the effective models view, so
   // spawn-time binding resolves it exactly as in production. Top-level
@@ -2358,7 +2358,7 @@ function configService(readConfig: () => KimiConfig): IConfigService {
   const effectiveConfig = () => {
     const effective = { ...configWithEnvOverrides(readConfig()) } as Record<string, unknown>;
     secondaryModelOverlay.apply(effective, () => undefined, (_domain, value) => value);
-    return effective as unknown as KimiConfig;
+    return effective as unknown as MultiAIConfig;
   };
   const memory = new Map<string, unknown>();
   const sectionEmitter = new Emitter<{
@@ -2407,14 +2407,14 @@ function configService(readConfig: () => KimiConfig): IConfigService {
   } as unknown as IConfigService;
 }
 
-function configWithEnvOverrides(config: KimiConfig): KimiConfig {
+function configWithEnvOverrides(config: MultiAIConfig): MultiAIConfig {
   const maxCompletionTokens =
-    parseEnvCompletionTokens(process.env['KIMI_MODEL_MAX_COMPLETION_TOKENS']) ??
-    parseEnvCompletionTokens(process.env['KIMI_MODEL_MAX_TOKENS']);
-  const temperature = parseEnvFloat(process.env['KIMI_MODEL_TEMPERATURE']);
-  const topP = parseEnvFloat(process.env['KIMI_MODEL_TOP_P']);
-  const forcedEffort = process.env['KIMI_MODEL_THINKING_EFFORT']?.trim();
-  const thinkingKeep = process.env['KIMI_MODEL_THINKING_KEEP']?.trim();
+    parseEnvCompletionTokens(process.env['MULTIAI_MODEL_MAX_COMPLETION_TOKENS']) ??
+    parseEnvCompletionTokens(process.env['MULTIAI_MODEL_MAX_TOKENS']);
+  const temperature = parseEnvFloat(process.env['MULTIAI_MODEL_TEMPERATURE']);
+  const topP = parseEnvFloat(process.env['MULTIAI_MODEL_TOP_P']);
+  const forcedEffort = process.env['MULTIAI_MODEL_THINKING_EFFORT']?.trim();
+  const thinkingKeep = process.env['MULTIAI_MODEL_THINKING_KEEP']?.trim();
   const cron = cronEnvOverrides(asMutableRecord(config['cron']));
   if (
     maxCompletionTokens === undefined &&
@@ -2457,18 +2457,18 @@ function cronEnvOverrides(base: Record<string, unknown>): Record<string, unknown
     next[key] = value;
     changed = true;
   };
-  setBoolean('debug', 'KIMI_CRON_DEBUG');
-  setBoolean('noJitter', 'KIMI_CRON_NO_JITTER');
-  setBoolean('noStale', 'KIMI_CRON_NO_STALE');
-  setBoolean('disabled', 'KIMI_DISABLE_CRON');
-  setBoolean('manualTick', 'KIMI_CRON_MANUAL_TICK');
-  const pollIntervalMs = parseEnvCronPollIntervalMs(process.env['KIMI_CRON_POLL_INTERVAL_MS']);
+  setBoolean('debug', 'MULTIAI_CRON_DEBUG');
+  setBoolean('noJitter', 'MULTIAI_CRON_NO_JITTER');
+  setBoolean('noStale', 'MULTIAI_CRON_NO_STALE');
+  setBoolean('disabled', 'MULTIAI_DISABLE_CRON');
+  setBoolean('manualTick', 'MULTIAI_CRON_MANUAL_TICK');
+  const pollIntervalMs = parseEnvCronPollIntervalMs(process.env['MULTIAI_CRON_POLL_INTERVAL_MS']);
   if (pollIntervalMs !== undefined) {
     next['pollIntervalMs'] = pollIntervalMs;
     changed = true;
   }
-  if (process.env['KIMI_CRON_CLOCK'] !== undefined) {
-    next['clock'] = process.env['KIMI_CRON_CLOCK'];
+  if (process.env['MULTIAI_CRON_CLOCK'] !== undefined) {
+    next['clock'] = process.env['MULTIAI_CRON_CLOCK'];
     changed = true;
   }
   return changed ? next : undefined;
@@ -2510,10 +2510,10 @@ function asMutableRecord(value: unknown): Record<string, unknown> {
 }
 
 function configWithProvider(
-  config: KimiConfig,
+  config: MultiAIConfig,
   provider: TestProviderConfig,
   modelCapabilities: ModelCapability | undefined,
-): KimiConfig {
+): MultiAIConfig {
   const providerName = 'test-provider';
   const maxContextSize = modelCapabilities?.max_context_tokens;
   return {
@@ -2537,7 +2537,7 @@ function configWithProvider(
   };
 }
 
-function providerConfigForAlias(provider: TestProviderConfig): KimiConfig['providers'][string] {
+function providerConfigForAlias(provider: TestProviderConfig): MultiAIConfig['providers'][string] {
   return {
     type: provider.type,
     apiKey: provider.apiKey,

@@ -3,9 +3,9 @@
  *
  * Mirrors v1 (`packages/server/src/services/snapshot/snapshotConfig.ts`):
  *
- *   KIMI_SNAPSHOT_READER       'auto' (default) | 'legacy'
- *   KIMI_SNAPSHOT_TIMEOUT_MS   integer ms hard ceiling on the auto path (default 4000)
- *   KIMI_SNAPSHOT_CACHE_LIMIT  transcript LRU entries (default 32)
+ *   MULTIAI_SNAPSHOT_READER       'auto' (default) | 'legacy'
+ *   MULTIAI_SNAPSHOT_TIMEOUT_MS   integer ms hard ceiling on the auto path (default 4000)
+ *   MULTIAI_SNAPSHOT_CACHE_LIMIT  transcript LRU entries (default 32)
  */
 
 export type SnapshotReaderMode = 'auto' | 'legacy';
@@ -27,11 +27,11 @@ function parseInteger(value: string | undefined, fallback: number, min: number):
 }
 
 export function loadSnapshotConfig(env: NodeJS.ProcessEnv = process.env): SnapshotConfig {
-  const rawMode = env['KIMI_SNAPSHOT_READER']?.trim().toLowerCase();
+  const rawMode = env['MULTIAI_SNAPSHOT_READER']?.trim().toLowerCase();
   const mode: SnapshotReaderMode = rawMode === 'legacy' ? 'legacy' : 'auto';
   return {
     mode,
-    timeoutMs: parseInteger(env['KIMI_SNAPSHOT_TIMEOUT_MS'], DEFAULT_TIMEOUT_MS, 100),
-    cacheLimit: parseInteger(env['KIMI_SNAPSHOT_CACHE_LIMIT'], DEFAULT_CACHE_LIMIT, 1),
+    timeoutMs: parseInteger(env['MULTIAI_SNAPSHOT_TIMEOUT_MS'], DEFAULT_TIMEOUT_MS, 100),
+    cacheLimit: parseInteger(env['MULTIAI_SNAPSHOT_CACHE_LIMIT'], DEFAULT_CACHE_LIMIT, 1),
   };
 }

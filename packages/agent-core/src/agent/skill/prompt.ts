@@ -13,7 +13,7 @@ export interface RenderSkillPromptInput {
    * resources (scripts, templates, data files). Surfaced on the loaded
    * block so the agent can locate those resources with relative paths —
    * without it, a skill that ships helper scripts is unusable unless the
-   * author manually embeds `${KIMI_SKILL_DIR}` in the body.
+   * author manually embeds `${MULTIAI_SKILL_DIR}` in the body.
    */
   readonly skillDir?: string | undefined;
 }
@@ -44,9 +44,9 @@ export function renderModelToolSkillPrompt(input: RenderModelToolSkillPromptInpu
 
 export function renderSkillLoadedBlock(input: RenderSkillLoadedBlockInput): string {
   return [
-    `<kimi-skill-loaded${renderSkillAttributes(input)}>`,
+    `<multiai-skill-loaded${renderSkillAttributes(input)}>`,
     input.skillContent,
-    '</kimi-skill-loaded>',
+    '</multiai-skill-loaded>',
   ].join('\n');
 }
 

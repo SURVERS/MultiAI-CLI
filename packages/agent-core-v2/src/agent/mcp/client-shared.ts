@@ -3,8 +3,8 @@ import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 
 import type { MCPClient, MCPToolDefinition, MCPToolResult } from './types';
 
-export const KIMI_MCP_CLIENT_NAME = 'kimi-code';
-export const KIMI_MCP_CLIENT_VERSION = getCoreVersion();
+export const MULTIAI_MCP_CLIENT_NAME = 'multiai-cli';
+export const MULTIAI_MCP_CLIENT_VERSION = getCoreVersion();
 
 export interface UnexpectedCloseReason {
   readonly error?: Error;

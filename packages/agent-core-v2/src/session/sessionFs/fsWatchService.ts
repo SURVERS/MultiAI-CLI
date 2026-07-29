@@ -67,11 +67,11 @@ export class SessionFsWatchService extends Disposable implements ISessionFsWatch
   private debounceTimer: NodeJS.Timeout | undefined;
 
   private readonly debounceMs = readPositiveIntEnv(
-    'KIMI_CODE_FS_WATCH_DEBOUNCE_MS',
+    'MULTIAI_FS_WATCH_DEBOUNCE_MS',
     DEFAULT_DEBOUNCE_MS,
   );
   private readonly maxChangesPerWindow = readPositiveIntEnv(
-    'KIMI_CODE_FS_WATCH_MAX_CHANGES_PER_WINDOW',
+    'MULTIAI_FS_WATCH_MAX_CHANGES_PER_WINDOW',
     DEFAULT_MAX_CHANGES_PER_WINDOW,
   );
 

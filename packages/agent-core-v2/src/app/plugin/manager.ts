@@ -38,7 +38,7 @@ import {
 } from './types';
 
 export interface PluginManagerOptions {
-  readonly kimiHomeDir: string;
+  readonly multiaiHomeDir: string;
   readonly discoverSkills?: (roots: readonly SkillRoot[]) => Promise<SkillDiscoveryResult>;
 }
 
@@ -48,19 +48,19 @@ interface ManagedPluginCopy {
 }
 
 export class PluginManager {
-  private readonly kimiHomeDir: string;
+  private readonly multiaiHomeDir: string;
   private readonly discoverSkills: (
     roots: readonly SkillRoot[],
   ) => Promise<SkillDiscoveryResult>;
   private records = new Map<string, PluginRecord>();
 
   constructor(options: PluginManagerOptions) {
-    this.kimiHomeDir = options.kimiHomeDir;
+    this.multiaiHomeDir = options.multiaiHomeDir;
     this.discoverSkills = options.discoverSkills ?? discoverFileSkills;
   }
 
   async load(): Promise<void> {
-    const file = await readInstalled(this.kimiHomeDir);
+    const file = await readInstalled(this.multiaiHomeDir);
     const next = new Map<string, PluginRecord>();
     for (const entry of file.plugins) {
       next.set(entry.id, await this.materialize(entry));
@@ -116,7 +116,7 @@ export class PluginManager {
               })()
             : resolved.path;
         const buffer = await downloadZip(zipUrl);
-        zipTmpDir = await mkdtemp(path.join(tmpdir(), 'kimi-plugin-zip-'));
+        zipTmpDir = await mkdtemp(path.join(tmpdir(), 'multiai-plugin-zip-'));
         sourceRoot = await extractZip(buffer, zipTmpDir);
       }
 
@@ -131,7 +131,7 @@ export class PluginManager {
       }
 
       const id = normalizePluginId(parsed.manifest.name);
-      managedCopy = await copyPluginToManagedRoot(this.kimiHomeDir, id, sourceRoot);
+      managedCopy = await copyPluginToManagedRoot(this.multiaiHomeDir, id, sourceRoot);
       const normalizedRoot = managedCopy.root;
       const managedParsed = await parseManifest(normalizedRoot);
       const existing = this.records.get(id);
@@ -244,7 +244,7 @@ export class PluginManager {
 
   async reload(): Promise<ReloadSummary> {
     const prevIds = new Set(this.records.keys());
-    const file = await readInstalled(this.kimiHomeDir);
+    const file = await readInstalled(this.multiaiHomeDir);
     const next = new Map<string, PluginRecord>();
     const errors: Array<{ id: string; message: string }> = [];
     for (const entry of file.plugins) {
@@ -271,8 +271,8 @@ export class PluginManager {
           ...hook,
           cwd: record.root,
           env: {
-            KIMI_CODE_HOME: this.kimiHomeDir,
-            KIMI_PLUGIN_ROOT: record.root,
+            MULTIAI_HOME: this.multiaiHomeDir,
+            MULTIAI_PLUGIN_ROOT: record.root,
           },
         });
       }
@@ -332,7 +332,7 @@ export class PluginManager {
         out[pluginMcpRuntimeName(record.id, name)] = withPluginMcpRuntime(
           withMcpServerEnabled(config, true),
           record.root,
-          this.kimiHomeDir,
+          this.multiaiHomeDir,
         );
       }
     }
@@ -360,7 +360,7 @@ export class PluginManager {
       capabilities: record.capabilities,
       github: record.github,
     }));
-    await writeInstalled(this.kimiHomeDir, { version: 1, plugins: installed });
+    await writeInstalled(this.multiaiHomeDir, { version: 1, plugins: installed });
   }
 
   private async materialize(entry: InstalledRecord): Promise<PluginRecord> {
@@ -478,11 +478,11 @@ async function normalizeInstallRoot(rootPath: string): Promise<string> {
 }
 
 async function copyPluginToManagedRoot(
-  kimiHomeDir: string,
+  multiaiHomeDir: string,
   id: string,
   sourceRoot: string,
 ): Promise<ManagedPluginCopy> {
-  const managedRoot = path.join(kimiHomeDir, 'plugins', 'managed', id);
+  const managedRoot = path.join(multiaiHomeDir, 'plugins', 'managed', id);
   const managedDir = path.dirname(managedRoot);
   await mkdir(managedDir, { recursive: true });
   const stagingRoot = await mkdtemp(path.join(managedDir, `${id}-`));
@@ -632,7 +632,7 @@ function pluginMcpRuntimeName(pluginId: string, serverName: string): string {
   return `plugin-${pluginId}:${serverName}`;
 }
 
-const KIMI_NODE_FALLBACK_SUBCOMMAND = '__plugin_run_node';
+const MULTIAI_NODE_FALLBACK_SUBCOMMAND = '__plugin_run_node';
 
 function withMcpServerEnabled(config: McpServerConfig, enabled: boolean): McpServerConfig {
   return { ...config, enabled };
@@ -641,14 +641,14 @@ function withMcpServerEnabled(config: McpServerConfig, enabled: boolean): McpSer
 function withPluginMcpRuntime(
   config: McpServerConfig,
   pluginRoot: string,
-  kimiHomeDir: string,
+  multiaiHomeDir: string,
 ): McpServerConfig {
   if (config.transport === 'http' || config.transport === 'sse') return config;
 
   const env = {
     ...config.env,
-    KIMI_CODE_HOME: kimiHomeDir,
-    KIMI_PLUGIN_ROOT: pluginRoot,
+    MULTIAI_HOME: multiaiHomeDir,
+    MULTIAI_PLUGIN_ROOT: pluginRoot,
   };
 
   if (config.command === 'node' && isElectron()) {
@@ -664,11 +664,11 @@ function withPluginMcpRuntime(
     };
   }
 
-  if (config.command === 'node' && isKimiNativeBinary()) {
+  if (config.command === 'node' && isMultiAINativeBinary()) {
     return {
       ...config,
       command: process.execPath,
-      args: [KIMI_NODE_FALLBACK_SUBCOMMAND, ...(config.args ?? [])],
+      args: [MULTIAI_NODE_FALLBACK_SUBCOMMAND, ...(config.args ?? [])],
       cwd: config.cwd ?? pluginRoot,
       env,
     };
@@ -681,7 +681,7 @@ function isElectron(): boolean {
   return typeof process.versions['electron'] === 'string';
 }
 
-function isKimiNativeBinary(): boolean {
+function isMultiAINativeBinary(): boolean {
   return !path.basename(process.execPath).toLowerCase().startsWith('node');
 }
 

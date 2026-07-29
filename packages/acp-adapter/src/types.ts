@@ -21,7 +21,7 @@ export type AcpToolCallStatus = ToolCallStatus;
 /**
  * Local alias for the ACP `ToolKind` enum.
  *
- * The kind is heuristic-mapped from Kimi tool names by
+ * The kind is heuristic-mapped from MultiAI tool names by
  * `events-map.inferToolKind`; aliasing here keeps the consumer side
  * (UI integration / future tool registries) decoupled from the raw
  * SDK type name.

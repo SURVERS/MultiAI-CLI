@@ -13,7 +13,6 @@ const sourceDirectories = [
     'agent-core',
     'kaos',
     'kosong',
-    'migration-legacy',
     'node-sdk',
     'oauth',
     'protocol',

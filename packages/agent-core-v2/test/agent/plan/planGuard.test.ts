@@ -9,7 +9,7 @@
  * stub; a stand-in listener registered after the plan listener proves
  * whether the guard ended adjudication (veto/allow) or abstained;
  * `IAgentToolApprovalService` is a recording stub.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run test/agent/plan/planGuard.test.ts`.
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run test/agent/plan/planGuard.test.ts`.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';

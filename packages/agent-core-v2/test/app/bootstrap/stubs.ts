@@ -12,7 +12,7 @@ import {
   type PersistenceScopeName,
 } from '#/app/bootstrap/bootstrap';
 
-export function stubBootstrap(homeDir = '/tmp/kimi-home', env: NodeJS.ProcessEnv = {}): IBootstrapService {
+export function stubBootstrap(homeDir = '/tmp/multiai-home', env: NodeJS.ProcessEnv = {}): IBootstrapService {
   const sessionsScope = 'sessions';
   const scopes: Record<PersistenceScopeName, string> = {
     config: '',

@@ -93,7 +93,7 @@ export async function writeExportZip(args: {
     }
     await mkdir(dirname(args.outputPath), { recursive: true });
     args.signal?.throwIfAborted();
-    tempDir = await mkdtemp(join(dirname(args.outputPath), '.kimi-session-export-'));
+    tempDir = await mkdtemp(join(dirname(args.outputPath), '.multiai-session-export-'));
     const tempOutputPath = join(tempDir, 'archive.zip');
 
     const zip = new ZipFile() as LazyZipFile;

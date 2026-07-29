@@ -93,7 +93,7 @@ export interface BootstrapInput {
 export function resolveBootstrapOptions(input: BootstrapInput = {}): IBootstrapOptions {
   const env = input.env ?? process.env;
   const osHomeDir = input.osHomeDir ?? homedir();
-  const homeDir = resolveKimiHome(input.homeDir, env, osHomeDir);
+  const homeDir = resolveMultiAIHome(input.homeDir, env, osHomeDir);
   const configPath = input.configPath ?? join(homeDir, 'config.toml');
   return {
     homeDir,
@@ -140,21 +140,21 @@ function skillSeed(): ScopeSeed {
   ];
 }
 
-export function resolveKimiHome(
+export function resolveMultiAIHome(
   homeDir?: string,
   env: NodeJS.ProcessEnv = process.env,
   osHomeDir: string = homedir(),
 ): string {
-  return homeDir ?? env['KIMI_CODE_HOME'] ?? join(osHomeDir, '.kimi-code');
+  return homeDir ?? env['MULTIAI_HOME'] ?? join(osHomeDir, '.multiai');
 }
 
 export function resolveConfigPath(input: {
   readonly homeDir?: string;
   readonly configPath?: string;
 }): string {
-  return input.configPath ?? join(resolveKimiHome(input.homeDir), 'config.toml');
+  return input.configPath ?? join(resolveMultiAIHome(input.homeDir), 'config.toml');
 }
 
-export function ensureKimiHome(homeDir: string): void {
+export function ensureMultiAIHome(homeDir: string): void {
   mkdirSync(homeDir, { recursive: true, mode: 0o700 });
 }

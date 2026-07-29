@@ -12,7 +12,7 @@
 // Compaction is a hot path, so these intentionally drive the real
 // Agent/ContextMemory/FullCompaction machinery through the test harness rather
 // than mocking it.
-import type { ContentPart, Message } from '@moonshot-ai/kosong';
+import type { ContentPart, Message } from '@multiai/kosong';
 import { describe, expect, it } from 'vitest';
 
 import type { AgentOptions, AgentRecord } from '../../../src/agent';
@@ -357,12 +357,12 @@ describe('compaction — probe tests (high-risk scenarios)', () => {
   // defect no longer exists.
   it.skip('does not clear recent tool results when projecting a shrunk suffix under an active micro-compaction cutoff', () => {
     // This defect only exists when micro-compaction is active, so enable the
-    // flag explicitly rather than inheriting the ambient KIMI_CODE_EXPERIMENTAL
+    // flag explicitly rather than inheriting the ambient MULTIAI_EXPERIMENTAL
     // master switch — otherwise the probe's pass/fail flips with the runner's
     // environment (on locally with the master switch, off in CI by default).
     const ctx = testAgent({
       experimentalFlags: new FlagResolver(
-        { KIMI_CODE_EXPERIMENTAL_MICRO_COMPACTION: '1' },
+        { MULTIAI_EXPERIMENTAL_MICRO_COMPACTION: '1' },
         FLAG_DEFINITIONS,
       ),
     });

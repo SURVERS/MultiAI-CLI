@@ -50,8 +50,8 @@ describe('fsBrowseResponseSchema', () => {
       parent: '/Users/foo',
       entries: [
         {
-          name: 'kimi-code',
-          path: '/Users/foo/code/kimi-code',
+          name: 'multiai',
+          path: '/Users/example/code/multiai',
           is_dir: true as const,
         },
       ],
@@ -79,7 +79,7 @@ describe('fsHomeResponseSchema', () => {
   it('round-trips a populated recent_roots list', () => {
     const resp = {
       home: '/Users/foo',
-      recent_roots: ['/Users/foo/code/kimi-code', '/Users/foo/code/other'],
+      recent_roots: ['/Users/example/code/multiai', '/Users/example/code/other'],
     };
     expect(fsHomeResponseSchema.parse(resp).recent_roots.length).toBe(2);
   });

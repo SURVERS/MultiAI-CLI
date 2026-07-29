@@ -1,21 +1,22 @@
 import type { Logger } from '#/logging/types';
-import type { ProviderConfig as KosongProviderConfig, ModelCapability, ProviderRequestAuth } from '@moonshot-ai/kosong';
+import type { ProviderConfig as KosongProviderConfig, ModelCapability, ProviderRequestAuth } from '@multiai/kosong';
 import {
+  APIProviderQuotaExhaustedError,
   APIStatusError,
   classifyKimiQuotaError,
   getModelCapability,
   UNKNOWN_CAPABILITY,
-} from '@moonshot-ai/kosong';
-import { parseKimiCodeCustomHeaders } from '@moonshot-ai/kimi-code-oauth';
+} from '@multiai/kosong';
+import { MULTIAI_PROVIDER_NAME, parseMultiAICustomHeaders } from '@multiai/oauth';
 import {
   effectiveModelAlias,
-  type KimiConfig,
+  type MultiAIConfig,
   type ModelAlias,
   type OAuthRef,
   type ProviderConfig,
   type ProviderType,
 } from '../config';
-import { ErrorCodes, isKimiError, KimiError } from '../errors';
+import { ErrorCodes, isMultiAIError, MultiAIError } from '../errors';
 
 export interface BearerTokenProvider {
   getAccessToken(options?: { readonly force?: boolean }): Promise<string>;
@@ -42,8 +43,8 @@ export interface ResolvedRuntimeProvider {
 }
 
 interface ProviderManagerOptions {
-  readonly config: KimiConfig | (() => KimiConfig);
-  readonly kimiRequestHeaders?: Record<string, string>;
+  readonly config: MultiAIConfig | (() => MultiAIConfig);
+  readonly multiAIRequestHeaders?: Record<string, string>;
   readonly resolveOAuthTokenProvider?: OAuthTokenProviderResolver;
   readonly promptCacheKey?: string;
 }
@@ -70,7 +71,7 @@ export class SingleModelProvider implements ModelProvider {
 
   resolveProviderConfig(model: string): ResolvedRuntimeProvider {
     if (model !== this.providerConfig.model) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.CONFIG_INVALID,
         `Model "${model}" is not supported by SingleModelProvider.`,
       );
@@ -88,7 +89,7 @@ export class SingleModelProvider implements ModelProvider {
 export class ProviderManager implements ModelProvider {
   constructor(private readonly options: ProviderManagerOptions) {}
 
-  private get config(): KimiConfig {
+  private get config(): MultiAIConfig {
     const { config } = this.options;
     return typeof config === 'function' ? config() : config;
   }
@@ -96,7 +97,7 @@ export class ProviderManager implements ModelProvider {
   resolveProviderConfig(model: string): ResolvedRuntimeProvider {
     const alias = this.config.models?.[model];
     if (alias === undefined) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.CONFIG_INVALID,
         `Model "${model}" is not configured in config.toml. Add a [models."${model}"] entry with max_context_size.`,
       );
@@ -104,7 +105,7 @@ export class ProviderManager implements ModelProvider {
 
     const providerName = alias.provider ?? this.config.defaultProvider;
     if (providerName === undefined) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.CONFIG_INVALID,
         `Model "${model}" must define a provider in config.toml.`,
       );
@@ -112,7 +113,7 @@ export class ProviderManager implements ModelProvider {
 
     const providerConfig = this.config.providers[providerName];
     if (providerConfig === undefined) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.CONFIG_INVALID,
         `Provider "${providerName}" for model "${model}" is not configured.`,
       );
@@ -120,19 +121,13 @@ export class ProviderManager implements ModelProvider {
 
     const effectiveAlias = effectiveModelAlias(alias, providerConfig.type);
 
-    if (!Number.isInteger(effectiveAlias.maxContextSize) || effectiveAlias.maxContextSize <= 0) {
-      throw new KimiError(
-        ErrorCodes.CONFIG_INVALID,
-        `Model "${model}" must define a positive max_context_size in config.toml.`,
-      );
-    }
-
     const provider = toKosongProviderConfig(
       providerConfig,
       alias.model,
       alias.protocol,
       alias.baseUrl,
-      this.options.kimiRequestHeaders,
+      this.options.multiAIRequestHeaders,
+      providerName === MULTIAI_PROVIDER_NAME,
       effectiveAlias.maxOutputSize,
       effectiveAlias.reasoningKey,
       this.options.promptCacheKey,
@@ -169,14 +164,14 @@ export class ProviderManager implements ModelProvider {
       // oauth + apiKey on the same provider makes request auth ambiguous:
       // provider construction would prefer apiKey while runtime auth resolves
       // OAuth. Reject it so misconfiguration surfaces at model resolution.
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.CONFIG_INVALID,
         `Provider "${providerName}" has both apiKey and oauth set in config.toml — they are mutually exclusive. Remove one.`,
       );
     }
 
-    const loginRequired = (cause?: unknown): KimiError =>
-      new KimiError(
+    const loginRequired = (cause?: unknown): MultiAIError =>
+      new MultiAIError(
         ErrorCodes.AUTH_LOGIN_REQUIRED,
         `OAuth provider "${providerName}" requires login before it can be used.`,
         cause === undefined ? undefined : { cause },
@@ -198,7 +193,7 @@ export class ProviderManager implements ModelProvider {
         // login-required is an expected state (the user must /login); don't
         // warn. Other failures (connection errors, etc.) are logged once for
         // diagnosis and then propagated — chatWithRetry does not retry them.
-        if (!isKimiError(error) || error.code !== ErrorCodes.AUTH_LOGIN_REQUIRED) {
+        if (!isMultiAIError(error) || error.code !== ErrorCodes.AUTH_LOGIN_REQUIRED) {
           log?.warn('oauth token fetch failed', { providerName, error });
         }
         throw error;
@@ -213,10 +208,12 @@ export class ProviderManager implements ModelProvider {
         try {
           return await request(auth);
         } catch (error) {
-          if (!(error instanceof APIStatusError) || error.statusCode !== 401) throw error;
+          if (!(error instanceof APIStatusError) || error.statusCode !== 401) {
+            throw withManagedAccountHint(providerName, error);
+          }
           if (refreshed) {
             const reason = error.message.replaceAll('\r', '');
-            throw new KimiError(
+            throw new MultiAIError(
               ErrorCodes.PROVIDER_AUTH_ERROR,
               reason.length > 0 ? reason : 'OAuth provider credentials were rejected.',
               {
@@ -232,6 +229,24 @@ export class ProviderManager implements ModelProvider {
   }
 }
 
+function withManagedAccountHint(providerName: string, error: unknown): unknown {
+  if (
+    providerName !== MULTIAI_PROVIDER_NAME ||
+    !(error instanceof APIProviderQuotaExhaustedError)
+  ) {
+    return error;
+  }
+  const accountUrl = 'https://multiai.store/account';
+  if (error.message.includes(accountUrl)) return error;
+  return new APIProviderQuotaExhaustedError(
+    `${error.message}\n\nПополнить баланс: ${accountUrl}`,
+    error.requestId,
+    error.retryAfterMs,
+    error.traceId,
+    error.statusCode,
+  );
+}
+
 function resolveModelCapabilities(
   alias: ModelAlias,
   provider: KosongProviderConfig,
@@ -245,7 +260,7 @@ function resolveModelCapabilities(
     audio_in: declared.has('audio_in') || detected.audio_in,
     thinking: declared.has('thinking') || declared.has('always_thinking') || detected.thinking,
     tool_use: declared.has('tool_use') || detected.tool_use,
-    max_context_tokens: alias.maxContextSize,
+    max_context_tokens: alias.maxContextSize ?? detected.max_context_tokens,
     max_input_tokens: alias.maxInputSize,
     // Message-level tool declarations ("dynamically loaded tools"). Every
     // field here must be merged explicitly — a capability registered in
@@ -261,7 +276,8 @@ function toKosongProviderConfig(
   model: string,
   modelProtocol: ModelAlias['protocol'],
   modelBaseUrl: string | undefined,
-  kimiRequestHeaders: Record<string, string> | undefined,
+  multiAIRequestHeaders: Record<string, string> | undefined,
+  useFullHostHeaders: boolean,
   maxOutputSize: number | undefined,
   reasoningKey: string | undefined,
   promptCacheKey: string | undefined,
@@ -271,7 +287,7 @@ function toKosongProviderConfig(
   betaApi: boolean | undefined,
 ): KosongProviderConfig {
   const effectiveType = modelProtocol === 'anthropic' ? 'anthropic' : provider.type;
-  const envCustomHeaders = parseKimiCodeCustomHeaders();
+  const envCustomHeaders = parseMultiAICustomHeaders();
   switch (effectiveType) {
     case 'anthropic': {
       // A per-model endpoint (catalog gateway override) wins over the
@@ -299,17 +315,12 @@ function toKosongProviderConfig(
         // Session affinity: Anthropic's analog of OpenAI `prompt_cache_key` is
         // `metadata.user_id` on the Messages API (cache-affinity / end-user id).
         ...(promptCacheKey !== undefined ? { metadata: { user_id: promptCacheKey } } : {}),
-        // When a Kimi provider is routed through the Anthropic transport
-        // (`protocol: 'anthropic'`), upstream is the managed Kimi endpoint,
-        // so align its full outbound identity headers (User-Agent + X-Msh-*)
-        // with the Kimi OpenAI transport. Plain Anthropic providers only
-        // receive the unified `User-Agent` (no `X-Msh-*` device identity),
-        // matching the other non-Kimi transports. Provider `customHeaders`
-        // still win on conflict.
         ...defaultHeadersField(
-          provider.type === 'kimi' && modelProtocol === 'anthropic'
-            ? { ...envCustomHeaders, ...kimiRequestHeaders, ...provider.customHeaders }
-            : { ...envCustomHeaders, ...kimiUserAgentHeader(kimiRequestHeaders), ...provider.customHeaders },
+          {
+            ...envCustomHeaders,
+            ...hostRequestHeaders(multiAIRequestHeaders, useFullHostHeaders),
+            ...provider.customHeaders,
+          },
         ),
       };
     }
@@ -331,7 +342,7 @@ function toKosongProviderConfig(
         generationKwargs: { prompt_cache_key: promptCacheKey },
         ...defaultHeadersField({
           ...envCustomHeaders,
-          ...kimiUserAgentHeader(kimiRequestHeaders),
+          ...hostRequestHeaders(multiAIRequestHeaders, useFullHostHeaders),
           ...provider.customHeaders,
         }),
       };
@@ -344,7 +355,7 @@ function toKosongProviderConfig(
         generationKwargs: { prompt_cache_key: promptCacheKey },
         ...defaultHeadersField({
           ...envCustomHeaders,
-          ...kimiRequestHeaders,
+          ...hostRequestHeaders(multiAIRequestHeaders, useFullHostHeaders),
           ...provider.customHeaders,
         }),
       };
@@ -357,7 +368,7 @@ function toKosongProviderConfig(
         apiKey: providerApiKey(provider),
         ...defaultHeadersField({
           ...envCustomHeaders,
-          ...kimiUserAgentHeader(kimiRequestHeaders),
+          ...hostRequestHeaders(multiAIRequestHeaders, useFullHostHeaders),
           ...provider.customHeaders,
         }),
       };
@@ -374,7 +385,7 @@ function toKosongProviderConfig(
         generationKwargs: { prompt_cache_key: promptCacheKey },
         ...defaultHeadersField({
           ...envCustomHeaders,
-          ...kimiUserAgentHeader(kimiRequestHeaders),
+          ...hostRequestHeaders(multiAIRequestHeaders, useFullHostHeaders),
           ...provider.customHeaders,
         }),
       };
@@ -397,14 +408,14 @@ function toKosongProviderConfig(
         location: vertexAILocation(provider, baseUrl),
         ...defaultHeadersField({
           ...envCustomHeaders,
-          ...kimiUserAgentHeader(kimiRequestHeaders),
+          ...hostRequestHeaders(multiAIRequestHeaders, useFullHostHeaders),
           ...provider.customHeaders,
         }),
       };
     }
     default: {
       const exhaustive: never = effectiveType;
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.MODEL_CONFIG_INVALID,
         `Unsupported provider type: ${String(exhaustive)}`,
       );
@@ -422,16 +433,15 @@ function defaultHeadersField(
   return { defaultHeaders: { ...headers } };
 }
 
-// Extract just the `User-Agent` from the Kimi identity headers so non-Kimi
-// providers (OpenAI, Anthropic, Google, Vertex) also identify as
-// `kimi-code-cli/<version>` without leaking the `X-Msh-*` device identity
-// headers to third-party endpoints. The full `kimiRequestHeaders` set stays
-// reserved for the Kimi transport (and the Kimi-routed Anthropic transport),
-// where upstream is the managed Kimi endpoint.
-function kimiUserAgentHeader(
-  kimiRequestHeaders: Record<string, string> | undefined,
+// Only the first-party managed MultiAI provider receives device identity
+// headers. External providers, including Kimi, receive the product User-Agent
+// without leaking the local device identity.
+function hostRequestHeaders(
+  multiAIRequestHeaders: Record<string, string> | undefined,
+  full: boolean,
 ): Record<string, string> {
-  const userAgent = kimiRequestHeaders?.['User-Agent'];
+  if (full) return multiAIRequestHeaders ?? {};
+  const userAgent = multiAIRequestHeaders?.['User-Agent'];
   return userAgent === undefined ? {} : { 'User-Agent': userAgent };
 }
 
@@ -454,7 +464,7 @@ function providerApiKey(provider: ProviderConfig): string | undefined {
       );
     default: {
       const exhaustive: never = provider.type;
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.MODEL_CONFIG_INVALID,
         `Unsupported provider type: ${String(exhaustive)}`,
       );

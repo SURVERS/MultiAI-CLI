@@ -21,7 +21,7 @@ type _AssertToolInputDisplayNonNever = ToolInputDisplay extends never ? never : 
 const _assertDisplay: _AssertToolInputDisplayNonNever = true;
 
 const packageRoot = fileURLToPath(new URL('../..', import.meta.url));
-const sdkPackageName = ['@moonshot-ai', 'kimi-code-sdk'].join('/');
+const sdkPackageName = ['@multiai', 'sdk'].join('/');
 
 function readPackageFiles(): string {
   const files = ['package.json', ...sourceFiles(join(packageRoot, 'src'))];

@@ -13,7 +13,7 @@
 import { randomBytes } from 'node:crypto';
 
 import { createControlledPromise, type ControlledPromise } from '@antfu/utils';
-import type { ContentPart } from '@moonshot-ai/kosong';
+import type { ContentPart } from '@multiai/kosong';
 
 import type { Agent } from '../..';
 import { errorMessage } from '../../loop/errors';
@@ -42,11 +42,11 @@ export function isBackgroundTaskTerminal(status: BackgroundTaskStatus): boolean 
   return TERMINAL_STATUSES.has(status);
 }
 
-const MAX_RUNNING_TASKS_ENV = 'KIMI_CODE_BACKGROUND_MAX_RUNNING_TASKS';
+const MAX_RUNNING_TASKS_ENV = 'MULTIAI_BACKGROUND_MAX_RUNNING_TASKS';
 
 /**
  * Resolve the effective background-task concurrency cap. Precedence:
- * `KIMI_CODE_BACKGROUND_MAX_RUNNING_TASKS` (positive integer) → config
+ * `MULTIAI_BACKGROUND_MAX_RUNNING_TASKS` (positive integer) → config
  * (`background.max_running_tasks`) → `undefined` (no cap). An invalid env
  * value is ignored.
  */
@@ -300,7 +300,7 @@ export class BackgroundManager {
 
   private assertCanRegister(startedInBackground: boolean): void {
     const maxRunningTasks = resolveMaxRunningTasks(
-      this.agent.kimiConfig?.background?.maxRunningTasks,
+      this.agent.multiAIConfig?.background?.maxRunningTasks,
     );
     if (maxRunningTasks === undefined) return;
     if (!startedInBackground) return;
@@ -575,7 +575,7 @@ export class BackgroundManager {
   /**
    * Wait until no active (non-terminal) task matching `predicate` remains.
    *
-   * Used by print-mode (`kimi -p`) turn draining to hold a turn open while
+   * Used by print-mode (`multiai -p`) turn draining to hold a turn open while
    * background subagents are still running. Re-enumerates after each batch
    * settles so tasks registered during the wait (fan-out) are picked up.
    * Resolves immediately when nothing matches. Bounded by `timeoutMs`; once

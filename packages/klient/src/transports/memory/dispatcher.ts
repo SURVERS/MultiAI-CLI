@@ -13,12 +13,12 @@
  * memory behave identically by construction.
  */
 
-import type { ServiceIdentifier } from '@moonshot-ai/agent-core-v2/_base/di/instantiation';
-import { ISessionLifecycleService } from '@moonshot-ai/agent-core-v2/app/sessionLifecycle/sessionLifecycle';
-import { IAgentLifecycleService } from '@moonshot-ai/agent-core-v2/session/agentLifecycle/agentLifecycle';
-import { ensureMainAgent } from '@moonshot-ai/agent-core-v2/session/agentLifecycle/mainAgent';
-import { ISessionInteractionService } from '@moonshot-ai/agent-core-v2/session/interaction/interaction';
-import { IEventBus } from '@moonshot-ai/agent-core-v2/app/event/eventBus';
+import type { ServiceIdentifier } from '@multiai/agent-core-v2/_base/di/instantiation';
+import { ISessionLifecycleService } from '@multiai/agent-core-v2/app/sessionLifecycle/sessionLifecycle';
+import { IAgentLifecycleService } from '@multiai/agent-core-v2/session/agentLifecycle/agentLifecycle';
+import { ensureMainAgent } from '@multiai/agent-core-v2/session/agentLifecycle/mainAgent';
+import { ISessionInteractionService } from '@multiai/agent-core-v2/session/interaction/interaction';
+import { IEventBus } from '@multiai/agent-core-v2/app/event/eventBus';
 
 import type { EventSourceRef, IDisposable, ScopeRef } from '../../core/channel.js';
 import { RPCError } from '../../core/errors.js';

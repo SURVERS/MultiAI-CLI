@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,7 +10,7 @@ import { isMainModule } from "./vsix-targets.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const appDir = resolve(scriptDir, "..");
-const defaultCachePath = join(tmpdir(), "kimi-vscode-test-cache");
+const defaultCachePath = join(tmpdir(), "multiai-vscode-test-cache");
 
 export async function runExtensionHostSmoke(options = {}) {
   const version = options.version ?? "stable";
@@ -33,11 +33,14 @@ export async function runExtensionHostSmoke(options = {}) {
     extensions: join(root, "ext"),
     installUserData: join(root, "install"),
     userData: join(root, "user"),
-    kimiHome: join(root, "home"),
+    multiaiHome: join(root, "home"),
     osHome: join(root, "os-home"),
     workspace: join(root, "ws"),
     harness: join(root, "harness"),
     report: join(root, "extension-host-report.json"),
+    vsix: join(root, basename(vsixPath)),
+    tests: join(root, "extension-host-tests.cjs"),
+    sourceManifest: join(root, "source-package.json"),
   };
 
   try {
@@ -45,13 +48,21 @@ export async function runExtensionHostSmoke(options = {}) {
       paths.extensions,
       paths.installUserData,
       paths.userData,
-      paths.kimiHome,
+      paths.multiaiHome,
       paths.osHome,
       paths.workspace,
       paths.harness,
     ].map((path) => mkdir(path, { recursive: true })));
-    await writeFile(join(paths.workspace, "README.md"), "# Kimi VSIX Extension Host smoke\n", "utf8");
+    await writeFile(join(paths.workspace, "README.md"), "# MultiAI VSIX Extension Host smoke\n", "utf8");
     await writeHarnessManifest(paths.harness);
+    // @vscode/test-electron invokes the Windows CLI through a shell and does not
+    // quote file paths containing spaces. Copy every CLI argument under our
+    // space-free temp root.
+    await Promise.all([
+      copyFile(vsixPath, paths.vsix),
+      copyFile(join(appDir, "test", "extension-host", "index.cjs"), paths.tests),
+      copyFile(join(appDir, "package.json"), paths.sourceManifest),
+    ]);
 
     const installProfileArgs = [
       `--extensions-dir=${paths.extensions}`,
@@ -63,7 +74,7 @@ export async function runExtensionHostSmoke(options = {}) {
     ];
     const downloadOptions = { version, cachePath };
     const install = await runVSCodeCommand(
-      ["--install-extension", vsixPath, "--force", ...installProfileArgs],
+      ["--install-extension", paths.vsix, "--force", ...installProfileArgs],
       downloadOptions,
     );
     const installOutput = `${install.stdout}\n${install.stderr}`;
@@ -74,7 +85,7 @@ export async function runExtensionHostSmoke(options = {}) {
     await runTests({
       ...downloadOptions,
       extensionDevelopmentPath: paths.harness,
-      extensionTestsPath: join(appDir, "test", "extension-host", "index.cjs"),
+      extensionTestsPath: paths.tests,
       launchArgs: [
         paths.workspace,
         ...profileArgs,
@@ -83,10 +94,11 @@ export async function runExtensionHostSmoke(options = {}) {
         "--skip-release-notes",
       ],
       extensionTestsEnv: {
-        KIMI_CODE_HOME: paths.kimiHome,
-        KIMI_VSCODE_SMOKE_OS_HOME: paths.osHome,
-        KIMI_VSCODE_SMOKE_REPORT: paths.report,
-        KIMI_VSCODE_SMOKE_VSIX: basename(vsixPath),
+        MULTIAI_HOME: paths.multiaiHome,
+        MULTIAI_VSCODE_SMOKE_OS_HOME: paths.osHome,
+        MULTIAI_VSCODE_SMOKE_REPORT: paths.report,
+        MULTIAI_VSCODE_SMOKE_VSIX: basename(vsixPath),
+        MULTIAI_VSCODE_SMOKE_SOURCE_MANIFEST: paths.sourceManifest,
       },
     });
 
@@ -111,15 +123,15 @@ export async function runExtensionHostSmoke(options = {}) {
 
 function defaultVsixPath() {
   const arch = process.arch === "arm64" ? "arm64" : process.arch === "x64" ? "x64" : process.arch;
-  return join(appDir, "artifacts", "vsix", `kimi-code-${process.platform}-${arch}.vsix`);
+  return join(appDir, "artifacts", "vsix", `multiai-cli-${process.platform}-${arch}.vsix`);
 }
 
 async function writeHarnessManifest(directory) {
   await writeFile(
     join(directory, "package.json"),
     JSON.stringify({
-      name: "kimi-vscode-extension-host-smoke",
-      displayName: "Kimi VSCode Extension Host Smoke",
+      name: "multiai-vscode-extension-host-smoke",
+      displayName: "MultiAI VSCode Extension Host Smoke",
       publisher: "local-test",
       version: "0.0.0",
       engines: { vscode: "^1.70.0" },

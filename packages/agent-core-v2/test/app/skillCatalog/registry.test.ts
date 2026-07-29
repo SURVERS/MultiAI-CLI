@@ -13,7 +13,7 @@ describe('InMemorySkillCatalog skill listing', () => {
       makeSkill('extra-a', 'extra'),
     ]);
 
-    const rendered = registry.getKimiSkillsDescription();
+    const rendered = registry.getMultiAISkillsDescription();
 
     expect(rendered).toContain('### Project');
     expect(rendered).toContain('### User');
@@ -37,7 +37,7 @@ describe('InMemorySkillCatalog skill listing', () => {
   });
 
   it('omits source headings that have no skills', () => {
-    const rendered = makeRegistry([makeSkill('alpha', 'user')]).getKimiSkillsDescription();
+    const rendered = makeRegistry([makeSkill('alpha', 'user')]).getMultiAISkillsDescription();
 
     expect(rendered).toContain('### User');
     expect(rendered).not.toContain('### Project');
@@ -46,7 +46,7 @@ describe('InMemorySkillCatalog skill listing', () => {
   });
 
   it('renders a No skills placeholder for an empty registry', () => {
-    const rendered = new InMemorySkillCatalog().getKimiSkillsDescription();
+    const rendered = new InMemorySkillCatalog().getMultiAISkillsDescription();
 
     expect(rendered.trim()).not.toBe('');
     expect(rendered).toMatch(/no skills/i);
@@ -57,7 +57,7 @@ describe('InMemorySkillCatalog skill listing', () => {
       makeSkill('zebra', 'user'),
       makeSkill('alpha', 'user'),
       makeSkill('mango', 'user'),
-    ]).getKimiSkillsDescription();
+    ]).getMultiAISkillsDescription();
 
     const alpha = rendered.indexOf('alpha');
     const mango = rendered.indexOf('mango');
@@ -70,7 +70,7 @@ describe('InMemorySkillCatalog skill listing', () => {
   it('renders each skill as name, path, and description', () => {
     const rendered = makeRegistry([
       makeSkill('alpha', 'user', 'Alpha does things', '/tmp/user/alpha/SKILL.md'),
-    ]).getKimiSkillsDescription();
+    ]).getMultiAISkillsDescription();
 
     expect(rendered).toContain('- alpha');
     expect(rendered).toContain('  - Path: /tmp/user/alpha/SKILL.md');
@@ -83,7 +83,7 @@ describe('InMemorySkillCatalog skill listing', () => {
     registry.register(makeSkill('foo', 'user', 'user version'));
     registry.register(makeSkill('foo', 'builtin', 'builtin version'));
 
-    const rendered = registry.getKimiSkillsDescription();
+    const rendered = registry.getMultiAISkillsDescription();
 
     expect(rendered.match(/\n- foo\n/g) ?? []).toHaveLength(1);
     expect(sectionFor(rendered, '### Project')).toContain('foo');
@@ -100,7 +100,7 @@ describe('InMemorySkillCatalog skill listing', () => {
       name: 'theme',
       source: 'builtin',
     });
-    expect(sectionFor(registry.getKimiSkillsDescription(), '### Built-in')).toContain('theme');
+    expect(sectionFor(registry.getMultiAISkillsDescription(), '### Built-in')).toContain('theme');
   });
 });
 
@@ -174,7 +174,7 @@ describe('InMemorySkillCatalog prompt rendering', () => {
       stubSkill('commit', {
         dir: '/tmp/skills/commit',
         content:
-          'raw=$ARGUMENTS zero=$0 one=$1 second=$ARGUMENTS[1] flag=$flag message=$message dir=${KIMI_SKILL_DIR} session=${KIMI_SESSION_ID}',
+          'raw=$ARGUMENTS zero=$0 one=$1 second=$ARGUMENTS[1] flag=$flag message=$message dir=${MULTIAI_SKILL_DIR} session=${MULTIAI_SESSION_ID}',
         metadata: { arguments: ['flag', 'message'] },
       }),
       '-m "fix login"',
@@ -227,7 +227,7 @@ describe('InMemorySkillCatalog prompt rendering', () => {
     const rendered = new InMemorySkillCatalog().renderSkillPrompt(
       stubSkill('review', {
         dir: '/skills/review',
-        content: 'Use ${KIMI_SKILL_DIR}/references/checklist.md.',
+        content: 'Use ${MULTIAI_SKILL_DIR}/references/checklist.md.',
       }),
       'src/app.ts',
       { sessionId: 'ses_1' },
@@ -299,9 +299,9 @@ describe('InMemorySkillCatalog prompt rendering', () => {
     );
 
     expect(rendered).toBe(
-      '<kimi-plugin-instructions plugin="superpowers">\n' +
+      '<multiai-plugin-instructions plugin="superpowers">\n' +
         'Use AskUserQuestion for clarifying questions.\n' +
-        '</kimi-plugin-instructions>\n\nBrainstorm body.',
+        '</multiai-plugin-instructions>\n\nBrainstorm body.',
     );
   });
 

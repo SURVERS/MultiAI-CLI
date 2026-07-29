@@ -17,7 +17,6 @@
  *  - the `[modelCatalog]` config section self-registers and validates.
  */
 
-import { KIMI_CODE_PROVIDER_NAME } from '@moonshot-ai/kimi-code-oauth';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createScopedTestHost } from '#/_base/di/test';
@@ -46,7 +45,7 @@ import '#/kosong/provider/providerService';
 import '#/kosong/provider/providers/kimi/kimi.contrib';
 import '#/kosong/provider/providers/standard.contrib';
 
-import { StubConfigService, stubOAuthService, stubTokenProvider } from '../../kosong/stubs';
+import { StubConfigService, stubOAuthService } from '../../kosong/stubs';
 
 function stubEvents(): IEventService & { published: Array<{ type: string; payload: unknown }> } {
   const published: Array<{ type: string; payload: unknown }> = [];
@@ -223,15 +222,18 @@ describe('refreshProviderModels write behavior', () => {
     const { host, discovery } = createHost(
       {
         providers: {
-          [KIMI_CODE_PROVIDER_NAME]: {
-            type: 'kimi',
-            baseUrl: 'https://api.example.test/v1',
-            oauth: { storage: 'file', key: 'oauth/kimi-code' },
+          acme: {
+            type: 'openai',
+            apiKey: 'sk-acme',
+            source: {
+              kind: 'apiJson',
+              url: 'https://registry.example.test/api.json',
+              apiKey: 'sk-registry',
+            },
           },
         },
         models: {},
       },
-      stubOAuthService(stubTokenProvider(['access-token'])),
     );
     try {
       let inFlight = 0;
@@ -244,14 +246,15 @@ describe('refreshProviderModels write behavior', () => {
         return {
           ok: true,
           json: async () => ({
-            data: [
-              {
-                id: 'kimi-k2',
-                context_length: 131072,
-                supports_reasoning: true,
-                display_name: 'Kimi K2',
+            acme: {
+              id: 'acme',
+              name: 'Acme',
+              api: 'https://acme.example.test/v1',
+              type: 'openai',
+              models: {
+                m1: { id: 'm1', name: 'M1' },
               },
-            ],
+            },
           }),
         };
       });
@@ -315,26 +318,9 @@ describe('refreshProviderModels write behavior', () => {
     }
   });
 
-  it('refreshes a hand-configured API-key provider at the managed endpoint', async () => {
+  it('does not treat a hand-configured Kimi provider as the managed MultiAI catalog', async () => {
     const baseUrl = 'https://api.managed.example.test/coding/v1';
-    vi.stubEnv('KIMI_CODE_BASE_URL', baseUrl);
-    const fetchMock = vi.fn(
-      async () =>
-        new Response(
-          JSON.stringify({
-            data: [
-              {
-                id: 'kimi-k2',
-                context_length: 262144,
-                supports_reasoning: true,
-                display_name: 'Fresh K2',
-              },
-              { id: 'kimi-k2.5', context_length: 131072 },
-            ],
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        ),
-    );
+    const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
     const { host, config, discovery, events, providers, models } = createHost({
@@ -354,29 +340,16 @@ describe('refreshProviderModels write behavior', () => {
     try {
       const result = await discovery.refreshProviderModels({ scope: 'all' });
 
-      expect(result.failed).toEqual([]);
-      expect(result.changed).toEqual([
-        { provider_id: 'my-kimi', provider_name: 'my-kimi', added: 1, removed: 0 },
-      ]);
-      expect(events.published).toEqual([
-        expect.objectContaining({ type: 'event.model_catalog.changed' }),
-      ]);
-      expect(fetchMock).toHaveBeenCalledWith(
-        `${baseUrl}/models`,
-        expect.objectContaining({
-          headers: expect.objectContaining({ Authorization: 'Bearer sk-distributed-key' }),
-        }),
-      );
-      // The user-owned provider record survives; only model aliases are merged.
+      expect(result).toEqual({ changed: [], unchanged: [], failed: [] });
+      expect(events.published).toEqual([]);
+      expect(fetchMock).not.toHaveBeenCalled();
       expect(providers.list()['my-kimi']).toEqual({
         type: 'kimi',
         baseUrl,
         apiKey: 'sk-distributed-key',
       });
       const modelRecords = models.list();
-      expect(modelRecords['my-kimi/kimi-k2']?.displayName).toBe('Fresh K2');
-      expect(modelRecords['my-kimi/kimi-k2.5']).toBeDefined();
-      // The surviving default selection is written back, not cleared.
+      expect(modelRecords['my-kimi/kimi-k2']?.displayName).toBe('Old K2');
       expect(config.get<string>('defaultModel')).toBe('my-kimi/kimi-k2');
     } finally {
       host.dispose();
@@ -384,13 +357,20 @@ describe('refreshProviderModels write behavior', () => {
   });
 
   it('clears a stale defaultModel whose alias upstream dropped', async () => {
-    const baseUrl = 'https://api.managed.example.test/coding/v1';
-    vi.stubEnv('KIMI_CODE_BASE_URL', baseUrl);
+    const registryUrl = 'https://registry.example.test/api.json';
     const fetchMock = vi.fn(
       async () =>
         new Response(
           JSON.stringify({
-            data: [{ id: 'kimi-k3', context_length: 1048576, supports_reasoning: true }],
+            acme: {
+              id: 'acme',
+              name: 'Acme',
+              api: 'https://acme.example.test/v1',
+              type: 'openai',
+              models: {
+                'new-model': { id: 'new-model', name: 'New Model' },
+              },
+            },
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         ),
@@ -399,17 +379,21 @@ describe('refreshProviderModels write behavior', () => {
 
     const { host, config, discovery, models } = createHost({
       providers: {
-        'my-kimi': { type: 'kimi', baseUrl, apiKey: 'sk-distributed-key' },
-      },
-      models: {
-        'my-kimi/kimi-k2': {
-          provider: 'my-kimi',
-          model: 'kimi-k2',
-          maxContextSize: 262144,
-          displayName: 'Old K2',
+        acme: {
+          type: 'openai',
+          apiKey: 'sk-acme',
+          source: { kind: 'apiJson', url: registryUrl, apiKey: 'sk-registry' },
         },
       },
-      defaultModel: 'my-kimi/kimi-k2',
+      models: {
+        'acme/old-model': {
+          provider: 'acme',
+          model: 'old-model',
+          maxContextSize: 262144,
+          displayName: 'Old Model',
+        },
+      },
+      defaultModel: 'acme/old-model',
       thinking: { enabled: true },
     });
     try {
@@ -417,7 +401,7 @@ describe('refreshProviderModels write behavior', () => {
 
       expect(result.failed).toEqual([]);
       expect(result.changed).toEqual([
-        { provider_id: 'my-kimi', provider_name: 'my-kimi', added: 1, removed: 1 },
+        { provider_id: 'acme', provider_name: 'Acme', added: 1, removed: 1 },
       ]);
       // The dropped alias was the default: an explicit undefined in the patch
       // must clear the section instead of leaving the default dangling. It has
@@ -426,8 +410,8 @@ describe('refreshProviderModels write behavior', () => {
       expect(config.get('defaultModel')).toBeUndefined();
       expect(config.get('thinking')).toBeUndefined();
       const modelRecords = models.list();
-      expect(modelRecords['my-kimi/kimi-k3']).toBeDefined();
-      expect(modelRecords['my-kimi/kimi-k2']).toBeUndefined();
+      expect(modelRecords['acme/new-model']).toBeDefined();
+      expect(modelRecords['acme/old-model']).toBeUndefined();
     } finally {
       host.dispose();
     }

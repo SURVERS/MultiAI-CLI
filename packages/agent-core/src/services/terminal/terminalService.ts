@@ -8,7 +8,7 @@ import type {
   Terminal,
   TerminalExitMessage,
   TerminalOutputMessage,
-} from '@moonshot-ai/protocol';
+} from '@multiai/protocol';
 import { ulid } from 'ulid';
 
 import { resolveSafePath } from '../fs/fsPathSafety';

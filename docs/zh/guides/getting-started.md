@@ -1,8 +1,8 @@
 # 开始使用
 
-## Kimi Code CLI 是什么
+## MultiAI CLI 是什么
 
-Kimi Code CLI 是一个运行在终端中的 AI Agent，帮助你完成软件开发任务和日常的终端操作——阅读和修改代码、执行 Shell 命令、搜索文件、抓取网页，并在执行过程中根据反馈自主规划和调整下一步行动。
+MultiAI CLI 是一个运行在终端中的 AI Agent，帮助你完成软件开发任务和日常的终端操作——阅读和修改代码、执行 Shell 命令、搜索文件、抓取网页，并在执行过程中根据反馈自主规划和调整下一步行动。
 
 它适用于以下场景：
 
@@ -14,84 +14,71 @@ Kimi Code CLI 是一个运行在终端中的 AI Agent，帮助你完成软件开
 
 ## 安装
 
-提供两种安装方式：官方安装脚本（推荐，无需预装 Node.js）和 npm 全局安装。
+可以通过 npm 全局安装，或从 GitHub Releases 下载原生构建。
 
 ::: tip 安装之前
-Kimi Code CLI 为全交互式 TUI 应用，推荐在支持真彩色与连字的现代终端中运行以获得最佳体验，例如 [Kitty](https://sw.kovidgoyal.net/kitty/) 或 [Ghostty](https://ghostty.org/)。
+MultiAI CLI 为全交互式 TUI 应用，推荐在支持真彩色与连字的现代终端中运行以获得最佳体验，例如 [Kitty](https://sw.kovidgoyal.net/kitty/) 或 [Ghostty](https://ghostty.org/)。
 :::
-
-### 脚本安装（推荐）
-
-- **macOS / Linux**：
-
-```sh
-curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash
-```
-
-- **Windows（PowerShell）**：
-
-```powershell
-irm https://code.kimi.com/kimi-code/install.ps1 | iex
-```
-
-> Windows 用户首次启动前还需要安装 [Git for Windows](https://gitforwindows.org/)，Kimi Code CLI 会使用其中的 Git Bash 作为 Shell 环境。如果 Git Bash 安装在非标准路径，请把 `KIMI_SHELL_PATH` 设为 `bash.exe` 的绝对路径。
-
-脚本会自动下载最新版本、校验 checksum，并把 `kimi` 可执行文件放到你的 `PATH` 中。
 
 ### npm 安装
 
-需要 Node.js 22.19.0 或更高版本：
+需要 Node.js 24.15.0 或更高版本：
 
 ```sh
 node --version
-npm install -g @moonshot-ai/kimi-code
+npm install -g @multiai/cli
 ```
 
 或用 pnpm：
 
 ```sh
-pnpm add -g @moonshot-ai/kimi-code
+pnpm add -g @multiai/cli
 ```
+
+原生构建可从
+[GitHub Releases](https://github.com/SURVERS/MultiAI-CLI/releases) 下载。
+
+> Windows 用户首次启动前还需要安装 [Git for Windows](https://gitforwindows.org/)，MultiAI CLI 会使用其中的 Git Bash 作为 Shell 环境。如果 Git Bash 安装在非标准路径，请把 `MULTIAI_SHELL_PATH` 设为 `bash.exe` 的绝对路径。
 
 ## 升级与卸载
 
 安装完成后，验证可执行文件是否就绪：
 
 ```sh
-kimi --version
+multiai --version
 ```
 
-**升级**：运行 `kimi upgrade`，CLI 会检查最新版本并展示更新选项。选择 `Install update now` 后根据当前安装来源执行升级；也可以直接用包管理器：
+**升级**：运行 `multiai upgrade`，CLI 会检查最新版本并展示更新选项。选择 `Install update now` 后根据当前安装来源执行升级；也可以直接用包管理器：
 
 ```sh
-npm install -g @moonshot-ai/kimi-code@latest
+npm install -g @multiai/cli@latest
 ```
 
-**卸载**：脚本安装的用户删除 `kimi` 可执行文件即可；npm 安装的用户：
+**卸载**：删除下载的原生可执行文件，或卸载 npm 包：
 
 ```sh
-npm uninstall -g @moonshot-ai/kimi-code
+npm uninstall -g @multiai/cli
 ```
 
 ## 第一次启动
 
-进入项目目录后直接运行 `kimi` 启动交互界面：
+进入项目目录后直接运行 `multiai` 启动交互界面：
 
 ```sh
 cd your-project
-kimi
+multiai
 ```
 
 只想执行一条指令而不进入交互界面时，使用 `-p`：
 
 ```sh
-kimi -p "帮我看一下这个项目的目录结构"
+multiai -p "帮我看一下这个项目的目录结构"
 ```
 
 继续上一次会话加 `-c`：
 
 ```sh
-kimi -c
+multiai -c
 ```
 
 首次启动时需要配置 API 来源。在交互界面中输入 `/login` 进入登录流程：
@@ -100,16 +87,23 @@ kimi -c
 /login
 ```
 
-`/login` 会弹出平台选择器，支持两种方式：
+`/login` 默认使用 Authorization Code + PKCE 打开 MultiAI 浏览器登录，CLI
+只在临时 `127.0.0.1` 端口监听回调。无法使用浏览器时选择设备码后备流程，或运行
+`multiai login --device`。
 
-- **Kimi Code（OAuth）** — 验证码流程，在任意设备打开链接、登录并输入验证码即可授权
-- **Kimi Platform API 密钥** — 输入来自 `platform.kimi.com` 或 `platform.kimi.ai` 的 API 密钥
+MultiAI OAuth 需要原生应用签发的公开 client ID。开发和 staging 构建可设置
+`MULTIAI_OAUTH_CLIENT_ID`。CLI 中绝不能配置 client secret。
 
-需要退出登录时，输入 `/logout` 清除当前凭证。
+用 `/account` 查看账号、`/logout` 退出；也可运行 `multiai account` 和
+`multiai logout`。
 
 ::: tip 使用其他 AI 供应商
-如果你想接入 Anthropic、OpenAI、Google 等其他供应商，需要直接编辑 `~/.kimi-code/config.toml` 配置 API 密钥，详见[平台与模型](../configuration/providers.md)。配置项完整说明见[配置文件](../configuration/config-files.md)、[环境变量](../configuration/env-vars.md)和[配置覆盖](../configuration/overrides.md)。
+如果你想接入 Kimi、Anthropic、OpenAI、Google 或其他外部供应商，需要编辑
+`~/.multiai/config.toml` 配置 API 密钥，详见[平台与模型](../configuration/providers.md)。
 :::
+
+关于 keyring、token 过期、账号删除、资料变化、额度错误和 `multiai.store` 的精确
+应用配置，见[账号与 OAuth](./account-and-oauth.md)。
 
 ## 第一个对话
 
@@ -119,7 +113,7 @@ kimi -c
 帮我看一下这个项目的目录结构，简单介绍一下每个目录是做什么的
 ```
 
-Kimi Code CLI 会自动调用文件读取、搜索等工具浏览相关内容后给出回答。只读操作默认自动执行无需确认；对于会修改文件或执行 Shell 命令的操作，默认会在执行前征求确认。
+MultiAI CLI 会自动调用文件读取、搜索等工具浏览相关内容后给出回答。只读操作默认自动执行无需确认；对于会修改文件或执行 Shell 命令的操作，默认会在执行前征求确认。
 
 也可以直接描述更具体的任务：
 
@@ -127,7 +121,7 @@ Kimi Code CLI 会自动调用文件读取、搜索等工具浏览相关内容后
 在 src/utils 里新增一个函数，用来把任意字符串转成 kebab-case，并补一个单元测试
 ```
 
-Kimi Code CLI 会规划步骤、修改代码、运行测试，并在每一步告诉你它做了什么。
+MultiAI CLI 会规划步骤、修改代码、运行测试，并在每一步告诉你它做了什么。
 
 ::: tip 不知道能做什么？输入 `/help`
 随时在输入框输入 `/help`，可以打开内置的命令和快捷键面板，按 `↑`/`↓` 翻看，`Esc` 关闭。退出时输入 `/exit`，或按 `Ctrl-C` 两次，或在输入框为空时按 `Ctrl-D`。
@@ -161,7 +155,7 @@ Kimi Code CLI 会规划步骤、修改代码、运行测试，并在每一步告
 
 ## 数据存放在哪里
 
-Kimi Code CLI 的本地数据默认保存在 `~/.kimi-code/` 下，包含配置文件、会话记录、日志和更新缓存。如需迁移到别处，通过 `KIMI_CODE_HOME` 环境变量指定新路径。完整说明见[数据路径](../configuration/data-locations.md)和[环境变量](../configuration/env-vars.md)。
+MultiAI CLI 的本地数据默认保存在 `~/.multiai/` 下，包含配置文件、会话记录、日志和更新缓存。如需迁移到别处，通过 `MULTIAI_HOME` 环境变量指定新路径。完整说明见[数据路径](../configuration/data-locations.md)和[环境变量](../configuration/env-vars.md)。
 
 ## 下一步
 

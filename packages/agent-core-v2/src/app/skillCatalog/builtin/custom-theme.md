@@ -1,35 +1,35 @@
 ---
 name: custom-theme
-description: Create or edit a kimi-code custom color theme — a JSON file under the resolved KIMI_CODE_HOME data directory that recolors the TUI. Use when the user wants their own theme, asks for a specific palette or mood, or wants to tweak an existing custom theme's colors.
+description: Create or edit a MultiAI CLI custom color theme — a JSON file under the resolved MULTIAI_HOME data directory that recolors the TUI. Use when the user wants their own theme, asks for a specific palette or mood, or wants to tweak an existing custom theme's colors.
 ---
 
-# Create a kimi-code custom theme (custom-theme)
+# Create a MultiAI CLI custom theme (custom-theme)
 
-Help the user design, write, and apply a custom color theme for the kimi-code TUI. A theme is a single JSON file; the TUI ships with `dark`, `light`, and `auto`, and any file the user adds becomes selectable alongside them.
+Help the user design, write, and apply a custom color theme for the MultiAI CLI TUI. A theme is a single JSON file; the TUI ships with `dark`, `light`, and `auto`, and any file the user adds becomes selectable alongside them.
 
 ## Rules of engagement
 
 - **Never write a theme until the user has explicitly clarified what they want.** This skill may only run after the user has confirmed light vs dark, the style or mood, any specific colors they care about, and the intended filename. If any of these are missing, ask before creating files.
-- **Never assume the data directory is `~/.kimi-code`.** Always resolve `$KIMI_CODE_HOME` first with the Bash command below.
+- **Never assume the data directory is `~/.multiai`.** Always resolve `$MULTIAI_HOME` first with the Bash command below.
 - **Never edit a live theme file in place.** Always create a `.json.new` candidate, validate it, back up the old file, and then `mv` it into place.
 - **Never overwrite an existing theme without reading it first.** Read, back up, then overwrite only after the user confirms.
 
 ## Where a theme lives
 
-The kimi-code runtime resolves the data directory as `KIMI_CODE_HOME` first, falling back to `~/.kimi-code`. Theme files live inside the `themes/` subdirectory of that data directory.
+The MultiAI CLI runtime resolves the data directory as `MULTIAI_HOME` first, falling back to `~/.multiai`. Theme files live inside the `themes/` subdirectory of that data directory.
 
-Before doing anything, resolve the actual data root with Bash so you don't write to the wrong place. Check whether `KIMI_CODE_HOME` is set and fall back to `~/.kimi-code` when it is empty:
+Before doing anything, resolve the actual data root with Bash so you don't write to the wrong place. Check whether `MULTIAI_HOME` is set and fall back to `~/.multiai` when it is empty:
 
 ```bash
-echo "$KIMI_CODE_HOME"
-echo "$HOME/.kimi-code"
+echo "$MULTIAI_HOME"
+echo "$HOME/.multiai"
 ```
 
-Use the first line when it is non-empty; otherwise use the second line. In the rest of this skill, `<KIMI_CODE_HOME>` means that resolved data root — **never assume `~/.kimi-code`**. Theme files live at `<KIMI_CODE_HOME>/themes/<name>.json`. Create the `themes/` directory if it doesn't exist.
+Use the first line when it is non-empty; otherwise use the second line. In the rest of this skill, `<MULTIAI_HOME>` means that resolved data root — **never assume `~/.multiai`**. Theme files live at `<MULTIAI_HOME>/themes/<name>.json`. Create the `themes/` directory if it doesn't exist.
 
 ## What a theme is
 
-- A theme lives at `<KIMI_CODE_HOME>/themes/<name>.json`.
+- A theme lives at `<MULTIAI_HOME>/themes/<name>.json`.
 - **The filename is the theme name**: `ember.json` shows up in the `/theme` picker as `Custom: ember`.
 - Shape:
 
@@ -52,7 +52,7 @@ Use the first line when it is non-empty; otherwise use the second line. In the r
 Before choosing colors, use **FetchURL** to fetch the official custom-theme docs as the authoritative list of tokens and what each controls:
 
 ```
-https://moonshotai.github.io/kimi-code/en/customization/themes.html
+https://survers.github.io/MultiAI-CLI/en/customization/themes.html
 ```
 
 Only set tokens from this set — unknown keys are silently ignored at load. If FetchURL is unavailable or the fetch fails, fall back to the embedded reference below (it mirrors the same tokens) and tell the user you're working from the built-in list rather than the live docs.
@@ -91,9 +91,9 @@ Only set tokens from this set — unknown keys are silently ignored at load. If 
    For the discrete choices (light vs dark, a few style options), prefer **AskUserQuestion** if it is available. If you are running in **auto mode** and `AskUserQuestion` is unavailable, ask the same question as a plain-text message with clear numbered or bulleted options, and wait for the user's reply. Don't start picking colors until you at least know light-vs-dark and the rough style.
 
 2. **Resolve the actual theme directory and current theme(s).**
-   - Resolve the data root by checking `echo "$KIMI_CODE_HOME"`; if empty, use `echo "$HOME/.kimi-code"`. Use `<root>/themes` for every subsequent step.
-   - If tweaking an existing custom theme, **Read** `<KIMI_CODE_HOME>/themes/<name>.json` first — never overwrite a theme you haven't read.
-   - Starting fresh: build a `colors` object from the token table. You can `ls <KIMI_CODE_HOME>/themes/` and Read one of the user's existing themes as a reference for the format.
+   - Resolve the data root by checking `echo "$MULTIAI_HOME"`; if empty, use `echo "$HOME/.multiai"`. Use `<root>/themes` for every subsequent step.
+   - If tweaking an existing custom theme, **Read** `<MULTIAI_HOME>/themes/<name>.json` first — never overwrite a theme you haven't read.
+   - Starting fresh: build a `colors` object from the token table. You can `ls <MULTIAI_HOME>/themes/` and Read one of the user's existing themes as a reference for the format.
 
 3. **Pick a starting point and choose colors deliberately.**
    - Every value is a 6-digit hex `#RRGGBB` (not 3-digit, not a named color).
@@ -102,7 +102,7 @@ Only set tokens from this set — unknown keys are silently ignored at load. If 
    - `roleUser` is the one role color meant to stand on its own — give it a distinct hue.
 
 4. **Create a candidate file; never edit the live theme in place.**
-   - Use Bash to create a candidate. If the target theme already exists, copy it verbatim: `cp <name>.json <name>.json.new` (inside `<KIMI_CODE_HOME>/themes/`). If it doesn't exist, use **Write** to create a minimal skeleton named `<name>.json.new`.
+   - Use Bash to create a candidate. If the target theme already exists, copy it verbatim: `cp <name>.json <name>.json.new` (inside `<MULTIAI_HOME>/themes/`). If it doesn't exist, use **Write** to create a minimal skeleton named `<name>.json.new`.
    - Use **Edit** on the candidate to change only the intended keys. Keep every existing entry, comment, and formatting intact.
 
 5. **Validate the candidate before overwriting.**

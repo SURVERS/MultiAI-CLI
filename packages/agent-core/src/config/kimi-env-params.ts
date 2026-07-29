@@ -3,23 +3,23 @@ import {
   type GenerationKwargs,
   KimiChatProvider,
   type ThinkingEffort,
-} from '@moonshot-ai/kosong';
-import { AnthropicChatProvider } from '@moonshot-ai/kosong/providers/anthropic';
+} from '@multiai/kosong';
+import { AnthropicChatProvider } from '@multiai/kosong/providers/anthropic';
 
 import { parseFloatEnv } from '#/config/resolve';
 
 type Env = Readonly<Record<string, string | undefined>>;
 
 /**
- * Apply Kimi sampling params (`KIMI_MODEL_TEMPERATURE`, `KIMI_MODEL_TOP_P`) from
+ * Apply Kimi sampling params (`MULTIAI_MODEL_TEMPERATURE`, `MULTIAI_MODEL_TOP_P`) from
  * the environment to a chat provider. Applied at provider construction
  * (`ConfigState.provider`) so every request built from `config.provider` — the
  * main loop AND full-history compaction — carries them, matching kimi-cli where
  * these live on the shared `create_llm` provider. Applies globally to any Kimi
- * provider (not tied to `KIMI_MODEL_NAME`).
+ * provider (not tied to `MULTIAI_MODEL_NAME`).
  *
  * Non-Kimi providers — and Kimi providers with neither var set — are returned
- * unchanged. `max_tokens` is intentionally NOT handled here: `KIMI_MODEL_MAX_TOKENS`
+ * unchanged. `max_tokens` is intentionally NOT handled here: `MULTIAI_MODEL_MAX_TOKENS`
  * already flows through the completion-budget path (`resolveCompletionBudget`).
  */
 export function applyKimiEnvSamplingParams(
@@ -29,16 +29,16 @@ export function applyKimiEnvSamplingParams(
   if (!(provider instanceof KimiChatProvider)) return provider;
 
   const kwargs: GenerationKwargs = {};
-  const temperature = parseFloatEnv(env['KIMI_MODEL_TEMPERATURE'], 'KIMI_MODEL_TEMPERATURE');
+  const temperature = parseFloatEnv(env['MULTIAI_MODEL_TEMPERATURE'], 'MULTIAI_MODEL_TEMPERATURE');
   if (temperature !== undefined) kwargs.temperature = temperature;
-  const topP = parseFloatEnv(env['KIMI_MODEL_TOP_P'], 'KIMI_MODEL_TOP_P');
+  const topP = parseFloatEnv(env['MULTIAI_MODEL_TOP_P'], 'MULTIAI_MODEL_TOP_P');
   if (topP !== undefined) kwargs.top_p = topP;
 
   return Object.keys(kwargs).length > 0 ? provider.withGenerationKwargs(kwargs) : provider;
 }
 
 /**
- * Resolve the operational `KIMI_MODEL_THINKING_EFFORT` override after the
+ * Resolve the operational `MULTIAI_MODEL_THINKING_EFFORT` override after the
  * model-aware effort has been resolved. The override intentionally bypasses
  * `support_efforts`, but cannot turn Thinking on after the user disabled it.
  *
@@ -51,7 +51,7 @@ export function resolveKimiEnvThinkingEffort(
   env: Env = process.env,
 ): ThinkingEffort | undefined {
   if (!kimiProvider || thinkingEffort === 'off') return undefined;
-  const effort = env['KIMI_MODEL_THINKING_EFFORT']?.trim().toLowerCase();
+  const effort = env['MULTIAI_MODEL_THINKING_EFFORT']?.trim().toLowerCase();
   return effort === undefined || effort.length === 0 ? undefined : effort;
 }
 
@@ -77,7 +77,7 @@ function parseKeepValue(raw: string | undefined): KeepResolution {
 /**
  * Resolve the Preserved Thinking passthrough (Kimi `thinking.keep` / Anthropic
  * `context_management` `clear_thinking_20251015`) with precedence env
- * (`KIMI_MODEL_THINKING_KEEP`) > config (`thinking.keep`) > default `"all"`.
+ * (`MULTIAI_MODEL_THINKING_KEEP`) > config (`thinking.keep`) > default `"all"`.
  * Only meaningful while thinking is on — otherwise the API would receive a keep
  * directive with no accompanying `thinking.type` it honors, so it resolves to
  * `undefined`. Applied via `ConfigState.provider`, which is shared by the main
@@ -94,7 +94,7 @@ export function resolveThinkingKeep(
   thinkingEffort: ThinkingEffort,
 ): string | undefined {
   if (thinkingEffort === 'off') return undefined;
-  const fromEnv = parseKeepValue(env['KIMI_MODEL_THINKING_KEEP']);
+  const fromEnv = parseKeepValue(env['MULTIAI_MODEL_THINKING_KEEP']);
   if (fromEnv.specified) return fromEnv.value;
   const fromConfig = parseKeepValue(configKeep);
   if (fromConfig.specified) return fromConfig.value;

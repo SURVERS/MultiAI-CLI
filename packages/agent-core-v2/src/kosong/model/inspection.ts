@@ -17,7 +17,7 @@
  * drift from what `get` served (same config generation, same cache entry).
  */
 
-import { parseKimiCodeCustomHeaders } from '@moonshot-ai/kimi-code-oauth';
+import { parseMultiAICustomHeaders } from '@multiai/oauth';
 
 import type { ModelCapability } from '#/kosong/contract/capability';
 import type { InspectionSource, ResolutionTrace } from '#/kosong/contract/inspection';
@@ -51,7 +51,7 @@ export interface InspectedResolvedModel {
   readonly aliases: readonly string[];
   readonly auth: InspectedAuth;
   readonly capabilities: ModelCapability;
-  readonly maxContextSize: number;
+  readonly maxContextSize?: number;
   readonly maxInputSize?: number;
   readonly maxOutputSize?: number;
   readonly displayName?: string;
@@ -272,7 +272,7 @@ interface ResolvedModelLike {
   readonly name: string;
   readonly aliases: readonly string[];
   readonly capabilities: ModelCapability;
-  readonly maxContextSize: number;
+  readonly maxContextSize?: number;
   readonly maxInputSize?: number;
   readonly maxOutputSize?: number;
   readonly displayName?: string;
@@ -517,7 +517,7 @@ function attributeHeaders(
   providerConfig: ProviderConfig | undefined,
   trace: ResolutionTraceCollector,
 ): void {
-  const envLayer = parseKimiCodeCustomHeaders();
+  const envLayer = parseMultiAICustomHeaders();
   const rawHost = trace.captured<Readonly<Record<string, string>>>(TRACE.hostHeaders) ?? {};
   const forwardsAll =
     providerConfig?.type !== undefined &&
@@ -540,7 +540,7 @@ function attributeHeaders(
         detail: forwardsAll ? "host request headers (hostHeaders: 'full')" : 'host User-Agent',
       });
     } else if (key in envLayer) {
-      sources.set(path, { kind: 'env', detail: 'KIMI_CODE_CUSTOM_HEADERS' });
+      sources.set(path, { kind: 'env', detail: 'MULTIAI_CUSTOM_HEADERS' });
     }
   }
 }

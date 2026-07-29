@@ -52,7 +52,7 @@ describe('server-v2 OpenAPI', () => {
 
     expect(doc['openapi']).toMatch(/^3\.\d+\.\d+$/);
     const info = asRecord(doc['info']);
-    expect(info['title']).toBe('Kimi Code Server API');
+    expect(info['title']).toBe('MultiAI CLI Server API');
     expect(typeof info['version']).toBe('string');
   });
 

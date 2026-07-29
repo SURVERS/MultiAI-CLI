@@ -1,18 +1,18 @@
-import type { KimiHostIdentity } from '@moonshot-ai/kimi-code-oauth';
-import { type KimiHarness, type Session, type Event } from '@moonshot-ai/kimi-code-sdk';
+import type { MultiAIHostIdentity } from '@multiai/oauth';
+import { type MultiAIHarness, type Session, type Event } from '@multiai/sdk';
 
-export function smokeIdentityFromEnv(): KimiHostIdentity {
-  const version = process.env['KIMI_CODE_SMOKE_VERSION'];
+export function smokeIdentityFromEnv(): MultiAIHostIdentity {
+  const version = process.env['MULTIAI_SMOKE_VERSION'];
   if (version === undefined || version.trim().length === 0) {
-    throw new Error('KIMI_CODE_SMOKE_VERSION is required for Kimi SDK smoke examples.');
+    throw new Error('MULTIAI_SMOKE_VERSION is required for MultiAI SDK smoke examples.');
   }
   return {
-    userAgentProduct: 'kimi-code-cli',
+    userAgentProduct: 'multiai-cli',
     version,
   };
 }
 
-export async function createConfiguredSession(harness: KimiHarness): Promise<Session> {
+export async function createConfiguredSession(harness: MultiAIHarness): Promise<Session> {
   const config = await harness.getConfig();
   const model = config.defaultModel;
   if (model === undefined) {

@@ -269,7 +269,7 @@ function AssistantMessage({ message, turnIndex, isStreaming }: { message: ChatMe
       <div className="flex gap-3 flex-col">
         <div className="flex flex-row items-center justify-start gap-2">
           <div className="shrink-0 size-5 rounded flex items-center justify-center text-[10px] font-medium bg-blue-500 text-white">K</div>
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Kimi</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">MultiAI</div>
         </div>
 
         <div className="flex-1 min-w-0">

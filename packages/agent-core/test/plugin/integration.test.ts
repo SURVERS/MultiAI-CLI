@@ -21,7 +21,7 @@ describe('PluginManager → SkillRegistry integration', () => {
       '---\nname: demo-skill\ndescription: demo\n---\nbody',
       'utf8',
     );
-    const manager = new PluginManager({ kimiHomeDir: home });
+    const manager = new PluginManager({ multiaiHomeDir: home });
     await manager.load();
     await manager.install(pluginRoot);
     const managedRoot = await realpath(path.join(home, 'plugins', 'managed', 'demo'));

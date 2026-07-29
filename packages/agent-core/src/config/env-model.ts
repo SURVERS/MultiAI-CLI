@@ -1,8 +1,8 @@
-import { ErrorCodes, KimiError } from '#/errors';
+import { ErrorCodes, MultiAIError } from '#/errors';
 import { parseBooleanEnv } from './resolve';
 import {
   validateConfig,
-  type KimiConfig,
+  type MultiAIConfig,
   type ModelAlias,
   type ProviderConfig,
   type ProviderType,
@@ -10,8 +10,8 @@ import {
 } from './schema';
 
 /** Reserved keys for the env-driven synthetic provider / model alias. */
-export const ENV_MODEL_PROVIDER_KEY = '__kimi_env__';
-export const ENV_MODEL_ALIAS_KEY = '__kimi_env_model__';
+export const ENV_MODEL_PROVIDER_KEY = '__multiai_env__';
+export const ENV_MODEL_ALIAS_KEY = '__multiai_env_model__';
 
 const ALLOWED_TYPES: readonly ProviderType[] = ['kimi', 'anthropic', 'openai'];
 
@@ -21,10 +21,10 @@ const DEFAULT_BASE_URL: Partial<Record<ProviderType, string>> = {
   // anthropic: omitted -> let the Anthropic SDK pick its default
 };
 
-/** Default context window (256K) used when KIMI_MODEL_MAX_CONTEXT_SIZE is unset. */
+/** Default context window (256K) used when MULTIAI_MODEL_MAX_CONTEXT_SIZE is unset. */
 const DEFAULT_MAX_CONTEXT_SIZE = 262144;
 
-/** Default capabilities when KIMI_MODEL_CAPABILITIES is unset (kimi models support both). */
+/** Default capabilities when MULTIAI_MODEL_CAPABILITIES is unset (kimi models support both). */
 const DEFAULT_CAPABILITIES = ['image_in', 'thinking'];
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -35,7 +35,7 @@ function trimmed(value: string | undefined): string | undefined {
 }
 
 function fail(message: string): never {
-  throw new KimiError(ErrorCodes.CONFIG_INVALID, message);
+  throw new MultiAIError(ErrorCodes.CONFIG_INVALID, message);
 }
 
 function parsePositiveInt(raw: string, varName: string): number {
@@ -50,7 +50,7 @@ function parseProviderType(raw: string | undefined): ProviderType {
   const normalized = raw.toLowerCase() as ProviderType;
   if (!ALLOWED_TYPES.includes(normalized)) {
     fail(
-      `KIMI_MODEL_PROVIDER_TYPE must be one of ${ALLOWED_TYPES.join(', ')}, got "${raw}".`,
+      `MULTIAI_MODEL_PROVIDER_TYPE must be one of ${ALLOWED_TYPES.join(', ')}, got "${raw}".`,
     );
   }
   return normalized;
@@ -67,7 +67,7 @@ function parseCapabilities(raw: string | undefined): string[] | undefined {
 
 // `parseBooleanEnv` returns undefined for unrecognized input. Treat a non-empty
 // but unparseable value (e.g. a typo like `flase`) as a config error so it
-// fails fast like the other KIMI_MODEL_* values, instead of silently keeping
+// fails fast like the other MULTIAI_MODEL_* values, instead of silently keeping
 // config.toml's existing value.
 function parseBooleanVar(raw: string | undefined, varName: string): boolean | undefined {
   const value = trimmed(raw);
@@ -80,8 +80,8 @@ function parseBooleanVar(raw: string | undefined, varName: string): boolean | un
 }
 
 /**
- * When `KIMI_MODEL_NAME` is set, synthesize one provider + one model alias from
- * the `KIMI_MODEL_*` environment variables and make it the default model.
+ * When `MULTIAI_MODEL_NAME` is set, synthesize one provider + one model alias from
+ * the `MULTIAI_MODEL_*` environment variables and make it the default model.
  * Returns the config unchanged when the trigger variable is absent.
  *
  * IMPORTANT: the synthesized provider/model/default_model exist ONLY in the
@@ -90,23 +90,23 @@ function parseBooleanVar(raw: string | undefined, varName: string): boolean | un
  * and `writeConfigFile` strips the reserved entries via `stripEnvModelConfig` as
  * a final guard against patch round-trips (getConfig -> setConfig).
  */
-export function applyEnvModelConfig(config: KimiConfig, env: Env = process.env): KimiConfig {
-  const model = trimmed(env['KIMI_MODEL_NAME']);
+export function applyEnvModelConfig(config: MultiAIConfig, env: Env = process.env): MultiAIConfig {
+  const model = trimmed(env['MULTIAI_MODEL_NAME']);
   if (model === undefined) return config;
 
-  const apiKey = trimmed(env['KIMI_MODEL_API_KEY']);
+  const apiKey = trimmed(env['MULTIAI_MODEL_API_KEY']);
   if (apiKey === undefined) {
-    fail('KIMI_MODEL_NAME is set but KIMI_MODEL_API_KEY is missing.');
+    fail('MULTIAI_MODEL_NAME is set but MULTIAI_MODEL_API_KEY is missing.');
   }
 
-  const maxContextRaw = trimmed(env['KIMI_MODEL_MAX_CONTEXT_SIZE']);
+  const maxContextRaw = trimmed(env['MULTIAI_MODEL_MAX_CONTEXT_SIZE']);
   const maxContextSize =
     maxContextRaw === undefined
       ? DEFAULT_MAX_CONTEXT_SIZE
-      : parsePositiveInt(maxContextRaw, 'KIMI_MODEL_MAX_CONTEXT_SIZE');
+      : parsePositiveInt(maxContextRaw, 'MULTIAI_MODEL_MAX_CONTEXT_SIZE');
 
-  const type = parseProviderType(trimmed(env['KIMI_MODEL_PROVIDER_TYPE']));
-  const baseUrl = trimmed(env['KIMI_MODEL_BASE_URL']) ?? DEFAULT_BASE_URL[type];
+  const type = parseProviderType(trimmed(env['MULTIAI_MODEL_PROVIDER_TYPE']));
+  const baseUrl = trimmed(env['MULTIAI_MODEL_BASE_URL']) ?? DEFAULT_BASE_URL[type];
 
   const provider: ProviderConfig = {
     type,
@@ -114,17 +114,17 @@ export function applyEnvModelConfig(config: KimiConfig, env: Env = process.env):
     ...(baseUrl !== undefined ? { baseUrl } : {}),
   };
 
-  const maxOutputRaw = trimmed(env['KIMI_MODEL_MAX_OUTPUT_SIZE']);
+  const maxOutputRaw = trimmed(env['MULTIAI_MODEL_MAX_OUTPUT_SIZE']);
   const maxOutputSize =
     maxOutputRaw !== undefined
-      ? parsePositiveInt(maxOutputRaw, 'KIMI_MODEL_MAX_OUTPUT_SIZE')
+      ? parsePositiveInt(maxOutputRaw, 'MULTIAI_MODEL_MAX_OUTPUT_SIZE')
       : undefined;
-  const capabilities = parseCapabilities(env['KIMI_MODEL_CAPABILITIES']) ?? DEFAULT_CAPABILITIES;
-  const displayName = trimmed(env['KIMI_MODEL_DISPLAY_NAME']);
-  const reasoningKey = trimmed(env['KIMI_MODEL_REASONING_KEY']);
+  const capabilities = parseCapabilities(env['MULTIAI_MODEL_CAPABILITIES']) ?? DEFAULT_CAPABILITIES;
+  const displayName = trimmed(env['MULTIAI_MODEL_DISPLAY_NAME']);
+  const reasoningKey = trimmed(env['MULTIAI_MODEL_REASONING_KEY']);
   const adaptiveThinking = parseBooleanVar(
-    env['KIMI_MODEL_ADAPTIVE_THINKING'],
-    'KIMI_MODEL_ADAPTIVE_THINKING',
+    env['MULTIAI_MODEL_ADAPTIVE_THINKING'],
+    'MULTIAI_MODEL_ADAPTIVE_THINKING',
   );
 
   const alias: ModelAlias = {
@@ -138,11 +138,11 @@ export function applyEnvModelConfig(config: KimiConfig, env: Env = process.env):
     ...(adaptiveThinking !== undefined ? { adaptiveThinking } : {}),
   };
 
-  const thinkingEffort = trimmed(env['KIMI_MODEL_THINKING_EFFORT']);
+  const thinkingEffort = trimmed(env['MULTIAI_MODEL_THINKING_EFFORT']);
   const thinking: ThinkingConfig | undefined =
     thinkingEffort !== undefined ? { ...config.thinking, effort: thinkingEffort } : config.thinking;
 
-  const merged: KimiConfig = {
+  const merged: MultiAIConfig = {
     ...config,
     providers: { ...config.providers, [ENV_MODEL_PROVIDER_KEY]: provider },
     models: { ...config.models, [ENV_MODEL_ALIAS_KEY]: alias },
@@ -151,7 +151,7 @@ export function applyEnvModelConfig(config: KimiConfig, env: Env = process.env):
   };
 
   // Re-validate so the synthesized entries honor the same schema constraints.
-  // `validateConfig` throws KimiError(CONFIG_INVALID) on violation, matching
+  // `validateConfig` throws MultiAIError(CONFIG_INVALID) on violation, matching
   // the explicit checks above.
   return validateConfig(merged);
 }
@@ -167,7 +167,7 @@ export function applyEnvModelConfig(config: KimiConfig, env: Env = process.env):
  * value from `config.raw` rather than erased, so real values already in
  * config.toml survive the round-trip.
  */
-export function stripEnvModelConfig(config: KimiConfig): KimiConfig {
+export function stripEnvModelConfig(config: MultiAIConfig): MultiAIConfig {
   const hasProvider = ENV_MODEL_PROVIDER_KEY in config.providers;
   const hasModel = config.models !== undefined && ENV_MODEL_ALIAS_KEY in config.models;
   const defaultIsEnv = config.defaultModel === ENV_MODEL_ALIAS_KEY;
@@ -196,12 +196,12 @@ export function stripEnvModelConfig(config: KimiConfig): KimiConfig {
   };
 }
 
-function rawDefaultModel(config: KimiConfig): string | undefined {
+function rawDefaultModel(config: MultiAIConfig): string | undefined {
   const raw = config.raw?.['default_model'];
   return typeof raw === 'string' ? raw : undefined;
 }
 
-function rawThinking(config: KimiConfig): ThinkingConfig | undefined {
+function rawThinking(config: MultiAIConfig): ThinkingConfig | undefined {
   const raw = config.raw?.['thinking'];
   return typeof raw === 'object' && raw !== null && !Array.isArray(raw)
     ? (raw as ThinkingConfig)

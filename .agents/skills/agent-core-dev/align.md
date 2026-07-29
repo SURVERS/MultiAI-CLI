@@ -16,10 +16,10 @@ v1 is a **VSCode-style singleton container**: services self-register with `regis
 | DI import | `from '../../di'` | `from '#/_base/di/scope'` / `'#/_base/di/instantiation'` / `'#/_base/di/lifecycle'` |
 | Lifetime | implicit singleton-per-container | explicit `LifecycleScope` (App/Session/Agent) — see orient.md |
 | Domain granularity | coarse (`session`, `tool`, `loop`) | fine, split by scope + responsibility |
-| Test import | `from '@moonshot-ai/agent-core/di/test'` | `from '#/_base/di/test'` |
+| Test import | `from '@multiai/agent-core/di/test'` | `from '#/_base/di/test'` |
 | Resolve SUT in tests | `ix.createInstance(Impl)` (common) | `ix.get(IX)` by interface — see test.md |
 | Scope tests | none | `createScopedTestHost` — see test.md |
-| Errors | `from '../../errors'` (central `KimiError`, `ErrorCodes`) | `from '#/_base/errors'` + domain co-located `XxxError` — see errors.md |
+| Errors | `from '../../errors'` (central `MultiAIError`, `ErrorCodes`) | `from '#/_base/errors'` + domain co-located `XxxError` — see errors.md |
 | Flags | `flags/` (process-global `FlagResolver`) | `flag/` (App-scope `IFlagService`) — see flags.md |
 | Permission | `agent/permission/` (hardcoded chain) | `permission*` (registry + composer) — see permission.md |
 
@@ -166,18 +166,18 @@ registerScopedService(LifecycleScope.Session, IXxxService, XxxService, ScopeActi
 ```ts
 // v1
 import { createDecorator, Disposable, IInstantiationService } from '../../di';
-import { KimiError, ErrorCodes } from '../../errors';
+import { MultiAIError, ErrorCodes } from '../../errors';
 
 // v2
 import { createDecorator, type ServiceIdentifier } from '#/_base/di/instantiation';
 import { Disposable } from '#/_base/di/lifecycle';
 import { IInstantiationService } from '#/_base/di/instantiation';
-import { KimiError, type ErrorCode } from '#/_base/errors';
+import { MultiAIError, type ErrorCode } from '#/_base/errors';
 ```
 
 **Constructor injection** — unchanged in shape (`@IX` on constructor params, service params after static params). Verify each dependency is resolvable from the new scope (step 6).
 
-**Errors** — move any shared error into a co-located `XxxError extends KimiError` with a registered `code` (errors.md). Do not keep throwing v1's central error codes from a v2 domain.
+**Errors** — move any shared error into a co-located `XxxError extends MultiAIError` with a registered `code` (errors.md). Do not keep throwing v1's central error codes from a v2 domain.
 
 **Flags** — replace any `FlagResolver` / env check with `IFlagService.enabled(id)`; contribute new flags from the owning domain's `flag.ts` via `registerFlagDefinition` (flags.md).
 
@@ -197,7 +197,7 @@ Convert v1 tests to the v2 harness, following test.md:
 
 ```ts
 // v1
-import { TestInstantiationService } from '@moonshot-ai/agent-core/di/test';
+import { TestInstantiationService } from '@multiai/agent-core/di/test';
 const svc = ix.createInstance(XxxService, 'static-arg');
 
 // v2

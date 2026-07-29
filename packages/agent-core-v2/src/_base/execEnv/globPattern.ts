@@ -1,7 +1,7 @@
 /**
  * `_base/execEnv` (L0) — glob-pattern-to-regex conversion.
  *
- * Vendored from `@moonshot-ai/kaos` `internal.ts`. Pure function used by the
+ * Vendored from `@multiai/kaos` `internal.ts`. Pure function used by the
  * session-scoped fs implementation's `glob` traversal. Mirrors Python pathlib
  * semantics: includes dotfiles, case-sensitive by default.
  */

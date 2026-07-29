@@ -1,5 +1,5 @@
-import { ErrorCodes, KimiError } from '#/errors';
-import type { SessionWarning } from '@moonshot-ai/protocol';
+import { ErrorCodes, MultiAIError } from '#/errors';
+import type { SessionWarning } from '@multiai/protocol';
 import type {
   ActivateSkillPayload,
   ActivatePluginCommandPayload,
@@ -55,7 +55,7 @@ export class SessionAPIImpl implements PromisableMethods<SessionAPI> {
   async renameSession(payload: RenameSessionPayload): Promise<void> {
     const title = payload.title.trim();
     if (title.length === 0) {
-      throw new KimiError(ErrorCodes.SESSION_TITLE_EMPTY, 'Session title cannot be empty');
+      throw new MultiAIError(ErrorCodes.SESSION_TITLE_EMPTY, 'Session title cannot be empty');
     }
     this.session.metadata = {
       ...this.session.metadata,

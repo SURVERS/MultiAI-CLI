@@ -75,6 +75,7 @@ import {
   resolveProviderEndpoint,
 } from '#/kosong/provider/providerDefinition';
 import '#/kosong/provider/providers/kimi/kimi.contrib';
+import '#/kosong/provider/providers/multiai/multiai.contrib';
 import '#/kosong/provider/providers/standard.contrib';
 
 registerProviderDefinition({
@@ -447,7 +448,7 @@ describe('resolveProviderEndpoint', () => {
 });
 
 describe('kimi provider definitions', () => {
-  it('registers one definition per transport, with shared vendor-level facts', () => {
+  it('keeps Kimi as an external provider without product OAuth discovery', () => {
     const native = getProviderDefinition('kimi', 'openai');
     const anthropic = getProviderDefinition('kimi', 'anthropic');
     expect(native?.baseProtocol).toBe('openai');
@@ -460,8 +461,8 @@ describe('kimi provider definitions', () => {
         baseUrlEnv: 'KIMI_BASE_URL',
         defaultBaseUrl: 'https://api.moonshot.ai/v1',
       });
-      expect(definition?.hostHeaders).toBe('full');
-      expect(definition?.modelSource).toBe('oauth-catalog');
+      expect(definition?.hostHeaders).toBe('user-agent');
+      expect(definition?.modelSource).toBeUndefined();
     }
   });
 
@@ -486,6 +487,18 @@ describe('kimi provider definitions', () => {
     expect(() =>
       registerProviderDefinition({ id: 'kimi', baseProtocol: 'openai', traits: [] }),
     ).toThrow(/already registered/);
+  });
+});
+
+describe('MultiAI provider definition', () => {
+  it('uses the Responses API and the OAuth-managed model catalog', () => {
+    const definition = getProviderDefinition('multiai', 'openai_responses');
+    expect(definition?.endpoint).toEqual({
+      baseUrlEnv: 'MULTIAI_BASE_URL',
+      defaultBaseUrl: 'https://multiai.store/v1',
+    });
+    expect(definition?.hostHeaders).toBe('full');
+    expect(definition?.modelSource).toBe('oauth-catalog');
   });
 });
 

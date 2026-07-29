@@ -23,7 +23,12 @@
 
 import { AsyncEventQueue } from '#/_base/asyncEventQueue';
 import type { VideoURLPart } from '#/kosong/contract/message';
-import { APIStatusError, isAbortError, VideoUploadUnsupportedError } from '#/kosong/contract/errors';
+import {
+  APIProviderQuotaExhaustedError,
+  APIStatusError,
+  isAbortError,
+  VideoUploadUnsupportedError,
+} from '#/kosong/contract/errors';
 import { generate, type GenerateResult } from '#/kosong/contract/generate';
 import type {
   ChatProvider,
@@ -195,7 +200,7 @@ export class ModelRequesterImpl implements ModelRequester {
     try {
       return await run(auth);
     } catch (error) {
-      if (!this.shouldForceRefresh(error)) throw error;
+      if (!this.shouldForceRefresh(error)) throw this.withManagedAccountHint(error);
     }
 
     const refreshedAuth = await this.authProvider.getAuth({ force: true });
@@ -206,7 +211,7 @@ export class ModelRequesterImpl implements ModelRequester {
       // the account itself: surface it as `provider.auth_error` (carrying the
       // provider's message) instead of a misleading re-login prompt.
       if (isUnauthorizedStatusError(error)) throw translateProviderError(error);
-      throw error;
+      throw this.withManagedAccountHint(error);
     }
   }
 
@@ -216,6 +221,24 @@ export class ModelRequesterImpl implements ModelRequester {
 
   private shouldForceRefresh(error: unknown): boolean {
     return this.authProvider.canRefresh === true && isUnauthorizedStatusError(error);
+  }
+
+  private withManagedAccountHint(error: unknown): unknown {
+    if (
+      this.model.providerName !== 'managed:multiai' ||
+      !(error instanceof APIProviderQuotaExhaustedError)
+    ) {
+      return error;
+    }
+    const accountUrl = 'https://multiai.store/account';
+    if (error.message.includes(accountUrl)) return error;
+    return new APIProviderQuotaExhaustedError(
+      `${error.message}\n\nПополнить баланс: ${accountUrl}`,
+      error.requestId,
+      error.retryAfterMs,
+      error.traceId,
+      error.statusCode,
+    );
   }
 }
 

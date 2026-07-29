@@ -3,7 +3,7 @@
  *
  * Resolves the engine's own package version at runtime by walking up from
  * this module's location to the nearest `package.json` named
- * `@moonshot-ai/agent-core-v2`. Works whenever the package runs from its own
+ * `@multiai/agent-core-v2`. Works whenever the package runs from its own
  * directory layout (workspace installs, e.g. kap-server); falls back to
  * `'unknown'` when the code is bundled into another package's artifact.
  * App-scoped, no collaborators.
@@ -13,7 +13,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PACKAGE_NAME = '@moonshot-ai/agent-core-v2';
+const PACKAGE_NAME = '@multiai/agent-core-v2';
 const UNKNOWN_VERSION = 'unknown';
 const MAX_WALK_UP = 8;
 

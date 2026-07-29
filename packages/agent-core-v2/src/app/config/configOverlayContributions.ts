@@ -12,7 +12,7 @@
  * This decouples overlay registration from Service lifetime: an overlay must
  * not depend on a Service being constructed, because top-level contributions
  * are available before any scope activation (see `ModelService` /
- * `kimiModelEnvOverlay`).
+ * `multiaiModelEnvOverlay`).
  */
 
 import type { ConfigEffectiveOverlay } from './config';

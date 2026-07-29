@@ -8,7 +8,7 @@ import { LifecycleScope, ScopeActivation, _clearScopedRegistryForTests, register
 import { createScopedTestHost, stubPair } from '#/_base/di/test';
 import { ILogService } from '#/_base/log/log';
 import { IBootstrapService } from '#/app/bootstrap/bootstrap';
-import { ClusterDb } from '@moonshot-ai/minidb/cluster';
+import { ClusterDb } from '@multiai/minidb/cluster';
 import { MiniDbQueryStore } from '#/persistence/backends/minidb/miniDbQueryStore';
 import { IQueryStore } from '#/persistence/interface/queryStore';
 import { stubBootstrap } from '../../../app/bootstrap/stubs';

@@ -2,7 +2,7 @@
  * `bashParser` domain (L1) — bash source parsing capability.
  *
  * Defines the `IBashParserService` that parses a bash source string into a
- * syntax tree through the pure `@moonshot-ai/tree-sitter-bash` package, plus
+ * syntax tree through the pure `@multiai/tree-sitter-bash` package, plus
  * the wire-safe DTO types it returns: `BashSyntaxNode` drops the cyclic
  * `parent` link so results can cross the RPC boundary, and offsets are
  * UTF-16 code units (`text` always equals `source.slice(start, end)`). The

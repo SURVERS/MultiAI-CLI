@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   resetModelsDevUpstreamForTest,
   setModelsDevUpstreamForTest,
-} from '@moonshot-ai/agent-core-v2/app/kosongConfig/modelsDevUpstream';
+} from '@multiai/agent-core-v2/app/kosongConfig/modelsDevUpstream';
 import { type RunningServer, startServer } from '../src/start';
 import { authHeaders } from './helpers/auth';
 
@@ -90,7 +90,7 @@ const MANAGED_OPENAI_TOML = [
   '[providers.openai]',
   'type = "openai"',
   'api_key = "sk-managed"',
-  'oauth = { storage = "file", key = "oauth/openai" }',
+  'oauth = { storage = "keyring", key = "oauth/openai" }',
   '',
 ].join('\n');
 
@@ -130,8 +130,8 @@ describe('server-v2 /api/v1 catalog browse + import endpoints', () => {
 
   beforeEach(async () => {
     home = await mkdtemp(join(tmpdir(), 'kimi-server-v2-catalog-'));
-    process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START'] = '0';
-    process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS'] = '0';
+    process.env['MULTIAI_MODEL_CATALOG_REFRESH_ON_START'] = '0';
+    process.env['MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS'] = '0';
     resetModelsDevUpstreamForTest();
     setModelsDevUpstreamForTest({ fetchImpl: catalogFetchOk() });
   });
@@ -146,8 +146,8 @@ describe('server-v2 /api/v1 catalog browse + import endpoints', () => {
       await rm(home, { recursive: true, force: true });
       home = undefined;
     }
-    delete process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_ON_START'];
-    delete process.env['KIMI_CODE_MODEL_CATALOG_REFRESH_INTERVAL_MS'];
+    delete process.env['MULTIAI_MODEL_CATALOG_REFRESH_ON_START'];
+    delete process.env['MULTIAI_MODEL_CATALOG_REFRESH_INTERVAL_MS'];
   });
 
   async function boot(toml?: string): Promise<void> {
@@ -741,7 +741,7 @@ describe('server-v2 /api/v1 catalog browse + import endpoints', () => {
       '[providers."managed-one"]',
       'type = "openai"',
       'api_key = "sk-managed"',
-      'oauth = { storage = "file", key = "oauth/managed-one" }',
+      'oauth = { storage = "keyring", key = "oauth/managed-one" }',
       '',
     ].join('\n');
     setModelsDevUpstreamForTest({ fetchImpl: registryFetch(managed) });

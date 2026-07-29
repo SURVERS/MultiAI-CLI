@@ -2,9 +2,9 @@ import type { PromisableMethods, Promisify } from '#/utils/types';
 import { createControlledPromise, objectMap } from '@antfu/utils';
 
 import {
-  fromKimiErrorPayload,
-  type KimiErrorPayload,
-  toKimiErrorPayload,
+  fromMultiAIErrorPayload,
+  type MultiAIErrorPayload,
+  toMultiAIErrorPayload,
 } from '../errors';
 import { abortable } from '../utils/abort';
 import type { CoreAPI } from './core-api';
@@ -16,7 +16,7 @@ export interface RPCCallOptions {
 
 type RpcResponse =
   | { readonly ok: true; readonly value: unknown }
-  | { readonly ok: false; readonly error: KimiErrorPayload };
+  | { readonly ok: false; readonly error: MultiAIErrorPayload };
 
 export type RPCMethods<T> = {
   [K in keyof T]: T[K] extends (payload: infer Payload) => infer Return
@@ -61,11 +61,11 @@ export function createRPC<Left extends Record<string, any>, Right extends Record
         response = { ok: true, value };
       } catch (error) {
         signal?.throwIfAborted();
-        response = { ok: false, error: toKimiErrorPayload(error) };
+        response = { ok: false, error: toMultiAIErrorPayload(error) };
       }
       const remoteResponse = await simulateNetwork(response);
       if (remoteResponse.ok) return remoteResponse.value;
-      throw fromKimiErrorPayload(remoteResponse.error);
+      throw fromMultiAIErrorPayload(remoteResponse.error);
     };
   }
 

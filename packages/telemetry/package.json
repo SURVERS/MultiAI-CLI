@@ -1,21 +1,21 @@
 {
-  "name": "@moonshot-ai/kimi-telemetry",
+  "name": "@multiai/telemetry",
   "version": "0.1.1",
   "private": true,
-  "description": "Shared telemetry infrastructure for Kimi Code",
+  "description": "Shared telemetry infrastructure for MultiAI CLI",
   "license": "MIT",
   "author": "Moonshot AI",
-  "homepage": "https://github.com/MoonshotAI/kimi-code/tree/main/packages/telemetry#readme",
+  "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/telemetry#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MoonshotAI/kimi-code.git",
+    "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",
     "directory": "packages/telemetry"
   },
   "bugs": {
-    "url": "https://github.com/MoonshotAI/kimi-code/issues"
+    "url": "https://github.com/SURVERS/MultiAI-CLI/issues"
   },
   "keywords": [
-    "kimi",
+    "multiai",
     "telemetry",
     "analytics",
     "events",

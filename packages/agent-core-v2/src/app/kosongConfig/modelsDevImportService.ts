@@ -5,7 +5,7 @@
  * import. Both are multi-step config writes (inspect → build → replace × N),
  * serialized through an internal chain so two interleaved imports cannot
  * lose each other's section rebuilds. Custom registries reuse the shared
- * `@moonshot-ai/kimi-code-oauth` primitives — the exact remove-then-apply
+ * `@multiai/oauth` primitives — the exact remove-then-apply
  * sequence of `applyCustomRegistryEntries`, split into TWO persisted passes
  * so deletions really reach the disk (the TOML transform is a raw overlay
  * that only honors entry-level deletes; applying in the same pass would let
@@ -33,8 +33,8 @@ import {
   removeCustomRegistryProvider,
   type CustomRegistryProviderEntry,
   type CustomRegistrySource,
-  type ManagedKimiConfigShape,
-} from '@moonshot-ai/kimi-code-oauth';
+  type ProviderDiscoveryConfigShape,
+} from '@multiai/oauth';
 
 import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/di/scope';
 import { Error2 } from '#/_base/errors/errors';
@@ -245,7 +245,7 @@ export class ModelsDevImportService implements IModelsDevImportService {
     try {
       entries = await fetchCustomRegistry(source, {
         fetchImpl: upstreamFetch(),
-        userAgent: 'kimi-code-kap-server',
+        userAgent: 'multiai-cli-server',
         signal: AbortSignal.timeout(UPSTREAM_FETCH_TIMEOUT_MS),
       });
     } catch (err) {
@@ -281,7 +281,7 @@ export class ModelsDevImportService implements IModelsDevImportService {
       models: {
         ...config.inspect<ModelsSection>(MODELS_SECTION).userValue,
       },
-    } as ManagedKimiConfigShape;
+    } as ProviderDiscoveryConfigShape;
     const surviving = new Set(Object.values(entries).map((entry) => entry.id));
     for (const [providerId, provider] of Object.entries(removed.providers)) {
       if (surviving.has(providerId)) continue;
@@ -308,7 +308,7 @@ export class ModelsDevImportService implements IModelsDevImportService {
     const applied = {
       providers: removed.providers,
       models: removed.models,
-    } as ManagedKimiConfigShape;
+    } as ProviderDiscoveryConfigShape;
     for (const entry of Object.values(entries)) {
       applyCustomRegistryProvider(applied, entry, source);
     }

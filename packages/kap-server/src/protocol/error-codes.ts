@@ -10,7 +10,7 @@
  *   - 8xxxx      MCP server passthrough (msg = original upstream text)
  *   - 9xxxx      reserved
  *
- * Domain `KimiError` string codes are mapped onto these numbers at the
+ * Domain `MultiAIError` string codes are mapped onto these numbers at the
  * transport boundary (`transport/errors.ts`, route-level `sendMappedError`).
  */
 

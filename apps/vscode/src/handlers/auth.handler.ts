@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 import { Events, Methods } from "../../shared/bridge";
 import type { LoginResult } from "../../shared/legacy-sdk";
-import type { LoginStatus } from "../../shared/types";
+import type { AccountSnapshot, LoginStatus } from "../../shared/types";
 import { updateLoginContext } from "../utils/context";
 import type { Handler } from "./types";
 
@@ -11,11 +11,22 @@ export const authHandlers: Record<string, Handler<any, any>> = {
     return { loggedIn: await updateLoginContext(ctx.harness) };
   },
 
-  [Methods.Login]: async (_, ctx): Promise<LoginResult> => {
+  [Methods.GetAccount]: async (_, ctx): Promise<AccountSnapshot> => {
+    return ctx.harness.auth.getAccount();
+  },
+
+  [Methods.Login]: async (
+    input: { method?: "browser" | "device"; persistence?: "keyring" | "session" } | undefined,
+    ctx,
+  ): Promise<LoginResult> => {
     try {
-      await ctx.harness.auth.login(undefined, {
-        onDeviceCode: async (authorization) => {
-          const url = authorization.verificationUriComplete || authorization.verificationUri;
+      await ctx.harness.auth.login({
+        method: input?.method ?? "browser",
+        persistence: input?.persistence ?? "keyring",
+        onAuthorization: async (authorization) => {
+          const url = authorization.method === "browser"
+            ? authorization.authorizationUri
+            : authorization.verificationUriComplete || authorization.verificationUri;
           ctx.broadcast(Events.LoginUrl, { url }, ctx.webviewId);
           await vscode.env.openExternal(vscode.Uri.parse(url));
         },
@@ -23,7 +34,7 @@ export const authHandlers: Record<string, Handler<any, any>> = {
       await updateLoginContext(ctx.harness);
       return { success: true };
     } catch (error) {
-      ctx.logError("Kimi login failed", error);
+      ctx.logError("MultiAI login failed", error);
       await updateLoginContext(ctx.harness).catch((statusError: unknown) => {
         ctx.logError("Unable to refresh login status after a failed login", statusError);
       });
@@ -40,7 +51,7 @@ export const authHandlers: Record<string, Handler<any, any>> = {
       await updateLoginContext(ctx.harness);
       return { success: true };
     } catch (error) {
-      ctx.logError("Kimi logout failed", error);
+      ctx.logError("MultiAI logout failed", error);
       await updateLoginContext(ctx.harness).catch((statusError: unknown) => {
         ctx.logError("Unable to refresh login status after a failed logout", statusError);
       });

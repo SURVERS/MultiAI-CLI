@@ -3,7 +3,7 @@
  *
  * Exercises the real injector through its service contract with in-memory
  * context, loop, reminder, event-bus, and wire collaborators.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/agent/contextInjector/contextInjector.test.ts`.
  */
 

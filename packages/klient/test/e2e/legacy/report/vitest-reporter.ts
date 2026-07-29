@@ -39,5 +39,5 @@ export default class DaemonE2eHtmlReporter implements Reporter {
 }
 
 function vitestReportDir(): string {
-  return resolve(process.env['KIMI_SERVER_E2E_REPORT_DIR'] ?? join(process.cwd(), 'reports', 'vitest', 'latest'));
+  return resolve(process.env['MULTIAI_SERVER_E2E_REPORT_DIR'] ?? join(process.cwd(), 'reports', 'vitest', 'latest'));
 }

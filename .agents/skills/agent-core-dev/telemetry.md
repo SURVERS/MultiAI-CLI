@@ -59,7 +59,9 @@ export interface ITelemetryAppender {
 Built-in appenders:
 
 - `ConsoleAppender` — `[telemetry] <event> <json>` to a log function (default `console.log`); options `prefix` / `pretty` / `log`.
-- `CloudAppender` — batches events, enriches with common context (`app_name` / `version` / `platform` / …), and posts to `https://telemetry-logs.kimi.com/v1/event` through `CloudTransport` (Bearer auth, retry, on-disk fallback). Options: `homeDir` / `deviceId` / `sessionId?` / `appName` / `version` / `uiMode?` / `model?` / `getAccessToken?` / `endpoint?` / `flushThreshold?` / `flushIntervalMs?`.
+- `CloudAppender` — reusable transport infrastructure for downstream hosts that
+  explicitly provide an endpoint. MultiAI CLI and kap-server do not register it:
+  product telemetry ships disabled.
 
 ### Registering appenders (bootstrap)
 
@@ -70,16 +72,19 @@ const app = createAppScope();
 const telemetry = app.accessor.get(ITelemetryService);
 
 telemetry.addAppender(new ConsoleAppender({ prefix: '[dev]' }));   // dev echo
-telemetry.addAppender(new CloudAppender({                          // production
+telemetry.addAppender(new CloudAppender({                          // explicit downstream opt-in
   homeDir, deviceId, sessionId,
-  appName: 'kimi-code', version, uiMode: 'shell', model,
-  getAccessToken: () => auth.getCachedAccessToken(KIMI_CODE_PROVIDER_NAME),
+  appName: 'multiai-cli', version, uiMode: 'shell', model,
+  endpoint: 'https://telemetry.example.test/v1/event',
+  getAccessToken: () => auth.getCachedAccessToken(MULTIAI_PROVIDER_NAME),
 }));
 ```
 
 `addAppender` returns an `IDisposable` that removes the appender when disposed. `setAppender(appender)` resets to a single appender (mainly for tests). `removeAppender(appender)` drops one.
 
-> There is no production bootstrap wired yet — `TelemetryService` defaults to `[nullTelemetryAppender]`, so `track(...)` is a no-op until `addAppender` is called at startup.
+> MultiAI product telemetry is intentionally disabled. `TelemetryService`
+> defaults to `[nullTelemetryAppender]`, so `track(...)` is a no-op until a
+> downstream host explicitly adds an appender.
 
 ## Lifecycle
 

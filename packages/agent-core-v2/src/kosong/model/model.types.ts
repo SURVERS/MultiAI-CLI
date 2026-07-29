@@ -4,7 +4,7 @@
  * One home for the small data interfaces that would otherwise each sit in a
  * near-empty file:
  *   - `ModelOverrides` — the resolved `modelOverrides` effective config
- *     section (populated by the `KIMI_MODEL_*` env overlay). Consumers fold it
+ *     section (populated by the `MULTIAI_MODEL_*` env overlay). Consumers fold it
  *     into `ModelRequestParams`: `temperature`/`topP` into `sampling`,
  *     `thinkingKeep` into the thinking intent, `maxCompletionTokens` into the
  *     completion budget. Each wire dialect encodes (or drops) the resulting

@@ -1,319 +1,236 @@
 import {
-  loadRuntimeConfigSafe,
   readConfigFile,
   readConfigFileForUpdate,
   writeConfigFile,
-  type KimiConfig,
+  type MultiAIConfig,
   type OAuthRef,
-} from '@moonshot-ai/agent-core';
+} from '@multiai/agent-core';
 import {
-  applyManagedKimiCodeConfig,
-  applyManagedKimiCodeLogoutConfig,
-  KIMI_CODE_PROVIDER_NAME,
-  KimiOAuthToolkit,
-  resolveKimiCodeLoginAuth,
-  resolveKimiCodeRuntimeAuth,
-  type AuthManagedUsageResult,
-  type AuthStatus,
-  type BearerTokenProvider,
-  type FetchCompleteFeedbackUploadResult,
-  type FetchFeedbackUploadError,
-  type FetchSubmitFeedbackResult,
-  type KimiHostIdentity,
-  type KimiOAuthLoginOptions,
-  type ManagedKimiConfigShape,
-  type OAuthRefreshOutcome,
-} from '@moonshot-ai/kimi-code-oauth';
+  MULTIAI_API_BASE_URL,
+  MULTIAI_OAUTH_ISSUER,
+  MULTIAI_OAUTH_KEY,
+  MULTIAI_PROVIDER_NAME,
+  MultiAIAccountUnavailableError,
+  MultiAIOAuthLoginRequiredError,
+  MultiAIOAuthToolkit,
+  applyManagedMultiAIConfig,
+  clearManagedMultiAIConfig,
+  type ManagedMultiAIConfigShape,
+  type MultiAIAccountSnapshot,
+  type MultiAIAuthStatus,
+  type MultiAIBearerTokenProvider,
+  type MultiAILoginOptions,
+  type MultiAIOAuthTokenRef,
+} from '@multiai/oauth';
 
 import { mapOAuthTokenError } from '#/oauth-error';
 
-export interface KimiAuthSubmitFeedbackInput {
+export type MultiAIAuthLoginOptions = MultiAILoginOptions;
+
+export interface MultiAIAuthLoginResult {
+  readonly providerName: typeof MULTIAI_PROVIDER_NAME;
+  readonly ok: true;
+  readonly defaultModel?: string;
+  readonly configPath: string;
+  readonly persistence: 'keyring' | 'session';
+}
+
+export interface MultiAIAuthLogoutResult {
+  readonly providerName: typeof MULTIAI_PROVIDER_NAME;
+  readonly ok: true;
+}
+
+/** @deprecated MultiAI CLI does not expose the legacy feedback backend. */
+export interface MultiAIAuthSubmitFeedbackInput {
   readonly content: string;
   readonly sessionId: string;
   readonly version: string;
   readonly os: string;
   readonly model: string | null;
-  readonly contact?: string;
-  readonly info?: Record<string, unknown>;
 }
 
-export interface KimiAuthCreateFeedbackUploadUrlInput {
+/** @deprecated MultiAI CLI does not expose the legacy feedback backend. */
+export interface MultiAIAuthCreateFeedbackUploadUrlInput {
   readonly feedbackId: number;
   readonly filename: string;
   readonly size: number;
   readonly sha256: string;
 }
 
-export interface KimiAuthCompleteFeedbackUploadPart {
-  readonly partNumber: number;
-  readonly etag: string;
-}
-
-export interface KimiAuthCompleteFeedbackUploadInput {
+/** @deprecated MultiAI CLI does not expose the legacy feedback backend. */
+export interface MultiAIAuthCompleteFeedbackUploadInput {
   readonly uploadId: number;
-  readonly parts: readonly KimiAuthCompleteFeedbackUploadPart[];
+  readonly parts: readonly { readonly partNumber: number; readonly etag: string }[];
 }
 
-export interface KimiAuthFeedbackUploadPart {
-  readonly partNumber: number;
-  readonly url: string;
-  readonly method: string;
-  readonly size: number;
-}
+export type DisabledFeedbackResult =
+  | { readonly kind: 'ok'; readonly feedbackId: number }
+  | { readonly kind: 'error'; readonly status?: number; readonly message: string };
 
-export interface KimiAuthCreateFeedbackUploadUrlOk {
-  readonly kind: 'ok';
-  readonly uploadId: number;
-  readonly parts: readonly KimiAuthFeedbackUploadPart[];
-}
+export type DisabledFeedbackUploadResult =
+  | {
+      readonly kind: 'ok';
+      readonly uploadId: number;
+      readonly parts: readonly {
+        readonly partNumber: number;
+        readonly url: string;
+        readonly method: string;
+        readonly size: number;
+      }[];
+    }
+  | { readonly kind: 'error'; readonly status?: number; readonly message: string };
 
-export type KimiAuthCreateFeedbackUploadUrlResult =
-  | KimiAuthCreateFeedbackUploadUrlOk
-  | FetchFeedbackUploadError;
+export type DisabledFeedbackCompleteResult =
+  | { readonly kind: 'ok' }
+  | { readonly kind: 'error'; readonly status?: number; readonly message: string };
 
-export type KimiAuthLoginOptions = Omit<KimiOAuthLoginOptions, 'provisionConfig'>;
-
-export interface KimiAuthLoginResult {
-  readonly providerName: string;
-  readonly ok: true;
-  readonly defaultModel: string;
-  readonly defaultThinking: boolean;
-  readonly configPath?: string | undefined;
-}
-
-export interface KimiAuthLogoutResult {
-  readonly providerName: string;
-  readonly ok: true;
-}
-
-export interface KimiAuthFacadeOptions {
+export interface MultiAIAuthFacadeOptions {
   readonly homeDir: string;
   readonly configPath: string;
-  readonly identity?: KimiHostIdentity | undefined;
-  readonly onConfigUpdated?: ((config: KimiConfig) => void) | undefined;
-  readonly onRefresh?: ((outcome: OAuthRefreshOutcome) => void) | undefined;
+  readonly onConfigUpdated?: (config: MultiAIConfig) => void;
 }
 
-type SDKManagedConfig = KimiConfig & ManagedKimiConfigShape;
+type SDKManagedConfig = MultiAIConfig & ManagedMultiAIConfigShape;
 
-export class KimiAuthFacade {
-  private readonly toolkit: KimiOAuthToolkit<SDKManagedConfig>;
+export class MultiAIAuthFacade {
+  private readonly toolkit: MultiAIOAuthToolkit;
 
-  constructor(private readonly options: KimiAuthFacadeOptions) {
-    this.toolkit = new KimiOAuthToolkit<SDKManagedConfig>({
-      homeDir: options.homeDir,
-      identity: options.identity,
-      onRefresh: options.onRefresh,
-      configAdapter: {
-        configPath: options.configPath,
-        // Write-path base read: strict (a salvaged base would drop the user's
-        // broken-but-fixable sections on rewrite) with an actionable message.
-        read: () => readConfigFileForUpdate(options.configPath) as SDKManagedConfig,
-        write: async (config) => {
-          await writeConfigFile(options.configPath, config);
-        },
-        apply: applyManagedKimiCodeConfig,
-        remove: applyManagedKimiCodeLogoutConfig,
-      },
-    });
+  constructor(private readonly options: MultiAIAuthFacadeOptions) {
+    this.toolkit = new MultiAIOAuthToolkit({ homeDir: options.homeDir });
   }
 
-  async status(providerName?: string | undefined): Promise<AuthStatus> {
-    return this.toolkit.status(providerName, this.resolveRuntimeManagedAuth(providerName).oauthRef);
+  status(): Promise<MultiAIAuthStatus> {
+    return this.toolkit.status();
   }
 
-  async login(
-    providerName: string | undefined = KIMI_CODE_PROVIDER_NAME,
-    options: KimiAuthLoginOptions = {},
-  ): Promise<KimiAuthLoginResult> {
-    const auth = this.resolveManagedAuth(providerName);
-    const loginAuth = resolveKimiCodeLoginAuth({
-      configuredBaseUrl: auth.baseUrl,
-      configuredOAuthRef: auth.oauthRef,
-      requestedBaseUrl: options.baseUrl,
-      requestedOAuthHost: options.oauthHost,
+  async login(options: MultiAIAuthLoginOptions = {}): Promise<MultiAIAuthLoginResult> {
+    const result = await this.toolkit.login(options);
+    const models = await this.toolkit.getModels();
+    const config = readConfigFileForUpdate(this.options.configPath) as SDKManagedConfig;
+    const applied = applyManagedMultiAIConfig(config, models, {
+      baseUrl: MULTIAI_API_BASE_URL,
+      issuer: MULTIAI_OAUTH_ISSUER,
+      preserveDefaultModel: true,
+      providerType: 'openai_responses',
     });
-    const result = await this.toolkit.login(providerName, {
-      ...options,
-      baseUrl: loginAuth.baseUrl,
-      oauthHost: loginAuth.oauthHost,
-      oauthRef: options.oauthRef ?? loginAuth.oauthRef,
-      provisionConfig: true,
-    });
-    if (result.provision === undefined) {
-      throw new Error('Kimi auth login did not provision model config.');
-    }
-    const updated = readConfigFile(this.options.configPath);
-    this.options.onConfigUpdated?.(updated);
+    await writeConfigFile(this.options.configPath, config);
+    this.options.onConfigUpdated?.(readConfigFile(this.options.configPath));
     return {
-      providerName: result.providerName,
+      providerName: MULTIAI_PROVIDER_NAME,
       ok: true,
-      defaultModel: result.provision.defaultModel,
-      defaultThinking: result.provision.defaultThinking,
-      configPath: result.provision.configPath,
+      defaultModel: applied.defaultModel,
+      configPath: this.options.configPath,
+      persistence: result.persistence,
     };
   }
 
-  async logout(providerName?: string | undefined): Promise<KimiAuthLogoutResult> {
-    const result = await this.toolkit.logout(
-      providerName,
-      this.resolveRuntimeManagedAuth(providerName).oauthRef,
-    );
-    const updated = readConfigFile(this.options.configPath);
-    this.options.onConfigUpdated?.(updated);
-    return {
-      providerName: result.providerName,
-      ok: result.ok,
-    };
+  async logout(): Promise<MultiAIAuthLogoutResult> {
+    await this.toolkit.logout(this.tokenRef());
+    const config = readConfigFileForUpdate(this.options.configPath) as SDKManagedConfig;
+    clearManagedMultiAIConfig(config);
+    await writeConfigFile(this.options.configPath, config);
+    this.options.onConfigUpdated?.(readConfigFile(this.options.configPath));
+    return { providerName: MULTIAI_PROVIDER_NAME, ok: true };
   }
 
-  async getManagedUsage(providerName?: string | undefined): Promise<AuthManagedUsageResult> {
-    const auth = this.resolveRuntimeManagedAuth(providerName);
-    return this.toolkit.getManagedUsage(providerName, {
-      oauthRef: auth.oauthRef,
-      baseUrl: auth.baseUrl,
+  getAccount(): Promise<MultiAIAccountSnapshot> {
+    return this.toolkit.getAccountSnapshot().catch(async (error: unknown) => {
+      if (isSignedOutError(error)) await this.deprovision();
+      throw error;
     });
   }
 
+  /** @deprecated The in-product feedback integration is disabled. */
   async submitFeedback(
-    input: KimiAuthSubmitFeedbackInput,
-    providerName?: string | undefined,
-  ): Promise<FetchSubmitFeedbackResult> {
-    const auth = this.resolveRuntimeManagedAuth(providerName);
-    return this.toolkit.submitFeedback(
-      {
-        session_id: input.sessionId,
-        content: input.content,
-        version: input.version,
-        os: input.os,
-        model: input.model,
-        contact: input.contact,
-        info: input.info,
-      },
-      providerName,
-      {
-        oauthRef: auth.oauthRef,
-        baseUrl: auth.baseUrl,
-      },
-    );
+    _input: MultiAIAuthSubmitFeedbackInput,
+  ): Promise<DisabledFeedbackResult> {
+    return { kind: 'error', message: 'In-product feedback is disabled.' };
   }
 
+  /** @deprecated The in-product feedback integration is disabled. */
   async createFeedbackUploadUrl(
-    input: KimiAuthCreateFeedbackUploadUrlInput,
-    providerName?: string | undefined,
-  ): Promise<KimiAuthCreateFeedbackUploadUrlResult> {
-    const auth = this.resolveRuntimeManagedAuth(providerName);
-    const result = await this.toolkit.createFeedbackUploadUrl(
-      {
-        file_hash: input.sha256,
-        file_name: input.filename,
-        file_size: input.size,
-        feedback_id: input.feedbackId,
-      },
-      providerName,
-      {
-        oauthRef: auth.oauthRef,
-        baseUrl: auth.baseUrl,
-      },
-    );
-    if (result.kind !== 'ok') return result;
-    return {
-      kind: 'ok',
-      uploadId: result.upload_id,
-      parts: result.parts.map((part) => ({
-        partNumber: part.part_number,
-        url: part.url,
-        method: part.method,
-        size: part.size,
-      })),
-    };
+    _input: MultiAIAuthCreateFeedbackUploadUrlInput,
+  ): Promise<DisabledFeedbackUploadResult> {
+    return { kind: 'error', message: 'In-product feedback is disabled.' };
   }
 
+  /** @deprecated The in-product feedback integration is disabled. */
   async completeFeedbackUpload(
-    input: KimiAuthCompleteFeedbackUploadInput,
-    providerName?: string | undefined,
-  ): Promise<FetchCompleteFeedbackUploadResult> {
-    const auth = this.resolveRuntimeManagedAuth(providerName);
-    return this.toolkit.completeFeedbackUpload(
-      {
-        upload_id: input.uploadId,
-        parts: input.parts.map((part) => ({ part_number: part.partNumber, etag: part.etag })),
-      },
-      providerName,
-      {
-        oauthRef: auth.oauthRef,
-        baseUrl: auth.baseUrl,
-      },
-    );
+    _input: MultiAIAuthCompleteFeedbackUploadInput,
+  ): Promise<DisabledFeedbackCompleteResult> {
+    return { kind: 'error', message: 'In-product feedback is disabled.' };
   }
 
   async getCachedAccessToken(
     providerName?: string,
-    oauthRef?: OAuthRef | undefined,
+    _oauthRef?: OAuthRef,
   ): Promise<string | undefined> {
-    return this.toolkit.getCachedAccessToken(
-      providerName,
-      this.runtimeOAuthRef(providerName, oauthRef),
-    );
+    if ((providerName ?? MULTIAI_PROVIDER_NAME) !== MULTIAI_PROVIDER_NAME) return undefined;
+    const cached = this.toolkit.getCachedAccessToken();
+    if (cached !== undefined) return cached;
+    try {
+      return await this.toolkit.getAccessToken();
+    } catch (error) {
+      if (isSignedOutError(error)) await this.deprovision();
+      return undefined;
+    }
   }
 
   readonly resolveOAuthTokenProvider = (
     providerName: string,
-    oauthRef?: OAuthRef | undefined,
-  ): BearerTokenProvider => {
-    const provider = this.toolkit.tokenProvider(
-      providerName,
-      this.runtimeOAuthRef(providerName, oauthRef),
-    );
+    oauthRef?: OAuthRef,
+  ): MultiAIBearerTokenProvider => {
+    if (providerName !== MULTIAI_PROVIDER_NAME) {
+      return {
+        getAccessToken: async () => {
+          const error = new Error('OAuth provider is not supported.');
+          throw mapOAuthTokenError(error, providerName) ?? error;
+        },
+      };
+    }
+    const provider = this.toolkit.tokenProvider(toTokenRef(oauthRef));
     return {
       getAccessToken: async (options) => {
         try {
           return await provider.getAccessToken(options);
         } catch (error) {
-          // Classify OAuth token failures into the public KimiError protocol;
-          // unrecognized errors are rethrown raw (see mapOAuthTokenError).
+          if (isSignedOutError(error)) await this.deprovision();
           throw mapOAuthTokenError(error, providerName) ?? error;
         }
       },
     };
   };
 
-  private resolveManagedAuth(providerName?: string | undefined): {
-    readonly oauthRef?: OAuthRef | undefined;
-    readonly baseUrl?: string | undefined;
-  } {
-    const name = providerName ?? KIMI_CODE_PROVIDER_NAME;
-    // Read path: token/status resolution must work off a degraded config
-    // instead of failing the session when an unrelated section is broken.
-    // Write paths (the toolkit's configAdapter.read) stay strict.
-    const config = loadRuntimeConfigSafe(this.options.configPath).config;
-    const provider = config.providers[name];
-    return {
-      oauthRef: provider?.oauth,
-      baseUrl: provider?.baseUrl,
-    };
+  private async deprovision(): Promise<void> {
+    const config = readConfigFileForUpdate(this.options.configPath) as SDKManagedConfig;
+    const cleanup = clearManagedMultiAIConfig(config);
+    if (
+      !cleanup.removedProvider &&
+      cleanup.removedModels.length === 0 &&
+      !cleanup.defaultModelCleared
+    ) {
+      return;
+    }
+    await writeConfigFile(this.options.configPath, config);
+    this.options.onConfigUpdated?.(readConfigFile(this.options.configPath));
   }
 
-  private resolveRuntimeManagedAuth(providerName?: string | undefined): {
-    readonly oauthRef: OAuthRef;
-    readonly baseUrl?: string | undefined;
-  } {
-    const auth = this.resolveManagedAuth(providerName);
-    return resolveKimiCodeRuntimeAuth({
-      configuredBaseUrl: auth.baseUrl,
-      configuredOAuthRef: auth.oauthRef,
-    });
+  private tokenRef(): MultiAIOAuthTokenRef {
+    return { key: MULTIAI_OAUTH_KEY, issuer: MULTIAI_OAUTH_ISSUER };
   }
+}
 
-  private runtimeOAuthRef(
-    providerName: string | undefined,
-    oauthRef?: OAuthRef | undefined,
-  ): OAuthRef | undefined {
-    if ((providerName ?? KIMI_CODE_PROVIDER_NAME) !== KIMI_CODE_PROVIDER_NAME) return oauthRef;
-    const auth = this.resolveManagedAuth(providerName);
-    return resolveKimiCodeRuntimeAuth({
-      configuredBaseUrl: auth.baseUrl,
-      configuredOAuthRef: oauthRef ?? auth.oauthRef,
-    }).oauthRef;
-  }
+function isSignedOutError(error: unknown): boolean {
+  return (
+    error instanceof MultiAIOAuthLoginRequiredError ||
+    error instanceof MultiAIAccountUnavailableError
+  );
+}
+
+function toTokenRef(oauthRef: OAuthRef | undefined): MultiAIOAuthTokenRef {
+  const record = oauthRef as unknown as { key?: string; issuer?: string } | undefined;
+  return {
+    key: record?.key ?? MULTIAI_OAUTH_KEY,
+    issuer: record?.issuer ?? MULTIAI_OAUTH_ISSUER,
+  };
 }

@@ -44,7 +44,7 @@ import {
   ISessionLifecycleService,
   type AgentTaskInfo,
   type Scope,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { ErrorCode } from '../protocol/error-codes';
 import {
   cancelTaskResultSchema,

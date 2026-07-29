@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 
-import { isoDateTimeSchema } from '@moonshot-ai/agent-core-v2/_base/utils/isoDateTime';
+import { isoDateTimeSchema } from '@multiai/agent-core-v2/_base/utils/isoDateTime';
 
 import { approvalRequestSchema, approvalResponseSchema } from './approval';
 

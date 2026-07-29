@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StreamingConfirmDialog } from "./StreamingConfirmDialog";
-import { KimiLogo } from "./KimiLogo";
+import { MultiAILogo } from "./MultiAILogo";
 import { SessionList } from "./SessionList";
 import { useChatStore } from "@/stores";
 import { ChatStatus, TokenInfo } from "./ChatStatus";
@@ -34,8 +34,8 @@ export function Header() {
   return (
     <header className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0 @container">
       <div className="flex items-center gap-2 shrink-0">
-        <KimiLogo className="size-5 shrink-0" />
-        <span className="text-sm font-semibold whitespace-nowrap">Kimi Code</span>
+        <MultiAILogo className="size-5 shrink-0" />
+        <span className="text-sm font-semibold whitespace-nowrap">MultiAI CLI</span>
       </div>
       <div className="flex items-center gap-1">
         {sessionId && (

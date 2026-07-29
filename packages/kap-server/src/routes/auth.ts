@@ -12,8 +12,8 @@
  * — its `AuthStatus[]` model is the v2 shape, not the v1 contract.
  */
 
-import { IAuthLegacyService, type Scope } from '@moonshot-ai/agent-core-v2';
-import { authSummarySchema } from '@moonshot-ai/agent-core-v2/app/authLegacy/authLegacy';
+import { IAuthLegacyService, type Scope } from '@multiai/agent-core-v2';
+import { authSummarySchema } from '@multiai/agent-core-v2/app/authLegacy/authLegacy';
 
 import { okEnvelope } from '../envelope';
 import { defineRoute } from '../middleware/defineRoute';

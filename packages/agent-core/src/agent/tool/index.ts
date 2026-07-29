@@ -1,5 +1,5 @@
 import { uniq } from '@antfu/utils';
-import type { ChatProvider, Tool } from '@moonshot-ai/kosong';
+import type { ChatProvider, Tool } from '@multiai/kosong';
 import picomatch from 'picomatch';
 
 import type { Agent } from '..';
@@ -781,8 +781,8 @@ export class ToolManager {
         new b.BashTool(kaos, cwd, background, {
           allowBackground,
           autoBackgroundOnTimeout:
-            this.agent.kimiConfig?.background?.bashAutoBackgroundOnTimeout ?? true,
-          backgroundTimeoutS: this.agent.kimiConfig?.background?.bashTaskTimeoutS,
+            this.agent.multiAIConfig?.background?.bashAutoBackgroundOnTimeout ?? true,
+          backgroundTimeoutS: this.agent.multiAIConfig?.background?.bashTaskTimeoutS,
         }),
         (modelCapabilities.image_in || modelCapabilities.video_in) &&
           new b.ReadMediaFileTool(
@@ -825,14 +825,14 @@ export class ToolManager {
             {
               allowBackground,
               log: this.agent.log,
-              subagentTimeoutMs: resolveSubagentTimeoutMs(this.agent.kimiConfig?.subagent?.timeoutMs),
+              subagentTimeoutMs: resolveSubagentTimeoutMs(this.agent.multiAIConfig?.subagent?.timeoutMs),
             },
           ),
         this.agent.subagentHost &&
           new b.AgentSwarmTool(
             this.agent.subagentHost,
             this.agent.swarmMode,
-            resolveSubagentTimeoutMs(this.agent.kimiConfig?.subagent?.timeoutMs),
+            resolveSubagentTimeoutMs(this.agent.multiAIConfig?.subagent?.timeoutMs),
           ),
         toolServices?.webSearcher && new b.WebSearchTool(toolServices.webSearcher),
         toolServices?.urlFetcher && new b.FetchURLTool(toolServices.urlFetcher),

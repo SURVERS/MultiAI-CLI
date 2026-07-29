@@ -40,10 +40,10 @@ A Service method is directly exposable iff **all** hold:
 
 1. Args are JSON-serializable (no live objects, `AbortSignal`, callbacks, resumer fns).
 2. Return is JSON-serializable data or `void` (no `IScopeHandle`, `Turn`, `IProcess`, `AsyncIterable`, `IDisposable`, `Event`).
-3. Errors are `KimiError` (coded).
+3. Errors are `MultiAIError` (coded).
 4. It is a command/query, not a factory, stream, byte-store, or sink.
 
-If any fail → wrap in a **facade** (a Service that takes ids, returns data, throws `KimiError`) and expose the facade. The repo already ships a wire-shaped facade in `rpc/core-api.ts` (`CoreAPI` / `SessionAPI` / `AgentAPI`) behind `IAgentRPCService` / `ISessionRPCService` — prefer building the HTTP edge on top of it rather than re-deriving a new one.
+If any fail → wrap in a **facade** (a Service that takes ids, returns data, throws `MultiAIError`) and expose the facade. The repo already ships a wire-shaped facade in `rpc/core-api.ts` (`CoreAPI` / `SessionAPI` / `AgentAPI`) behind `IAgentRPCService` / `ISessionRPCService` — prefer building the HTTP edge on top of it rather than re-deriving a new one.
 
 ## 3. Per-scope `resource:action` map
 

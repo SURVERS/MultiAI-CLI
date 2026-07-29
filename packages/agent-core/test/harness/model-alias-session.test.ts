@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createRPC,
-  KimiCore,
+  MultiAICore,
   type CoreAPI,
   type SDKAPI,
   type TelemetryClient,
@@ -24,13 +24,13 @@ import {
 const CONFIG = `
 default_model = "kimi-code/kimi-for-coding"
 
-[providers."managed:kimi-code"]
+[providers."managed:multiai"]
 type = "kimi"
 api_key = "test-key"
 base_url = "https://api.example/v1"
 
 [models."kimi-code/kimi-for-coding"]
-provider = "managed:kimi-code"
+provider = "managed:multiai"
 model = "kimi-for-coding"
 max_context_size = 1000000
 capabilities = ["thinking"]
@@ -250,7 +250,7 @@ max_context_size = 200000
       model: 'kimi-code/kimi-for-coding',
     });
 
-    const updatedConfig = await rpc.setKimiConfig({
+    const updatedConfig = await rpc.setMultiAIConfig({
       defaultModel: 'gpt-alias',
       providers: {
         openai: {
@@ -418,7 +418,7 @@ reason = "no rm"
     await freshRpc.resumeSession({ sessionId: created.id });
     await getRootLogger().flushSession(created.id);
 
-    const logText = await readFile(join(created.sessionDir, 'logs', 'kimi-code.log'), 'utf-8');
+    const logText = await readFile(join(created.sessionDir, 'logs', 'multiai.log'), 'utf-8');
     expect(logText).toContain('session resume');
     expect(logText).toContain('app_version=1.2.3-test');
   });
@@ -436,7 +436,7 @@ reason = "no rm"
       `
 default_model = "kimi-code/kimi-for-coding"
 
-[providers."managed:kimi-code"]
+[providers."managed:multiai"]
 type = "kimi"
 api_key = "test-key"
 base_url = "https://api.example/v1"
@@ -476,7 +476,7 @@ max_context_size = 1000000
       properties: { enabled: true, agent_id: 'main' },
     });
 
-    await createRpc.setKimiConfig({
+    await createRpc.setMultiAIConfig({
       defaultModel: 'gpt-alias',
       providers: {
         openai: {
@@ -592,7 +592,7 @@ max_context_size = 1000000
     } = {},
   ) {
     const [coreRpc, sdkRpc] = createRPC<CoreAPI, SDKAPI>();
-    void new KimiCore(coreRpc, {
+    void new MultiAICore(coreRpc, {
       homeDir,
       configPath,
       appVersion: options.appVersion,

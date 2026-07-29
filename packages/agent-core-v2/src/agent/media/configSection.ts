@@ -5,8 +5,8 @@
  * when compressing images for the model, and the raw-byte budget
  * (`read_byte_budget`) for images the model reads for itself (ReadMediaFile's
  * default path). Both are persisted user preferences that also accept an
- * operational env override (`KIMI_IMAGE_MAX_EDGE_PX` /
- * `KIMI_IMAGE_READ_BYTE_BUDGET`); `config` resolves each field as
+ * operational env override (`MULTIAI_IMAGE_MAX_EDGE_PX` /
+ * `MULTIAI_IMAGE_READ_BYTE_BUDGET`); `config` resolves each field as
  * `env > config.toml > default` and re-applies the env binding on every read.
  *
  * While a field's env var is set, `stripEnvBoundFields` restores its env-free
@@ -27,8 +27,8 @@ import { registerConfigSection } from '#/app/config/configSectionContributions';
 
 export const IMAGE_SECTION = 'image';
 
-export const IMAGE_MAX_EDGE_ENV = 'KIMI_IMAGE_MAX_EDGE_PX';
-export const IMAGE_READ_BYTE_BUDGET_ENV = 'KIMI_IMAGE_READ_BYTE_BUDGET';
+export const IMAGE_MAX_EDGE_ENV = 'MULTIAI_IMAGE_MAX_EDGE_PX';
+export const IMAGE_READ_BYTE_BUDGET_ENV = 'MULTIAI_IMAGE_READ_BYTE_BUDGET';
 
 export const ImageConfigSchema = z.object({
   maxEdgePx: z.number().int().min(1).optional(),

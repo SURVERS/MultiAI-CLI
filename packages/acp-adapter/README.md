@@ -1,16 +1,16 @@
-# @moonshot-ai/acp-adapter
+# @multiai/acp-adapter
 
-Agent Client Protocol adapter for kimi-code. Exposes the kimi-code agent over the [Agent Client Protocol](https://agentclientprotocol.com/) so that ACP-compatible clients (editors, IDEs, custom front-ends) can drive a kimi-code session over stdio.
+Agent Client Protocol adapter for MultiAI CLI. Exposes the MultiAI agent over the [Agent Client Protocol](https://agentclientprotocol.com/) so ACP-compatible clients can drive a MultiAI session over stdio.
 
-Part of the [Kimi Code](https://github.com/MoonshotAI/kimi-code) monorepo.
+Part of the [MultiAI CLI](https://github.com/SURVERS/MultiAI-CLI) monorepo.
 
 ## Minimum usage
 
 ```ts
-import { createKimiHarness } from '@moonshot-ai/kimi-code-sdk';
-import { runAcpServer } from '@moonshot-ai/acp-adapter';
+import { createMultiAIHarness } from '@multiai/sdk';
+import { runAcpServer } from '@multiai/acp-adapter';
 
-const harness = await createKimiHarness();
+const harness = await createMultiAIHarness();
 await runAcpServer(harness);
 ```
 

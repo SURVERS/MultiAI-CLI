@@ -286,7 +286,7 @@ export function createProxyDispatcher(
     // A malformed proxy URL makes agent construction throw synchronously. Don't
     // abort startup with a raw stack trace — report it and fall back to direct.
     const reason = error instanceof Error ? error.message : String(error);
-    process.stderr.write(`kimi: ignoring invalid proxy configuration (${reason}); connecting directly\n`);
+    process.stderr.write(`multiai: ignoring invalid proxy configuration (${reason}); connecting directly\n`);
     return undefined;
   }
 }

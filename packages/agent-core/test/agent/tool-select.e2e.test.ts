@@ -14,7 +14,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { ToolCall } from '@moonshot-ai/kosong';
+import type { ToolCall } from '@multiai/kosong';
 
 import {
   foldAnnouncedToolNames,
@@ -56,7 +56,7 @@ function toolSelectFlagOn(): FlagResolver {
   return new FlagResolver({}, FLAG_DEFINITIONS, { 'tool-select': true });
 }
 
-/** Empty env so an ambient KIMI_CODE_EXPERIMENTAL_FLAG cannot force flags on. */
+/** Empty env so an ambient MULTIAI_EXPERIMENTAL_FLAG cannot force flags on. */
 function toolSelectFlagOff(): FlagResolver {
   return new FlagResolver({}, FLAG_DEFINITIONS, {});
 }

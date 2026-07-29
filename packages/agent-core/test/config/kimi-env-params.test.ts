@@ -1,5 +1,5 @@
-import { type ChatProvider, KimiChatProvider } from '@moonshot-ai/kosong';
-import { AnthropicChatProvider } from '@moonshot-ai/kosong/providers/anthropic';
+import { type ChatProvider, KimiChatProvider } from '@multiai/kosong';
+import { AnthropicChatProvider } from '@multiai/kosong/providers/anthropic';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,7 +8,7 @@ import {
   applyKimiEnvThinkingKeep,
   resolveKimiEnvThinkingEffort,
 } from '../../src/config/kimi-env-params';
-import { KimiError } from '../../src/errors';
+import { MultiAIError } from '../../src/errors';
 
 function kimi(): KimiChatProvider {
   return new KimiChatProvider({ model: 'kimi-k2', apiKey: 'k' });
@@ -28,8 +28,8 @@ function expectConfigInvalid(fn: () => unknown): void {
   try {
     fn();
   } catch (error) {
-    expect(error).toBeInstanceOf(KimiError);
-    expect((error as KimiError).code).toBe('config.invalid');
+    expect(error).toBeInstanceOf(MultiAIError);
+    expect((error as MultiAIError).code).toBe('config.invalid');
     return;
   }
   throw new Error('expected function to throw');
@@ -43,8 +43,8 @@ describe('applyKimiEnvSamplingParams', () => {
 
   it('injects temperature and top_p for a kimi provider', () => {
     const out = applyKimiEnvSamplingParams(kimi(), {
-      KIMI_MODEL_TEMPERATURE: '0.3',
-      KIMI_MODEL_TOP_P: '0.95',
+      MULTIAI_MODEL_TEMPERATURE: '0.3',
+      MULTIAI_MODEL_TOP_P: '0.95',
     });
     const state = genState(out);
     expect(state.temperature).toBe(0.3);
@@ -53,12 +53,12 @@ describe('applyKimiEnvSamplingParams', () => {
 
   it('leaves non-kimi providers untouched', () => {
     const stub = { name: 'stub' } as unknown as ChatProvider;
-    expect(applyKimiEnvSamplingParams(stub, { KIMI_MODEL_TEMPERATURE: '0.3' })).toBe(stub);
+    expect(applyKimiEnvSamplingParams(stub, { MULTIAI_MODEL_TEMPERATURE: '0.3' })).toBe(stub);
   });
 
   it('throws config.invalid for an invalid temperature', () => {
     expectConfigInvalid(() =>
-      applyKimiEnvSamplingParams(kimi(), { KIMI_MODEL_TEMPERATURE: 'abc' }),
+      applyKimiEnvSamplingParams(kimi(), { MULTIAI_MODEL_TEMPERATURE: 'abc' }),
     );
   });
 });
@@ -70,7 +70,7 @@ describe('applyKimiEnvThinkingKeep', () => {
   });
 
   it('injects thinking.keep from env when thinking is on', () => {
-    const out = applyKimiEnvThinkingKeep(kimi(), 'high', { KIMI_MODEL_THINKING_KEEP: 'all' });
+    const out = applyKimiEnvThinkingKeep(kimi(), 'high', { MULTIAI_MODEL_THINKING_KEEP: 'all' });
     expect(genState(out).extra_body?.thinking?.keep).toBe('all');
   });
 
@@ -80,14 +80,14 @@ describe('applyKimiEnvThinkingKeep', () => {
   });
 
   it('env takes precedence over config', () => {
-    const out = applyKimiEnvThinkingKeep(kimi(), 'high', { KIMI_MODEL_THINKING_KEEP: 'all' }, 'off');
+    const out = applyKimiEnvThinkingKeep(kimi(), 'high', { MULTIAI_MODEL_THINKING_KEEP: 'all' }, 'off');
     expect(genState(out).extra_body?.thinking?.keep).toBe('all');
   });
 
   it.each(['off', 'false', '0', 'no', 'none', 'null', 'OFF', 'None'])(
     'env off-value %s disables keep even when config enables it',
     (off) => {
-      const out = applyKimiEnvThinkingKeep(kimi(), 'high', { KIMI_MODEL_THINKING_KEEP: off }, 'all');
+      const out = applyKimiEnvThinkingKeep(kimi(), 'high', { MULTIAI_MODEL_THINKING_KEEP: off }, 'all');
       expect(genState(out).extra_body).toBeUndefined();
     },
   );
@@ -98,18 +98,18 @@ describe('applyKimiEnvThinkingKeep', () => {
   });
 
   it('blank env falls through to config', () => {
-    const out = applyKimiEnvThinkingKeep(kimi(), 'high', { KIMI_MODEL_THINKING_KEEP: '  ' }, 'off');
+    const out = applyKimiEnvThinkingKeep(kimi(), 'high', { MULTIAI_MODEL_THINKING_KEEP: '  ' }, 'off');
     expect(genState(out).extra_body).toBeUndefined();
   });
 
   it('does NOT inject thinking.keep when thinking is off', () => {
-    const out = applyKimiEnvThinkingKeep(kimi(), 'off', { KIMI_MODEL_THINKING_KEEP: 'all' });
+    const out = applyKimiEnvThinkingKeep(kimi(), 'off', { MULTIAI_MODEL_THINKING_KEEP: 'all' });
     expect(genState(out).extra_body).toBeUndefined();
   });
 
   it('leaves non-kimi providers untouched', () => {
     const stub = { name: 'stub' } as unknown as ChatProvider;
-    expect(applyKimiEnvThinkingKeep(stub, 'high', { KIMI_MODEL_THINKING_KEEP: 'all' })).toBe(stub);
+    expect(applyKimiEnvThinkingKeep(stub, 'high', { MULTIAI_MODEL_THINKING_KEEP: 'all' })).toBe(stub);
   });
 });
 
@@ -117,7 +117,7 @@ describe('resolveKimiEnvThinkingEffort', () => {
   it('returns the trimmed force override for an enabled Kimi model', () => {
     expect(
       resolveKimiEnvThinkingEffort('high', true, {
-        KIMI_MODEL_THINKING_EFFORT: ' max ',
+        MULTIAI_MODEL_THINKING_EFFORT: ' max ',
       }),
     ).toBe('max');
   });
@@ -125,7 +125,7 @@ describe('resolveKimiEnvThinkingEffort', () => {
   it('lowercases the force override', () => {
     expect(
       resolveKimiEnvThinkingEffort('high', true, {
-        KIMI_MODEL_THINKING_EFFORT: ' MAX ',
+        MULTIAI_MODEL_THINKING_EFFORT: ' MAX ',
       }),
     ).toBe('max');
   });
@@ -133,7 +133,7 @@ describe('resolveKimiEnvThinkingEffort', () => {
   it('does not override an explicit off effort', () => {
     expect(
       resolveKimiEnvThinkingEffort('off', true, {
-        KIMI_MODEL_THINKING_EFFORT: 'max',
+        MULTIAI_MODEL_THINKING_EFFORT: 'max',
       }),
     ).toBeUndefined();
   });
@@ -142,7 +142,7 @@ describe('resolveKimiEnvThinkingEffort', () => {
     expect(resolveKimiEnvThinkingEffort('high', true, {})).toBeUndefined();
     expect(
       resolveKimiEnvThinkingEffort('high', true, {
-        KIMI_MODEL_THINKING_EFFORT: '  ',
+        MULTIAI_MODEL_THINKING_EFFORT: '  ',
       }),
     ).toBeUndefined();
   });
@@ -150,7 +150,7 @@ describe('resolveKimiEnvThinkingEffort', () => {
   it('does not apply the Kimi force override to another provider', () => {
     expect(
       resolveKimiEnvThinkingEffort('high', false, {
-        KIMI_MODEL_THINKING_EFFORT: 'max',
+        MULTIAI_MODEL_THINKING_EFFORT: 'max',
       }),
     ).toBeUndefined();
   });
@@ -179,7 +179,7 @@ describe('applyAnthropicThinkingKeep', () => {
   });
 
   it('injects keep from env when thinking is on', () => {
-    const out = applyAnthropicThinkingKeep(anthropic(), 'high', { KIMI_MODEL_THINKING_KEEP: 'all' });
+    const out = applyAnthropicThinkingKeep(anthropic(), 'high', { MULTIAI_MODEL_THINKING_KEEP: 'all' });
     expect(anthropicState(out).contextManagement?.edits[0]?.keep).toBe('all');
   });
 
@@ -192,7 +192,7 @@ describe('applyAnthropicThinkingKeep', () => {
     const out = applyAnthropicThinkingKeep(
       anthropic(),
       'high',
-      { KIMI_MODEL_THINKING_KEEP: 'all' },
+      { MULTIAI_MODEL_THINKING_KEEP: 'all' },
       'off',
     );
     expect(anthropicState(out).contextManagement?.edits[0]?.keep).toBe('all');
@@ -204,7 +204,7 @@ describe('applyAnthropicThinkingKeep', () => {
       const out = applyAnthropicThinkingKeep(
         anthropic(),
         'high',
-        { KIMI_MODEL_THINKING_KEEP: off },
+        { MULTIAI_MODEL_THINKING_KEEP: off },
         'all',
       );
       expect(anthropicState(out).contextManagement).toBeUndefined();
@@ -220,14 +220,14 @@ describe('applyAnthropicThinkingKeep', () => {
     const out = applyAnthropicThinkingKeep(
       anthropic(),
       'high',
-      { KIMI_MODEL_THINKING_KEEP: '  ' },
+      { MULTIAI_MODEL_THINKING_KEEP: '  ' },
       'off',
     );
     expect(anthropicState(out).contextManagement).toBeUndefined();
   });
 
   it('does NOT inject context_management when thinking is off', () => {
-    const out = applyAnthropicThinkingKeep(anthropic(), 'off', { KIMI_MODEL_THINKING_KEEP: 'all' });
+    const out = applyAnthropicThinkingKeep(anthropic(), 'off', { MULTIAI_MODEL_THINKING_KEEP: 'all' });
     expect(anthropicState(out).contextManagement).toBeUndefined();
   });
 
@@ -243,6 +243,6 @@ describe('applyAnthropicThinkingKeep', () => {
 
   it('leaves non-anthropic providers untouched', () => {
     const stub = { name: 'stub' } as unknown as ChatProvider;
-    expect(applyAnthropicThinkingKeep(stub, 'high', { KIMI_MODEL_THINKING_KEEP: 'all' })).toBe(stub);
+    expect(applyAnthropicThinkingKeep(stub, 'high', { MULTIAI_MODEL_THINKING_KEEP: 'all' })).toBe(stub);
   });
 });

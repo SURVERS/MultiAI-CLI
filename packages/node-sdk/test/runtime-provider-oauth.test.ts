@@ -1,22 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { ErrorCodes, KimiError, type KimiConfig, type Logger } from '#/index';
+import { ErrorCodes, MultiAIError, type MultiAIConfig, type Logger } from '#/index';
 
 import { ProviderManager } from '../../agent-core/src/session/provider-manager';
 
-function managedConfig(): KimiConfig {
+function managedConfig(): MultiAIConfig {
   return {
     providers: {
-      'managed:kimi-code': {
+      'managed:multiai': {
         type: 'kimi',
         baseUrl: 'https://api.kimi.com/coding/v1',
         apiKey: '',
-        oauth: { storage: 'file', key: 'oauth/kimi-code' },
+        oauth: { storage: 'keyring', key: 'oauth/multiai' },
       },
     },
     models: {
       'kimi-code/kimi-for-coding': {
-        provider: 'managed:kimi-code',
+        provider: 'managed:multiai',
         model: 'kimi-for-coding',
         maxContextSize: 262144,
       },
@@ -26,7 +26,7 @@ function managedConfig(): KimiConfig {
 }
 
 async function resolveRuntimeProviderWithOAuth(options: {
-  readonly config: KimiConfig;
+  readonly config: MultiAIConfig;
   readonly resolveOAuthTokenProvider?: import('../../agent-core/src/session/provider-manager').OAuthTokenProviderResolver;
   readonly log?: Logger;
 }) {
@@ -36,13 +36,13 @@ async function resolveRuntimeProviderWithOAuth(options: {
   });
   const model = options.config.defaultModel;
   if (model === undefined) {
-    throw new KimiError(ErrorCodes.CONFIG_INVALID, 'No model is selected.');
+    throw new MultiAIError(ErrorCodes.CONFIG_INVALID, 'No model is selected.');
   }
   const { providerName, provider } = manager.resolveProviderConfig(model);
 
   const providerConfig = options.config.providers[providerName];
   if (providerConfig?.oauth !== undefined && (providerConfig.apiKey ?? '').length > 0) {
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.CONFIG_INVALID,
       `Provider "${providerName}" has both apiKey and oauth set in config.toml — they are mutually exclusive. Remove one.`,
     );
@@ -52,7 +52,7 @@ async function resolveRuntimeProviderWithOAuth(options: {
   const tokenProvider = options.resolveOAuthTokenProvider?.(providerName, oauthRef);
 
   if (tokenProvider === undefined) {
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.AUTH_LOGIN_REQUIRED,
       `OAuth provider "${providerName}" requires login before it can be used.`,
     );
@@ -64,11 +64,11 @@ async function resolveRuntimeProviderWithOAuth(options: {
     await tokenProvider.getAccessToken(undefined);
   } catch (error) {
     if (
-      !(error instanceof KimiError && error.code === ErrorCodes.AUTH_LOGIN_REQUIRED)
+      !(error instanceof MultiAIError && error.code === ErrorCodes.AUTH_LOGIN_REQUIRED)
     ) {
       options.log?.warn('oauth token fetch failed', { providerName, error });
     }
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.AUTH_LOGIN_REQUIRED,
       `OAuth provider "${providerName}" requires login before it can be used.`,
       { cause: error },
@@ -84,7 +84,7 @@ async function resolveRuntimeProviderWithOAuth(options: {
           opts?.forceRefresh ? { force: true } : undefined,
         );
         if (apiKey.trim().length === 0) {
-          throw new KimiError(
+          throw new MultiAIError(
             ErrorCodes.AUTH_LOGIN_REQUIRED,
             `OAuth provider "${providerName}" requires login before it can be used.`,
           );
@@ -92,11 +92,11 @@ async function resolveRuntimeProviderWithOAuth(options: {
         return { apiKey };
       } catch (error) {
         if (
-          !(error instanceof KimiError && error.code === ErrorCodes.AUTH_LOGIN_REQUIRED)
+          !(error instanceof MultiAIError && error.code === ErrorCodes.AUTH_LOGIN_REQUIRED)
         ) {
           options.log?.warn('oauth token fetch failed', { providerName, error });
         }
-        throw new KimiError(
+        throw new MultiAIError(
           ErrorCodes.AUTH_LOGIN_REQUIRED,
           `OAuth provider "${providerName}" requires login before it can be used.`,
           { cause: error },
@@ -118,12 +118,12 @@ describe('resolveRuntimeProviderWithOAuth', () => {
     const resolved = await resolveRuntimeProviderWithOAuth({
       config: managedConfig(),
       resolveOAuthTokenProvider: (_providerName, oauthRef) => {
-        expect(oauthRef).toEqual({ storage: 'file', key: 'oauth/kimi-code' });
+        expect(oauthRef).toEqual({ storage: 'keyring', key: 'oauth/multiai' });
         return { getAccessToken };
       },
     });
 
-    expect(resolved.providerName).toBe('managed:kimi-code');
+    expect(resolved.providerName).toBe('managed:multiai');
     expect(resolved.provider).toMatchObject({
       type: 'kimi',
       model: 'kimi-for-coding',
@@ -146,14 +146,14 @@ describe('resolveRuntimeProviderWithOAuth', () => {
   });
 
   it('rejects providers that set both apiKey and oauth on the same config', async () => {
-    const conflicting: KimiConfig = {
+    const conflicting: MultiAIConfig = {
       ...managedConfig(),
       providers: {
-        'managed:kimi-code': {
+        'managed:multiai': {
           type: 'kimi',
           baseUrl: 'https://api.kimi.com/coding/v1',
           apiKey: 'static-key',
-          oauth: { storage: 'file', key: 'oauth/kimi-code' },
+          oauth: { storage: 'keyring', key: 'oauth/multiai' },
         },
       },
     };
@@ -177,7 +177,7 @@ describe('resolveRuntimeProviderWithOAuth', () => {
         }),
       }),
     ).rejects.toMatchObject({
-      name: 'KimiError',
+      name: 'MultiAIError',
       code: 'auth.login_required',
     });
   });
@@ -196,7 +196,7 @@ describe('resolveRuntimeProviderWithOAuth', () => {
     expect(log.warn).toHaveBeenCalledWith(
       'oauth token fetch failed',
       expect.objectContaining({
-        providerName: 'managed:kimi-code',
+        providerName: 'managed:multiai',
         error: expect.any(Error),
       }),
     );
@@ -208,7 +208,7 @@ describe('resolveRuntimeProviderWithOAuth', () => {
         log,
         resolveOAuthTokenProvider: () => ({
           getAccessToken: vi.fn().mockRejectedValue(
-            new KimiError(ErrorCodes.AUTH_LOGIN_REQUIRED, 'not logged in'),
+            new MultiAIError(ErrorCodes.AUTH_LOGIN_REQUIRED, 'not logged in'),
           ),
         }),
       }),

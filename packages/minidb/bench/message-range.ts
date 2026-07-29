@@ -7,7 +7,7 @@
 //
 // This is a message-granularity range query with a SMALL LIMIT, which is a
 // different shape from the session-level benches:
-//   - import-kimi-code / search-baseline index whole sessions (one doc/session).
+//   - import-multiai / search-baseline index whole sessions (one doc/session).
 //   - the metadata lookups (workspace lookup, dt range over sessions) return
 //     ALL matches, so at small N a linear filter beats the index.
 // Here, an ordered dt index can walk just `limit` entries (O(log N + limit))
@@ -36,7 +36,7 @@ interface Msg {
 }
 
 function loadRealMessages(): Msg[] {
-  const DATA = path.join(os.homedir(), '.kimi-code');
+  const DATA = path.join(os.homedir(), '.multiai');
   const lines = readFileSync(path.join(DATA, 'session_index.jsonl'), 'utf8').trim().split('\n');
   const out: Msg[] = [];
   for (const line of lines) {

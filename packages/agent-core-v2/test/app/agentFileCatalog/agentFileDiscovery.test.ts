@@ -3,7 +3,7 @@
  * pruning, per-file parse isolation, first-wins name collisions, and
  * directory-failure tolerance (root propagates, subdirectories skip-and-warn).
  * Exercises discoverAgentFiles against real temp dirs and targeted fake fs.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/app/agentFileCatalog/agentFileDiscovery.test.ts`.
  */
 

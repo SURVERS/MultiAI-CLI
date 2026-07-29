@@ -14,8 +14,8 @@ import {
 } from '../../harness';
 import { recordingTelemetry, type TelemetryRecord } from '../../app/telemetry/stubs';
 
-type TestKimiConfig = ReturnType<Parameters<typeof configServices>[0]>;
-type TestProtocolModelConfig = NonNullable<TestKimiConfig['models']>[string] &
+type TestMultiAIConfig = ReturnType<Parameters<typeof configServices>[0]>;
+type TestProtocolModelConfig = NonNullable<TestMultiAIConfig['models']>[string] &
   Pick<ModelRecord, 'protocol'>;
 type GenerateFn = Parameters<typeof llmGenerateServices>[0];
 
@@ -27,18 +27,18 @@ describe('ConfigState model capabilities', () => {
   let ctx: TestAgentContext;
   let profile: IAgentProfileService;
   let requester: IAgentLLMRequesterService;
-  let kimiConfig: TestKimiConfig;
+  let multiAIConfig: TestMultiAIConfig;
   let generate: GenerateFn;
   let records: TelemetryRecord[];
 
   beforeEach(() => {
-    kimiConfig = {
+    multiAIConfig = {
       providers: {},
     };
     generate = defaultGenerate;
     records = [];
     ctx = createTestAgent(
-      configServices(() => kimiConfig),
+      configServices(() => multiAIConfig),
       llmGenerateServices((...args) => generate(...args)),
       telemetryServices(recordingTelemetry(records)),
     );
@@ -55,7 +55,7 @@ describe('ConfigState model capabilities', () => {
   });
 
   it('computes provider and model capabilities from config metadata', () => {
-    kimiConfig = {
+    multiAIConfig = {
       providers: {
         kimi: {
           type: 'kimi',
@@ -89,7 +89,7 @@ describe('ConfigState model capabilities', () => {
   });
 
   it('tracks thinking_toggle with the effort payload when effort changes', () => {
-    kimiConfig = {
+    multiAIConfig = {
       providers: {
         kimi: {
           type: 'kimi',
@@ -120,7 +120,7 @@ describe('ConfigState model capabilities', () => {
   });
 
   it('does not infer Kimi capabilities from the provider catalogue', () => {
-    kimiConfig = {
+    multiAIConfig = {
       providers: {
         kimi: {
           type: 'kimi',
@@ -149,7 +149,7 @@ describe('ConfigState model capabilities', () => {
 
   it('uses model max output size as the LLM completion cap', async () => {
     let requestMaxTokens: unknown;
-    kimiConfig = {
+    multiAIConfig = {
       providers: {
         deepseek: {
           type: 'openai',
@@ -193,10 +193,10 @@ describe('ConfigState model capabilities', () => {
 describe('ConfigState prompt cache hint', () => {
   let ctx: TestAgentContext;
   let profile: IAgentProfileService;
-  let kimiConfig: TestKimiConfig;
+  let multiAIConfig: TestMultiAIConfig;
 
   beforeEach(() => {
-    kimiConfig = {
+    multiAIConfig = {
       providers: {
         kimi: {
           type: 'kimi',
@@ -213,7 +213,7 @@ describe('ConfigState prompt cache hint', () => {
       },
     };
     ctx = createTestAgent(
-      configServices(() => kimiConfig),
+      configServices(() => multiAIConfig),
       modelProviderOptionServices({ promptCacheKey: 'session-test' }),
     );
     profile = ctx.get(IAgentProfileService);
@@ -243,11 +243,11 @@ describe('ConfigState thinking clamp for always-thinking models', () => {
   let ctx: TestAgentContext;
   let profile: IAgentProfileService;
   let requester: IAgentLLMRequesterService;
-  let kimiConfig: TestKimiConfig;
+  let multiAIConfig: TestMultiAIConfig;
   let capturedThinking: unknown;
 
   beforeEach(() => {
-    kimiConfig = {
+    multiAIConfig = {
       providers: { kimi: { type: 'kimi', apiKey: 'test-key', baseUrl: 'https://api.example.test/v1' } },
       models: {
         'kimi-code/deep': {
@@ -292,7 +292,7 @@ describe('ConfigState thinking clamp for always-thinking models', () => {
     };
     capturedThinking = undefined;
     ctx = createTestAgent(
-      configServices(() => kimiConfig),
+      configServices(() => multiAIConfig),
       llmGenerateServices(async (_provider, _systemPrompt, _tools, _history, _callbacks, options) => {
         // The per-turn thinking intent (effort + keep) — the replacement for
         // the morph-era baked `_generationKwargs.extra_body.thinking`.
@@ -432,16 +432,16 @@ describe('ConfigState thinking clamp for always-thinking models', () => {
   });
 });
 
-describe('ConfigState.provider applies global KIMI_MODEL_* request config', () => {
+describe('ConfigState.provider applies global MULTIAI_MODEL_* request config', () => {
   let ctx: TestAgentContext | undefined;
   let profile: IAgentProfileService;
   let requester: IAgentLLMRequesterService;
-  let kimiConfig: TestKimiConfig;
+  let multiAIConfig: TestMultiAIConfig;
   let capturedProvider: unknown;
   let capturedOptions: Parameters<GenerateFn>[5];
 
   beforeEach(() => {
-    kimiConfig = {
+    multiAIConfig = {
       providers: { kimi: { type: 'kimi', apiKey: 'test-key', baseUrl: 'https://api.example.test/v1' } },
       models: {
         'kimi-code': {
@@ -475,7 +475,7 @@ describe('ConfigState.provider applies global KIMI_MODEL_* request config', () =
 
   function createAgentWithEnv(): void {
     ctx = createTestAgent(
-      configServices(() => kimiConfig),
+      configServices(() => multiAIConfig),
       llmGenerateServices(async (provider, _systemPrompt, _tools, _history, _callbacks, options) => {
         capturedProvider = provider;
         capturedOptions = options;
@@ -492,8 +492,8 @@ describe('ConfigState.provider applies global KIMI_MODEL_* request config', () =
     requester = ctx.get(IAgentLLMRequesterService);
   }
 
-  it('injects KIMI_MODEL_TEMPERATURE into the per-turn sampling intent (the compaction request also uses)', async () => {
-    vi.stubEnv('KIMI_MODEL_TEMPERATURE', '0.3');
+  it('injects MULTIAI_MODEL_TEMPERATURE into the per-turn sampling intent (the compaction request also uses)', async () => {
+    vi.stubEnv('MULTIAI_MODEL_TEMPERATURE', '0.3');
     createAgentWithEnv();
 
     profile.update({ modelAlias: 'kimi-code' });
@@ -508,8 +508,8 @@ describe('ConfigState.provider applies global KIMI_MODEL_* request config', () =
     });
   });
 
-  it('injects KIMI_MODEL_THINKING_KEEP into the per-turn thinking intent when thinking is on (so compaction keeps it)', async () => {
-    vi.stubEnv('KIMI_MODEL_THINKING_KEEP', 'all');
+  it('injects MULTIAI_MODEL_THINKING_KEEP into the per-turn thinking intent when thinking is on (so compaction keeps it)', async () => {
+    vi.stubEnv('MULTIAI_MODEL_THINKING_KEEP', 'all');
     createAgentWithEnv();
 
     profile.update({ modelAlias: 'kimi-code', thinkingLevel: 'high' });
@@ -521,7 +521,7 @@ describe('ConfigState.provider applies global KIMI_MODEL_* request config', () =
   });
 
   it('does NOT inject thinking.keep into the per-turn intent when thinking is off', async () => {
-    vi.stubEnv('KIMI_MODEL_THINKING_KEEP', 'all');
+    vi.stubEnv('MULTIAI_MODEL_THINKING_KEEP', 'all');
     createAgentWithEnv();
 
     profile.update({ modelAlias: 'kimi-code', thinkingLevel: 'off' });
@@ -532,7 +532,7 @@ describe('ConfigState.provider applies global KIMI_MODEL_* request config', () =
   });
 
   it('injects forced effort through the Anthropic protocol for a Kimi provider', async () => {
-    vi.stubEnv('KIMI_MODEL_THINKING_EFFORT', 'max');
+    vi.stubEnv('MULTIAI_MODEL_THINKING_EFFORT', 'max');
     createAgentWithEnv();
 
     profile.update({ modelAlias: 'kimi-code-anthropic', thinkingLevel: 'high' });

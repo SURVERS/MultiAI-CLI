@@ -3,7 +3,7 @@ import { APIProviderQuotaExhaustedError, parseRetryAfterMs, parseTraceId } from 
 // Structured error `type`/`code` value that means the Moonshot account's
 // quota or balance is exhausted (as opposed to a transient rate limit): the
 // backend sets `exceeded_current_quota_error` as the body `error.type`.
-const KIMI_QUOTA_EXHAUSTED_ERROR_CODES = new Set(['exceeded_current_quota_error']);
+const MULTIAI_QUOTA_EXHAUSTED_ERROR_CODES = new Set(['exceeded_current_quota_error']);
 
 // Message fallback for gateways that flatten the body to text, matched
 // against the lowercased message of a 429. Every pattern is anchored to
@@ -13,7 +13,7 @@ const KIMI_QUOTA_EXHAUSTED_ERROR_CODES = new Set(['exceeded_current_quota_error'
 // quota: ... please check your account balance" and "Your account ... is
 // suspended due to insufficient balance, please recharge your account or
 // check your plan and billing details".
-const KIMI_QUOTA_EXHAUSTED_MESSAGE_PATTERNS = [
+const MULTIAI_QUOTA_EXHAUSTED_MESSAGE_PATTERNS = [
   /exceeded your current (?:token )?quota/,
   /check your account balance/,
   /insufficient balance/,
@@ -68,10 +68,10 @@ export function classifyKimiQuotaError(
 
   const message = readStringProp(error, 'message') ?? '';
   const structuredHit = collectErrorCodes(error).some((code) =>
-    KIMI_QUOTA_EXHAUSTED_ERROR_CODES.has(code),
+    MULTIAI_QUOTA_EXHAUSTED_ERROR_CODES.has(code),
   );
   const lowerMessage = message.toLowerCase();
-  const wordingHit = KIMI_QUOTA_EXHAUSTED_MESSAGE_PATTERNS.some((pattern) =>
+  const wordingHit = MULTIAI_QUOTA_EXHAUSTED_MESSAGE_PATTERNS.some((pattern) =>
     pattern.test(lowerMessage),
   );
   if (!structuredHit && !wordingHit) return undefined;

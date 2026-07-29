@@ -2,11 +2,11 @@ import { join } from 'pathe';
 import { randomUUID } from 'node:crypto';
 
 import { normalizeAdditionalDirs } from '../config';
-import { ErrorCodes, KimiError, makeErrorPayload } from '#/errors';
+import { ErrorCodes, MultiAIError, makeErrorPayload } from '#/errors';
 import { log } from '#/logging/logger';
 import type { Logger } from '#/logging/types';
-import type { AgentAPI, AgentEvent, KimiConfig, SDKAgentRPC, UsageStatus } from '#/rpc';
-import { generate, type ChatProvider } from '@moonshot-ai/kosong';
+import type { AgentAPI, AgentEvent, MultiAIConfig, SDKAgentRPC, UsageStatus } from '#/rpc';
+import { generate, type ChatProvider } from '@multiai/kosong';
 
 import type { EnabledPluginSessionStart, PluginCommandDef } from '#/plugin';
 import { expandCommandArguments } from '../plugin/commands';
@@ -58,7 +58,7 @@ import { UsageRecorder } from './usage';
 import { LlmRequestLogger, splitGenerateOptions } from './llm-request-logger';
 import { LlmRequestRecorder } from './llm-request-recorder';
 import { resolveCompletionBudget } from '../utils/completion-budget';
-import type { Kaos } from '@moonshot-ai/kaos';
+import type { Kaos } from '@multiai/kaos';
 import type { ToolServices } from '../tools/support/services';
 
 export type { AgentRecord, AgentRecordPersistence } from './records';
@@ -76,7 +76,7 @@ export type AgentType = 'main' | 'sub' | 'independent';
 
 export interface AgentOptions {
   readonly kaos: Kaos;
-  readonly config?: KimiConfig;
+  readonly config?: MultiAIConfig;
   readonly homedir?: string;
   /**
    * Session-owned directory for pre-compression image originals
@@ -118,7 +118,7 @@ export class Agent {
     return this._kaos;
   }
 
-  readonly kimiConfig?: KimiConfig;
+  readonly multiAIConfig?: MultiAIConfig;
   readonly homedir?: string;
   readonly mediaOriginalsDir?: string;
   readonly rpc?: Partial<SDKAgentRPC>;
@@ -157,7 +157,7 @@ export class Agent {
   readonly replayBuilder: ReplayBuilder;
 
   /**
-   * Print-mode (`kimi -p`) only: when true and the agent ends a turn while
+   * Print-mode (`multiai -p`) only: when true and the agent ends a turn while
    * background subagents (`kind === 'agent'`) are still running, the turn loop
    * holds the turn open and idle-waits until they finish, flushing their
    * completions into the turn so the model can react before the run exits. Set
@@ -182,7 +182,7 @@ export class Agent {
   constructor(options: AgentOptions) {
     this.type = options.type ?? 'main';
     this._kaos = options.kaos;
-    this.kimiConfig = options.config;
+    this.multiAIConfig = options.config;
     this.homedir = options.homedir;
     this.mediaOriginalsDir = options.mediaOriginalsDir;
     this.rpc = options.rpc;
@@ -416,7 +416,7 @@ export class Agent {
     // All provider-level request config (thinking, sampling params, thinking.keep)
     // is applied in ConfigState.provider so compaction shares it. See get provider().
     const provider = this.config.provider;
-    const loopControl = this.kimiConfig?.loopControl;
+    const loopControl = this.multiAIConfig?.loopControl;
     const completionBudgetConfig = resolveCompletionBudget({
       maxOutputSize: this.config.maxOutputSize,
       reservedContextSize: loopControl?.reservedContextSize,
@@ -606,7 +606,7 @@ export class Agent {
       },
       importContext: (payload) => {
         if (this.turn.hasActiveTurn || this.fullCompaction.isCompacting) {
-          throw new KimiError(
+          throw new MultiAIError(
             ErrorCodes.TURN_AGENT_BUSY,
             'Cannot import context while the agent is busy',
           );
@@ -615,7 +615,7 @@ export class Agent {
       },
       activateSkill: (payload) => {
         if (this.skills === null) {
-          throw new KimiError(ErrorCodes.SKILL_NOT_FOUND, `Skill "${payload.name}" was not found`);
+          throw new MultiAIError(ErrorCodes.SKILL_NOT_FOUND, `Skill "${payload.name}" was not found`);
         }
         this.skills.activate(payload);
       },
@@ -624,7 +624,7 @@ export class Agent {
           (d) => d.pluginId === payload.pluginId && d.name === payload.commandName,
         );
         if (def === undefined) {
-          throw new KimiError(
+          throw new MultiAIError(
             ErrorCodes.REQUEST_INVALID,
             `Plugin command "${payload.pluginId}:${payload.commandName}" was not found`,
           );

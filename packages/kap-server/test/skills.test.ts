@@ -29,7 +29,7 @@ import {
   IAgentLifecycleService,
   ISessionLifecycleService,
   ISkillCatalogRuntimeOptions,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import {
   activateSkillResultSchema,
   listSkillsResponseSchema,
@@ -130,9 +130,9 @@ describe('server-v2 /api/v1 skills', () => {
     return dir;
   }
 
-  /** Seed a project skill bundle at `<root>/.kimi-code/skills/<name>/SKILL.md`. */
+  /** Seed a project skill bundle at `<root>/.multiai/skills/<name>/SKILL.md`. */
   async function seedProjectSkill(root: string, name: string): Promise<void> {
-    const dir = join(root, '.kimi-code', 'skills', name);
+    const dir = join(root, '.multiai', 'skills', name);
     await mkdir(dir, { recursive: true });
     await writeFile(
       join(dir, 'SKILL.md'),
@@ -186,7 +186,7 @@ describe('server-v2 /api/v1 skills', () => {
       expect(updateConfig).not.toHaveProperty('isSubSkill');
     });
 
-    it('lists the check-kimi-code-docs builtin skill', async () => {
+    it('lists the check-multiai-docs builtin skill', async () => {
       const id = await createSession();
       const { body } = await getJson<{ skills: SkillWire[] }>(
         `/api/v1/sessions/${id}/skills`,
@@ -194,7 +194,7 @@ describe('server-v2 /api/v1 skills', () => {
       expect(body.code).toBe(0);
       const skills = listSkillsResponseSchema.parse(body.data).skills;
 
-      const docsSkill = skills.find((s) => s.name === 'check-kimi-code-docs');
+      const docsSkill = skills.find((s) => s.name === 'check-multiai-docs');
       expect(docsSkill).toBeDefined();
       expect(docsSkill).toMatchObject({ source: 'builtin' });
       expect(docsSkill?.description.length).toBeGreaterThan(0);

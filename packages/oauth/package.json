@@ -1,21 +1,21 @@
 {
-  "name": "@moonshot-ai/kimi-code-oauth",
+  "name": "@multiai/oauth",
   "version": "0.2.2",
   "private": true,
-  "description": "Kimi OAuth toolkit for managed Kimi Code authentication",
+  "description": "OAuth 2.0 and OpenID Connect toolkit for MultiAI native clients",
   "license": "MIT",
-  "author": "Moonshot AI",
-  "homepage": "https://github.com/MoonshotAI/kimi-code/tree/main/packages/oauth#readme",
+  "author": "MultiAI",
+  "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/oauth#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MoonshotAI/kimi-code.git",
+    "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",
     "directory": "packages/oauth"
   },
   "bugs": {
-    "url": "https://github.com/MoonshotAI/kimi-code/issues"
+    "url": "https://github.com/SURVERS/MultiAI-CLI/issues"
   },
   "keywords": [
-    "kimi",
+    "multiai",
     "oauth",
     "authentication",
     "auth",
@@ -40,6 +40,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@napi-rs/keyring": "^1.3.0",
+    "jose": "^6.2.2",
     "proper-lockfile": "^4.1.2"
   },
   "devDependencies": {

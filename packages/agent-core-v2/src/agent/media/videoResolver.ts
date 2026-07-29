@@ -1,10 +1,10 @@
 /**
  * `media` domain (L4) — request-time video reference resolver contract.
  *
- * Rewrites the `kimi-file://` video references a prompt carries in the
+ * Rewrites the `multiai-file://` video references a prompt carries in the
  * projected wire messages into a provider-acceptable form (an uploaded
  * `ms://` reference, an inline base64 `data:` part, or a `<video path>` text
- * tag) right before the messages reach the provider — so a `kimi-file://` url
+ * tag) right before the messages reach the provider — so a `multiai-file://` url
  * never touches the wire. Bound at Agent scope.
  */
 

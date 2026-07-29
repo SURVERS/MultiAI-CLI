@@ -1,18 +1,17 @@
 import { Disposable, InstantiationType, registerSingleton } from '../../di';
-import type { KimiConfig, ModelAlias, ProviderConfig, ProviderType } from '../../config';
+import type { MultiAIConfig, ModelAlias, OAuthRef, ProviderConfig, ProviderType } from '../../config';
 import type {
   ModelCatalogItem,
   ProviderCatalogItem,
   RefreshOAuthProviderModelsResponse,
   RefreshProviderModelsResponse,
   SetDefaultModelResponse,
-} from '@moonshot-ai/protocol';
+} from '@multiai/protocol';
 import {
   refreshProviderModels,
-  type ManagedKimiOAuthRef,
   type RefreshProviderHost,
   type RefreshResult,
-} from '@moonshot-ai/kimi-code-oauth';
+} from '@multiai/oauth';
 
 import { createManagedAuthFacade, type ServicesAuthFacade } from '../auth/managedAuth';
 import { ICoreProcessService } from '../coreProcess/coreProcess';
@@ -90,7 +89,7 @@ export class ModelCatalogService
       throw new ModelNotFoundError(modelId);
     }
 
-    const updated = await this.core.rpc.setKimiConfig({ defaultModel: modelId });
+    const updated = await this.core.rpc.setMultiAIConfig({ defaultModel: modelId });
     const updatedAlias = updated.models?.[modelId] ?? alias;
     return {
       default_model: modelId,
@@ -102,7 +101,7 @@ export class ModelCatalogService
     };
   }
 
-  private _providerTypeOf(config: KimiConfig, alias: ModelAlias): ProviderType | undefined {
+  private _providerTypeOf(config: MultiAIConfig, alias: ModelAlias): ProviderType | undefined {
     const providerId = alias.provider ?? config.defaultProvider;
     return config.providers[providerId ?? '']?.type;
   }
@@ -155,17 +154,17 @@ export class ModelCatalogService
   private _buildRefreshHost(): RefreshProviderHost {
     return {
       getConfig: () => this._readConfig(),
-      removeProvider: (providerId) => this.core.rpc.removeKimiProvider({ providerId }),
-      setConfig: (patch) => this.core.rpc.setKimiConfig(patch as Record<string, unknown>),
+      removeProvider: (providerId) => this.core.rpc.removeProvider({ providerId }),
+      setConfig: (patch) => this.core.rpc.setMultiAIConfig(patch as Record<string, unknown>),
       resolveOAuthToken: (providerName, oauthRef) =>
         this._resolveOAuthToken(providerName, oauthRef),
-      userAgent: this.core.kimiRequestHeaders?.['User-Agent'],
+      userAgent: this.core.multiAIRequestHeaders?.['User-Agent'],
     };
   }
 
   private async _resolveOAuthToken(
     providerName: string,
-    oauthRef?: ManagedKimiOAuthRef,
+    oauthRef?: OAuthRef,
   ): Promise<string> {
     const tokenProvider = this._authFacade.resolveOAuthTokenProvider(providerName, oauthRef);
     if (tokenProvider === undefined) {
@@ -174,12 +173,12 @@ export class ModelCatalogService
     return tokenProvider.getAccessToken();
   }
 
-  private async _readConfig(): Promise<KimiConfig> {
-    return this.core.rpc.getKimiConfig({ reload: true });
+  private async _readConfig(): Promise<MultiAIConfig> {
+    return this.core.rpc.getMultiAIConfig({ reload: true });
   }
 
   private async _provider(
-    config: KimiConfig,
+    config: MultiAIConfig,
     providerId: string,
     provider: ProviderConfig,
   ): Promise<ProviderCatalogItem> {

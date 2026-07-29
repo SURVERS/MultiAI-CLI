@@ -16,6 +16,7 @@ export const Methods = {
 
   GetSlashCommands: "getSlashCommands",
   CheckLoginStatus: "checkLoginStatus",
+  GetAccount: "getAccount",
   Login: "login",
   Logout: "logout",
   SaveConfig: "saveConfig",
@@ -39,14 +40,14 @@ export const Methods = {
   SteerChat: "steerChat",
   RespondApproval: "respondApproval",
 
-  GetKimiSessions: "getKimiSessions",
-  GetAllKimiSessions: "getAllKimiSessions",
+  GetMultiAISessions: "getMultiAISessions",
+  GetAllMultiAISessions: "getAllMultiAISessions",
   GetRegisteredWorkDirs: "getRegisteredWorkDirs",
   SetWorkDir: "setWorkDir",
   BrowseWorkDir: "browseWorkDir",
-  LoadKimiSessionHistory: "loadKimiSessionHistory",
-  DeleteKimiSession: "deleteKimiSession",
-  ForkKimiSession: "forkKimiSession",
+  LoadMultiAISessionHistory: "loadMultiAISessionHistory",
+  DeleteMultiAISession: "deleteMultiAISession",
+  ForkMultiAISession: "forkMultiAISession",
   GetProjectFiles: "getProjectFiles",
   PickMedia: "pickMedia",
   OpenFile: "openFile",
@@ -132,7 +133,7 @@ function validateParams(method: RpcMethod, params: unknown): boolean {
     case Methods.GetInputHistory:
     case Methods.GetSlashCommands:
     case Methods.CheckLoginStatus:
-    case Methods.Login:
+    case Methods.GetAccount:
     case Methods.Logout:
     case Methods.GetExtensionConfig:
     case Methods.OpenSettings:
@@ -141,14 +142,20 @@ function validateParams(method: RpcMethod, params: unknown): boolean {
     case Methods.GetMCPServers:
     case Methods.AbortChat:
     case Methods.ResetSession:
-    case Methods.GetKimiSessions:
-    case Methods.GetAllKimiSessions:
+    case Methods.GetMultiAISessions:
+    case Methods.GetAllMultiAISessions:
     case Methods.GetRegisteredWorkDirs:
     case Methods.BrowseWorkDir:
     case Methods.ClearTrackedFiles:
     case Methods.ShowLogs:
     case Methods.ReloadWebview:
       return params === undefined;
+    case Methods.Login:
+      return params === undefined || (
+        isPlainObject(params)
+        && (params["method"] === undefined || params["method"] === "browser" || params["method"] === "device")
+        && (params["persistence"] === undefined || params["persistence"] === "keyring" || params["persistence"] === "session")
+      );
 
     case Methods.AddInputHistory:
       return hasString(params, "text");
@@ -192,11 +199,11 @@ function validateParams(method: RpcMethod, params: unknown): boolean {
       );
     case Methods.SetWorkDir:
       return isPlainObject(params) && (params["workDir"] === null || typeof params["workDir"] === "string");
-    case Methods.LoadKimiSessionHistory:
-      return hasNonEmptyString(params, "kimiSessionId");
-    case Methods.DeleteKimiSession:
+    case Methods.LoadMultiAISessionHistory:
+      return hasNonEmptyString(params, "multiaiSessionId");
+    case Methods.DeleteMultiAISession:
       return hasNonEmptyString(params, "sessionId");
-    case Methods.ForkKimiSession:
+    case Methods.ForkMultiAISession:
       return isPlainObject(params)
         && isNonEmptyString(params["sessionId"])
         && Number.isInteger(params["turnIndex"])

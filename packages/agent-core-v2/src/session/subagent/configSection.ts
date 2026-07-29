@@ -3,7 +3,7 @@
  * timeout / model resolution.
  *
  * Owns the `[subagent]` configuration section (`timeout_ms` on disk) together
- * with the `KIMI_SUBAGENT_TIMEOUT_MS` env override, mirroring v1's
+ * with the `MULTIAI_SUBAGENT_TIMEOUT_MS` env override, mirroring v1's
  * `resolveSubagentTimeoutMs` precedence (env > config.toml > 2h default). While
  * the env var is set, `stripEnvBoundFields` restores the env-free raw value
  * before persistence, so the override never leaks into `config.toml`. Both
@@ -65,7 +65,7 @@ export type SubagentConfig = z.infer<typeof SubagentConfigSchema>;
 /** Default per-run subagent timeout: 2 hours, same as v1. */
 export const DEFAULT_SUBAGENT_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 
-export const SUBAGENT_TIMEOUT_ENV = 'KIMI_SUBAGENT_TIMEOUT_MS';
+export const SUBAGENT_TIMEOUT_ENV = 'MULTIAI_SUBAGENT_TIMEOUT_MS';
 
 /** Parse the env override; anything but a positive integer is ignored (v1 semantics). */
 function parseTimeoutMsEnv(raw: string): number | undefined {

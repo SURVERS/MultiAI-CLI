@@ -42,7 +42,7 @@ function capturingLogger(): { logger: Logger; lines: string[] } {
 }
 
 beforeEach(() => {
-  prevPassword = process.env['KIMI_CODE_PASSWORD'];
+  prevPassword = process.env['MULTIAI_PASSWORD'];
 });
 
 afterEach(async () => {
@@ -57,9 +57,9 @@ afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
   }
   if (prevPassword === undefined) {
-    delete process.env['KIMI_CODE_PASSWORD'];
+    delete process.env['MULTIAI_PASSWORD'];
   } else {
-    process.env['KIMI_CODE_PASSWORD'] = prevPassword;
+    process.env['MULTIAI_PASSWORD'] = prevPassword;
   }
 });
 
@@ -72,7 +72,7 @@ describe('public-bind gate', () => {
   });
 
   it('boots 0.0.0.0 token-only and logs the token-only warning', async () => {
-    delete process.env['KIMI_CODE_PASSWORD'];
+    delete process.env['MULTIAI_PASSWORD'];
     const home = await tmpHome();
     const { logger, lines } = capturingLogger();
     const server = await startServer({
@@ -95,7 +95,7 @@ describe('public-bind gate', () => {
 
 describe('real password path (verifyPassword)', () => {
   async function bootPublic(): Promise<RunningServer> {
-    process.env['KIMI_CODE_PASSWORD'] = 'test-pw';
+    process.env['MULTIAI_PASSWORD'] = 'test-pw';
     const home = await tmpHome();
     const server = await startServer({
       host: '0.0.0.0',

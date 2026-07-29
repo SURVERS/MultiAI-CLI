@@ -98,17 +98,18 @@ describe('persistOriginalImage', () => {
 });
 
 describe('originalImageCacheDir', () => {
-  it('defaults to a kimi-code cache directory under the OS temp dir', () => {
+  it('defaults to a MultiAI cache directory under the OS temp dir', () => {
     const dir = originalImageCacheDir();
     expect(dir.startsWith(tmpdir())).toBe(true);
-    expect(dir).toContain('kimi-code');
+    expect(dir).toContain('multiai-original-images');
   });
 });
 
 describe('sessionMediaOriginalsDir', () => {
   it('nests the originals dir inside the session dir', () => {
-    expect(sessionMediaOriginalsDir('/home/u/.kimi-code/sessions/ws/abc')).toBe(
-      '/home/u/.kimi-code/sessions/ws/abc/media-originals',
+    const sessionDir = join('home', 'u', '.multiai', 'sessions', 'ws', 'abc');
+    expect(sessionMediaOriginalsDir(sessionDir)).toBe(
+      join(sessionDir, 'media-originals'),
     );
   });
 });

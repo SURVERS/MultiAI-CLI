@@ -15,13 +15,13 @@ import type { PermissionData, PermissionMode } from '#/agent/permission';
 import type { PlanData } from '#/agent/plan';
 import type { SwarmModeTrigger } from '#/agent/swarm';
 import type { ToolDisclosure, ToolInfo } from '#/agent/tool';
-import type { KimiConfig, KimiConfigPatch, McpServerConfig } from '#/config';
+import type { MultiAIConfig, MultiAIConfigPatch, McpServerConfig } from '#/config';
 import type { ExperimentalFeatureState } from '#/flags';
 import type { ResumeSessionResult } from '#/rpc/resumed';
 import type { SessionMeta } from '#/session';
 import type { GlobalMcpServerConfig } from '#/mcp/global-config';
-import type { ContentPart } from '@moonshot-ai/kosong';
-import type { SessionWarning } from '@moonshot-ai/protocol';
+import type { ContentPart } from '@multiai/kosong';
+import type { SessionWarning } from '@multiai/protocol';
 
 import type { PluginCommandDef, PluginInfo, PluginSummary, ReloadSummary } from '#/plugin';
 import type { UsageStatus } from './events';
@@ -35,7 +35,7 @@ export type JsonObject = { readonly [key: string]: JsonValue };
 
 export type Unsubscribe = () => void;
 
-export type { KimiConfig, KimiConfigPatch };
+export type { MultiAIConfig, MultiAIConfigPatch };
 
 export type TextPromptPart = Extract<ContentPart, { type: 'text' }>;
 export type PromptPart = Extract<ContentPart, { type: 'text' | 'image_url' | 'video_url' }>;
@@ -126,8 +126,8 @@ export interface ExportSessionPayload {
   readonly sessionId: string;
   readonly outputPath?: string | undefined;
   /**
-   * When true, the active global diagnostic log (`$KIMI_CODE_HOME/logs/kimi-code.log`)
-   * is copied into the zip at `logs/global/kimi-code.log`. Off by default to
+   * When true, the active global diagnostic log (`$MULTIAI_HOME/logs/multiai.log`)
+   * is copied into the zip at `logs/global/multiai.log`. Off by default to
    * avoid bundling events from concurrent sessions / other projects.
    */
   readonly includeGlobalLog?: boolean | undefined;
@@ -141,7 +141,7 @@ export interface ExportSessionPayload {
 export interface ExportSessionManifest {
   readonly sessionId: string;
   readonly exportedAt: string;
-  readonly kimiCodeVersion: string;
+  readonly multiAIVersion: string;
   readonly wireProtocolVersion: string;
   readonly os: string;
   readonly nodejsVersion: string;
@@ -436,7 +436,7 @@ export interface CreateGoalPayload {
   readonly replace?: boolean;
 }
 
-export interface GetKimiConfigPayload {
+export interface GetMultiAIConfigPayload {
   readonly reload?: boolean;
 }
 
@@ -445,9 +445,9 @@ export interface ConfigDiagnostics {
   readonly warnings: readonly string[];
 }
 
-export type SetKimiConfigPayload = KimiConfigPatch;
+export type SetMultiAIConfigPayload = MultiAIConfigPatch;
 
-export interface RemoveKimiProviderPayload {
+export interface RemoveProviderPayload {
   readonly providerId: string;
 }
 
@@ -523,10 +523,10 @@ type SessionAPIWithId = WithSessionId<SessionAPI>;
 export interface CoreAPI extends SessionAPIWithId {
   getCoreInfo: (payload: EmptyPayload) => CoreInfo;
   getExperimentalFeatures: (payload: EmptyPayload) => readonly ExperimentalFeatureState[];
-  getKimiConfig: (payload: GetKimiConfigPayload) => KimiConfig;
+  getMultiAIConfig: (payload: GetMultiAIConfigPayload) => MultiAIConfig;
   getConfigDiagnostics: (payload: EmptyPayload) => ConfigDiagnostics;
-  setKimiConfig: (payload: SetKimiConfigPayload) => KimiConfig;
-  removeKimiProvider: (payload: RemoveKimiProviderPayload) => KimiConfig;
+  setMultiAIConfig: (payload: SetMultiAIConfigPayload) => MultiAIConfig;
+  removeProvider: (payload: RemoveProviderPayload) => MultiAIConfig;
   listGlobalMcpServers: (payload: EmptyPayload) => readonly GlobalMcpServerConfig[];
   addGlobalMcpServer: (payload: PutGlobalMcpServerPayload) => readonly GlobalMcpServerConfig[];
   updateGlobalMcpServer: (payload: PutGlobalMcpServerPayload) => readonly GlobalMcpServerConfig[];

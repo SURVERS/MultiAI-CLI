@@ -84,9 +84,9 @@ export class InMemorySkillCatalog implements SkillCatalog {
     const instructions = plugin.instructions;
     if (instructions === undefined || instructions.trim().length === 0) return content;
     return (
-      `<kimi-plugin-instructions plugin="${escapeXmlAttr(plugin.id)}">\n` +
+      `<multiai-plugin-instructions plugin="${escapeXmlAttr(plugin.id)}">\n` +
       `${instructions}\n` +
-      `</kimi-plugin-instructions>\n\n${content}`
+      `</multiai-plugin-instructions>\n\n${content}`
     );
   }
 
@@ -109,7 +109,7 @@ export class InMemorySkillCatalog implements SkillCatalog {
     return [...this.skipped];
   }
 
-  getKimiSkillsDescription(): string {
+  getMultiAISkillsDescription(): string {
     const rendered = renderGroupedSkills(this.listSkills(), formatFullSkill);
     return rendered.length === 0 ? 'No skills' : rendered;
   }
@@ -175,8 +175,8 @@ function expandSkillParameters(
 
   const hasArgumentPlaceholder = content !== body;
   content = content
-    .replaceAll('${KIMI_SKILL_DIR}', context.skillDir)
-    .replaceAll('${KIMI_SESSION_ID}', context.sessionId ?? '');
+    .replaceAll('${MULTIAI_SKILL_DIR}', context.skillDir)
+    .replaceAll('${MULTIAI_SESSION_ID}', context.sessionId ?? '');
 
   if (!hasArgumentPlaceholder && rawArgs.length > 0) {
     return `${content}\n\nARGUMENTS: ${escapeXmlTags(rawArgs)}`;

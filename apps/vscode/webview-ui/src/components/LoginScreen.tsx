@@ -1,18 +1,8 @@
 import { useState, useEffect } from "react";
 import { IconLoader2, IconCopy, IconCheck, IconExternalLink, IconArrowRight } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { KimiMascot } from "./KimiMascot";
 import { bridge, Events } from "@/services";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import multiaiLogo from "@/assets/multiai-logo.svg";
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -21,17 +11,11 @@ interface LoginScreenProps {
 
 type LoginState = "idle" | "pending" | "error";
 
-function isPaymentRequiredError(error: string | null): boolean {
-  if (!error) return false;
-  return error.includes("402") || error.toLowerCase().includes("payment required");
-}
-
 export function LoginScreen({ onLoginSuccess, onSkip }: LoginScreenProps) {
   const [state, setState] = useState<LoginState>("idle");
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
 
   useEffect(() => {
     return bridge.on<{ url: string }>(Events.LoginUrl, ({ url }) => {
@@ -39,39 +23,27 @@ export function LoginScreen({ onLoginSuccess, onSkip }: LoginScreenProps) {
     });
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = async (
+    method: "browser" | "device" = "browser",
+    persistence: "keyring" | "session" = "keyring",
+  ) => {
     setState("pending");
     setUrl(null);
     setError(null);
     try {
-      const result = await bridge.login();
+      const result = await bridge.login(method, persistence);
       if (result.success) {
         onLoginSuccess();
       } else {
         const errorMessage = result.error || "Login failed";
-        if (isPaymentRequiredError(errorMessage)) {
-          setShowSubscribeDialog(true);
-          setState("idle");
-        } else {
-          setState("error");
-          setError(errorMessage);
-        }
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      if (isPaymentRequiredError(errorMessage)) {
-        setShowSubscribeDialog(true);
-        setState("idle");
-      } else {
         setState("error");
         setError(errorMessage);
       }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setState("error");
+      setError(errorMessage);
     }
-  };
-
-  const handleSubscribe = () => {
-    window.open("https://www.kimi.com/code", "_blank");
-    setShowSubscribeDialog(false);
   };
 
   const handleCopyUrl = async () => {
@@ -85,7 +57,7 @@ export function LoginScreen({ onLoginSuccess, onSkip }: LoginScreenProps) {
     return (
       <div className="h-full flex items-center justify-center p-6">
         <div className="max-w-sm w-full text-center space-y-6">
-          <KimiMascot className="h-12 mx-auto" />
+          <img src={multiaiLogo} alt="MultiAI CLI" className="size-12 mx-auto" />
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 text-blue-500">
               <IconLoader2 className="size-5 animate-spin" />
@@ -124,11 +96,11 @@ export function LoginScreen({ onLoginSuccess, onSkip }: LoginScreenProps) {
     <>
       <div className="h-full flex items-center justify-center p-6">
         <div className="max-w-sm w-full text-center space-y-6">
-          <KimiMascot className="h-12 mx-auto" />
+          <img src={multiaiLogo} alt="MultiAI CLI" className="size-12 mx-auto" />
           <div className="space-y-2">
-            <h1 className="text-lg font-semibold">Welcome to Kimi Code</h1>
+            <h1 className="text-lg font-semibold">Welcome to MultiAI CLI</h1>
             <div className="text-left space-y-2">
-              <p className="text-xs leading-5">Use Kimi Code with your Kimi account subscription or your existing API setup.</p>
+              <p className="text-xs leading-5">Sign in with your MultiAI account or use an existing provider configuration.</p>
             </div>
           </div>
 
@@ -142,13 +114,21 @@ export function LoginScreen({ onLoginSuccess, onSkip }: LoginScreenProps) {
             <div className="text-left space-y-1">
               <Button
                 onClick={() => {
-                  void handleLogin();
+                  void handleLogin("browser");
                 }}
                 className="w-full justify-center gap-2"
               >
-                Sign in with Kimi Account
+                Sign in with MultiAI
               </Button>
-              <p className="text-[11px] text-muted-foreground leading-4">Use your Kimi account and Kimi Code subscription.</p>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => void handleLogin("device")}>
+                  Device code
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => void handleLogin("browser", "session")}>
+                  Session only
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-4">Browser login is the default. Device code works when loopback callbacks are unavailable.</p>
             </div>
 
             <div className="text-left space-y-1">
@@ -162,20 +142,6 @@ export function LoginScreen({ onLoginSuccess, onSkip }: LoginScreenProps) {
         </div>
       </div>
 
-      <AlertDialog open={showSubscribeDialog} onOpenChange={setShowSubscribeDialog}>
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Subscription Required</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your account does not have an active Kimi Code subscription. Please subscribe to continue using Kimi Code with your account.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowSubscribeDialog(false)}>Skip</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubscribe}>Subscribe</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

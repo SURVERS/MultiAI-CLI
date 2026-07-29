@@ -64,7 +64,7 @@ export async function runHostSlashCommand(
       emit(result.message);
       if (result.sensitive) {
         void vscode.window.showWarningMessage(
-          "Kimi: The imported file may contain API keys, tokens, or credentials.",
+          "MultiAI: The imported file may contain API keys, tokens, or credentials.",
         );
       }
     } else {
@@ -210,7 +210,7 @@ async function exportContext(
     `Exported ${String(context.history.length)} messages to ${outputPath}\n\n` +
     "Note: The exported file may contain sensitive information. Please be cautious when sharing it externally.",
   );
-  void vscode.window.showInformationMessage("Kimi: Session exported.", "Open File").then((action) => {
+  void vscode.window.showInformationMessage("MultiAI: Session exported.", "Open File").then((action) => {
     if (action !== "Open File") return;
     void vscode.window.showTextDocument(vscode.Uri.file(outputPath));
   });
@@ -289,7 +289,7 @@ async function resolveExportPath(args: string, workDir: string, defaultName: str
 
 function defaultExportName(sessionId: string, now: Date): string {
   const timestamp = now.toISOString().replaceAll(/[-:]/g, "").replace("T", "-").slice(0, 15);
-  return `kimi-export-${sessionId.slice(0, 8)}-${timestamp}.md`;
+  return `multiai-export-${sessionId.slice(0, 8)}-${timestamp}.md`;
 }
 
 function resolveUserPath(value: string, workDir: string): string {

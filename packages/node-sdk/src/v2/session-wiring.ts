@@ -31,7 +31,7 @@ import type {
   ToolCallRequest,
   ToolCallResponse,
   ToolInputDisplay,
-} from '@moonshot-ai/agent-core';
+} from '@multiai/agent-core';
 import {
   IAgentLifecycleService,
   IEventBus,
@@ -43,7 +43,7 @@ import {
   type IDisposable,
   type Interaction,
   type ISessionScopeHandle,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 
 import { translateDomainEvent } from '#/v2/event-mapper';
 

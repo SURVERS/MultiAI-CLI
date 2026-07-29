@@ -16,11 +16,11 @@ import type {
   QuestionRequest,
   Session,
   SessionSummary,
-} from "@moonshot-ai/kimi-code-sdk";
+} from "@multiai/sdk";
 import { describe, expect, it } from "vitest";
 
 import { Events } from "../shared/bridge";
-import type { LegacyApprovalFlags } from "../src/runtime/legacy-approval";
+import type { SessionApprovalFlags } from "../src/runtime/session-approval";
 import { SessionRuntime } from "../src/runtime/session-runtime";
 
 interface BroadcastRecord {
@@ -53,7 +53,7 @@ interface FakeSessionBoundary {
   requestQuestion(request: QuestionRequest): Promise<Awaited<ReturnType<QuestionHandler>>>;
 }
 
-const DEFAULT_LEGACY_APPROVAL: LegacyApprovalFlags = { yolo: false, afk: false };
+const DEFAULT_LEGACY_APPROVAL: SessionApprovalFlags = { yolo: false, afk: false };
 
 function createFakeSession(): FakeSessionBoundary {
   const listeners = new Set<(event: Event) => void>();
@@ -173,13 +173,13 @@ function createFakeSession(): FakeSessionBoundary {
   };
 }
 
-function createRuntime(legacyApproval = DEFAULT_LEGACY_APPROVAL) {
+function createRuntime(sessionApproval = DEFAULT_LEGACY_APPROVAL) {
   const sdk = createFakeSession();
   const broadcasts: BroadcastRecord[] = [];
   const baselines: BaselineRecord[] = [];
   const runtime = new SessionRuntime({
     session: sdk.session,
-    legacyApproval,
+    sessionApproval,
     broadcast: (event, data, webviewId) => broadcasts.push({ event, data, webviewId }),
     captureBaseline: (session, filePath, webviewIds) => {
       baselines.push({ session, filePath, webviewIds });
@@ -597,7 +597,7 @@ describe("session runtime (adapts one SDK session for subscribed Webviews)", () 
     await expect(runtime.toggleLegacyApproval("afk")).rejects.toThrow("state is read-only");
 
     expect(sdk.setPermissions).toEqual(["auto", "manual"]);
-    expect(runtime.legacyApprovalFlags).toEqual({ yolo: false, afk: false });
+    expect(runtime.sessionApprovalFlags).toEqual({ yolo: false, afk: false });
   });
 
   it("resolves an SDK question when the Webview submits answers", async () => {

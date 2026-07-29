@@ -14,9 +14,9 @@
  * those sources so a v1-written and a v2-written import reduce to the same
  * history.
  */
-import { ErrorCodes, KimiError } from '@moonshot-ai/agent-core';
-import type { ContextMessage } from '@moonshot-ai/agent-core-v2';
-import { estimateTokensForMessages } from '@moonshot-ai/agent-core-v2/kosong/contract/tokens';
+import { ErrorCodes, MultiAIError } from '@multiai/agent-core';
+import type { ContextMessage } from '@multiai/agent-core-v2';
+import { estimateTokensForMessages } from '@multiai/agent-core-v2/kosong/contract/tokens';
 
 /** Byte-identical with v1's `IMPORT_CONTEXT_GUIDANCE`. */
 const IMPORT_CONTEXT_GUIDANCE =
@@ -45,13 +45,13 @@ function escapeXmlAttr(input: string): string {
  */
 export function buildImportContextMessage(content: string, source: string): ContextMessage {
   if (content.trim().length === 0) {
-    throw new KimiError(ErrorCodes.REQUEST_INVALID, 'Imported context cannot be empty', {
+    throw new MultiAIError(ErrorCodes.REQUEST_INVALID, 'Imported context cannot be empty', {
       details: { reason: 'import_content_empty' },
     });
   }
   const normalizedSource = source.trim();
   if (normalizedSource.length === 0) {
-    throw new KimiError(ErrorCodes.REQUEST_INVALID, 'Imported context source cannot be empty', {
+    throw new MultiAIError(ErrorCodes.REQUEST_INVALID, 'Imported context source cannot be empty', {
       details: { reason: 'import_source_empty' },
     });
   }
@@ -90,7 +90,7 @@ export function assertImportFits(
   const importTokenCount = estimateTokensForMessages([message]);
   const totalTokenCount = currentTokenCount + importTokenCount;
   if (maxContextTokens > 0 && totalTokenCount > maxContextTokens) {
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.CONTEXT_OVERFLOW,
       'Imported content is too large for the current model context ' +
         `(~${String(importTokenCount)} import tokens + ~${String(currentTokenCount)} existing ` +

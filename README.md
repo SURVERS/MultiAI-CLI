@@ -1,79 +1,81 @@
-# Kimi Code CLI
+# MultiAI CLI
 
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![Docs](https://img.shields.io/badge/docs-online-blue)](https://moonshotai.github.io/kimi-code/en/) <br>
-[Documentation](https://moonshotai.github.io/kimi-code/en/) · [Issues](https://github.com/MoonshotAI/kimi-code/issues) · [中文](README.zh-CN.md)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-online-blue)](https://survers.github.io/MultiAI-CLI/en/)
 
-![Demo of using Kimi Code](./docs/media/intro.gif)
+[Documentation](https://survers.github.io/MultiAI-CLI/en/) ·
+[Issues](https://github.com/SURVERS/MultiAI-CLI/issues) ·
+[中文](README.zh-CN.md)
 
-## What is Kimi Code CLI
-
-Kimi Code CLI is an AI coding agent that runs in your terminal — it can read and edit code, run shell commands, search files, fetch web pages, and choose the next step based on the feedback it receives. It works out of the box with Moonshot AI’s Kimi models and can also be configured to use other compatible providers.
+MultiAI CLI is an AI coding agent for the terminal. It can inspect and edit code,
+run commands, search files, use web and MCP tools, and coordinate focused
+subagents. A MultiAI account provides a managed catalog through secure OAuth, while
+custom providers and local plugins remain supported.
 
 ## Install
 
-Install with the official script. No Node.js required.
-
-- **macOS or Linux**:
+MultiAI CLI requires Node.js 24.15.0 or newer:
 
 ```sh
-curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash
+npm install -g @multiai/cli
+multiai --version
 ```
 
-- **Windows (PowerShell)**:
+On Windows, also install [Git for Windows](https://gitforwindows.org/). If Git
+Bash is not in a standard location, set `MULTIAI_SHELL_PATH` to the absolute path
+of `bash.exe`.
 
-```powershell
-irm https://code.kimi.com/kimi-code/install.ps1 | iex
-```
+Native builds are published on the
+[GitHub Releases page](https://github.com/SURVERS/MultiAI-CLI/releases).
 
-> On Windows, install [Git for Windows](https://gitforwindows.org/) before first launch because Kimi Code CLI uses the bundled Git Bash as its shell environment. If Git Bash is installed in a custom location, set `KIMI_SHELL_PATH` to the absolute path of `bash.exe`.
+## Sign in
 
-Then, run it with a new shell session:
+Create the MultiAI OAuth application described in
+[Account and OAuth](https://survers.github.io/MultiAI-CLI/en/guides/account-and-oauth),
+then configure its public client ID:
 
 ```sh
-kimi --version
+set MULTIAI_OAUTH_CLIENT_ID=YOUR_CLIENT_ID
+multiai login
 ```
 
-For npm install, upgrade, uninstall, see [Getting Started](https://moonshotai.github.io/kimi-code/en/guides/getting-started).
+`multiai login` uses Authorization Code with PKCE and a temporary loopback
+listener. For a terminal without a usable browser, run `multiai login --device`.
+Use `--session-only` when a system keyring is unavailable and you intentionally
+want credentials to last only for the current process.
 
-## Quick Start
+No client secret belongs in a CLI build.
 
-Open a project and start the interactive UI:
+## Quick start
 
 ```sh
 cd your-project
-kimi
+multiai
 ```
 
-On first launch, run `/login` inside Kimi Code CLI and choose either Kimi Code OAuth or a Moonshot AI Open Platform API key. After login, try your first task:
+Useful account commands:
 
+```sh
+multiai account
+multiai account --json
+multiai logout
 ```
-Take a look at this project and explain its main directories.
-```
 
-## Key Features
+MultiAI CLI stores application data under `~/.multiai`, reads project-local
+configuration from `.multiai/local.toml`, and recognizes `MULTIAI_*` environment
+variables. The legacy `kimi` command and old settings/history are not migrated.
 
-- **Single-binary distribution.** Install with one command: no Node.js setup, PATH gymnastics, or global module conflicts.
-- **Blazing-fast startup.** The TUI is ready in milliseconds, so starting a session never feels heavy.
-- **Purpose-built TUI.** A carefully tuned interface, optimized end to end for long, focused agent sessions.
-- **Video input.** Drop a screen recording or demo clip into the chat and let the agent watch what is hard to describe in words — turn a reference clip into a LUT, a long video into a short, a screen recording into working code, and more.
-- **AI-native MCP configuration.** Add, edit, and authenticate Model Context Protocol servers conversationally with `/mcp-config`, without hand-editing JSON.
-- **Rich plugin ecosystem.** Install skills, MCP servers, and data sources from the marketplace or any GitHub repo, with each install's trust level surfaced up front.
-- **Subagents for focused, parallel work.** Dispatch built-in `coder`, `explore`, and `plan` subagents in isolated contexts while keeping the main conversation clean.
-- **Lifecycle hooks.** Run local commands at key points to gate risky tool calls, audit decisions, trigger desktop notifications, or connect to your own automation.
-- **Editor & IDE integration (ACP).** Drive a Kimi Code CLI session straight from Zed, JetBrains, or any [Agent Client Protocol](https://agentclientprotocol.com/) client with `kimi acp`.
+## Editor integration
 
-## Use it in your editor (ACP)
-
-Kimi Code CLI speaks the [Agent Client Protocol](https://agentclientprotocol.com/), so ACP-compatible editors and IDEs (Zed, JetBrains, …) can drive a session over stdio. Log in once, then point your editor at the `kimi acp` subcommand — no extra login needed.
-
-For Zed, add this to `~/.config/zed/settings.json`:
+MultiAI CLI supports the
+[Agent Client Protocol](https://agentclientprotocol.com/) over stdio:
 
 ```json
 {
   "agent_servers": {
-    "Kimi Code CLI": {
+    "MultiAI CLI": {
       "type": "custom",
-      "command": "kimi",
+      "command": "multiai",
       "args": ["acp"],
       "env": {}
     }
@@ -81,45 +83,30 @@ For Zed, add this to `~/.config/zed/settings.json`:
 }
 ```
 
-Then open a new conversation in Zed's Agent panel. See [Using in IDEs](https://moonshotai.github.io/kimi-code/en/guides/ides) for JetBrains setup and troubleshooting, and the [`kimi acp` reference](https://moonshotai.github.io/kimi-code/en/reference/kimi-acp) for the full capability matrix.
-
-## Docs
-
-- [Getting Started](https://moonshotai.github.io/kimi-code/en/guides/getting-started)
-- [Interaction and approvals](https://moonshotai.github.io/kimi-code/en/guides/interaction)
-- [Sessions](https://moonshotai.github.io/kimi-code/en/guides/sessions)
-- [Using in IDEs (ACP)](https://moonshotai.github.io/kimi-code/en/guides/ides)
-- [Configuration](https://moonshotai.github.io/kimi-code/en/configuration/config-files)
-- [Command reference](https://moonshotai.github.io/kimi-code/en/reference/kimi-command)
+See [Using in IDEs](https://survers.github.io/MultiAI-CLI/en/guides/ides) and
+the [`multiai acp` reference](https://survers.github.io/MultiAI-CLI/en/reference/multiai-acp).
 
 ## Develop
 
-Requirements: Node.js ≥ 24.15.0, pnpm 10.33.0.
+Requirements: Node.js 24.15.0+, pnpm 10.33.0.
 
 ```sh
-git clone https://github.com/MoonshotAI/kimi-code.git
-cd kimi-code
+git clone https://github.com/SURVERS/MultiAI-CLI.git
+cd MultiAI-CLI
 pnpm install
+pnpm dev:cli
 ```
+
+Common checks:
 
 ```sh
-pnpm dev:cli    # run the CLI in dev mode
-pnpm test       # run tests
-pnpm typecheck  # TypeScript check
-pnpm lint       # oxlint
-pnpm build      # build all packages
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm build
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guide.
-
-## Community
-
-- [Issues](https://github.com/MoonshotAI/kimi-code/issues)
-- For security vulnerabilities, see [SECURITY.md](SECURITY.md).
-
-## Acknowledgements
-
-Our TUI is built on top of [`pi-tui`](https://github.com/earendil-works/pi-mono/tree/main/packages/tui). We thank the authors of `pi-tui` for their valuable work.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow.
 
 ## License
 

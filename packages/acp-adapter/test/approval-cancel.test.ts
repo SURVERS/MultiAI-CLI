@@ -48,9 +48,9 @@ import type {
   ApprovalRequest,
   ApprovalResponse,
   Event,
-  KimiHarness,
+  MultiAIHarness,
   Session,
-} from '@moonshot-ai/kimi-code-sdk';
+} from '@multiai/sdk';
 
 import { APPROVE_ONCE_OPTION_ID } from '../src/approval';
 import { AcpServer } from '../src/server';
@@ -190,7 +190,7 @@ describe('AcpServer cancel ⇄ pending requestPermission', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => handle.session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -285,7 +285,7 @@ describe('AcpServer cancel ⇄ pending requestPermission', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => handle.session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);

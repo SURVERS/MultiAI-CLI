@@ -140,7 +140,7 @@ describe('skill parser', () => {
 describe('skill parameter expansion', () => {
   it('expands raw, positional, named, and context placeholders', () => {
     const out = expandSkillParameters(
-      'raw=$ARGUMENTS zero=$0 one=$1 second=$ARGUMENTS[1] flag=$flag message=$message dir=${KIMI_SKILL_DIR} session=${KIMI_SESSION_ID}',
+      'raw=$ARGUMENTS zero=$0 one=$1 second=$ARGUMENTS[1] flag=$flag message=$message dir=${MULTIAI_SKILL_DIR} session=${MULTIAI_SESSION_ID}',
       '-m "fix login"',
       {
         skillDir: '/tmp/skills/commit',
@@ -204,7 +204,7 @@ describe('SkillRegistry.renderSkillPrompt', () => {
 
   it('expands context placeholders and still appends args when no argument placeholder is used', () => {
     const rendered = new SessionSkillRegistry({ sessionId: 'ses_1' }).renderSkillPrompt(
-      testSkill({ content: 'Use ${KIMI_SKILL_DIR}/references/checklist.md.' }),
+      testSkill({ content: 'Use ${MULTIAI_SKILL_DIR}/references/checklist.md.' }),
       'src/app.ts',
     );
 
@@ -262,9 +262,9 @@ describe('SkillRegistry.renderSkillPrompt', () => {
     );
 
     expect(rendered).toBe(
-      '<kimi-plugin-instructions plugin="superpowers">\n' +
+      '<multiai-plugin-instructions plugin="superpowers">\n' +
         'Use AskUserQuestion for clarifying questions.\n' +
-        '</kimi-plugin-instructions>\n\nBrainstorm body.',
+        '</multiai-plugin-instructions>\n\nBrainstorm body.',
     );
   });
 });

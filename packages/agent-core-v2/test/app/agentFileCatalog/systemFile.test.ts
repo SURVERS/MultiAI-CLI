@@ -5,7 +5,7 @@
  * template rendering through the shared variable table (`${skills}` gating,
  * `${base_prompt}`, `${additional_dirs_info}`). Pure logic against real temp
  * dirs plus a targeted fake fs for the read-failure path.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/app/agentFileCatalog/systemFile.test.ts`.
  */
 

@@ -1,6 +1,6 @@
 /**
  * `AgentTranscriptProjector` — maps one agent's `IEventBus` domain events to
- * L2 transcript operations (`@moonshot-ai/transcript`).
+ * L2 transcript operations (`@multiai/transcript`).
  *
  * Mapping rules (settled design):
  *   - `turn.upsert` / `step.upsert` carry headers only; render content rides
@@ -65,7 +65,7 @@
  * `agent/profile/profileService.ts`, `agent/contextMemory/contextMemoryService.ts`).
  */
 
-import type { DomainEvent } from '@moonshot-ai/agent-core-v2';
+import type { DomainEvent } from '@multiai/agent-core-v2';
 import type {
   AgentRef,
   AgentUsageMeta,
@@ -85,7 +85,7 @@ import type {
   TurnHeader,
   TurnOrigin,
   TurnState,
-} from '@moonshot-ai/transcript';
+} from '@multiai/transcript';
 
 import { toLegacyPhase } from '../legacyStatus/legacyStatus';
 

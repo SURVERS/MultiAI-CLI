@@ -22,7 +22,7 @@ import { DaemonClient } from '../harness/index.js';
 import { fetchWithReport } from '../harness/report.js';
 import { createCaseLogger } from './log.js';
 
-const BASE_URL = process.env['KIMI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
+const BASE_URL = process.env['MULTIAI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
 const API_PREFIX = '/api/v1';
 const PROMPT_TIMEOUT_MS = 120_000;
 

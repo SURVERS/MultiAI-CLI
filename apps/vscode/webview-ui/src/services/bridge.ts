@@ -4,7 +4,7 @@ import type {
   ContentPart,
   MCPServerConfig,
   SessionInfo,
-  KimiConfig,
+  MultiAIConfig,
   MCPTestResult,
   LoginResult,
   UpdateMCPServerRequest,
@@ -15,6 +15,7 @@ import type {
   ExtensionConfig,
   WorkspaceStatus,
   LoginStatus,
+  AccountSnapshot,
   UIStreamEvent,
 } from "shared/types";
 
@@ -48,9 +49,9 @@ class Bridge {
     if (typeof acquireVsCodeApi === "function") {
       this.vscode = acquireVsCodeApi();
     } else {
-      console.warn("[Kimi Bridge] Running outside VS Code, using mock");
+      console.warn("[MultiAI Bridge] Running outside VS Code, using mock");
       this.vscode = {
-        postMessage: (msg) => console.log("[Kimi Mock]", msg),
+        postMessage: (msg) => console.log("[MultiAI Mock]", msg),
         getState: () => undefined,
         setState: () => {},
       };
@@ -126,8 +127,15 @@ class Bridge {
     return this.call<LoginStatus>(Methods.CheckLoginStatus);
   }
 
-  login() {
-    return this.call<LoginResult>(Methods.Login, undefined, OAUTH_REQUEST_TIMEOUT_MS);
+  getAccount() {
+    return this.call<AccountSnapshot>(Methods.GetAccount);
+  }
+
+  login(
+    method: "browser" | "device" = "browser",
+    persistence: "keyring" | "session" = "keyring",
+  ) {
+    return this.call<LoginResult>(Methods.Login, { method, persistence }, OAUTH_REQUEST_TIMEOUT_MS);
   }
 
   logout() {
@@ -151,7 +159,7 @@ class Bridge {
   }
 
   getModels() {
-    return this.call<KimiConfig>(Methods.GetModels);
+    return this.call<MultiAIConfig>(Methods.GetModels);
   }
 
   getMCPServers() {
@@ -207,12 +215,12 @@ class Bridge {
     return this.call<{ ok: boolean }>(Methods.RespondQuestion, { rpcRequestId, questionRequestId, answers });
   }
 
-  getKimiSessions() {
-    return this.call<SessionInfo[]>(Methods.GetKimiSessions);
+  getMultiAISessions() {
+    return this.call<SessionInfo[]>(Methods.GetMultiAISessions);
   }
 
-  getAllKimiSessions() {
-    return this.call<SessionInfo[]>(Methods.GetAllKimiSessions);
+  getAllMultiAISessions() {
+    return this.call<SessionInfo[]>(Methods.GetAllMultiAISessions);
   }
 
   getRegisteredWorkDirs() {
@@ -228,15 +236,15 @@ class Bridge {
   }
 
   loadSessionHistory(sessionId: string) {
-    return this.call<UIStreamEvent[]>(Methods.LoadKimiSessionHistory, { kimiSessionId: sessionId });
+    return this.call<UIStreamEvent[]>(Methods.LoadMultiAISessionHistory, { multiaiSessionId: sessionId });
   }
 
   deleteSession(sessionId: string) {
-    return this.call<{ ok: boolean }>(Methods.DeleteKimiSession, { sessionId });
+    return this.call<{ ok: boolean }>(Methods.DeleteMultiAISession, { sessionId });
   }
 
   forkSession(sessionId: string, turnIndex: number) {
-    return this.call<{ sessionId: string } | null>(Methods.ForkKimiSession, { sessionId, turnIndex });
+    return this.call<{ sessionId: string } | null>(Methods.ForkMultiAISession, { sessionId, turnIndex });
   }
 
   pickMedia(maxCount: number, includeVideo = true) {

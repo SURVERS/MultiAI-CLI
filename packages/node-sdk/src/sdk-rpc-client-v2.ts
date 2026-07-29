@@ -1,6 +1,6 @@
 /**
  * v2 wiring MVP — an `SDKRpcClientBase` backed by the agent-core-v2 engine
- * (DI × Scope) instead of the v1 `KimiCore` RPC pair. The engine is
+ * (DI × Scope) instead of the v1 `MultiAICore` RPC pair. The engine is
  * bootstrapped in-process and reached through the klient facade over the
  * memory transport, so every call crosses the same contract validation and
  * JSON round-trip as the networked transports.
@@ -17,7 +17,7 @@
  *   through the `engineAccessor` escape hatch (`ISkillDiscovery` + the v2
  *   skill-root helpers) instead.
  * - `getConfig` / `setConfig` / `removeProvider` / `getConfigDiagnostics` →
- *   `klient.global.config.*`, with the v1 `KimiConfig` shape restored by the
+ *   `klient.global.config.*`, with the v1 `MultiAIConfig` shape restored by the
  *   pure mapping layer in `src/v2/config-mapper.ts`.
  * - `listPlugins` / `installPlugin` / `setPluginEnabled` /
  *   `setPluginMcpServerEnabled` / `removePlugin` / `reloadPlugins` /
@@ -123,29 +123,29 @@ import { join } from 'node:path';
 import {
   ensureConfigFile,
   ErrorCodes,
-  KimiError,
+  MultiAIError,
   limitAgentReplayByTurns,
   noopTelemetryClient,
   type AgentContextData,
   type BeginGlobalMcpServerAuthResult,
   type ExperimentalFeatureState,
-} from '@moonshot-ai/agent-core';
-import { encodeWorkDirKey } from '@moonshot-ai/agent-core-v2/_base/utils/workdir-slug';
-import { MCP_SECTION, type McpSection } from '@moonshot-ai/agent-core-v2/agent/mcp/configSection';
-import { McpConnectionManager } from '@moonshot-ai/agent-core-v2/agent/mcp/connection-manager';
+} from '@multiai/agent-core';
+import { encodeWorkDirKey } from '@multiai/agent-core-v2/_base/utils/workdir-slug';
+import { MCP_SECTION, type McpSection } from '@multiai/agent-core-v2/agent/mcp/configSection';
+import { McpConnectionManager } from '@multiai/agent-core-v2/agent/mcp/connection-manager';
 import {
   AlreadyAuthorizedError,
   McpOAuthService,
   type BeginAuthorizationResult,
-} from '@moonshot-ai/agent-core-v2/agent/mcp/oauth/service';
-import { createMcpOAuthStore } from '@moonshot-ai/agent-core-v2/agent/mcp/oauth/store';
-import { IAtomicDocumentStore } from '@moonshot-ai/agent-core-v2/persistence/interface/atomicDocumentStore';
+} from '@multiai/agent-core-v2/agent/mcp/oauth/service';
+import { createMcpOAuthStore } from '@multiai/agent-core-v2/agent/mcp/oauth/store';
+import { IAtomicDocumentStore } from '@multiai/agent-core-v2/persistence/interface/atomicDocumentStore';
 import {
   applyPromptMetadataUpdate,
   bootstrap,
   BUILTIN_SKILLS,
   DEFAULT_AGENT_PROFILE_NAME,
-  ensureKimiHome,
+  ensureMultiAIHome,
   ensureMainAgent,
   IAgentActivityView,
   IAgentContextMemoryService,
@@ -197,7 +197,7 @@ import {
   promptMetadataTextFromSkill,
   resolveAgentTaskConfig,
   resolveConfigPath,
-  resolveKimiHome,
+  resolveMultiAIHome,
   resolveLoggingConfig,
   resolvePrintBackgroundMode,
   skillCatalogRuntimeOptionsSeed,
@@ -208,13 +208,13 @@ import {
   type ISessionScopeHandle,
   type Scope,
   type ServicesAccessor,
-} from '@moonshot-ai/agent-core-v2';
-import type { AgentHandle, Klient } from '@moonshot-ai/klient';
-import { createKlient } from '@moonshot-ai/klient/memory';
-import { assertKimiHostIdentity } from '@moonshot-ai/kimi-code-oauth';
+} from '@multiai/agent-core-v2';
+import type { AgentHandle, Klient } from '@multiai/klient';
+import { createKlient } from '@multiai/klient/memory';
+import { assertMultiAIHostIdentity } from '@multiai/oauth';
 
-import { KimiAuthFacade } from '#/auth';
-import { KimiHarness } from '#/kimi-harness';
+import { MultiAIAuthFacade } from '#/auth';
+import { MultiAIHarness } from '#/multiai-harness';
 import {
   SDKRpcClientBase,
   type ActivatePluginCommandRpcInput,
@@ -248,16 +248,15 @@ import type {
   GoalSnapshot,
   GoalToolResult,
   JsonObject,
-  KimiConfig,
-  KimiConfigPatch,
-  KimiHarnessOptions,
-  KimiHostIdentity,
+  MultiAIConfig,
+  MultiAIConfigPatch,
+  MultiAIHarnessOptions,
+  MultiAIHostIdentity,
   ListSessionsOptions,
   McpServerConfig,
   McpServerInfo,
   McpStartupMetrics,
   McpTestResult,
-  OAuthRefreshOutcome,
   PluginCommandDef,
   PluginInfo,
   PluginSummary,
@@ -276,7 +275,7 @@ import type {
 import {
   diagnosticsToConfigDiagnostics,
   planProviderRemoval,
-  resolvedConfigToKimiConfig,
+  resolvedConfigToMultiAIConfig,
 } from '#/v2/config-mapper';
 import { translateGlobalEvent } from '#/v2/event-mapper';
 import { assertImportFits, buildImportContextMessage } from '#/v2/import-context';
@@ -298,7 +297,7 @@ import { SessionEventWiring } from '#/v2/session-wiring';
 export interface SDKRpcClientV2Options {
   readonly homeDir?: string;
   readonly configPath?: string;
-  readonly identity?: KimiHostIdentity;
+  readonly identity?: MultiAIHostIdentity;
   /**
    * Explicit skill directories for this process (v1's SDK `skillDirs` /
    * the CLI's `--skills-dir`): when non-empty, default user / project skill
@@ -308,7 +307,6 @@ export interface SDKRpcClientV2Options {
    */
   readonly skillDirs?: readonly string[];
   readonly telemetry?: TelemetryClient;
-  readonly onOAuthRefresh?: (outcome: OAuthRefreshOutcome) => void;
   readonly uiMode?: string;
 }
 
@@ -325,9 +323,9 @@ const DEFAULT_GLOBAL_MCP_AUTH_TIMEOUT_MS = 15 * 60 * 1000;
 export class SDKRpcClientV2 extends SDKRpcClientBase {
   readonly homeDir: string;
   readonly configPath: string;
-  readonly identity: KimiHostIdentity | undefined;
+  readonly identity: MultiAIHostIdentity | undefined;
   readonly telemetry: TelemetryClient;
-  readonly auth: KimiAuthFacade;
+  readonly auth: MultiAIAuthFacade;
   readonly klient: Klient;
 
   private readonly app: Scope;
@@ -385,19 +383,17 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
   constructor(options: SDKRpcClientV2Options = {}) {
     super();
     this.identity =
-      options.identity === undefined ? undefined : assertKimiHostIdentity(options.identity);
-    this.homeDir = resolveKimiHome(options.homeDir);
+      options.identity === undefined ? undefined : assertMultiAIHostIdentity(options.identity);
+    this.homeDir = resolveMultiAIHome(options.homeDir);
     this.configPath = resolveConfigPath({
       homeDir: this.homeDir,
       configPath: options.configPath,
     });
-    ensureKimiHome(this.homeDir);
+    ensureMultiAIHome(this.homeDir);
     this.telemetry = options.telemetry ?? noopTelemetryClient;
-    this.auth = new KimiAuthFacade({
+    this.auth = new MultiAIAuthFacade({
       homeDir: this.homeDir,
       configPath: this.configPath,
-      identity: this.identity,
-      onRefresh: options.onOAuthRefresh,
     });
 
     const { app } = bootstrap(
@@ -459,7 +455,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
 
   /**
    * Forward engine telemetry to the host-supplied client. Without this the
-   * client only served `KimiHarness`-level events and every engine-side event
+   * client only served `MultiAIHarness`-level events and every engine-side event
    * (`track2` facts from agent/session scopes) was dropped on the v2 route.
    * The `ITelemetryAppender` shape is a structural superset of the v1
    * `TelemetryClient`, so the client installs directly. The `telemetry`
@@ -494,7 +490,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
   }
 
   protected getRpc(): Promise<never> {
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.NOT_IMPLEMENTED,
       'This SDK method is not wired to agent-core-v2 yet.',
     );
@@ -542,18 +538,18 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
   }
 
   /**
-   * v1 returns the whole config.toml document as one `KimiConfig`; v2
+   * v1 returns the whole config.toml document as one `MultiAIConfig`; v2
    * resolves the same file per config domain. `getAll()` is the effective
    * view (file + env overlays + section defaults), which matches v1's
-   * runtime config (`loadRuntimeConfigSafe` + the KIMI_MODEL_* overlay);
+   * runtime config (`loadRuntimeConfigSafe` + the MULTIAI_MODEL_* overlay);
    * `reload` mirrors v1's re-read-from-disk option.
    */
-  override async getConfig(options?: GetConfigOptions): Promise<KimiConfig> {
+  override async getConfig(options?: GetConfigOptions): Promise<MultiAIConfig> {
     await this.configReady;
     if (options?.reload) {
       await this.klient.global.config.reload();
     }
-    return resolvedConfigToKimiConfig(await this.klient.global.config.getAll());
+    return resolvedConfigToMultiAIConfig(await this.klient.global.config.getAll());
   }
 
   override async getConfigDiagnostics(): Promise<ConfigDiagnostics> {
@@ -568,7 +564,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
    * Unknown-to-v2 fields (`yolo`, `planMode`, `telemetry`, ...) persist as
    * unregistered pass-through domains, like v1's schema keeping them.
    */
-  override async setConfig(patch: KimiConfigPatch): Promise<KimiConfig> {
+  override async setConfig(patch: MultiAIConfigPatch): Promise<MultiAIConfig> {
     await this.configReady;
     for (const [domain, domainPatch] of Object.entries(patch)) {
       if (domainPatch === undefined) continue;
@@ -584,7 +580,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
    * the full v1 cascade is computed from the user-layer values and applied
    * through the config facade (see `planProviderRemoval`).
    */
-  override async removeProvider(providerId: string): Promise<KimiConfig> {
+  override async removeProvider(providerId: string): Promise<MultiAIConfig> {
     await this.configReady;
     const [providers, models, defaultModel, defaultProvider] = await Promise.all([
       this.klient.global.config.inspect<Record<string, unknown>>('providers'),
@@ -683,8 +679,8 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
   }
 
   /** v1's `requireSession` / store lookup failure shape. */
-  private static sessionNotFound(sessionId: string): KimiError {
-    return new KimiError(ErrorCodes.SESSION_NOT_FOUND, `Session "${sessionId}" was not found`, {
+  private static sessionNotFound(sessionId: string): MultiAIError {
+    return new MultiAIError(ErrorCodes.SESSION_NOT_FOUND, `Session "${sessionId}" was not found`, {
       details: { sessionId },
     });
   }
@@ -914,7 +910,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
         this.sessionLifecycle.get(input.id) ??
         (await this.engineAccessor.get(ISessionIndex).get(input.id));
       if (existing !== undefined) {
-        throw new KimiError(
+        throw new MultiAIError(
           ErrorCodes.SESSION_ALREADY_EXISTS,
           `Session "${input.id}" already exists`,
         );
@@ -960,7 +956,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
   override async renameSession(input: RenameSessionInput): Promise<void> {
     const title = input.title.trim();
     if (title.length === 0) {
-      throw new KimiError(ErrorCodes.SESSION_TITLE_EMPTY, 'Session title cannot be empty');
+      throw new MultiAIError(ErrorCodes.SESSION_TITLE_EMPTY, 'Session title cannot be empty');
     }
     if (this.sessionLifecycle.get(input.id) !== undefined) {
       await this.klient.session(input.id).setTitle(title);
@@ -986,7 +982,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
    */
   override async forkSession(input: ForkSessionInput): Promise<SessionSummary> {
     if (input.turnIndex !== undefined) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.NOT_IMPLEMENTED,
         'forkSession turnIndex truncation is not wired to agent-core-v2 yet.',
       );
@@ -1050,7 +1046,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
     if (live !== undefined) {
       for (const agent of live.accessor.get(IAgentLifecycleService).list()) {
         if (agent.accessor.get(IAgentActivityView).state().turn !== undefined) {
-          throw new KimiError(
+          throw new MultiAIError(
             ErrorCodes.TURN_AGENT_BUSY,
             `Session "${sessionId}" cannot be reloaded while a turn is running`,
             { details: { sessionId } },
@@ -1202,7 +1198,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
     if (agentId === MAIN_AGENT_ID) return this.materializeMainAgent(session);
     const agent = session.accessor.get(IAgentLifecycleService).get(agentId);
     if (agent === undefined) {
-      throw new KimiError(ErrorCodes.AGENT_NOT_FOUND, `Agent "${agentId}" was not found`);
+      throw new MultiAIError(ErrorCodes.AGENT_NOT_FOUND, `Agent "${agentId}" was not found`);
     }
     return agent;
   }
@@ -1390,7 +1386,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
       agent.accessor.get(IAgentLoopService).status().state === 'running' ||
       agent.accessor.get(IAgentFullCompactionService).compacting !== null
     ) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.TURN_AGENT_BUSY,
         'Cannot import context while the agent is busy',
       );
@@ -1926,7 +1922,7 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
   ): Promise<void> {
     const active = this.globalMcpOAuthFlows.get(input.flowId);
     if (active === undefined) {
-      throw new KimiError(ErrorCodes.REQUEST_INVALID, `Unknown MCP OAuth flow: ${input.flowId}`);
+      throw new MultiAIError(ErrorCodes.REQUEST_INVALID, `Unknown MCP OAuth flow: ${input.flowId}`);
     }
     try {
       await active.flow.complete({
@@ -2012,9 +2008,9 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
   }
 }
 
-export function createKimiHarnessV2(options: KimiHarnessOptions): KimiHarness {
+export function createMultiAIHarnessV2(options: MultiAIHarnessOptions): MultiAIHarness {
   const rpc = new SDKRpcClientV2(options);
-  return new KimiHarness(rpc, {
+  return new MultiAIHarness(rpc, {
     identity: rpc.identity,
     uiMode: options.uiMode,
     homeDir: rpc.homeDir,
@@ -2033,7 +2029,7 @@ export function createKimiHarnessV2(options: KimiHarnessOptions): KimiHarness {
 /** v1's `requiredWorkDir`: reject blank and normalize to the canonical spelling. */
 function normalizeRequiredWorkDir(operation: string, workDir: string): string {
   if (typeof workDir !== 'string' || workDir.trim() === '') {
-    throw new KimiError(ErrorCodes.REQUEST_WORK_DIR_REQUIRED, `${operation} requires workDir`);
+    throw new MultiAIError(ErrorCodes.REQUEST_WORK_DIR_REQUIRED, `${operation} requires workDir`);
   }
   return normalizeWorkDir(workDir);
 }

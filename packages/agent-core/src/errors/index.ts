@@ -1,19 +1,19 @@
 export {
   ErrorCodes,
-  KIMI_ERROR_INFO,
-  type KimiErrorCode,
-  type KimiErrorInfo,
+  MULTIAI_ERROR_INFO,
+  type MultiAIErrorCode,
+  type MultiAIErrorInfo,
 } from './codes';
 export {
-  KimiError,
-  type KimiErrorOptions,
+  MultiAIError,
+  type MultiAIErrorOptions,
 } from './classes';
 export {
-  fromKimiErrorPayload,
-  isKimiError,
+  fromMultiAIErrorPayload,
+  isMultiAIError,
   makeErrorPayload,
-  toKimiErrorPayload,
-  type KimiErrorPayload,
+  toMultiAIErrorPayload,
+  type MultiAIErrorPayload,
 } from './serialize';
 export {
   onUnexpectedError,

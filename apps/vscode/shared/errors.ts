@@ -47,10 +47,10 @@ export const PREFLIGHT_CODES = new Set<string>([
 // User-friendly error messages
 export const ERROR_MESSAGES: Record<string, string> = {
   // Pre-flight
-  [LEGACY.CLI_NOT_FOUND]: "Kimi Code CLI not found.",
-  [LEGACY.SPAWN_FAILED]: "Failed to start Kimi Code CLI.",
+  [LEGACY.CLI_NOT_FOUND]: "MultiAI CLI not found.",
+  [LEGACY.SPAWN_FAILED]: "Failed to start MultiAI CLI.",
   [LEGACY.ALREADY_STARTED]: "A session is already running.",
-  [LEGACY.STDIN_NOT_WRITABLE]: "Failed to communicate with Kimi Code CLI.",
+  [LEGACY.STDIN_NOT_WRITABLE]: "Failed to communicate with MultiAI CLI.",
   [LEGACY.HANDSHAKE_TIMEOUT]: "Connection timed out.",
   [LEGACY.PROCESS_CRASHED]: "Process connection lost.",
 
@@ -71,7 +71,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   [LEGACY.INVALID_PARAMS]: "Invalid parameters.",
   [LEGACY.INTERNAL_ERROR]: "Internal error occurred.",
 
-  "config.invalid": "Kimi Code configuration is invalid.",
+  "config.invalid": "MultiAI CLI configuration is invalid.",
   "model.not_configured": "No model is configured. Please sign in or configure a provider.",
   "auth.login_required": "Authentication failed. Please sign in.",
   "session.not_found": "Session was not found.",

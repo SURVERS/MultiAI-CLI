@@ -1,4 +1,4 @@
-import type { ThinkingEffort } from '@moonshot-ai/kosong';
+import type { ThinkingEffort } from '@multiai/kosong';
 
 import { effectiveModelAlias } from '../../config';
 import type { ModelAlias, ThinkingConfig } from '../../config/schema';

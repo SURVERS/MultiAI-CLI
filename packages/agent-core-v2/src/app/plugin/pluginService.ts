@@ -8,14 +8,11 @@
  * contributions through the hook, MCP, and skill contracts. Bound at App scope.
  */
 
-import { KIMI_CODE_PROVIDER_NAME } from '@moonshot-ai/kimi-code-oauth';
-
 import { Disposable } from '#/_base/di/lifecycle';
 import { Emitter, type Event } from '#/_base/event';
 import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/di/scope';
 import { Error2, PluginErrors } from '#/errors';
 import { IBootstrapService } from '#/app/bootstrap/bootstrap';
-import { IProviderService } from '#/kosong/provider/provider';
 import { ISkillDiscovery } from '#/app/skillCatalog/skillDiscovery';
 import type { HookDef } from '#/agent/externalHooks/types';
 import type { McpServerConfig } from '#/agent/mcp/config-schema';
@@ -39,16 +36,10 @@ import type {
   ReloadSummary,
 } from './types';
 
-const KIMI_CODE_BASE_URL_ENV = 'KIMI_CODE_BASE_URL';
-const KIMI_CODE_OAUTH_HOST_ENV = 'KIMI_CODE_OAUTH_HOST';
-const KIMI_OAUTH_HOST_ENV = 'KIMI_OAUTH_HOST';
-
 export class PluginService extends Disposable implements IPluginService {
   declare readonly _serviceBrand: undefined;
 
   private readonly homeDir: string;
-  private readonly envBaseUrl: string | undefined;
-  private readonly envOAuthHost: string | undefined;
   private readonly manager: PluginManager;
   private initialLoadPromise: Promise<void> | undefined;
   private hasLoadedSnapshot = false;
@@ -61,15 +52,11 @@ export class PluginService extends Disposable implements IPluginService {
   constructor(
     @IBootstrapService bootstrap: IBootstrapService,
     @ISkillDiscovery discovery: ISkillDiscovery,
-    @IProviderService private readonly providers: IProviderService,
   ) {
     super();
     this.homeDir = bootstrap.homeDir;
-    this.envBaseUrl = bootstrap.getEnv(KIMI_CODE_BASE_URL_ENV);
-    this.envOAuthHost =
-      bootstrap.getEnv(KIMI_CODE_OAUTH_HOST_ENV) ?? bootstrap.getEnv(KIMI_OAUTH_HOST_ENV);
     this.manager = new PluginManager({
-      kimiHomeDir: this.homeDir,
+      multiaiHomeDir: this.homeDir,
       discoverSkills: (roots) => discovery.discover(roots),
     });
   }
@@ -118,7 +105,7 @@ export class PluginService extends Disposable implements IPluginService {
         throw new Error2(
           PluginErrors.codes.PLUGIN_LOAD_FAILED,
           `Failed to reload plugins: ${this.loadError.message}`,
-          { cause: this.loadError, details: { kimiHomeDir: this.homeDir } },
+          { cause: this.loadError, details: { multiaiHomeDir: this.homeDir } },
         );
       }
     });
@@ -160,14 +147,7 @@ export class PluginService extends Disposable implements IPluginService {
   }
 
   enabledMcpServers(): Promise<Record<string, McpServerConfig>> {
-    return this.runConsumptionRead({}, async () => {
-      const pluginServers = this.manager.enabledMcpServers();
-      if (!Object.values(pluginServers).some((server) => server.transport === 'stdio')) {
-        return pluginServers;
-      }
-      const managedEnv = await this.managedKimiCodeEnvForPlugins();
-      return withManagedKimiPluginEnv(pluginServers, managedEnv);
-    });
+    return this.runConsumptionRead({}, async () => this.manager.enabledMcpServers());
   }
 
   enabledHooks(): Promise<readonly HookDef[]> {
@@ -231,39 +211,10 @@ export class PluginService extends Disposable implements IPluginService {
       PluginErrors.codes.PLUGIN_LOAD_FAILED,
       `Plugin state failed to load: ${this.loadError.message}. ` +
         `Fix the file at ${this.homeDir}/plugins/installed.json and run /plugins reload.`,
-      { cause: this.loadError, details: { kimiHomeDir: this.homeDir } },
+      { cause: this.loadError, details: { multiaiHomeDir: this.homeDir } },
     );
   }
 
-  private async managedKimiCodeEnvForPlugins(): Promise<Record<string, string>> {
-    await this.providers.ready;
-    const provider = this.providers.get(KIMI_CODE_PROVIDER_NAME);
-    const envBaseUrl = this.envBaseUrl;
-    const envOAuthHost = this.envOAuthHost;
-    const hasEnvOverride = envBaseUrl !== undefined || envOAuthHost !== undefined;
-    const baseUrl =
-      envBaseUrl !== undefined ? envBaseUrl.replace(/\/+$/, '') : provider?.baseUrl;
-    const oauthHost = hasEnvOverride ? envOAuthHost : provider?.oauth?.oauthHost;
-    const env: Record<string, string> = {};
-    if (baseUrl !== undefined) env[KIMI_CODE_BASE_URL_ENV] = baseUrl;
-    if (oauthHost !== undefined) env[KIMI_CODE_OAUTH_HOST_ENV] = oauthHost;
-    return env;
-  }
-}
-
-function withManagedKimiPluginEnv(
-  pluginServers: Record<string, McpServerConfig>,
-  managedEnv: Record<string, string>,
-): Record<string, McpServerConfig> {
-  if (Object.keys(managedEnv).length === 0) return pluginServers;
-  const out: Record<string, McpServerConfig> = {};
-  for (const [name, server] of Object.entries(pluginServers)) {
-    out[name] =
-      server.transport === 'stdio'
-        ? { ...server, env: { ...server.env, ...managedEnv } }
-        : server;
-  }
-  return out;
 }
 
 registerScopedService(

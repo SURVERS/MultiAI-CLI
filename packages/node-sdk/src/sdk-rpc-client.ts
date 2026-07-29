@@ -2,28 +2,27 @@ import {
   createRPC,
   ensureConfigFile,
   getRootLogger,
-  KimiCore,
+  MultiAICore,
   noopTelemetryClient,
   resolveConfigPath,
-  resolveKimiHome,
+  resolveMultiAIHome,
   resolveLoggingConfig,
   type CoreAPI,
   type OAuthTokenProviderResolver,
   type RPCMethods,
   type SDKAPI,
   type TelemetryClient,
-} from '@moonshot-ai/agent-core';
-import type { Kaos } from '@moonshot-ai/kaos';
-import { assertKimiHostIdentity, createKimiDefaultHeaders } from '@moonshot-ai/kimi-code-oauth';
+} from '@multiai/agent-core';
+import type { Kaos } from '@multiai/kaos';
+import { assertMultiAIHostIdentity, createMultiAIDefaultHeaders } from '@multiai/oauth';
 
-import { KimiAuthFacade } from '#/auth';
-import { KimiHarness } from '#/kimi-harness';
+import { MultiAIAuthFacade } from '#/auth';
+import { MultiAIHarness } from '#/multiai-harness';
 import { ClientAPI, SDKRpcClientBase } from '#/rpc';
 import type {
   CreateSessionOptions,
-  KimiHarnessOptions,
-  KimiHostIdentity,
-  OAuthRefreshOutcome,
+  MultiAIHarnessOptions,
+  MultiAIHostIdentity,
   ResumeSessionInput,
   ResumedSessionSummary,
   SessionSummary,
@@ -32,13 +31,12 @@ import type {
 export interface SDKRpcClientOptions {
   readonly homeDir?: string;
   readonly configPath?: string;
-  readonly identity?: KimiHostIdentity;
+  readonly identity?: MultiAIHostIdentity;
   readonly resolveOAuthTokenProvider?: OAuthTokenProviderResolver;
   readonly skillDirs?: readonly string[];
   readonly telemetry?: TelemetryClient;
-  readonly onOAuthRefresh?: (outcome: OAuthRefreshOutcome) => void;
   /**
-   * Host UI mode (`'print'` for `kimi -p`, `'cli'` for the TUI, ...). Forwarded
+   * Host UI mode (`'print'` for `multiai -p`, `'cli'` for the TUI, ...). Forwarded
    * to the v1 core, which applies print-mode config defaults when it is
    * `'print'`.
    */
@@ -48,37 +46,35 @@ export interface SDKRpcClientOptions {
 export class SDKRpcClient extends SDKRpcClientBase {
   readonly homeDir: string;
   readonly configPath: string;
-  readonly identity: KimiHostIdentity | undefined;
+  readonly identity: MultiAIHostIdentity | undefined;
   readonly telemetry: TelemetryClient;
-  readonly auth: KimiAuthFacade;
-  readonly core: KimiCore;
+  readonly auth: MultiAIAuthFacade;
+  readonly core: MultiAICore;
 
   private readonly ready: Promise<RPCMethods<CoreAPI>>;
 
   constructor(options: SDKRpcClientOptions = {}) {
     super();
     this.identity =
-      options.identity === undefined ? undefined : assertKimiHostIdentity(options.identity);
-    this.homeDir = resolveKimiHome(options.homeDir);
+      options.identity === undefined ? undefined : assertMultiAIHostIdentity(options.identity);
+    this.homeDir = resolveMultiAIHome(options.homeDir);
     this.configPath = resolveConfigPath({
       homeDir: this.homeDir,
       configPath: options.configPath,
     });
     this.telemetry = options.telemetry ?? noopTelemetryClient;
-    this.auth = new KimiAuthFacade({
+    this.auth = new MultiAIAuthFacade({
       homeDir: this.homeDir,
       configPath: this.configPath,
-      identity: this.identity,
-      onRefresh: options.onOAuthRefresh,
     });
 
     void getRootLogger().configure(resolveLoggingConfig({ homeDir: this.homeDir }));
 
     const [coreRpc, sdkRpc] = createRPC<CoreAPI, SDKAPI>();
-    this.core = new KimiCore(coreRpc, {
+    this.core = new MultiAICore(coreRpc, {
       homeDir: options.homeDir,
       configPath: this.configPath,
-      kimiRequestHeaders: this.createKimiRequestHeaders(),
+      multiAIRequestHeaders: this.createMultiAIRequestHeaders(),
       resolveOAuthTokenProvider:
         options.resolveOAuthTokenProvider ?? this.auth.resolveOAuthTokenProvider,
       skillDirs: options.skillDirs,
@@ -126,18 +122,18 @@ export class SDKRpcClient extends SDKRpcClientBase {
     );
   }
 
-  private createKimiRequestHeaders(): Record<string, string> | undefined {
+  private createMultiAIRequestHeaders(): Record<string, string> | undefined {
     if (this.identity === undefined) return undefined;
-    return createKimiDefaultHeaders({
+    return createMultiAIDefaultHeaders({
       homeDir: this.homeDir,
       ...this.identity,
     });
   }
 }
 
-export function createKimiHarness(options: KimiHarnessOptions): KimiHarness {
+export function createMultiAIHarness(options: MultiAIHarnessOptions): MultiAIHarness {
   const rpc = new SDKRpcClient(options);
-  return new KimiHarness(rpc, {
+  return new MultiAIHarness(rpc, {
     identity: rpc.identity,
     uiMode: options.uiMode,
     homeDir: rpc.homeDir,

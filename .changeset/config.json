@@ -1,5 +1,5 @@
 {
-  "changelog": ["@changesets/changelog-github", { "repo": "MoonshotAI/kimi-code" }],
+  "changelog": ["@changesets/changelog-github", { "repo": "SURVERS/MultiAI-CLI" }],
   "commit": false,
   "fixed": [],
   "linked": [],
@@ -7,10 +7,10 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "@moonshot-ai/vis",
-    "@moonshot-ai/vis-server",
-    "@moonshot-ai/vis-web",
-    "@moonshot-ai/kimi-inspect"
+    "@multiai/vis",
+    "@multiai/vis-server",
+    "@multiai/vis-web",
+    "@multiai/inspect"
   ],
   "snapshot": {
     "useCalculatedVersion": true,

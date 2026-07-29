@@ -68,4 +68,53 @@ export interface LoginStatus {
   loggedIn: boolean;
 }
 
+export interface AccountLimit {
+  enabled: boolean;
+  remaining_percent: number;
+  reset_at?: string;
+}
+
+export interface AccountSnapshot {
+  user: {
+    sub: string;
+    display_name?: string;
+    avatar_url?: string;
+    email?: string;
+    email_verified?: boolean;
+  };
+  account: {
+    wallet: {
+      total: number;
+      classic: number;
+      new: number;
+      billing_mode: string;
+    };
+    subscription: {
+      active: boolean;
+      available: boolean;
+      limits: {
+        five_hour: AccountLimit;
+        weekly: AccountLimit;
+        monthly: AccountLimit;
+      };
+    };
+    generated_at: string;
+  };
+  keys: ReadonlyArray<{
+    id: number;
+    name: string;
+    key: string;
+    status: string;
+  }>;
+  connection: {
+    id: string;
+    client_id: string;
+    client_name: string;
+    device_name: string;
+    scopes: readonly string[];
+    expires_at: string;
+  };
+  generated_at: string;
+}
+
 export type { QuestionRequest, QuestionItem, QuestionOption, QuestionResponse } from "./legacy-sdk";

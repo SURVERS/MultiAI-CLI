@@ -86,7 +86,7 @@ export function SessionList({ onClose }: SessionListProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [pendingSession, setPendingSession] = useState<SessionInfo | null>(null);
 
-  const { data: kimiSessions = [], loading, mutate } = useRequest(() => bridge.getAllKimiSessions());
+  const { data: multiaiSessions = [], loading, mutate } = useRequest(() => bridge.getAllMultiAISessions());
 
   const getWorkDirLabel = (sessionWorkDir: string): string | null => {
     const activeWorkDir = currentWorkDir || workspaceRoot;
@@ -103,10 +103,10 @@ export function SessionList({ onClose }: SessionListProps) {
   };
 
   const filteredSessions = useMemo(() => {
-    if (!searchQuery.trim()) return kimiSessions;
+    if (!searchQuery.trim()) return multiaiSessions;
     const q = searchQuery.toLowerCase();
-    return kimiSessions.filter((s) => s.brief.toLowerCase().includes(q));
-  }, [kimiSessions, searchQuery]);
+    return multiaiSessions.filter((s) => s.brief.toLowerCase().includes(q));
+  }, [multiaiSessions, searchQuery]);
 
   const handleSelect = async (session: SessionInfo) => {
     console.log("[SessionList] Loading session:", session.id);

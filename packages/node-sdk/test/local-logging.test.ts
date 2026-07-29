@@ -5,28 +5,28 @@ import * as zlib from 'node:zlib';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createKimiHarness, log } from '#/index';
+import { createMultiAIHarness, log } from '#/index';
 import { __resetRootLoggerForTest, getRootLogger } from '../../agent-core/src/logging/logger';
 import { TEST_IDENTITY } from './test-identity';
 
 const tempDirs: string[] = [];
 
 const LOG_ENV_KEYS = [
-  'KIMI_LOG_LEVEL',
-  'KIMI_LOG_GLOBAL_MAX_BYTES',
-  'KIMI_LOG_GLOBAL_FILES',
-  'KIMI_LOG_SESSION_MAX_BYTES',
-  'KIMI_LOG_SESSION_FILES',
+  'MULTIAI_LOG_LEVEL',
+  'MULTIAI_LOG_GLOBAL_MAX_BYTES',
+  'MULTIAI_LOG_GLOBAL_FILES',
+  'MULTIAI_LOG_SESSION_MAX_BYTES',
+  'MULTIAI_LOG_SESSION_FILES',
 ] as const;
 
 beforeEach(async () => {
-  process.env['KIMI_LOG_LEVEL'] = 'info';
+  process.env['MULTIAI_LOG_LEVEL'] = 'info';
   await __resetRootLoggerForTest();
 });
 
 afterEach(async () => {
   await __resetRootLoggerForTest();
-  process.env['KIMI_LOG_LEVEL'] = 'off';
+  process.env['MULTIAI_LOG_LEVEL'] = 'off';
   for (const dir of tempDirs.splice(0)) {
     await rm(dir, { recursive: true, force: true });
   }
@@ -104,7 +104,7 @@ describe('Local logging — harness integration', () => {
     const homeDir = await makeTempDir('kimi-log-home-');
     const workDir = await makeTempDir('kimi-log-work-');
 
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+    const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
     const session = await harness.createSession({
       id: 'ses_logging_int',
       workDir,
@@ -119,10 +119,10 @@ describe('Local logging — harness integration', () => {
       (s) => s.id === session.id,
     )!;
 
-    const globalPath = join(homeDir, 'logs', 'kimi-code.log');
-    const sessionLogPath = join(summary.sessionDir, 'logs', 'kimi-code.log');
+    const globalPath = join(homeDir, 'logs', 'multiai.log');
+    const sessionLogPath = join(summary.sessionDir, 'logs', 'multiai.log');
 
-    // Trigger an export — this flushes both global and session via KimiCore
+    // Trigger an export — this flushes both global and session via MultiAICore
     const exportOut = join(workDir, 'out.zip');
     await harness.exportSession({
       id: session.id,
@@ -142,7 +142,7 @@ describe('Local logging — harness integration', () => {
   it('default export bundles session log only; no globalLogPath in manifest', async () => {
     const homeDir = await makeTempDir('kimi-log-home-');
     const workDir = await makeTempDir('kimi-log-work-');
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+    const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
     const session = await harness.createSession({ id: 'ses_default_export', workDir });
     log.warn('session export marker', { sessionId: session.id });
 
@@ -152,25 +152,25 @@ describe('Local logging — harness integration', () => {
     const zipBuf = await readFile(result.zipPath);
     const entries = readZipEntries(zipBuf);
     expect(entries.has('agents/main/wire.jsonl')).toBe(true);
-    expect(entries.has('logs/kimi-code.log')).toBe(true);
-    expect(entries.has('logs/global/kimi-code.log')).toBe(false);
-    expect(entries.get('logs/kimi-code.log')!.toString('utf-8')).toContain(
+    expect(entries.has('logs/multiai.log')).toBe(true);
+    expect(entries.has('logs/global/multiai.log')).toBe(false);
+    expect(entries.get('logs/multiai.log')!.toString('utf-8')).toContain(
       'session export marker',
     );
-    expect(result.manifest.sessionLogPath).toBe('logs/kimi-code.log');
+    expect(result.manifest.sessionLogPath).toBe('logs/multiai.log');
     expect(result.manifest.globalLogPath).toBeUndefined();
     const manifest = JSON.parse(entries.get('manifest.json')!.toString('utf-8')) as Record<
       string,
       unknown
     >;
-    expect(manifest['sessionLogPath']).toBe('logs/kimi-code.log');
+    expect(manifest['sessionLogPath']).toBe('logs/multiai.log');
     expect(manifest['globalLogPath']).toBeUndefined();
   });
 
   it('default export works when no session log file exists', async () => {
     const homeDir = await makeTempDir('kimi-log-home-');
     const workDir = await makeTempDir('kimi-log-work-');
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+    const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
     const session = await harness.createSession({ id: 'ses_no_session_log', workDir });
 
     const outputPath = join(workDir, 'no-log.zip');
@@ -178,7 +178,7 @@ describe('Local logging — harness integration', () => {
 
     const entries = readZipEntries(await readFile(result.zipPath));
     expect(entries.has('agents/main/wire.jsonl')).toBe(true);
-    expect(entries.has('logs/kimi-code.log')).toBe(false);
+    expect(entries.has('logs/multiai.log')).toBe(false);
     expect(result.manifest.sessionLogPath).toBeUndefined();
     const manifest = JSON.parse(entries.get('manifest.json')!.toString('utf-8')) as Record<
       string,
@@ -187,15 +187,15 @@ describe('Local logging — harness integration', () => {
     expect(manifest['sessionLogPath']).toBeUndefined();
   });
 
-  it('default export includes rotated session log files without requiring active kimi-code.log', async () => {
+  it('default export includes rotated session log files without requiring active multiai.log', async () => {
     const env = snapshotLogEnv();
-    process.env['KIMI_LOG_LEVEL'] = 'warn';
-    process.env['KIMI_LOG_SESSION_MAX_BYTES'] = '1024';
-    process.env['KIMI_LOG_SESSION_FILES'] = '2';
+    process.env['MULTIAI_LOG_LEVEL'] = 'warn';
+    process.env['MULTIAI_LOG_SESSION_MAX_BYTES'] = '1024';
+    process.env['MULTIAI_LOG_SESSION_FILES'] = '2';
     try {
       const homeDir = await makeTempDir('kimi-log-home-');
       const workDir = await makeTempDir('kimi-log-work-');
-      const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+      const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
       const session = await harness.createSession({ id: 'ses_rotated_export', workDir });
       for (let i = 0; i < 16; i++) {
         log.warn(`rotated session marker ${i}`, {
@@ -212,13 +212,13 @@ describe('Local logging — harness integration', () => {
 
       const entries = readZipEntries(await readFile(result.zipPath));
       const sessionLogEntries = [...entries.keys()].filter(
-        (entry) => entry === 'logs/kimi-code.log' || entry.startsWith('logs/kimi-code.log.'),
+        (entry) => entry === 'logs/multiai.log' || entry.startsWith('logs/multiai.log.'),
       );
       expect(sessionLogEntries.length).toBeGreaterThan(0);
-      expect(sessionLogEntries).toContain('logs/kimi-code.log.1');
-      expect(entries.has('logs/global/kimi-code.log')).toBe(false);
-      if (entries.has('logs/kimi-code.log')) {
-        expect(result.manifest.sessionLogPath).toBe('logs/kimi-code.log');
+      expect(sessionLogEntries).toContain('logs/multiai.log.1');
+      expect(entries.has('logs/global/multiai.log')).toBe(false);
+      if (entries.has('logs/multiai.log')) {
+        expect(result.manifest.sessionLogPath).toBe('logs/multiai.log');
       } else {
         expect(result.manifest.sessionLogPath).toBeUndefined();
       }
@@ -230,7 +230,7 @@ describe('Local logging — harness integration', () => {
   it('--include-global-log bundles global active and sets manifest field', async () => {
     const homeDir = await makeTempDir('kimi-log-home-');
     const workDir = await makeTempDir('kimi-log-work-');
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+    const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
     const session = await harness.createSession({ id: 'ses_global_export', workDir });
     log.warn('untagged probe');
 
@@ -244,10 +244,10 @@ describe('Local logging — harness integration', () => {
     const zipBuf = await readFile(result.zipPath);
     const entries = readZipEntries(zipBuf);
     expect(entries.has('agents/main/wire.jsonl')).toBe(true);
-    expect(entries.has('logs/global/kimi-code.log')).toBe(true);
-    expect(result.manifest.globalLogPath).toBe('logs/global/kimi-code.log');
+    expect(entries.has('logs/global/multiai.log')).toBe(true);
+    expect(result.manifest.globalLogPath).toBe('logs/global/multiai.log');
     // Global log carries entries that don't have a sessionId routed to a sink.
-    expect(entries.get('logs/global/kimi-code.log')!.toString('utf-8')).toContain(
+    expect(entries.get('logs/global/multiai.log')!.toString('utf-8')).toContain(
       'untagged probe',
     );
   });
@@ -256,9 +256,9 @@ describe('Local logging — harness integration', () => {
     const firstHome = await makeTempDir('kimi-log-home-a-');
     const secondHome = await makeTempDir('kimi-log-home-b-');
     const workDir = await makeTempDir('kimi-log-work-');
-    const first = createKimiHarness({ identity: TEST_IDENTITY, homeDir: firstHome });
+    const first = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir: firstHome });
     const firstSession = await first.createSession({ id: 'ses_first_global_export', workDir });
-    const second = createKimiHarness({ identity: TEST_IDENTITY, homeDir: secondHome });
+    const second = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir: secondHome });
 
     log.warn('active-global-export-marker');
     await getRootLogger().flushGlobal();
@@ -271,8 +271,8 @@ describe('Local logging — harness integration', () => {
     });
 
     const entries = readZipEntries(await readFile(result.zipPath));
-    const globalLog = entries.get('logs/global/kimi-code.log')!.toString('utf-8');
-    const firstLog = await readOptionalFile(join(firstHome, 'logs', 'kimi-code.log'));
+    const globalLog = entries.get('logs/global/multiai.log')!.toString('utf-8');
+    const firstLog = await readOptionalFile(join(firstHome, 'logs', 'multiai.log'));
     expect(globalLog).toContain('active-global-export-marker');
     expect(firstLog).not.toContain('active-global-export-marker');
 
@@ -283,7 +283,7 @@ describe('Local logging — harness integration', () => {
   it('logs export flush failures without failing the export', async () => {
     const homeDir = await makeTempDir('kimi-log-home-');
     const workDir = await makeTempDir('kimi-log-work-');
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+    const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
     const session = await harness.createSession({ id: 'ses_flush_warning', workDir });
     log.warn('flush warning setup', { sessionId: session.id });
     log.warn('global untagged marker');
@@ -304,8 +304,8 @@ describe('Local logging — harness integration', () => {
       });
 
       const entries = readZipEntries(await readFile(result.zipPath));
-      const sessionLog = entries.get('logs/kimi-code.log')!.toString('utf-8');
-      const globalLog = entries.get('logs/global/kimi-code.log')!.toString('utf-8');
+      const sessionLog = entries.get('logs/multiai.log')!.toString('utf-8');
+      const globalLog = entries.get('logs/global/multiai.log')!.toString('utf-8');
       expect(sessionLog).toContain('export session log flush failed');
       expect(sessionLog).toContain('export global log flush failed');
       expect(globalLog).toContain('global untagged marker');
@@ -316,24 +316,24 @@ describe('Local logging — harness integration', () => {
     }
   });
 
-  it('multiple KimiHarness constructions in the same process do not throw', async () => {
+  it('multiple MultiAIHarness constructions in the same process do not throw', async () => {
     const homeDir = await makeTempDir('kimi-log-home-');
-    expect(() => createKimiHarness({ identity: TEST_IDENTITY, homeDir })).not.toThrow();
-    expect(() => createKimiHarness({ identity: TEST_IDENTITY, homeDir })).not.toThrow();
-    expect(() => createKimiHarness({ identity: TEST_IDENTITY, homeDir })).not.toThrow();
+    expect(() => createMultiAIHarness({ identity: TEST_IDENTITY, homeDir })).not.toThrow();
+    expect(() => createMultiAIHarness({ identity: TEST_IDENTITY, homeDir })).not.toThrow();
+    expect(() => createMultiAIHarness({ identity: TEST_IDENTITY, homeDir })).not.toThrow();
   });
 
   it('uses the latest harness homeDir for global diagnostic logging', async () => {
     const firstHome = await makeTempDir('kimi-log-home-a-');
     const secondHome = await makeTempDir('kimi-log-home-b-');
-    const first = createKimiHarness({ identity: TEST_IDENTITY, homeDir: firstHome });
-    const second = createKimiHarness({ identity: TEST_IDENTITY, homeDir: secondHome });
+    const first = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir: firstHome });
+    const second = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir: secondHome });
 
     log.warn('second-home-marker');
     await getRootLogger().flushGlobal();
 
-    const firstLog = await readOptionalFile(join(firstHome, 'logs', 'kimi-code.log'));
-    const secondLog = await readFile(join(secondHome, 'logs', 'kimi-code.log'), 'utf-8');
+    const firstLog = await readOptionalFile(join(firstHome, 'logs', 'multiai.log'));
+    const secondLog = await readFile(join(secondHome, 'logs', 'multiai.log'), 'utf-8');
     expect(firstLog).not.toContain('second-home-marker');
     expect(secondLog).toContain('second-home-marker');
 
@@ -359,11 +359,11 @@ describe('Local logging — harness integration', () => {
   it('checks that an empty session log directory does not get a log file', async () => {
     // Sanity: if level is off, no log files should be created
     const env = snapshotLogEnv();
-    process.env['KIMI_LOG_LEVEL'] = 'off';
+    process.env['MULTIAI_LOG_LEVEL'] = 'off';
     try {
       const homeDir = await makeTempDir('kimi-log-home-');
       const workDir = await makeTempDir('kimi-log-work-');
-      const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+      const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
       await harness.createSession({ id: 'ses_off', workDir });
       log.error('this should not write');
       let logsDir: string[] = [];
@@ -372,19 +372,19 @@ describe('Local logging — harness integration', () => {
       } catch {
         // intentional — directory may not exist when level=off
       }
-      expect(logsDir).not.toContain('kimi-code.log');
+      expect(logsDir).not.toContain('multiai.log');
     } finally {
       restoreLogEnv(env);
     }
   });
 
-  it('KimiHarness.close() flushes the global log', async () => {
+  it('MultiAIHarness.close() flushes the global log', async () => {
     const homeDir = await makeTempDir('kimi-log-home-');
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+    const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
     log.warn('untagged before close');
     // No `await flush()` here on purpose — close() must do it.
     await harness.close();
-    const globalPath = join(homeDir, 'logs', 'kimi-code.log');
+    const globalPath = join(homeDir, 'logs', 'multiai.log');
     const text = await readFile(globalPath, 'utf-8');
     expect(text).toContain('untagged before close');
   });

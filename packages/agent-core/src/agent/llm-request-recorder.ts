@@ -10,7 +10,7 @@
  * `records/types.ts` for the persistence contract.
  */
 
-import { KimiChatProvider, type ChatProvider, type Message, type Tool } from '@moonshot-ai/kosong';
+import { KimiChatProvider, type ChatProvider, type Message, type Tool } from '@multiai/kosong';
 
 import { parseFloatEnv } from '#/config/resolve';
 import { resolveThinkingKeep } from '#/config/kimi-env-params';
@@ -81,21 +81,21 @@ export class LlmRequestRecorder {
       thinkingKeep: isKimiProvider
         ? resolveThinkingKeep(
             process.env,
-            this.agent.kimiConfig?.thinking?.keep,
+            this.agent.multiAIConfig?.thinking?.keep,
             provider.thinkingEffort ?? 'off',
           )
         : undefined,
       temperature: isKimiProvider
-        ? parseFloatEnv(process.env['KIMI_MODEL_TEMPERATURE'], 'KIMI_MODEL_TEMPERATURE')
+        ? parseFloatEnv(process.env['MULTIAI_MODEL_TEMPERATURE'], 'MULTIAI_MODEL_TEMPERATURE')
         : undefined,
       topP: isKimiProvider
-        ? parseFloatEnv(process.env['KIMI_MODEL_TOP_P'], 'KIMI_MODEL_TOP_P')
+        ? parseFloatEnv(process.env['MULTIAI_MODEL_TOP_P'], 'MULTIAI_MODEL_TOP_P')
         : undefined,
       maxTokens: provider.maxCompletionTokens,
       betaApi:
         modelAlias === undefined
           ? undefined
-          : this.agent.kimiConfig?.models?.[modelAlias]?.betaApi,
+          : this.agent.multiAIConfig?.models?.[modelAlias]?.betaApi,
       toolSelect: this.agent.toolSelectEnabled,
       systemPromptHash: this.systemPromptHashFor(systemPrompt),
       systemPrompt:

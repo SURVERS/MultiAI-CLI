@@ -192,6 +192,25 @@ describe('formatter — auto-redact', () => {
     expect(text).not.toContain('ghi789');
   });
 
+  it('redacts OAuth callback material and device codes', () => {
+    const { text } = formatEntry(
+      baseEntry({
+        ctx: {
+          authorizationUri: 'https://multiai.example.test/oauth/authorize?code=secret-code',
+          callback:
+            'http://127.0.0.1:49152/oauth/callback?code=secret-code&state=secret-state',
+          detail:
+            'code_verifier=secret-verifier device_code=ma-oauth-device-secret user_code=MA-1234',
+        },
+      }),
+    );
+    expect(text).not.toContain('secret-code');
+    expect(text).not.toContain('secret-state');
+    expect(text).not.toContain('secret-verifier');
+    expect(text).not.toContain('ma-oauth-device-secret');
+    expect(text).not.toContain('49152');
+  });
+
   it('recurses into nested objects', () => {
     const out = redactCtx({ headers: { Authorization: 'Bearer xxx', 'X-Trace': '1' } });
     const headers = out['headers'] as Record<string, unknown>;

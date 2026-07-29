@@ -2,7 +2,7 @@
  * Scenario: model-facing goal tool validation and delayed execution.
  * Responsibilities: verify goal commands target the goal selected when execution is resolved.
  * Wiring: real goal service; loop is stubbed at the agent boundary.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run test/agent/goal/tools/goal-tools.test.ts`.
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run test/agent/goal/tools/goal-tools.test.ts`.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 

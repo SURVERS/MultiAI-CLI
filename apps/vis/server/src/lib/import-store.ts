@@ -64,7 +64,7 @@ export async function importSessionZip(
     const hasMainWire = await pathExists(join(dir, 'agents', 'main', 'wire.jsonl'));
     if (!hasMainWire) {
       throw new ZipImportError(
-        'zip does not look like a kimi-code session bundle (missing agents/main/wire.jsonl)',
+        'zip does not look like a MultiAI CLI session bundle (missing agents/main/wire.jsonl)',
       );
     }
 
@@ -135,7 +135,7 @@ async function readManifest(dir: string): Promise<ImportManifest | null> {
 
 /** Declared string fields of {@link ImportManifest}. `shellEnv` is free-form. */
 const MANIFEST_STRING_FIELDS = [
-  'sessionId', 'exportedAt', 'kimiCodeVersion', 'wireProtocolVersion', 'os',
+  'sessionId', 'exportedAt', 'multiAIVersion', 'wireProtocolVersion', 'os',
   'nodejsVersion', 'sessionFirstActivity', 'sessionLastActivity', 'title',
   'workspaceDir', 'sessionLogPath', 'globalLogPath', 'installSource',
 ] as const;

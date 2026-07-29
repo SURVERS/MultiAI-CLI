@@ -1,9 +1,9 @@
 /**
- * `kosongConfig` domain (L3) — `KIMI_MODEL_*` effective-config overlay.
+ * `kosongConfig` domain (L3) — `MULTIAI_MODEL_*` effective-config overlay.
  *
- * When `KIMI_MODEL_NAME` is set, synthesizes one model id (bound to the
- * reserved `__kimi_env__` provider whose schema kosong owns) from the
- * `KIMI_MODEL_*` environment variables and overlays it onto the resolved
+ * When `MULTIAI_MODEL_NAME` is set, synthesizes one model id (bound to the
+ * reserved `__multiai_env__` provider whose schema kosong owns) from the
+ * `MULTIAI_MODEL_*` environment variables and overlays it onto the resolved
  * `effective` config: the reserved model entry, `defaultModel`, and the request
  * `modelOverrides`. The overlay is applied ONLY to the in-memory `effective`
  * view; its `strip` removes the synthesized values on the write path so they
@@ -15,7 +15,7 @@
  * The env provider's default `baseUrl` is resolved through kosong's
  * provider-definition registry (`resolveProviderEndpoint` against the same
  * env the overlay reads), not from a hardcoded vendor table — for Kimi that
- * is the `KIMI_BASE_URL` → `https://api.moonshot.ai/v1` chain declared by the
+ * is the `MULTIAI_BASE_URL` → `https://api.moonshot.ai/v1` chain declared by the
  * vendor's traits.
  */
 
@@ -29,7 +29,7 @@ import { resolveProviderEndpoint } from '#/kosong/provider/providerDefinition';
 
 import { ENV_MODEL_PROVIDER_KEY } from './configSection';
 
-export const ENV_MODEL_ALIAS_KEY = '__kimi_env_model__';
+export const ENV_MODEL_ALIAS_KEY = '__multiai_env_model__';
 
 const DEFAULT_MAX_CONTEXT_SIZE = 262144;
 
@@ -105,18 +105,18 @@ function withoutKey(value: unknown, key: string): unknown {
   return out;
 }
 
-export const kimiModelEnvOverlay: ConfigEffectiveOverlay = {
+export const multiaiModelEnvOverlay: ConfigEffectiveOverlay = {
   apply(effective, getEnv, validate) {
-    const model = trimmed(getEnv('KIMI_MODEL_NAME'));
+    const model = trimmed(getEnv('MULTIAI_MODEL_NAME'));
     const temperature = parseFloatEnv(
-      getEnv('KIMI_MODEL_TEMPERATURE'),
-      'KIMI_MODEL_TEMPERATURE',
+      getEnv('MULTIAI_MODEL_TEMPERATURE'),
+      'MULTIAI_MODEL_TEMPERATURE',
     );
-    const topP = parseFloatEnv(getEnv('KIMI_MODEL_TOP_P'), 'KIMI_MODEL_TOP_P');
-    const thinkingKeep = trimmed(getEnv('KIMI_MODEL_THINKING_KEEP'));
+    const topP = parseFloatEnv(getEnv('MULTIAI_MODEL_TOP_P'), 'MULTIAI_MODEL_TOP_P');
+    const thinkingKeep = trimmed(getEnv('MULTIAI_MODEL_THINKING_KEEP'));
     const maxCompletionTokens =
-      parseCompletionTokens(getEnv('KIMI_MODEL_MAX_COMPLETION_TOKENS')) ??
-      parseCompletionTokens(getEnv('KIMI_MODEL_MAX_TOKENS'));
+      parseCompletionTokens(getEnv('MULTIAI_MODEL_MAX_COMPLETION_TOKENS')) ??
+      parseCompletionTokens(getEnv('MULTIAI_MODEL_MAX_TOKENS'));
 
     const changed: string[] = [];
 
@@ -134,23 +134,23 @@ export const kimiModelEnvOverlay: ConfigEffectiveOverlay = {
       return changed;
     }
 
-    const maxContextRaw = trimmed(getEnv('KIMI_MODEL_MAX_CONTEXT_SIZE'));
+    const maxContextRaw = trimmed(getEnv('MULTIAI_MODEL_MAX_CONTEXT_SIZE'));
     const maxContextSize =
       maxContextRaw === undefined
         ? DEFAULT_MAX_CONTEXT_SIZE
-        : parsePositiveInt(maxContextRaw, 'KIMI_MODEL_MAX_CONTEXT_SIZE');
+        : parsePositiveInt(maxContextRaw, 'MULTIAI_MODEL_MAX_CONTEXT_SIZE');
 
-    const maxOutputRaw = trimmed(getEnv('KIMI_MODEL_MAX_OUTPUT_SIZE'));
+    const maxOutputRaw = trimmed(getEnv('MULTIAI_MODEL_MAX_OUTPUT_SIZE'));
     const maxOutputSize =
       maxOutputRaw === undefined
         ? undefined
-        : parsePositiveInt(maxOutputRaw, 'KIMI_MODEL_MAX_OUTPUT_SIZE');
-    const capabilities = parseCapabilities(getEnv('KIMI_MODEL_CAPABILITIES')) ?? DEFAULT_CAPABILITIES;
-    const displayName = trimmed(getEnv('KIMI_MODEL_DISPLAY_NAME'));
-    const reasoningKey = trimmed(getEnv('KIMI_MODEL_REASONING_KEY'));
+        : parsePositiveInt(maxOutputRaw, 'MULTIAI_MODEL_MAX_OUTPUT_SIZE');
+    const capabilities = parseCapabilities(getEnv('MULTIAI_MODEL_CAPABILITIES')) ?? DEFAULT_CAPABILITIES;
+    const displayName = trimmed(getEnv('MULTIAI_MODEL_DISPLAY_NAME'));
+    const reasoningKey = trimmed(getEnv('MULTIAI_MODEL_REASONING_KEY'));
     const adaptiveThinking = parseBooleanVar(
-      getEnv('KIMI_MODEL_ADAPTIVE_THINKING'),
-      'KIMI_MODEL_ADAPTIVE_THINKING',
+      getEnv('MULTIAI_MODEL_ADAPTIVE_THINKING'),
+      'MULTIAI_MODEL_ADAPTIVE_THINKING',
     );
 
     const alias: Record<string, unknown> = {
@@ -253,4 +253,4 @@ function collectModelOverrides(input: {
   return Object.keys(modelOverrides).length > 0 ? modelOverrides : undefined;
 }
 
-registerConfigOverlay(kimiModelEnvOverlay);
+registerConfigOverlay(multiaiModelEnvOverlay);

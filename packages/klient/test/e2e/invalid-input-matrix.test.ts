@@ -33,9 +33,9 @@ import { join } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { bootstrap, logSeed, resolveLoggingConfig } from '@moonshot-ai/agent-core-v2';
-import type { ContentPart } from '@moonshot-ai/agent-core-v2/kosong/contract/message';
-import { IModelService } from '@moonshot-ai/agent-core-v2/kosong/model/model';
+import { bootstrap, logSeed, resolveLoggingConfig } from '@multiai/agent-core-v2';
+import type { ContentPart } from '@multiai/agent-core-v2/kosong/contract/message';
+import { IModelService } from '@multiai/agent-core-v2/kosong/model/model';
 
 import type { Klient } from '../../src/index.js';
 import type { AgentHandle } from '../../src/core/klient.js';
@@ -89,7 +89,7 @@ const M_KIMI = 'matrix-kimi';
 const M_ANTHROPIC = 'matrix-anthropic';
 const M_GOOGLE = 'matrix-google';
 
-const KIMI_PROVIDER = 'matrix-kimi-provider';
+const MULTIAI_PROVIDER = 'matrix-kimi-provider';
 
 const IMAGE_BAD_MIME_URL = 'data:image/bmp;base64,QUJD'; // bmp is outside every base's allowlist
 const IMAGE_BAD_BASE64_URL = 'data:image/png;base64,%%%not-base64%%%';
@@ -355,7 +355,7 @@ beforeAll(async () => {
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 
-  await klient.global.kosong.addProvider(KIMI_PROVIDER, {
+  await klient.global.kosong.addProvider(MULTIAI_PROVIDER, {
     type: 'kimi',
     auth: { method: 'api-key', apiKey: 'test-key' },
     baseUrl: `${baseUrl}/v1`,
@@ -377,12 +377,12 @@ beforeAll(async () => {
     maxContextSize: 262_144,
     capabilities: { image_in: true, video_in: true },
   });
-  // M_KIMI needs a `provider` reference to KIMI_PROVIDER so the engine
+  // M_KIMI needs a `provider` reference to MULTIAI_PROVIDER so the engine
   // resolves kimi provider traits (uploadVideo). The facade's addProvider()
   // doesn't support provider-linkage, so call modelService directly.
   await app!.accessor.get(IModelService).set(M_KIMI, {
     model: 'kimi-k2-matrix',
-    provider: KIMI_PROVIDER,
+    provider: MULTIAI_PROVIDER,
     protocol: 'openai',
     maxContextSize: 262_144,
     capabilities: ['image_in', 'video_in'],

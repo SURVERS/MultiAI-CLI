@@ -8,7 +8,7 @@ import {
   ISessionLifecycleService,
   IModelCatalog,
   type AgentTask,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { type RunningServer, startServer } from '../src/start';

@@ -1,6 +1,6 @@
 /**
- * `@moonshot-ai/kap-server` public surface — the Kimi Code server backed by the
- * DI × Scope agent engine (`@moonshot-ai/agent-core-v2`).
+ * `@multiai/kap-server` public surface — the MultiAI CLI server backed by the
+ * DI × Scope agent engine (`@multiai/agent-core-v2`).
  */
 
 export { startServer } from './start';

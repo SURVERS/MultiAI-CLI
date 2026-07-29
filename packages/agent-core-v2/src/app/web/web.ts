@@ -1,13 +1,10 @@
 /**
- * `web` domain (L4) — URL fetching with an optional OAuth-backed backend.
+ * `web` domain (L4) — URL fetching through the local backend.
  *
  * Owns the built-in `FetchURL` tool and the `IWebFetchService` seam that yields
- * its `UrlFetcher`. The default `WebFetchService` routes fetches through the
- * Moonshot fetch service when the managed Kimi OAuth provider is configured
- * (falling back to the built-in `LocalFetchURLProvider` on failure or when no
- * OAuth provider is present), so `FetchURL` works both with and without OAuth.
- * The `MoonshotFetchURLProvider` is also exported as a building block for hosts
- * that bind `IWebFetchService` directly. Bound at App scope.
+ * its `UrlFetcher`. MultiAI OAuth does not provision a product-owned remote
+ * fetch backend; hosts may explicitly replace `IWebFetchService`. Bound at App
+ * scope.
  */
 
 import { createDecorator, type ServiceIdentifier } from '#/_base/di/instantiation';

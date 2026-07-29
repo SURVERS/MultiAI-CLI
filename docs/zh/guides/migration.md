@@ -1,40 +1,40 @@
-# 从 kimi-cli 迁移
+# 旧版本数据
 
-::: info
-Kimi Code CLI 已完成重大版本升级，底层从 Python/uv 迁移至 Node.js，带来更简单的安装方式、更快的启动速度和全新的终端界面。旧版将逐渐停止维护，建议尽快升级至新版。
+MultiAI CLI 使用新的产品身份、命令、package namespace 与 home directory。它不会从
+Kimi Code 或 `kimi-cli` 导入设置与历史记录。
+
+::: warning 移除
+MultiAI CLI 1.0.0 不再包含旧版迁移 workspace 与 `migrate` 命令。
 :::
 
-如果你正在从旧版迁移，按照以下步骤操作——一条命令就能把配置、MCP server 与会话历史一并迁移至新版。
+## MultiAI CLI 使用的位置
 
-## 新版优势
+新数据只会写入 MultiAI 路径：
 
-- **不再依赖 Python / uv**：基于 Node.js 重写，无需配置 Python 环境，安装更简单
-- **原生二进制，开箱即用**：启动更快，运行更轻量
-- **终端界面全面重设计**：交互体验更流畅
-- **数据可完整迁移**：配置、MCP、会话历史一键带走，无缝延续
+- 全局数据与配置：`~/.multiai`；
+- workspace 配置：`.multiai/local.toml`；
+- 命令：`multiai`；
+- 环境变量：`MULTIAI_*`。
 
-## 如何迁移
+旧的 `kimi` 命令、`~/.kimi-code`、`.kimi-code/local.toml` 与产品级 `KIMI_*` 设置
+都不是 alias，也不会被读取。
 
-迁移有两种方式。
+## 清理旧凭据
 
-装好 kimi-code 之后**第一次运行 `kimi`** 时，它会自动检测 `~/.kimi/` 下是否存在 kimi-cli 的数据。一旦检测到，就会弹出迁移提示，你可以选择立即迁移、稍后再说，或不再提示。
+首次启动时，MultiAI CLI 只检查 `~/.kimi-code/credentials/kimi-code.json`。如果该
+文件可识别为以前的托管 OAuth 凭据文件，客户端会将其删除，避免遗留过期的明文 token。
 
-你也可以**随时手动运行**：
+`~/.kimi-code` 下的其他文件与目录不会被修改。确认不再需要旧应用后，请自行保留、
+归档或删除该目录。
+
+## 设置 MultiAI
+
+安装 MultiAI CLI 后，以新的原生 OAuth 客户端登录：
 
 ```sh
-kimi migrate
+multiai login
 ```
 
-你可以选择是否同时迁移聊天会话。如果暂时不需要历史记录，选 **Config only**；否则选 **Config + N sessions** 一并迁移。结束后会显示结果摘要。
-
-## 迁移会发生什么
-
-**会被迁移的内容**：配置（`config.toml`）、MCP 服务配置、输入历史，以及你选择迁移的聊天会话。
-
-**不会被迁移的内容**：OAuth 登录凭证和 MCP 服务的授权都不会被复制，迁移后需要在 kimi-code 里重新执行 `/login` 和重新授权 MCP 服务。kimi-cli 的插件也不在迁移范围内。
-
-::: tip 提示
-迁移**不会改动或删除** `~/.kimi/` 下的任何旧数据。kimi-cli 仍可照常使用，两者互不影响。迁移也可以重复运行，已经迁移过的会话不会被重复导入。
-:::
-
-迁移完成后，从 kimi-cli 导入的会话会带上 `[imported]` 标记，方便你与新建的会话区分。
+请在 `~/.multiai` 下重新配置 custom provider 与本地 plugin。MultiAI 仍支持外部 Kimi
+模型 provider，但它与已移除的 Kimi 产品账户及迁移流程相互独立。账户配置与 token
+行为请阅读 [OAuth 与账户](./account-and-oauth.md)。

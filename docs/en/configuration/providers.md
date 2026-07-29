@@ -1,6 +1,9 @@
 # Providers and models
 
-Kimi Code CLI supports connecting to multiple LLM platforms simultaneously — one-click login via the Kimi Code managed service, connecting Claude with an Anthropic API key, or connecting third-party inference services via the OpenAI-compatible protocol. Each provider corresponds to a specific API protocol; models are declared on top of providers with their own name, context length, and capabilities. This page explains how to configure each type of provider in `config.toml`.
+MultiAI CLI supports connecting to multiple LLM platforms simultaneously —
+managed MultiAI models through OAuth, Kimi as an external provider, Claude with
+an Anthropic API key, and third-party inference services through compatible
+protocols.
 
 ## Supported provider types
 
@@ -8,7 +11,7 @@ The `type` field in the `providers` table determines which protocol implementati
 
 | Type | Protocol | Typical use |
 | --- | --- | --- |
-| `kimi` | OpenAI-compatible | Kimi Code managed service, Kimi Platform API key |
+| `kimi` | OpenAI-compatible | Kimi / Moonshot API key |
 | `anthropic` | Anthropic Messages | Claude model family |
 | `openai` | OpenAI Chat Completions | OpenAI and compatible services, DeepSeek, Qwen, etc. |
 | `openai_responses` | OpenAI Responses API | OpenAI's newer Responses interface |
@@ -35,14 +38,18 @@ Two paths when adding:
 - **Custom registry (api.json)**: paste a custom registry URL and Bearer token; the CLI automatically creates the `providers` / `models` entries. On later startup, providers from the same registry URL are refreshed together, so upstream provider additions, removals, and model metadata changes are synced.
 
 ::: warning
-Kimi Code OAuth managed accounts logged in via `/login` do not appear in `/provider`. Use `/login` and `/logout` to manage them.
+MultiAI OAuth managed accounts logged in via `/login` do not appear in
+`/provider`. Use `/login`, `/account`, and `/logout` to manage them.
 :::
 
-The same operations are also available in non-interactive environments via the shell command: [`kimi provider`](../reference/kimi-command.md#kimi-provider).
+The same operations are also available in non-interactive environments via the
+shell command: [`multiai provider`](../reference/multiai-command.md#multiai-provider).
 
 ## `kimi`
 
-For connecting to Moonshot AI's OpenAI-compatible interface, including the Kimi Code managed service and Kimi Platform API keys.
+For connecting to Kimi / Moonshot AI's OpenAI-compatible interface with an API
+key. Kimi remains an external provider; MultiAI account login does not change
+its model IDs or protocol.
 
 - Default `base_url`: `https://api.moonshot.ai/v1`
 - Credential key names: `KIMI_API_KEY`, `KIMI_BASE_URL`
@@ -54,8 +61,6 @@ type = "kimi"
 base_url = "https://api.moonshot.ai/v1"
 api_key = "sk-xxxxx"
 ```
-
-> When using the Kimi Code managed service, running `/login` automatically configures `base_url` and credentials — no manual setup needed.
 
 ## `anthropic`
 
@@ -134,7 +139,7 @@ base_url = "https://your-gateway.example"
 
 Shares the same implementation as `google-genai`; setting `type = "vertexai"` switches to the Vertex AI access path.
 
-Authentication follows the standard Google Cloud ADC flow (`gcloud auth application-default login` or a `GOOGLE_APPLICATION_CREDENTIALS` service account JSON) — this part is unrelated to Kimi Code. **The project ID and region must be written in the `[providers.vertexai.env]` sub-table** — simply `export GOOGLE_CLOUD_PROJECT` in the shell will not be read by the CLI.
+Authentication follows the standard Google Cloud ADC flow (`gcloud auth application-default login` or a `GOOGLE_APPLICATION_CREDENTIALS` service account JSON). **The project ID and region must be written in the `[providers.vertexai.env]` sub-table** — simply `export GOOGLE_CLOUD_PROJECT` in the shell will not be read by the CLI.
 
 ```toml
 [providers.vertexai]
@@ -147,14 +152,18 @@ GOOGLE_CLOUD_LOCATION = "us-central1"
 
 ```sh
 gcloud auth application-default login   # one-time authentication
-kimi
+multiai
 ```
 
 To route Vertex requests through a custom (e.g. proxied) endpoint, set `base_url` (or the `GOOGLE_VERTEX_BASE_URL` env var); when omitted, the SDK default regional `*-aiplatform.googleapis.com` host is used. As with `google-genai`, give the host root only — the SDK appends `/v1beta1/publishers/google/models/…` itself.
 
 ## OAuth and credential injection
 
-The Kimi Code managed service uses OAuth rather than static API keys. After running `/login`, the built-in authentication toolchain automatically writes and refreshes credentials — no manual configuration is needed in `config.toml` for this.
+The MultiAI managed service uses OAuth rather than a static API key. After
+`/login`, the CLI injects `managed:multiai` and creates `multiai/<model-id>`
+aliases from the live `/v1/models` response. Requests use `/v1/responses`.
+Refresh tokens stay in the operating-system keyring; access tokens and account
+data stay in memory. See [Account and OAuth](../guides/account-and-oauth.md).
 
 ## Next steps
 

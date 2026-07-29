@@ -4,7 +4,7 @@
  * Exercises the real connection manager and resolves the real session MCP
  * service through DI. Stdio MCP processes are the external boundary; timeout
  * forwarding tests stub only the MCP SDK client boundary.
- * Run with `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run with `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/agent/mcp/connection-manager.test.ts`.
  */
 
@@ -689,7 +689,7 @@ describe('McpConnectionManager', () => {
           transport: 'stdio',
           command: process.execPath,
           args: [crashAfterConnectFixture],
-          env: { KIMI_TEST_MCP_EXIT_AFTER_MS: '500', KIMI_TEST_MCP_STDERR: 'fatal: out of memory' },
+          env: { MULTIAI_TEST_MCP_EXIT_AFTER_MS: '500', MULTIAI_TEST_MCP_STDERR: 'fatal: out of memory' },
           startupTimeoutMs: 4_000,
         },
       });
@@ -722,13 +722,13 @@ describe('McpConnectionManager', () => {
           transport: 'stdio',
           command: process.execPath,
           args: [stderrThenExitFixture],
-          env: { KIMI_TEST_MCP_STDERR: 'fatal: missing API token KIMI_X' },
+          env: { MULTIAI_TEST_MCP_STDERR: 'fatal: missing API token MULTIAI_X' },
           startupTimeoutMs: 4_000,
         },
       });
       const entry = cm.get('nope');
       expect(entry?.status).toBe('failed');
-      expect(entry?.error).toContain('fatal: missing API token KIMI_X');
+      expect(entry?.error).toContain('fatal: missing API token MULTIAI_X');
     } finally {
       await cm.shutdown();
     }
@@ -838,8 +838,8 @@ describe('Session MCP initialization', () => {
   let manager: McpConnectionManager | undefined;
 
   beforeEach(() => {
-    cwd = mkdtempSync(join(tmpdir(), 'kimi-session-mcp-cwd-'));
-    homeDir = mkdtempSync(join(tmpdir(), 'kimi-session-mcp-home-'));
+    cwd = mkdtempSync(join(tmpdir(), 'multiai-session-mcp-cwd-'));
+    homeDir = mkdtempSync(join(tmpdir(), 'multiai-session-mcp-home-'));
     disposables = new DisposableStore();
     manager = undefined;
   });
@@ -914,7 +914,7 @@ describe('Session MCP initialization', () => {
         transport: 'stdio',
         command: process.execPath,
         args: [slowToolStdioFixture],
-        env: { KIMI_TEST_MCP_TOOL_DELAY_MS: '300' },
+        env: { MULTIAI_TEST_MCP_TOOL_DELAY_MS: '300' },
       },
     });
     manager = service.connectionManager();

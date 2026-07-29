@@ -14,7 +14,7 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import type { KimiConfig, KimiHarness, Session } from '@moonshot-ai/kimi-code-sdk';
+import type { MultiAIConfig, MultiAIHarness, Session } from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS, UNAUTHED_STATUS } from './_helpers/harness-stubs';
@@ -46,21 +46,21 @@ function makeInMemoryStreamPair(): {
 }
 
 function startAcpServer(
-  harness: KimiHarness,
+  harness: MultiAIHarness,
   agentStream: ReturnType<typeof ndJsonStream>,
 ): AgentSideConnection {
   return new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
 }
 
-function makeHarnessWithToken(hasToken: boolean): KimiHarness {
+function makeHarnessWithToken(hasToken: boolean): MultiAIHarness {
   return {
     auth: {
       status: async () => (hasToken ? AUTHED_STATUS : UNAUTHED_STATUS),
     },
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
 }
 
-function configuredModelConfig(provider: KimiConfig['providers'][string]): KimiConfig {
+function configuredModelConfig(provider: MultiAIConfig['providers'][string]): MultiAIConfig {
   return {
     providers: { local: provider },
     defaultModel: 'local/gpt',
@@ -74,8 +74,8 @@ function configuredModelConfig(provider: KimiConfig['providers'][string]): KimiC
   };
 }
 
-function makeHarnessWithConfig(config: KimiConfig, hasToken = false): {
-  harness: KimiHarness;
+function makeHarnessWithConfig(config: MultiAIConfig, hasToken = false): {
+  harness: MultiAIHarness;
   createCalls: Array<{ id?: string; workDir: string }>;
 } {
   const createCalls: Array<{ id?: string; workDir: string }> = [];
@@ -93,7 +93,7 @@ function makeHarnessWithConfig(config: KimiConfig, hasToken = false): {
         onEvent: () => () => undefined,
       } as unknown as Session;
     },
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
   return { harness, createCalls };
 }
 
@@ -125,7 +125,7 @@ describe('AcpServer auth gate', () => {
         createCalled = true;
         return { id: 'should-not-be-reached' };
       },
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     startAcpServer(harness, agentStream);
@@ -212,7 +212,7 @@ describe('AcpServer auth gate', () => {
       configuredModelConfig({
         type: 'kimi',
         apiKey: 'sk-test',
-        oauth: { storage: 'file', key: 'kimi' },
+        oauth: { storage: 'keyring', key: 'kimi' },
       }),
     );
 
@@ -263,7 +263,7 @@ describe('AcpServer auth gate', () => {
           onEvent: () => () => undefined,
         } as unknown as Session;
       },
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     startAcpServer(harness, agentStream);

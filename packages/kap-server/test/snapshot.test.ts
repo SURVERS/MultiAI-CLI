@@ -19,7 +19,7 @@ import {
   ISessionLifecycleService,
   ISessionMetadata,
   IWorkspaceService,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { sessionSnapshotResponseSchema } from '../src/protocol/rest-snapshot';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -118,8 +118,8 @@ describe('server-v2 snapshot route enrichment', () => {
       | undefined;
     // Exercise the legacy (resume + live assembly) path — the fakes model the
     // live scope, not the on-disk reader.
-    const previousReaderMode = process.env['KIMI_SNAPSHOT_READER'];
-    process.env['KIMI_SNAPSHOT_READER'] = 'legacy';
+    const previousReaderMode = process.env['MULTIAI_SNAPSHOT_READER'];
+    process.env['MULTIAI_SNAPSHOT_READER'] = 'legacy';
     const unusedReader = { read: async () => ({}) as never };
     try {
       registerSnapshotRoutes(
@@ -135,8 +135,8 @@ describe('server-v2 snapshot route enrichment', () => {
         },
       );
     } finally {
-      if (previousReaderMode === undefined) delete process.env['KIMI_SNAPSHOT_READER'];
-      else process.env['KIMI_SNAPSHOT_READER'] = previousReaderMode;
+      if (previousReaderMode === undefined) delete process.env['MULTIAI_SNAPSHOT_READER'];
+      else process.env['MULTIAI_SNAPSHOT_READER'] = previousReaderMode;
     }
 
     let payload: unknown;
@@ -234,7 +234,7 @@ describe('server-v2 snapshot route error mapping', () => {
     };
     const handler = captureHandler(
       { core, broadcaster: {}, reader },
-      { KIMI_SNAPSHOT_TIMEOUT_MS: '150' },
+      { MULTIAI_SNAPSHOT_TIMEOUT_MS: '150' },
     );
     let payload: unknown;
     await handler(

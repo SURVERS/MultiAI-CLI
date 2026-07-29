@@ -1,4 +1,4 @@
-import type { ContentPart, Message } from '@moonshot-ai/kosong';
+import type { ContentPart, Message } from '@multiai/kosong';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AgentRecord } from '../../../src/agent';
@@ -971,7 +971,7 @@ function hasMarker(messages: readonly Message[]): boolean {
 function getMicroCompactionFlagEnv(): string {
   // Micro compaction is disabled and its flag has been removed from the registry;
   // the env var name is kept so the (skipped) suite still type-checks.
-  return 'KIMI_CODE_EXPERIMENTAL_MICRO_COMPACTION';
+  return 'MULTIAI_EXPERIMENTAL_MICRO_COMPACTION';
 }
 
 function singleTelemetryEvent(

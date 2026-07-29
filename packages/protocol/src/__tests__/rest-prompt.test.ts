@@ -53,9 +53,9 @@ describe('promptSubmissionSchema', () => {
   it('accepts a partial per-turn override (model only)', () => {
     const parsed = promptSubmissionSchema.parse({
       content: [{ type: 'text', text: 'hi' }],
-      model: 'kimi-code/k2',
+      model: 'multiai/k2',
     });
-    expect(parsed.model).toBe('kimi-code/k2');
+    expect(parsed.model).toBe('multiai/k2');
     expect(parsed.thinking).toBeUndefined();
   });
 
@@ -63,7 +63,7 @@ describe('promptSubmissionSchema', () => {
     const parsed = promptSubmissionSchema.parse({
       content: [{ type: 'text', text: 'hi' }],
       profile: 'reviewer',
-      model: 'kimi-code/k2',
+      model: 'multiai/k2',
     });
     expect(parsed.profile).toBe('reviewer');
   });
@@ -80,12 +80,12 @@ describe('promptSubmissionSchema', () => {
   it('accepts the full bundle of controls when supplied', () => {
     const parsed = promptSubmissionSchema.parse({
       content: [{ type: 'text', text: 'hi' }],
-      model: 'kimi-code/k2',
+      model: 'multiai/k2',
       thinking: 'off',
       permission_mode: 'manual',
       plan_mode: false,
     });
-    expect(parsed.model).toBe('kimi-code/k2');
+    expect(parsed.model).toBe('multiai/k2');
     expect(parsed.thinking).toBe('off');
     expect(parsed.permission_mode).toBe('manual');
     expect(parsed.plan_mode).toBe(false);

@@ -17,7 +17,7 @@
  *     backend path class.
  */
 
-import type { Kaos } from '@moonshot-ai/kaos';
+import type { Kaos } from '@multiai/kaos';
 import { normalize } from 'pathe';
 import { z } from 'zod';
 

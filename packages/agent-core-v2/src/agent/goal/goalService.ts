@@ -77,8 +77,8 @@ import { IConfigService } from '#/app/config/config';
 import {
   ErrorCodes,
   Error2,
-  toKimiErrorPayload,
-  type KimiErrorPayload,
+  toMultiAIErrorPayload,
+  type MultiAIErrorPayload,
 } from '#/errors';
 import { IWireService } from '#/wire/wire';
 import { defineModel } from '#/wire/model';
@@ -1317,8 +1317,8 @@ function goalFailurePauseReason(error: unknown): string {
   }
 }
 
-function normalizeGoalErrorPayload(error: unknown): KimiErrorPayload {
-  const payload = toKimiErrorPayload(error);
+function normalizeGoalErrorPayload(error: unknown): MultiAIErrorPayload {
+  const payload = toMultiAIErrorPayload(error);
   if (payload.code === ErrorCodes.MODEL_NOT_CONFIGURED) {
     return { ...payload, message: LLM_NOT_SET_MESSAGE };
   }

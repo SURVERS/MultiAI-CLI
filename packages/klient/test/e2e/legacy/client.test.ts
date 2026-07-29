@@ -1,6 +1,6 @@
 /**
  * Self-tests for `DaemonClient` against a live server at
- * `process.env.KIMI_SERVER_URL ?? http://127.0.0.1:58627`.
+ * `process.env.MULTIAI_SERVER_URL ?? http://127.0.0.1:58627`.
  *
  * Every test gates on a `daemonReachable()` check so CI / dev machines
  * without a running server stay green. Run a server (`pnpm dev:server` from
@@ -23,13 +23,13 @@ import {
   type ProviderCatalogItem,
   type Session,
   type SessionStatusResponse,
-} from '@moonshot-ai/protocol';
+} from '@multiai/protocol';
 
 import { DaemonClient, EnvelopeError } from '../harness/index.js';
 import { fetchWithReport } from '../harness/report.js';
 import { createCaseLogger, errorForLog } from './log.js';
 
-const BASE_URL = process.env['KIMI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
+const BASE_URL = process.env['MULTIAI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
 const PROMPT_TIMEOUT_MS = 120_000;
 
 async function daemonReachable(): Promise<boolean> {

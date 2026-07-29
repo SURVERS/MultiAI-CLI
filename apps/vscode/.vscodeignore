@@ -27,7 +27,7 @@ artifacts/**
 
 # Never package generated test/debug state
 **/.kimi/**
-**/.kimi-code/**
+**/.multiai/**
 **/cache/**
 **/caches/**
 **/credentials/**

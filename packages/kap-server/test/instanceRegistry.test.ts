@@ -3,7 +3,7 @@
  * mechanism (no feature flag; every instance registers itself).
  *
  * Hermetic strategy: every test uses a tmpdir instances dir so the real
- * `~/.kimi-code/server/instances` is never touched. Dead-pid simulation uses
+ * `~/.multiai/server/instances` is never touched. Dead-pid simulation uses
  * `0x7fffffff` (guaranteed ESRCH on Linux/macOS).
  */
 

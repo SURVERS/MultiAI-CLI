@@ -40,7 +40,7 @@ export const turnEndedEventSchema = z.object({
   type: z.literal('turn.ended'),
   turnId: z.number(),
   reason: z.enum(['completed', 'cancelled', 'failed', 'blocked']),
-  /** Protocol `KimiErrorPayload` — mirrored as `unknown`. */
+  /** Protocol `MultiAIErrorPayload` — mirrored as `unknown`. */
   error: z.unknown().optional(),
   durationMs: z.number().optional(),
 });
@@ -106,7 +106,7 @@ export const permissionApprovalResolvedEventSchema = z.looseObject({
   toolCallId: z.string(),
 });
 
-/** `error` payloads carry the full `KimiErrorPayload`; kept loose. */
+/** `error` payloads carry the full `MultiAIErrorPayload`; kept loose. */
 export const errorEventSchema = z.looseObject({
   message: z.string(),
 });

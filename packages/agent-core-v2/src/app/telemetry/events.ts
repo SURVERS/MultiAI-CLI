@@ -443,7 +443,7 @@ export interface ExitEvent {
 
 export const telemetryEventDefinitions = {
   turn_started: defineAgentTelemetryEvent<TurnStartedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A turn starts running.',
     properties: {
       turn_id: 'Per-agent turn index (main or subagent); pair with agent_id to locate a turn within a session',
@@ -454,7 +454,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   turn_interrupted: defineAgentTelemetryEvent<TurnInterruptedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A running turn is interrupted.',
     properties: {
       turn_id: 'Per-agent turn index (main or subagent); pair with agent_id to locate a turn within a session',
@@ -469,7 +469,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   turn_ended: defineAgentTelemetryEvent<TurnEndedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A turn ends, unconditionally.',
     properties: {
       turn_id: 'Per-agent turn index (main or subagent); pair with agent_id to locate a turn within a session',
@@ -484,7 +484,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   tool_call: defineAgentTelemetryEvent<ToolCallEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A tool call finishes execution.',
     properties: {
       turn_id: 'Per-agent turn index (main or subagent); pair with agent_id to locate a turn within a session',
@@ -499,7 +499,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   api_error: defineAgentTelemetryEvent<ApiErrorEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'An LLM API request fails.',
     properties: {
       error_type: 'Classified error category',
@@ -519,7 +519,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   skill_invoked: defineAgentTelemetryEvent<SkillInvokedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A skill is invoked.',
     properties: {
       skill_name: 'Skill name',
@@ -527,19 +527,19 @@ export const telemetryEventDefinitions = {
     },
   }),
   flow_invoked: defineAgentTelemetryEvent<FlowInvokedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A flow-type skill is invoked.',
     properties: { flow_name: 'Flow name' },
   }),
   input_steer: defineAgentTelemetryEvent<InputSteerEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The user steers input while a turn is running.',
     properties: {
       parts: 'Number of input parts',
     },
   }),
   cancel: defineAgentTelemetryEvent<CancelEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The user cancels ongoing work.',
     properties: {
       from: 'What was running when cancelled',
@@ -548,24 +548,24 @@ export const telemetryEventDefinitions = {
     },
   }),
   conversation_undo: defineAgentTelemetryEvent<ConversationUndoEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The user undoes conversation entries.',
     properties: {
       count: 'Number of entries undone',
     },
   }),
   yolo_toggle: defineAgentTelemetryEvent<YoloToggleEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'Yolo permission mode is toggled.',
     properties: { enabled: 'Whether yolo mode is now enabled' },
   }),
   afk_toggle: defineAgentTelemetryEvent<AfkToggleEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'AFK (auto) permission mode is toggled.',
     properties: { enabled: 'Whether auto mode is now enabled' },
   }),
   permission_policy_decision: defineAgentTelemetryEvent<PermissionPolicyDecisionEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A permission policy evaluates a tool call.',
     properties: {
       turn_id: 'Per-agent turn index (main or subagent); pair with agent_id to locate a turn within a session',
@@ -577,7 +577,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   permission_approval_result: defineAgentTelemetryEvent<PermissionApprovalResultEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A permission approval prompt resolves.',
     properties: {
       turn_id: 'Per-agent turn index (main or subagent); pair with agent_id to locate a turn within a session',
@@ -595,14 +595,14 @@ export const telemetryEventDefinitions = {
     },
   }),
   plan_submitted: defineAgentTelemetryEvent<PlanSubmittedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A plan is submitted for review.',
     properties: {
       has_options: 'Whether the plan offered selectable options',
     },
   }),
   plan_resolved: defineAgentTelemetryEvent<PlanResolvedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A submitted plan is resolved.',
     properties: {
       outcome: 'How the plan was resolved',
@@ -611,14 +611,14 @@ export const telemetryEventDefinitions = {
     },
   }),
   plan_enter_resolved: defineAgentTelemetryEvent<PlanEnterResolvedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A request to enter plan mode is resolved.',
     properties: {
       outcome: 'How the request was resolved',
     },
   }),
   compaction_finished: defineAgentTelemetryEvent<CompactionFinishedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'Context compaction completes.',
     properties: {
       turn_id: 'Per-agent turn index when compaction ran inside a turn; omitted for manual compaction between turns',
@@ -640,7 +640,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   compaction_failed: defineAgentTelemetryEvent<CompactionFailedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'Context compaction fails.',
     properties: {
       turn_id: 'Per-agent turn index when compaction ran inside a turn; omitted for manual compaction between turns',
@@ -656,7 +656,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   context_projection_repaired: defineAgentTelemetryEvent<ContextProjectionRepairedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The context projector repairs the outgoing request to keep it wire-valid.',
     properties: {
       reordered: 'Tool results moved back next to their call',
@@ -671,7 +671,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   background_task_created: defineAgentTelemetryEvent<BackgroundTaskCreatedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A background task is created.',
     properties: {
       task_id: 'Background task id; joins background_task_created with background_task_completed',
@@ -679,7 +679,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   background_task_completed: defineAgentTelemetryEvent<BackgroundTaskCompletedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A background task reaches a terminal state.',
     properties: {
       task_id: 'Background task id; joins background_task_created with background_task_completed',
@@ -689,12 +689,12 @@ export const telemetryEventDefinitions = {
     },
   }),
   model_switch: defineAgentTelemetryEvent<ModelSwitchEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The active model is bound or switched.',
     properties: { model: 'Model alias' },
   }),
   thinking_toggle: defineAgentTelemetryEvent<ThinkingToggleEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'Thinking effort is toggled.',
     properties: {
       enabled: 'Whether thinking is now enabled',
@@ -703,7 +703,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   question_dismissed: defineAgentTelemetryEvent<QuestionDismissedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A user question prompt is dismissed.',
     properties: {
       trace_id:
@@ -711,7 +711,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   question_answered: defineAgentTelemetryEvent<QuestionAnsweredEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A user question prompt is answered.',
     properties: {
       answered: 'Number of questions answered',
@@ -721,7 +721,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   goal_created: defineAgentTelemetryEvent<GoalCreatedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A goal is created.',
     properties: {
       actor: 'Who created the goal',
@@ -729,7 +729,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   goal_budget_set: defineAgentTelemetryEvent<GoalBudgetSetEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A goal budget is set.',
     properties: {
       actor: 'Who set the budget',
@@ -739,17 +739,17 @@ export const telemetryEventDefinitions = {
     },
   }),
   goal_continued: defineAgentTelemetryEvent<GoalContinuedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A goal continues into another turn.',
     properties: { turns_used: 'Turns consumed so far' },
   }),
   goal_cleared: defineAgentTelemetryEvent<GoalClearedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A goal is cleared.',
     properties: { actor: 'Who cleared the goal' },
   }),
   goal_status_changed: defineAgentTelemetryEvent<GoalStatusChangedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A goal changes status.',
     properties: {
       actor: 'Who changed the status',
@@ -763,7 +763,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   tool_call_dedup_detected: defineAgentTelemetryEvent<ToolCallDedupDetectedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A duplicate tool call is detected.',
     properties: {
       turn_id: 'Per-agent turn index (main or subagent); pair with agent_id to locate a turn within a session; omitted when no turn is active',
@@ -777,7 +777,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   tool_call_repeat: defineAgentTelemetryEvent<ToolCallRepeatEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A repeated tool call streak is detected.',
     properties: {
       turn_id: 'Per-agent turn index (main or subagent); pair with agent_id to locate a turn within a session; omitted when no turn is active',
@@ -789,7 +789,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   grep_tool_rg_fallback: defineAgentTelemetryEvent<GrepToolRgFallbackEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The grep tool falls back when resolving ripgrep.',
     properties: {
       source: 'Where ripgrep was resolved from',
@@ -797,7 +797,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   glob_tool_rg_fallback: defineAgentTelemetryEvent<GlobToolRgFallbackEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The glob tool falls back when resolving ripgrep.',
     properties: {
       source: 'Where ripgrep was resolved from',
@@ -805,12 +805,12 @@ export const telemetryEventDefinitions = {
     },
   }),
   fs_grep_node_fallback: defineTelemetryEvent<FsGrepNodeFallbackEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The fs grep path falls back to the node implementation.',
     properties: { reason: 'Why the fallback was taken' },
   }),
   subagent_created: defineTelemetryEvent<SubagentCreatedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A subagent run is created.',
     properties: {
       subagent_name: 'Profile name of the subagent',
@@ -821,7 +821,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   mcp_connected: defineTelemetryEvent<McpConnectedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'MCP servers connect at session start.',
     properties: {
       server_count: 'Number of servers connected',
@@ -829,7 +829,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   mcp_failed: defineTelemetryEvent<McpFailedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'MCP servers fail to connect at session start.',
     properties: {
       failed_count: 'Number of servers that failed',
@@ -837,12 +837,12 @@ export const telemetryEventDefinitions = {
     },
   }),
   cron_missed: defineTelemetryEvent<CronMissedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'Cron tasks fire late after being slept through.',
     properties: { count: 'Number of tasks that missed their fire time' },
   }),
   cron_scheduled: defineTelemetryEvent<CronScheduledEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A cron task is scheduled.',
     properties: {
       recurring: 'Whether the task repeats',
@@ -850,7 +850,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   cron_deleted: defineTelemetryEvent<CronDeletedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A cron task is deleted.',
     properties: {
       task_id: 'Cron task id',
@@ -858,7 +858,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   cron_fired: defineTelemetryEvent<CronFiredEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A cron task fires.',
     properties: {
       recurring: 'Whether the task repeats',
@@ -868,7 +868,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   image_compress: defineTelemetryEvent<ImageCompressEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'An image is compressed before being sent to the model.',
     properties: {
       source: 'Where the image came from',
@@ -886,7 +886,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   image_crop: defineTelemetryEvent<ImageCropEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'An image is cropped to a region before being sent to the model.',
     properties: {
       source: 'Where the image came from',
@@ -901,7 +901,7 @@ export const telemetryEventDefinitions = {
     },
   }),
   video_upload: defineAgentTelemetryEvent<VideoUploadEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A video is uploaded for the model.',
     properties: {
       model: 'Model the video is uploaded for',
@@ -915,22 +915,22 @@ export const telemetryEventDefinitions = {
     },
   }),
   session_started: defineTelemetryEvent<SessionStartedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A session becomes active (created, forked, or resumed).',
     properties: { resumed: 'Whether the session was resumed from disk' },
   }),
   session_load_failed: defineTelemetryEvent<SessionLoadFailedEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A session resume fails.',
     properties: { reason: 'Error code, error name, or unknown' },
   }),
   first_launch: defineTelemetryEvent<FirstLaunchEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'The CLI runs for the first time on this device.',
     properties: {},
   }),
   exit: defineTelemetryEvent<ExitEvent>({
-    owner: 'kimi-code',
+    owner: 'multiai-cli',
     comment: 'A CLI run exits.',
     properties: { duration_ms: 'Run wall-clock time in milliseconds' },
   }),

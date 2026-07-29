@@ -1,4 +1,4 @@
-import type { ContentPart, ToolCall } from '@moonshot-ai/kosong';
+import type { ContentPart, ToolCall } from '@multiai/kosong';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { mkdtempSync, truncateSync, writeFileSync } from 'node:fs';

@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { KimiCore } from '../../src/rpc/core-impl';
+import { MultiAICore } from '../../src/rpc/core-impl';
 
 const tempDirs: string[] = [];
 
@@ -23,8 +23,8 @@ async function makeHome(configToml?: string): Promise<string> {
   return home;
 }
 
-function makeCore(home: string): KimiCore {
-  return new KimiCore(async () => ({}) as never, { homeDir: home });
+function makeCore(home: string): MultiAICore {
+  return new MultiAICore(async () => ({}) as never, { homeDir: home });
 }
 
 const VALID_TOML = `
@@ -40,10 +40,10 @@ model = "kimi-for-coding"
 max_context_size = 128000
 `;
 
-describe('KimiCore degraded config loading', () => {
+describe('MultiAICore degraded config loading', () => {
   it('reports no diagnostics for a valid config', async () => {
     const core = makeCore(await makeHome(VALID_TOML));
-    const config = await core.getKimiConfig({});
+    const config = await core.getMultiAIConfig({});
     expect(config.providers['kimi']).toBeDefined();
     await expect(core.getConfigDiagnostics({})).resolves.toEqual({ warnings: [] });
   });
@@ -62,7 +62,7 @@ describe('KimiCore degraded config loading', () => {
 max_steps_per_turn = "nope"
 `),
     );
-    const config = await core.getKimiConfig({});
+    const config = await core.getMultiAIConfig({});
     expect(config.providers['kimi']).toBeDefined();
     expect(config.loopControl).toBeUndefined();
     const diagnostics = await core.getConfigDiagnostics({});
@@ -81,7 +81,7 @@ max_steps_per_turn = "nope"
     // Write paths stay strict: changing settings on top of a broken file
     // must fail with a short, actionable message — not raw validation JSON —
     // and must leave the file untouched.
-    const write = core.setKimiConfig({ thinking: { enabled: true } });
+    const write = core.setMultiAIConfig({ thinking: { enabled: true } });
     await expect(write).rejects.toThrow(/fix it first/i);
     await expect(write).rejects.toThrow(/kimi doctor/);
     await expect(write).rejects.not.toThrow(/invalid_type/);
@@ -96,20 +96,20 @@ max_steps_per_turn = "nope"
     const configPath = path.join(home, 'config.toml');
 
     await writeFile(configPath, '[[[', 'utf-8');
-    const kept = await core.getKimiConfig({ reload: true });
+    const kept = await core.getMultiAIConfig({ reload: true });
     expect(kept.providers['kimi']).toBeDefined();
     const degraded = await core.getConfigDiagnostics({});
     expect(degraded.warnings.some((w) => w.includes('Invalid TOML'))).toBe(true);
     expect(degraded.warnings.some((w) => w.includes('previous'))).toBe(true);
 
     await writeFile(configPath, `[thinking]\nenabled = true\n${VALID_TOML}`, 'utf-8');
-    const adopted = await core.getKimiConfig({ reload: true });
+    const adopted = await core.getMultiAIConfig({ reload: true });
     expect(adopted.thinking?.enabled).toBe(true);
     await expect(core.getConfigDiagnostics({})).resolves.toEqual({ warnings: [] });
   });
 });
 
-describe('KimiCore imageLimits scoping', () => {
+describe('MultiAICore imageLimits scoping', () => {
   it('two cores keep independent [image] limits and only follow their own reloads', async () => {
     const homeA = await makeHome(`${VALID_TOML}
 [image]
@@ -139,7 +139,7 @@ read_byte_budget = 32768
 `,
       'utf-8',
     );
-    await coreB.getKimiConfig({ reload: true });
+    await coreB.getMultiAIConfig({ reload: true });
     expect(coreB.imageLimits.maxEdgePx()).toBe(1000);
     expect(coreB.imageLimits.readByteBudget()).toBe(32768);
     expect(coreA.imageLimits.maxEdgePx()).toBe(800);
@@ -160,13 +160,13 @@ read_byte_budget = 131072
 `,
       'utf-8',
     );
-    await core.getKimiConfig({ reload: true });
+    await core.getMultiAIConfig({ reload: true });
     expect(core.imageLimits.maxEdgePx()).toBe(1400);
     expect(core.imageLimits.readByteBudget()).toBe(131072);
 
     // Removing the section clears back to built-ins.
     await writeFile(path.join(home, 'config.toml'), VALID_TOML, 'utf-8');
-    await core.getKimiConfig({ reload: true });
+    await core.getMultiAIConfig({ reload: true });
     expect(core.imageLimits.maxEdgePx()).toBe(2000);
     expect(core.imageLimits.readByteBudget()).toBe(256 * 1024);
   });

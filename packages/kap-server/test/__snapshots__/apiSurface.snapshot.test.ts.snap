@@ -114,11 +114,11 @@ exports[`API surface snapshot > matches the documented v2 route table and meta e
     ],
     [
       "GET",
-      "/api/v1/oauth/login",
+      "/api/v1/oauth/account",
     ],
     [
       "GET",
-      "/api/v1/oauth/usage",
+      "/api/v1/oauth/login",
     ],
     [
       "GET",

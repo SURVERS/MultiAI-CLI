@@ -20,7 +20,7 @@ import {
   type Message,
   type ProviderConfig,
   type StreamedMessagePart,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Agent, AgentOptions } from '../../src/agent';

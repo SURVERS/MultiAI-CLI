@@ -2,7 +2,7 @@
  * One-shot config migrations — mirror of agent-core's `config/migrations.ts`
  * (the two engines share neither code nor config abstractions, only the
  * on-disk `config.toml` and the `<home>/migrations-effort.json` marker
- * format). Each migration runs at most once per kimi home: a marker records
+ * format). Each migration runs at most once per MultiAI home: a marker records
  * completion (ISO timestamp), so a value the user re-sets by hand afterwards
  * is never migrated again. Best-effort and never throws — a migration must
  * never block startup.

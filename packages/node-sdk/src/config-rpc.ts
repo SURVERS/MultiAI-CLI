@@ -1,48 +1,48 @@
 import {
   createRPC,
   ErrorCodes,
-  KimiError,
+  MultiAIError,
   parseConfigString,
   resolveConfigPath,
   type RPCMethods,
-} from '@moonshot-ai/agent-core';
+} from '@multiai/agent-core';
 import { z } from 'zod';
 
-export type KimiConfigValidationPathSegment = string | number;
+export type MultiAIConfigValidationPathSegment = string | number;
 
-export interface KimiConfigValidationIssue {
-  readonly path: readonly KimiConfigValidationPathSegment[];
+export interface MultiAIConfigValidationIssue {
+  readonly path: readonly MultiAIConfigValidationPathSegment[];
   readonly message: string;
 }
 
-export interface ResolveKimiConfigPathInput {
+export interface ResolveMultiAIConfigPathInput {
   readonly homeDir?: string | undefined;
   readonly configPath?: string | undefined;
 }
 
-export interface ValidateKimiConfigTomlInput {
+export interface ValidateMultiAIConfigTomlInput {
   readonly text: string;
   readonly filePath?: string | undefined;
 }
 
-export interface KimiConfigRpc {
-  resolveConfigPath(input?: ResolveKimiConfigPathInput): Promise<string>;
-  validateConfigToml(input: ValidateKimiConfigTomlInput): Promise<void>;
+export interface MultiAIConfigRpc {
+  resolveConfigPath(input?: ResolveMultiAIConfigPathInput): Promise<string>;
+  validateConfigToml(input: ValidateMultiAIConfigTomlInput): Promise<void>;
 }
 
-interface KimiConfigCoreRpc {
-  resolveConfigPath(input: ResolveKimiConfigPathInput): string;
-  validateConfigToml(input: ValidateKimiConfigTomlInput): void;
+interface MultiAIConfigCoreRpc {
+  resolveConfigPath(input: ResolveMultiAIConfigPathInput): string;
+  validateConfigToml(input: ValidateMultiAIConfigTomlInput): void;
 }
 
-interface KimiConfigClientRpc {}
+interface MultiAIConfigClientRpc {}
 
-class KimiConfigCoreRpcImpl implements KimiConfigCoreRpc {
-  resolveConfigPath(input: ResolveKimiConfigPathInput): string {
+class MultiAIConfigCoreRpcImpl implements MultiAIConfigCoreRpc {
+  resolveConfigPath(input: ResolveMultiAIConfigPathInput): string {
     return resolveConfigPath(input);
   }
 
-  validateConfigToml(input: ValidateKimiConfigTomlInput): void {
+  validateConfigToml(input: ValidateMultiAIConfigTomlInput): void {
     try {
       parseConfigString(input.text, input.filePath);
     } catch (error) {
@@ -55,48 +55,48 @@ class KimiConfigCoreRpcImpl implements KimiConfigCoreRpc {
   }
 }
 
-export class KimiConfigRpcClient implements KimiConfigRpc {
-  private readonly ready: Promise<RPCMethods<KimiConfigCoreRpc>>;
+export class MultiAIConfigRpcClient implements MultiAIConfigRpc {
+  private readonly ready: Promise<RPCMethods<MultiAIConfigCoreRpc>>;
 
   constructor() {
-    const [coreRpc, clientRpc] = createRPC<KimiConfigCoreRpc, KimiConfigClientRpc>();
-    void coreRpc(new KimiConfigCoreRpcImpl());
+    const [coreRpc, clientRpc] = createRPC<MultiAIConfigCoreRpc, MultiAIConfigClientRpc>();
+    void coreRpc(new MultiAIConfigCoreRpcImpl());
     this.ready = clientRpc({});
   }
 
-  async resolveConfigPath(input: ResolveKimiConfigPathInput = {}): Promise<string> {
+  async resolveConfigPath(input: ResolveMultiAIConfigPathInput = {}): Promise<string> {
     const rpc = await this.ready;
     return rpc.resolveConfigPath(input);
   }
 
-  async validateConfigToml(input: ValidateKimiConfigTomlInput): Promise<void> {
+  async validateConfigToml(input: ValidateMultiAIConfigTomlInput): Promise<void> {
     const rpc = await this.ready;
     await rpc.validateConfigToml(input);
   }
 }
 
-export function createKimiConfigRpc(): KimiConfigRpc {
-  return new KimiConfigRpcClient();
+export function createMultiAIConfigRpc(): MultiAIConfigRpc {
+  return new MultiAIConfigRpcClient();
 }
 
 function toConfigValidationError(
   error: unknown,
-  validationIssues: readonly KimiConfigValidationIssue[],
-): KimiError {
+  validationIssues: readonly MultiAIConfigValidationIssue[],
+): MultiAIError {
   const details =
-    error instanceof KimiError && error.details !== undefined
+    error instanceof MultiAIError && error.details !== undefined
       ? { ...error.details, validationIssues }
       : { validationIssues };
 
-  if (error instanceof KimiError) {
-    return new KimiError(error.code, error.message, { details });
+  if (error instanceof MultiAIError) {
+    return new MultiAIError(error.code, error.message, { details });
   }
 
   const message = error instanceof Error ? error.message : String(error);
-  return new KimiError(ErrorCodes.CONFIG_INVALID, message, { details });
+  return new MultiAIError(ErrorCodes.CONFIG_INVALID, message, { details });
 }
 
-function extractValidationIssues(error: unknown): readonly KimiConfigValidationIssue[] | undefined {
+function extractValidationIssues(error: unknown): readonly MultiAIConfigValidationIssue[] | undefined {
   const zodError = findZodError(error);
   if (zodError === undefined) return undefined;
   return zodError.issues.map((issue) => ({

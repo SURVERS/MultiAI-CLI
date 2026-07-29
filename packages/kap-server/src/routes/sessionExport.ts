@@ -17,7 +17,7 @@ import {
   ISessionExportService,
   isError2,
   type Scope,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 
 import { requestLog } from '../lib/requestLog';
 import { defineRoute } from '../middleware/defineRoute';
@@ -107,7 +107,7 @@ export function registerSessionExportRoute(
         if (aborted) return;
 
         const safeSessionId = sanitizeSessionId(req.params.session_id);
-        tempDir = await mkdtemp(join(tmpdir(), `kimi-session-export-${safeSessionId}-`));
+        tempDir = await mkdtemp(join(tmpdir(), `multiai-session-export-${safeSessionId}-`));
         if (aborted) {
           await cleanup();
           return;
@@ -151,7 +151,7 @@ export function registerSessionExportRoute(
           .type('application/zip')
           .header(
             'content-disposition',
-            `attachment; filename="kimi-session-${safeSessionId}.zip"`,
+            `attachment; filename="multiai-session-${safeSessionId}.zip"`,
           )
           .header('content-length', archive.size)
           .header('cache-control', 'no-store')

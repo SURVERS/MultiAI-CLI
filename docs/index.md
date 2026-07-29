@@ -1,7 +1,7 @@
 ---
 layout: home
 hero:
-  name: Kimi Code CLI
+  name: MultiAI CLI
   text: ' '
   actions:
     - theme: brand

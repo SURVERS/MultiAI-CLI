@@ -16,10 +16,10 @@ import {
 import type {
   ApprovalHandler,
   Event,
-  KimiHarness,
+  MultiAIHarness,
   PermissionMode,
   Session,
-} from '@moonshot-ai/kimi-code-sdk';
+} from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS, makeModelsMap } from './_helpers/harness-stubs';
@@ -78,7 +78,7 @@ function makeFakeSession(sessionId: string): Session {
   } as unknown as Session;
 }
 
-function makeHarness(session: Session): KimiHarness {
+function makeHarness(session: Session): MultiAIHarness {
   return {
     auth: { status: async () => AUTHED_STATUS },
     createSession: async () => session,
@@ -90,11 +90,11 @@ function makeHarness(session: Session): KimiHarness {
         { id: 'kimi-v2', name: 'Kimi v2', thinkingSupported: false },
       ]),
     }),
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
 }
 
 async function openSession(
-  harness: KimiHarness,
+  harness: MultiAIHarness,
 ): Promise<{ client: ClientSideConnection; capturing: CapturingClient; sessionId: string }> {
   const { agentStream, clientStream } = makeInMemoryStreamPair();
   new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -189,7 +189,7 @@ describe('config_option_update wire-shape funnel', () => {
         defaultModel: 'kimi-coder',
         models: makeModelsMap([{ id: 'kimi-coder', name: 'Kimi Coder', thinkingSupported: true }]),
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
     const { client, capturing, sessionId } = await openSession(harness);
     capturing.notifications.length = 0;
 

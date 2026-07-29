@@ -1,7 +1,7 @@
 /**
  * Login-shell PATH enrichment.
  *
- * Reproduces the "Bash tool can't find local `gh`" report: when kimi-code is
+ * Reproduces the "Bash tool can't find local `gh`" report: when MultiAI CLI is
  * launched from a context that skipped the user's shell profile (GUI launcher,
  * non-login parent shell), `process.env.PATH` misses entries like
  * `/opt/homebrew/bin`, so every command spawned by the Bash tool inherits the

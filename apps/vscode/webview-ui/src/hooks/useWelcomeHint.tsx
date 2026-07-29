@@ -112,7 +112,7 @@ export function useWelcomeHint(): WelcomeHint {
       .then(setHasAgentMd)
       .catch(() => setHasAgentMd(false));
     bridge
-      .getKimiSessions()
+      .getMultiAISessions()
       .then((s) => setHasHistory(s.length > 0))
       .catch(() => setHasHistory(false));
   }, []);

@@ -132,7 +132,7 @@ export function normalizeRequestedThinkingEffort(
 }
 
 /**
- * The `KIMI_MODEL_THINKING_EFFORT` operational override: applies only when
+ * The `MULTIAI_MODEL_THINKING_EFFORT` operational override: applies only when
  * the vendor drives thinking through traits and the effective effort is not
  * `'off'`.
  */
@@ -283,7 +283,7 @@ function parseKeepValue(raw: string | undefined): KeepResolution {
 
 /**
  * Resolve the thinking-keep value from the env override (`modelOverrides`'s
- * `thinkingKeep`, sourced from `KIMI_MODEL_THINKING_KEEP`), the `thinking`
+ * `thinkingKeep`, sourced from `MULTIAI_MODEL_THINKING_KEEP`), the `thinking`
  * config `keep`, and the effective effort. Off-values (`0`/`false`/`no`/
  * `off`/`none`/`null`) explicitly disable keep; thinking `'off'` never keeps.
  */

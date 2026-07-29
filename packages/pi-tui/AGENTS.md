@@ -14,9 +14,9 @@ Never overwrite this directory wholesale when syncing from upstream. Each of the
 
 ## Acceptance after syncing from upstream
 
-- `pnpm --filter @moonshot-ai/pi-tui test` must pass in full; any failure among the guarding tests above means a local divergence was overwritten and lost.
+- `pnpm --filter @multiai/pi-tui test` must pass in full; any failure among the guarding tests above means a local divergence was overwritten and lost.
 
 ## Testing
 
-- This package's tests run with `node --test` (`pnpm --filter @moonshot-ai/pi-tui test`), not vitest; the root `vitest run` does not execute them — CI covers them through the dedicated `test-pi-tui` job in `.github/workflows/ci.yml`.
+- This package's tests run with `node --test` (`pnpm --filter @multiai/pi-tui test`), not vitest; the root `vitest run` does not execute them — CI covers them through the dedicated `test-pi-tui` job in `.github/workflows/ci.yml`.
 - Prefer adding new narrow-width tests to the existing test file of the corresponding component.

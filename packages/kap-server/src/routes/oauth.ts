@@ -1,7 +1,7 @@
 /**
  * `/oauth/*` REST routes.
  *
- *   POST   /oauth/login   start a device-code flow → OAuthFlowStart
+ *   POST   /oauth/login   start a browser or device flow → OAuthFlowStart
  *   GET    /oauth/login   poll current flow state  → OAuthFlowSnapshot | null
  *   DELETE /oauth/login   cancel pending flow       → { cancelled, status }
  *   POST   /oauth/logout  logout                    → { logged_out, provider }
@@ -11,16 +11,14 @@
  * (`ix.invokeFunction`) for the v2 one (`core.accessor.get`).
  */
 
-import { IOAuthService, type Scope } from '@moonshot-ai/agent-core-v2';
+import { IOAuthService, type Scope } from '@multiai/agent-core-v2';
 import {
-  managedUsageResultSchema,
+  accountSnapshotSchema,
   oauthFlowSnapshotSchema,
   oauthFlowStartSchema,
   oauthLoginCancelResponseSchema,
   oauthLogoutResponseSchema,
-  type ManagedUsageResult,
-  type UsageRow,
-} from '@moonshot-ai/agent-core-v2/app/auth/oauthProtocol';
+} from '@multiai/agent-core-v2/app/auth/oauthProtocol';
 import { z } from 'zod';
 
 import { okEnvelope } from '../envelope';
@@ -72,12 +70,20 @@ export function registerOAuthRoutes(app: RouteHost, core: Scope): void {
       path: '/oauth/login',
       body: oauthLoginStartRequestSchema,
       success: { data: oauthFlowStartSchema },
-      description: 'Start an OAuth device-code flow',
+      description: 'Start a MultiAI OAuth browser or device flow',
       tags: ['auth'],
     },
     async (req, reply) => {
-      const result = await core.accessor.get(IOAuthService).startLogin(req.body.provider);
-      requestLog(req)?.info({ provider: req.body.provider, action: 'login' }, 'oauth login started');
+      const result = await core.accessor.get(IOAuthService).startLogin(req.body);
+      requestLog(req)?.info(
+        {
+          provider: req.body.provider,
+          method: req.body.method,
+          persistence: req.body.persistence,
+          action: 'login',
+        },
+        'oauth login started',
+      );
       reply.send(okEnvelope(result, req.id));
     },
   );
@@ -94,7 +100,7 @@ export function registerOAuthRoutes(app: RouteHost, core: Scope): void {
       path: '/oauth/login',
       querystring: oauthLoginQuerySchema,
       success: { data: oauthFlowSnapshotOrNullSchema },
-      description: 'Poll the current OAuth device-code flow',
+      description: 'Poll the current OAuth flow',
       tags: ['auth'],
     },
     async (req, reply) => {
@@ -155,66 +161,24 @@ export function registerOAuthRoutes(app: RouteHost, core: Scope): void {
     logoutRoute.handler as Parameters<RouteHost['post']>[2],
   );
 
-  // GET /oauth/usage — managed-account plan usage (limits + booster wallet) ---
-  const usageRoute = defineRoute(
+  // GET /oauth/account -----------------------------------------------------
+  const accountRoute = defineRoute(
     {
       method: 'GET',
-      path: '/oauth/usage',
+      path: '/oauth/account',
       querystring: oauthLoginQuerySchema,
-      success: { data: managedUsageResultSchema },
-      description: 'Get the managed account usage summary',
+      success: { data: accountSnapshotSchema },
+      description: 'Get the MultiAI profile, wallet, limits, scopes, and masked keys',
       tags: ['auth'],
     },
     async (req, reply) => {
-      const result = await core.accessor.get(IOAuthService).getManagedUsage(req.query.provider);
-      reply.send(okEnvelope(toWireUsage(result), req.id));
+      const result = await core.accessor.get(IOAuthService).getAccount(req.query.provider);
+      reply.send(okEnvelope(result, req.id));
     },
   );
   app.get(
-    usageRoute.path,
-    usageRoute.options,
-    usageRoute.handler as Parameters<RouteHost['get']>[2],
+    accountRoute.path,
+    accountRoute.options,
+    accountRoute.handler as Parameters<RouteHost['get']>[2],
   );
-}
-
-/** Domain (camelCase) → wire (snake_case) mapping for the usage payload. */
-function toWireUsage(result: ManagedUsageDomainResult): ManagedUsageResult {
-  if (result.kind === 'error') {
-    return { kind: 'error', message: result.message, status: result.status };
-  }
-  return {
-    kind: 'ok',
-    summary: result.summary === null ? null : toWireUsageRow(result.summary),
-    limits: result.limits.map(toWireUsageRow),
-    extra_usage:
-      result.extraUsage === null
-        ? null
-        : {
-            balance_cents: result.extraUsage.balanceCents,
-            total_cents: result.extraUsage.totalCents,
-            monthly_charge_limit_enabled: result.extraUsage.monthlyChargeLimitEnabled,
-            monthly_charge_limit_cents: result.extraUsage.monthlyChargeLimitCents,
-            monthly_used_cents: result.extraUsage.monthlyUsedCents,
-            currency: result.extraUsage.currency,
-          },
-  };
-}
-
-type ManagedUsageDomainResult = Awaited<ReturnType<IOAuthService['getManagedUsage']>>;
-type DomainUsageRow = {
-  name?: string;
-  window?: { duration: number; unit: 'minute' | 'hour' | 'day' | 'week' };
-  used: number;
-  limit: number;
-  resetAt?: string;
-};
-
-function toWireUsageRow(row: DomainUsageRow): UsageRow {
-  return {
-    name: row.name,
-    window: row.window,
-    used: row.used,
-    limit: row.limit,
-    reset_at: row.resetAt,
-  };
 }

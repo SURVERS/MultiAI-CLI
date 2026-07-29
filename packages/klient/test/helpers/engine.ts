@@ -10,7 +10,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { bootstrap, logSeed, resolveLoggingConfig } from '@moonshot-ai/agent-core-v2';
+import { bootstrap, logSeed, resolveLoggingConfig } from '@multiai/agent-core-v2';
 
 export interface TestEngine {
   readonly homeDir: string;

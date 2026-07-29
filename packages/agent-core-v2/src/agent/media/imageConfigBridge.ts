@@ -7,7 +7,7 @@
  * exposes `setConfiguredMaxImageEdgePx` / `setConfiguredReadImageByteBudget`
  * and resolves its defaults as `configured ?? built-in`. This bridge is the
  * single owner that populates that seam from the env-resolved `[image]`
- * section — env (`KIMI_IMAGE_MAX_EDGE_PX` / `KIMI_IMAGE_READ_BYTE_BUDGET`) is
+ * section — env (`MULTIAI_IMAGE_MAX_EDGE_PX` / `MULTIAI_IMAGE_READ_BYTE_BUDGET`) is
  * already folded into `config.get('image')` by the config layer, so nothing
  * here reads `process.env`.
  *

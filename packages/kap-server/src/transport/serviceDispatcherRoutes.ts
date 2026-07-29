@@ -18,7 +18,7 @@
  * (`registerDebugRoutes.ts`).
  */
 
-import type { Scope } from '@moonshot-ai/agent-core-v2';
+import type { Scope } from '@multiai/agent-core-v2';
 
 import { requestLog } from '../lib/requestLog';
 import { okEnvelope } from '../protocol/envelope';
@@ -87,7 +87,7 @@ export function registerServiceDispatcherRoutes(
     app.post(path, handler);
   }
 
-  // Introspection: the dynamic service browser (kimi-inspect) reads this once
+  // Introspection: the dynamic service browser (multiai-inspect) reads this once
   // per connection.
   const describe = opts.describe ?? describeAllChannels;
   app.get(`${basePath}/channels`, async (req, reply) =>

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { ErrorCodes, KimiError } from '#/errors';
+import { ErrorCodes, MultiAIError } from '#/errors';
 import type { Agent } from '..';
 import type { AgentRecordOf } from '../records/types';
 import {
@@ -352,10 +352,10 @@ export class GoalMode {
   async createGoal(input: CreateGoalInput, actor: GoalActor = 'user'): Promise<GoalSnapshot> {
     const objective = input.objective.trim();
     if (objective.length === 0) {
-      throw new KimiError(ErrorCodes.GOAL_OBJECTIVE_EMPTY, 'Goal objective cannot be empty');
+      throw new MultiAIError(ErrorCodes.GOAL_OBJECTIVE_EMPTY, 'Goal objective cannot be empty');
     }
     if (objective.length > MAX_GOAL_OBJECTIVE_LENGTH) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.GOAL_OBJECTIVE_TOO_LONG,
         `Goal objective cannot exceed ${MAX_GOAL_OBJECTIVE_LENGTH} characters`,
       );
@@ -368,7 +368,7 @@ export class GoalMode {
       // observed here. This protects a resumable paused/blocked goal from being
       // silently overwritten.
       if (input.replace !== true) {
-        throw new KimiError(
+        throw new MultiAIError(
           ErrorCodes.GOAL_ALREADY_EXISTS,
           'A goal already exists; use replace to start a new one',
         );
@@ -408,7 +408,7 @@ export class GoalMode {
     const state = this.requireState();
     if (state.status === 'paused') return this.toSnapshot(state);
     if (state.status !== 'active') {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.GOAL_STATUS_INVALID,
         `Cannot pause a goal in status "${state.status}"`,
       );
@@ -446,7 +446,7 @@ export class GoalMode {
     const state = this.requireState();
     if (state.status === 'active') return this.toSnapshot(state);
     if (state.status !== 'paused' && state.status !== 'blocked') {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.GOAL_NOT_RESUMABLE,
         `Cannot resume a goal in status "${state.status}"`,
       );
@@ -668,7 +668,7 @@ export class GoalMode {
   private requireState(): GoalState {
     const state = this.state;
     if (state === undefined) {
-      throw new KimiError(ErrorCodes.GOAL_NOT_FOUND, 'No current goal');
+      throw new MultiAIError(ErrorCodes.GOAL_NOT_FOUND, 'No current goal');
     }
     return state;
   }

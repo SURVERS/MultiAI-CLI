@@ -10,7 +10,7 @@
  * params)` attempt plus projection rebuilds for request structure or media
  * compatibility; general retry policy remains in the loop's `stepRetry`
  * plugin. Before each request the projected messages pass through `media`'s
- * video resolver, which rewrites every `kimi-file://` prompt-video reference
+ * video resolver, which rewrites every `multiai-file://` prompt-video reference
  * to a provider-acceptable part (uploaded `ms://`, inline base64, or a
  * `<video path>` tag) so the internal reference never reaches the wire. When a
  * model is configured, `prepareTurnConfig` snapshots the

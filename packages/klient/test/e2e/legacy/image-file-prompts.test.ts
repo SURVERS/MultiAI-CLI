@@ -7,17 +7,17 @@
  *     prompt can be aborted (or was already terminal).
  *
  * Converted from the retired scenario `09-image-file-prompts.ts`. Skips when
- * no server is reachable at `KIMI_SERVER_URL`.
+ * no server is reachable at `MULTIAI_SERVER_URL`.
  */
 import { describe, expect, it } from 'vitest';
 
-import { ErrorCode } from '@moonshot-ai/protocol';
+import { ErrorCode } from '@multiai/protocol';
 
 import { DaemonClient, EnvelopeError } from '../harness/index.js';
 import { fetchWithReport } from '../harness/report.js';
 import { createCaseLogger } from './log.js';
 
-const BASE_URL = process.env['KIMI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
+const BASE_URL = process.env['MULTIAI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
 const API_PREFIX = '/api/v1';
 const SHORT_TIMEOUT_MS = 15_000;
 

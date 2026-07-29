@@ -1,6 +1,6 @@
 import { sleep } from '@antfu/utils';
 
-import { APIStatusError } from '@moonshot-ai/kosong';
+import { APIStatusError } from '@multiai/kosong';
 import type { Logger } from '#/logging/types';
 
 import { abortable } from '../utils/abort';

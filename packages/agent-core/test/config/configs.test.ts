@@ -2,7 +2,7 @@
  * Scenario: public config parsing, validation, TOML round-trips, and runtime overrides.
  *
  * Exercises the real config API with temporary files as the persistence
- * boundary. Run with `pnpm --filter @moonshot-ai/agent-core exec vitest run
+ * boundary. Run with `pnpm --filter @multiai/agent-core exec vitest run
  * test/config/configs.test.ts`.
  */
 
@@ -13,9 +13,9 @@ import { join } from 'pathe';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { ErrorCodes, KimiError } from '../../src/errors';
+import { ErrorCodes, MultiAIError } from '../../src/errors';
 import {
-  KimiConfigSchema,
+  MultiAIConfigSchema,
   McpServerConfigSchema,
   applyPrintModeConfigDefaults,
   configToTomlData,
@@ -30,7 +30,7 @@ import {
   readConfigFileForUpdate,
   resolveConfigPath,
   resolveConfigValue,
-  resolveKimiHome,
+  resolveMultiAIHome,
   validateConfig,
   writeConfigFile,
 } from '../../src/config';
@@ -49,12 +49,12 @@ function makeTempDir(): string {
   return dir;
 }
 
-function expectKimiErrorCode(fn: () => unknown, code: string): void {
+function expectMultiAIErrorCode(fn: () => unknown, code: string): void {
   try {
     fn();
   } catch (error) {
-    expect(error).toBeInstanceOf(KimiError);
-    expect((error as KimiError).code).toBe(code);
+    expect(error).toBeInstanceOf(MultiAIError);
+    expect((error as MultiAIError).code).toBe(code);
     return;
   }
   throw new Error('expected function to throw');
@@ -69,17 +69,17 @@ extra_skill_dirs = ["~/team-skills", ".agents/team-skills"]
 telemetry = false
 theme = "dark"
 
-[providers."managed:kimi-code"]
+[providers."managed:multiai"]
 type = "kimi"
 base_url = "https://api.kimi.com/coding/v1"
 api_key = "sk-file"
 custom_headers = { "X-Test" = "1" }
 
-[providers."managed:kimi-code".env]
+[providers."managed:multiai".env]
 GOOGLE_CLOUD_PROJECT = "project-1"
 
 [models."kimi-code/kimi-for-coding"]
-provider = "managed:kimi-code"
+provider = "managed:multiai"
 model = "kimi-for-coding"
 max_context_size = 262144
 capabilities = ["image_in", "thinking", "video_in"]
@@ -161,7 +161,7 @@ describe('harness config TOML loader', () => {
     expect(config.mergeAllAvailableSkills).toBe(true);
     expect(config.extraSkillDirs).toEqual(['~/team-skills', '.agents/team-skills']);
     expect(config.telemetry).toBe(false);
-    expect(config.providers['managed:kimi-code']).toMatchObject({
+    expect(config.providers['managed:multiai']).toMatchObject({
       type: 'kimi',
       baseUrl: 'https://api.kimi.com/coding/v1',
       apiKey: 'sk-file',
@@ -169,7 +169,7 @@ describe('harness config TOML loader', () => {
       customHeaders: { 'X-Test': '1' },
     });
     expect(config.models?.['kimi-code/kimi-for-coding']).toMatchObject({
-      provider: 'managed:kimi-code',
+      provider: 'managed:multiai',
       model: 'kimi-for-coding',
       maxContextSize: 262144,
       capabilities: ['image_in', 'thinking', 'video_in'],
@@ -273,35 +273,35 @@ source = { kind = "apiJson", url = "https://registry.example/api.json", apiKey =
     });
   });
 
-  it('round-trips OAuth refs with scoped OAuth hosts', async () => {
+  it('round-trips keyring OAuth refs with an issuer', async () => {
     const dir = makeTempDir();
     const configPath = join(dir, 'oauth-ref.toml');
     const toml = `
-[providers."managed:kimi-code"]
-type = "kimi"
-base_url = "https://api.dev.example.test/coding/v1"
+[providers."managed:multiai"]
+type = "openai_responses"
+base_url = "https://multiai.example.test/v1"
 api_key = ""
-oauth = { storage = "file", key = "oauth/kimi-code-env-1234", oauth_host = "https://auth.dev.example.test" }
+oauth = { storage = "keyring", key = "oauth/multiai", issuer = "https://multiai.example.test" }
 
 [services.moonshot_search]
 base_url = "https://api.dev.example.test/coding/v1/search"
 api_key = ""
-oauth = { storage = "file", key = "oauth/kimi-code-env-1234", oauth_host = "https://auth.dev.example.test" }
+oauth = { storage = "keyring", key = "oauth/multiai", issuer = "https://multiai.example.test" }
 `;
     const config = parseConfigString(toml, configPath);
-    expect(config.providers['managed:kimi-code']?.oauth).toEqual({
-      storage: 'file',
-      key: 'oauth/kimi-code-env-1234',
-      oauthHost: 'https://auth.dev.example.test',
+    expect(config.providers['managed:multiai']?.oauth).toEqual({
+      storage: 'keyring',
+      key: 'oauth/multiai',
+      issuer: 'https://multiai.example.test',
     });
-    expect(config.services?.moonshotSearch?.oauth?.oauthHost).toBe('https://auth.dev.example.test');
+    expect(config.services?.moonshotSearch?.oauth?.issuer).toBe('https://multiai.example.test');
 
     await writeConfigFile(configPath, config);
     const text = await readFile(configPath, 'utf-8');
-    expect(text).toContain('oauth_host = "https://auth.dev.example.test"');
+    expect(text).toContain('issuer = "https://multiai.example.test"');
     const roundTripped = parseConfigString(text, configPath);
-    expect(roundTripped.providers['managed:kimi-code']?.oauth?.oauthHost).toBe(
-      'https://auth.dev.example.test',
+    expect(roundTripped.providers['managed:multiai']?.oauth?.issuer).toBe(
+      'https://multiai.example.test',
     );
   });
 
@@ -398,7 +398,7 @@ removed_flag = true
     await ensureConfigFile(configPath);
 
     const text = await readFile(configPath, 'utf-8');
-    expect(text).toContain('Runtime settings for Kimi Code.');
+    expect(text).toContain('Runtime settings for MultiAI CLI.');
     expect(text).not.toMatch(/^default_thinking =/m);
     expect(text).not.toMatch(/^default_model =/m);
 
@@ -433,12 +433,12 @@ removed_flag = true
     expect(text).not.toContain('default_permission_mode');
   });
 
-  it('rejects invalid TOML and invalid schema with KimiError(config.invalid)', () => {
-    expectKimiErrorCode(
+  it('rejects invalid TOML and invalid schema with MultiAIError(config.invalid)', () => {
+    expectMultiAIErrorCode(
       () => parseConfigString('[[[', 'broken.toml'),
       ErrorCodes.CONFIG_INVALID,
     );
-    expectKimiErrorCode(
+    expectMultiAIErrorCode(
       () =>
         parseConfigString(
           `
@@ -449,7 +449,7 @@ type = "not-a-provider"
         ),
       ErrorCodes.CONFIG_INVALID,
     );
-    expectKimiErrorCode(
+    expectMultiAIErrorCode(
       () =>
         parseConfigString(
           `
@@ -486,7 +486,7 @@ timeout = 5
   });
 
   it('rejects invalid hooks config', () => {
-    expectKimiErrorCode(
+    expectMultiAIErrorCode(
       () =>
         parseConfigString(
           `
@@ -500,23 +500,22 @@ hooks = [{ type = "pre-tool-call", command = "echo hi" }]
 });
 
 describe('harness config schema and patch merge', () => {
-  it('accepts the empty public config and requires model context size in full configs', () => {
-    expect(KimiConfigSchema.parse({})).toEqual({ providers: {} });
-    expect(() =>
-      validateConfig({
-        providers: {
-          local: { type: 'openai', apiKey: 'sk-test' },
-        },
-        models: {
-          broken: { provider: 'local', model: 'gpt-test' },
-        },
-      }),
-    ).toThrow(/max_context_size/);
+  it('accepts empty public config and sparse model records without context metadata', () => {
+    expect(MultiAIConfigSchema.parse({})).toEqual({ providers: {} });
+    const config = validateConfig({
+      providers: {
+        local: { type: 'openai_responses', apiKey: 'sk-test' },
+      },
+      models: {
+        sparse: { provider: 'local', model: 'gpt-test' },
+      },
+    });
+    expect(config.models?.['sparse']?.maxContextSize).toBeUndefined();
   });
 
   it('accepts the Node.js timer upper boundary for MCP timeouts', () => {
     expect(
-      KimiConfigSchema.safeParse({
+      MultiAIConfigSchema.safeParse({
         mcp: {
           startupTimeoutMs: 2_147_483_647,
           toolTimeoutMs: 2_147_483_647,
@@ -535,7 +534,7 @@ describe('harness config schema and patch merge', () => {
 
   it('rejects MCP timeouts above the Node.js timer limit across config surfaces', () => {
     expect(
-      KimiConfigSchema.safeParse({
+      MultiAIConfigSchema.safeParse({
         mcp: {
           startupTimeoutMs: 2_147_483_648,
           toolTimeoutMs: 2_147_483_648,
@@ -556,7 +555,7 @@ describe('harness config schema and patch merge', () => {
     const base = parseConfigString(COMPLETE_TOML);
     const merged = mergeConfigPatch(base, {
       providers: {
-        'managed:kimi-code': {
+        'managed:multiai': {
           apiKey: 'sk-patched',
           baseUrl: undefined,
         },
@@ -571,14 +570,14 @@ describe('harness config schema and patch merge', () => {
       },
     });
 
-    expect(merged.providers['managed:kimi-code']).toMatchObject({
+    expect(merged.providers['managed:multiai']).toMatchObject({
       type: 'kimi',
       baseUrl: 'https://api.kimi.com/coding/v1',
       apiKey: 'sk-patched',
       env: { GOOGLE_CLOUD_PROJECT: 'project-1' },
     });
     expect(merged.models?.['kimi-code/kimi-for-coding']).toMatchObject({
-      provider: 'managed:kimi-code',
+      provider: 'managed:multiai',
       model: 'kimi-for-coding',
       maxContextSize: 262144,
       capabilities: ['tool_use'],
@@ -606,7 +605,7 @@ micro_compaction = false
   });
 
   it('rejects unknown fields in config patches', () => {
-    expectKimiErrorCode(
+    expectMultiAIErrorCode(
       () => mergeConfigPatch({ providers: {} }, { theme: 'dark' } as never),
       ErrorCodes.CONFIG_INVALID,
     );
@@ -624,7 +623,7 @@ micro_compaction = false
   });
 
   it('accepts maxOutputSize on a model alias and round-trips it', () => {
-    const parsed = KimiConfigSchema.parse({
+    const parsed = MultiAIConfigSchema.parse({
       providers: { local: { type: 'anthropic', apiKey: 'sk-test' } },
       models: {
         opus: {
@@ -642,7 +641,7 @@ micro_compaction = false
   });
 
   it('leaves maxOutputSize undefined when omitted', () => {
-    const parsed = KimiConfigSchema.parse({
+    const parsed = MultiAIConfigSchema.parse({
       providers: { local: { type: 'anthropic', apiKey: 'sk-test' } },
       models: {
         opus: {
@@ -657,7 +656,7 @@ micro_compaction = false
 
   it('rejects maxOutputSize <= 0', () => {
     expect(() =>
-      KimiConfigSchema.parse({
+      MultiAIConfigSchema.parse({
         providers: { local: { type: 'anthropic', apiKey: 'sk-test' } },
         models: {
           opus: {
@@ -673,18 +672,18 @@ micro_compaction = false
 });
 
 describe('config path env override', () => {
-  it('uses KIMI_CODE_HOME when no explicit homeDir is supplied', () => {
-    const saved = process.env['KIMI_CODE_HOME'];
+  it('uses MULTIAI_HOME when no explicit homeDir is supplied', () => {
+    const saved = process.env['MULTIAI_HOME'];
     try {
-      process.env['KIMI_CODE_HOME'] = '/tmp/kimi-from-env';
+      process.env['MULTIAI_HOME'] = '/tmp/kimi-from-env';
 
-      expect(resolveKimiHome()).toBe('/tmp/kimi-from-env');
-      expect(resolveKimiHome('/tmp/kimi-explicit')).toBe('/tmp/kimi-explicit');
+      expect(resolveMultiAIHome()).toBe('/tmp/kimi-from-env');
+      expect(resolveMultiAIHome('/tmp/kimi-explicit')).toBe('/tmp/kimi-explicit');
       expect(resolveConfigPath({})).toBe('/tmp/kimi-from-env/config.toml');
       expect(resolveConfigPath({ configPath: '/tmp/custom.toml' })).toBe('/tmp/custom.toml');
     } finally {
-      if (saved === undefined) delete process.env['KIMI_CODE_HOME'];
-      else process.env['KIMI_CODE_HOME'] = saved;
+      if (saved === undefined) delete process.env['MULTIAI_HOME'];
+      else process.env['MULTIAI_HOME'] = saved;
     }
   });
 });
@@ -706,8 +705,8 @@ describe('config value env override helpers', () => {
   it('resolves env before config before default', () => {
     expect(
       resolveConfigValue({
-        env: { KIMI_TEST_FLAG: '0' },
-        envKey: 'KIMI_TEST_FLAG',
+        env: { MULTIAI_TEST_FLAG: '0' },
+        envKey: 'MULTIAI_TEST_FLAG',
         configValue: true,
         defaultValue: true,
         parseEnv: parseBooleanEnv,
@@ -717,7 +716,7 @@ describe('config value env override helpers', () => {
     expect(
       resolveConfigValue({
         env: {},
-        envKey: 'KIMI_TEST_FLAG',
+        envKey: 'MULTIAI_TEST_FLAG',
         configValue: false,
         defaultValue: true,
         parseEnv: parseBooleanEnv,
@@ -727,7 +726,7 @@ describe('config value env override helpers', () => {
     expect(
       resolveConfigValue({
         env: {},
-        envKey: 'KIMI_TEST_FLAG',
+        envKey: 'MULTIAI_TEST_FLAG',
         defaultValue: true,
         parseEnv: parseBooleanEnv,
       }),
@@ -737,8 +736,8 @@ describe('config value env override helpers', () => {
   it('ignores invalid env values', () => {
     expect(
       resolveConfigValue({
-        env: { KIMI_TEST_FLAG: 'invalid' },
-        envKey: 'KIMI_TEST_FLAG',
+        env: { MULTIAI_TEST_FLAG: 'invalid' },
+        envKey: 'MULTIAI_TEST_FLAG',
         configValue: false,
         defaultValue: true,
         parseEnv: parseBooleanEnv,
@@ -789,7 +788,7 @@ max_context_size = 128000
     expect(result.config.providers).toEqual({});
     // The whole file is unusable: callers decide to fail startup (fileError)
     // or keep the last good config mid-run (fileWarnings).
-    expect(result.fileError).toBeInstanceOf(KimiError);
+    expect(result.fileError).toBeInstanceOf(MultiAIError);
     expect(result.fileError?.code).toBe(ErrorCodes.CONFIG_INVALID);
     expect(result.fileError?.message).toContain('Invalid TOML');
     expect(result.fileError?.message).toContain(configPath);
@@ -896,30 +895,30 @@ max_running_tasks = 0
     expect(result.fileWarnings[0]).toContain('background');
   });
 
-  it('applies KIMI_MODEL_* env overrides on top of a salvaged config', async () => {
+  it('applies MULTIAI_MODEL_* env overrides on top of a salvaged config', async () => {
     const configPath = await writeTempConfig(`${VALID_TOML}
 [loop_control]
 max_steps_per_turn = "nope"
 `);
     const result = loadRuntimeConfigSafe(configPath, {
-      KIMI_MODEL_NAME: 'env-model',
-      KIMI_MODEL_API_KEY: 'sk-env',
-      KIMI_MODEL_MAX_CONTEXT_SIZE: '262144',
+      MULTIAI_MODEL_NAME: 'env-model',
+      MULTIAI_MODEL_API_KEY: 'sk-env',
+      MULTIAI_MODEL_MAX_CONTEXT_SIZE: '262144',
     });
     expect(result.envWarnings).toEqual([]);
-    expect(result.config.models?.['__kimi_env_model__']).toBeDefined();
+    expect(result.config.models?.['__multiai_env_model__']).toBeDefined();
     expect(result.config.providers['kimi']).toBeDefined();
     expect(result.fileWarnings).toHaveLength(1);
   });
 
-  it('skips KIMI_MODEL_* overrides with an env warning instead of throwing', async () => {
+  it('skips MULTIAI_MODEL_* overrides with an env warning instead of throwing', async () => {
     const configPath = await writeTempConfig(VALID_TOML);
     const result = loadRuntimeConfigSafe(configPath, {
-      KIMI_MODEL_NAME: 'env-model',
+      MULTIAI_MODEL_NAME: 'env-model',
     });
     expect(result.fileWarnings).toEqual([]);
     expect(result.envWarnings).toHaveLength(1);
-    expect(result.envWarnings[0]).toContain('KIMI_MODEL');
+    expect(result.envWarnings[0]).toContain('MULTIAI_MODEL');
     expect(result.config).toEqual(readConfigFile(configPath));
   });
 
@@ -932,10 +931,10 @@ max_steps_per_turn = "nope"
       readConfigFileForUpdate(configPath);
       throw new Error('expected readConfigFileForUpdate to throw');
     } catch (error) {
-      expect(error).toBeInstanceOf(KimiError);
-      expect((error as KimiError).message).toContain('fix it first');
-      expect((error as KimiError).message).toContain('kimi doctor');
-      expect((error as KimiError).message).not.toContain('invalid_type');
+      expect(error).toBeInstanceOf(MultiAIError);
+      expect((error as MultiAIError).message).toContain('fix it first');
+      expect((error as MultiAIError).message).toContain('multiai doctor');
+      expect((error as MultiAIError).message).not.toContain('invalid_type');
     }
 
     const goodPath = await writeTempConfig(VALID_TOML);
@@ -957,7 +956,7 @@ describe('model overrides TOML', () => {
   it('parses nested model overrides from snake_case TOML', () => {
     const config = parseConfigString(`
 [models."kimi-code/kimi-k2"]
-provider = "managed:kimi-code"
+provider = "managed:multiai"
 model = "kimi-k2"
 max_context_size = 262144
 support_efforts = ["low", "high", "max"]
@@ -976,7 +975,7 @@ default_effort = "high"
   it('writes nested model overrides back as snake_case TOML data', () => {
     const config = parseConfigString(`
 [models."kimi-code/kimi-k2"]
-provider = "managed:kimi-code"
+provider = "managed:multiai"
 model = "kimi-k2"
 max_context_size = 262144
 

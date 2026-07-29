@@ -22,7 +22,7 @@ export type InspectionSourceKind =
 
 export interface InspectionSource {
   readonly kind: InspectionSourceKind;
-  /** Human-readable specifics, e.g. `KIMI_API_KEY (provider env bag)`. */
+  /** Human-readable specifics, e.g. `MULTIAI_API_KEY (provider env bag)`. */
   readonly detail?: string;
 }
 

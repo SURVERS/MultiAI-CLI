@@ -2,7 +2,7 @@
  * `kosongConfig` domain (L3) — `IProviderDiscoveryService` implementation.
  *
  * Owns the all-provider model refresh: delegates to the shared
- * `@moonshot-ai/kimi-code-oauth` orchestrator (managed OAuth + open
+ * `@multiai/oauth` orchestrator (managed OAuth + open
  * platforms + custom registries), applies the discovered providers/models
  * to kosong's in-memory registries (the persistence bridge writes them back
  * to config), and publishes `event.model_catalog.changed` on change. Bound
@@ -20,7 +20,7 @@
  * Two write-path details preserve the legacy semantics exactly:
  *  - Registry replaces preserve the entries the orchestrator could not see:
  *    the static exclusion AND the config-file-external entries (the
- *    env-synthesized `__kimi_env__` slice), which the orchestrator's
+ *    env-synthesized `__multiai_env__` slice), which the orchestrator's
  *    user-value view does not contain.
  *  - `defaultModel` / `thinking` stay direct `config.replace` writes (like
  *    the OAuth flows): the env overlay may pin the runtime default to the
@@ -34,11 +34,11 @@
 
 import {
   refreshProviderModels,
-  type ManagedKimiConfigShape,
-  type ManagedKimiOAuthRef,
+  type ProviderDiscoveryConfigShape,
+  type ProviderDiscoveryOAuthRef,
   type RefreshProviderHost,
   type RefreshResult,
-} from '@moonshot-ai/kimi-code-oauth';
+} from '@multiai/oauth';
 
 import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/di/scope';
 import { Error2 } from '#/_base/errors/errors';
@@ -77,7 +77,7 @@ interface StaticExclusion {
   readonly providers: Readonly<Record<string, ProviderConfig>>;
   readonly models: Readonly<Record<string, ModelRecord>>;
   readonly defaultModel?: string;
-  readonly thinking?: ManagedKimiConfigShape['thinking'];
+  readonly thinking?: ProviderDiscoveryConfigShape['thinking'];
 }
 
 const EMPTY_EXCLUSION: StaticExclusion = { providers: {}, models: {} };
@@ -172,7 +172,7 @@ export class ProviderDiscoveryService implements IProviderDiscoveryService {
       }
     }
     const defaultModel = this.config.inspect<string>(DEFAULT_MODEL_SECTION).userValue;
-    const thinking = this.config.inspect<ManagedKimiConfigShape['thinking']>(
+    const thinking = this.config.inspect<ProviderDiscoveryConfigShape['thinking']>(
       THINKING_SECTION,
     ).userValue;
     return {
@@ -195,17 +195,17 @@ export class ProviderDiscoveryService implements IProviderDiscoveryService {
     };
   }
 
-  private readUserConfigShape(exclusion: StaticExclusion = EMPTY_EXCLUSION): ManagedKimiConfigShape {
+  private readUserConfigShape(exclusion: StaticExclusion = EMPTY_EXCLUSION): ProviderDiscoveryConfigShape {
     const providers =
       this.config.inspect<Record<string, ProviderConfig>>(PROVIDERS_SECTION).userValue ?? {};
     const models =
       this.config.inspect<Record<string, ModelRecord>>(MODELS_SECTION).userValue ?? {};
     const defaultModel = this.config.inspect<string>(DEFAULT_MODEL_SECTION).userValue;
     const thinking =
-      this.config.inspect<ManagedKimiConfigShape['thinking']>(THINKING_SECTION).userValue;
+      this.config.inspect<ProviderDiscoveryConfigShape['thinking']>(THINKING_SECTION).userValue;
     return {
-      providers: withoutKeys(providers, exclusion.providers) as ManagedKimiConfigShape['providers'],
-      models: withoutKeys(models, exclusion.models) as ManagedKimiConfigShape['models'],
+      providers: withoutKeys(providers, exclusion.providers) as ProviderDiscoveryConfigShape['providers'],
+      models: withoutKeys(models, exclusion.models) as ProviderDiscoveryConfigShape['models'],
       defaultModel,
       thinking: thinking === undefined ? undefined : { ...thinking },
     };
@@ -228,7 +228,7 @@ export class ProviderDiscoveryService implements IProviderDiscoveryService {
     return withoutKeys(this.modelService.list(), userModels);
   }
 
-  private async removeProviderForRefresh(providerId: string): Promise<ManagedKimiConfigShape> {
+  private async removeProviderForRefresh(providerId: string): Promise<ProviderDiscoveryConfigShape> {
     const current = this.readUserConfigShape();
     const providers = current.providers as Record<string, ProviderConfig>;
     const restProviders = Object.fromEntries(
@@ -247,13 +247,13 @@ export class ProviderDiscoveryService implements IProviderDiscoveryService {
       ...current,
       providers: restProviders,
       models: restModels,
-    } as ManagedKimiConfigShape;
+    } as ProviderDiscoveryConfigShape;
   }
 
   private async applyRefreshPatch(
-    patch: ManagedKimiConfigShape,
+    patch: ProviderDiscoveryConfigShape,
     exclusion: StaticExclusion,
-  ): Promise<ManagedKimiConfigShape> {
+  ): Promise<ProviderDiscoveryConfigShape> {
     const userProviders =
       this.config.inspect<Record<string, ProviderConfig>>(PROVIDERS_SECTION).userValue ?? {};
     const userModels =
@@ -263,7 +263,7 @@ export class ProviderDiscoveryService implements IProviderDiscoveryService {
         ...this.syntheticProviders(userProviders),
         ...exclusion.providers,
         ...patch.providers,
-      });
+      } as Record<string, ProviderConfig>);
     }
     if (patch.models !== undefined) {
       await this.modelService.replaceAll({
@@ -311,12 +311,12 @@ export class ProviderDiscoveryService implements IProviderDiscoveryService {
     return {
       providers:
         patch.providers !== undefined
-          ? ({ ...exclusion.providers, ...patch.providers } as ManagedKimiConfigShape['providers'])
-          : (userProviders as ManagedKimiConfigShape['providers']),
+          ? ({ ...exclusion.providers, ...patch.providers } as ProviderDiscoveryConfigShape['providers'])
+          : (userProviders as ProviderDiscoveryConfigShape['providers']),
       models:
         patch.models !== undefined
-          ? ({ ...exclusion.models, ...patch.models } as ManagedKimiConfigShape['models'])
-          : (userModels as ManagedKimiConfigShape['models']),
+          ? ({ ...exclusion.models, ...patch.models } as ProviderDiscoveryConfigShape['models'])
+          : (userModels as ProviderDiscoveryConfigShape['models']),
       defaultModel:
         'defaultModel' in patch
           ? restoreDefault
@@ -328,13 +328,13 @@ export class ProviderDiscoveryService implements IProviderDiscoveryService {
           ? restoreDefault
             ? exclusion.thinking
             : patch.thinking
-          : this.config.inspect<ManagedKimiConfigShape['thinking']>(THINKING_SECTION).userValue,
+          : this.config.inspect<ProviderDiscoveryConfigShape['thinking']>(THINKING_SECTION).userValue,
     };
   }
 
   private async resolveOAuthToken(
     providerName: string,
-    oauthRef?: ManagedKimiOAuthRef,
+    oauthRef?: ProviderDiscoveryOAuthRef,
   ): Promise<string> {
     const tokenProvider = this.oauth.resolveTokenProvider(
       providerName,

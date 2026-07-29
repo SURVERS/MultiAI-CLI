@@ -1,6 +1,6 @@
 /**
  * `SnapshotReader` — server-layer disk reader for `GET /sessions/{sid}/snapshot`
- * (`KIMI_SNAPSHOT_READER=auto`, the default).
+ * (`MULTIAI_SNAPSHOT_READER=auto`, the default).
  *
  * Reads `<homeDir>/sessions/<workspaceId>/<sid>/state.json` and
  * `…/agents/main/wire.jsonl` directly, bypassing
@@ -34,7 +34,7 @@ import {
   type ContextMessage,
   type Scope,
   type SessionMeta,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 
 import { toWireApproval } from '../../routes/approvals';
 import { toWireQuestion } from '../../routes/questions';

@@ -7,7 +7,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { afterEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { ErrorCodes, KimiError } from '../../src/errors';
+import { ErrorCodes, MultiAIError } from '../../src/errors';
 import {
   buildMcpHttpHeaders,
   HttpMcpClient,
@@ -26,8 +26,8 @@ function expectConfigInvalid(fn: () => unknown): void {
   try {
     fn();
   } catch (error) {
-    expect(error).toBeInstanceOf(KimiError);
-    expect((error as KimiError).code).toBe(ErrorCodes.CONFIG_INVALID);
+    expect(error).toBeInstanceOf(MultiAIError);
+    expect((error as MultiAIError).code).toBe(ErrorCodes.CONFIG_INVALID);
     return;
   }
   throw new Error('expected function to throw');
@@ -58,7 +58,7 @@ describe('buildMcpHttpHeaders', () => {
     ).toEqual({ Authorization: 'Bearer secret' });
   });
 
-  it('throws KimiError(config.invalid) when a configured bearer token env var is empty or missing', () => {
+  it('throws MultiAIError(config.invalid) when a configured bearer token env var is empty or missing', () => {
     expectConfigInvalid(() =>
       buildMcpHttpHeaders(
         { transport: 'http', url: 'https://x', bearerTokenEnvVar: 'MISSING' },

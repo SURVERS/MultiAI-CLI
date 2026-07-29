@@ -14,9 +14,9 @@ import type { ServiceContract } from '../types.js';
 const providerTypeSchema = z.string();
 
 const oAuthRefSchema = z.object({
-  storage: z.enum(['file', 'keyring']),
+  storage: z.literal('keyring'),
   key: z.string().min(1),
-  oauthHost: z.string().min(1).optional(),
+  issuer: z.string().url().optional(),
 });
 
 const stringRecordSchema = z.record(z.string(), z.string());

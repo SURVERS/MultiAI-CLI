@@ -7,14 +7,14 @@
  * (`turn.*`, `assistant.delta`, `tool.call.*`, `prompt.completed`, …).
  */
 
-import type { IAgentRPCService } from '@moonshot-ai/agent-core-v2/agent/rpc/rpc';
-import type { IAgentPlanService } from '@moonshot-ai/agent-core-v2/agent/plan/plan';
-import type { IAgentProfileService } from '@moonshot-ai/agent-core-v2/agent/profile/profile';
-import type { IAgentShellCommandService } from '@moonshot-ai/agent-core-v2/agent/shellCommand/shellCommand';
-import type { IAgentTaskService } from '@moonshot-ai/agent-core-v2/agent/task/task';
-import type { IAgentUsageService } from '@moonshot-ai/agent-core-v2/agent/usage/usage';
-import type { ContentPart } from '@moonshot-ai/agent-core-v2/kosong/contract/message';
-import type { PermissionMode } from '@moonshot-ai/agent-core-v2/agent/permissionPolicy/types';
+import type { IAgentRPCService } from '@multiai/agent-core-v2/agent/rpc/rpc';
+import type { IAgentPlanService } from '@multiai/agent-core-v2/agent/plan/plan';
+import type { IAgentProfileService } from '@multiai/agent-core-v2/agent/profile/profile';
+import type { IAgentShellCommandService } from '@multiai/agent-core-v2/agent/shellCommand/shellCommand';
+import type { IAgentTaskService } from '@multiai/agent-core-v2/agent/task/task';
+import type { IAgentUsageService } from '@multiai/agent-core-v2/agent/usage/usage';
+import type { ContentPart } from '@multiai/agent-core-v2/kosong/contract/message';
+import type { PermissionMode } from '@multiai/agent-core-v2/agent/permissionPolicy/types';
 
 import type { ScopeRef } from '../channel.js';
 import type { ScopedCaller } from './session.js';

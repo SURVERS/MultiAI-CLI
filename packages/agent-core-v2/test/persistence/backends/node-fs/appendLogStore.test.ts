@@ -3,7 +3,7 @@
  *
  * Resolves the real `AppendLogStore` by interface over in-memory storage;
  * controlled storage promises expose write ordering without wall-clock waits.
- * Run with `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run with `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/persistence/backends/node-fs/appendLogStore.test.ts`.
  */
 

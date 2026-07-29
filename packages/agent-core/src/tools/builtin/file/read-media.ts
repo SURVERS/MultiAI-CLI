@@ -24,12 +24,12 @@
  * Read/Write/Edit.
  */
 
-import type { Kaos } from '@moonshot-ai/kaos';
+import type { Kaos } from '@multiai/kaos';
 import type {
   ContentPart,
   ModelCapability,
   VideoUploadInput as ProviderVideoUploadInput,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 import { z } from 'zod';
 
 import type { BuiltinTool } from '../../../agent/tool';

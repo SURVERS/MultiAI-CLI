@@ -4,7 +4,7 @@ export const modelCatalogItemSchema = z.object({
   provider: z.string().min(1),
   model: z.string().min(1),
   display_name: z.string().min(1).optional(),
-  max_context_size: z.number().int().min(1),
+  max_context_size: z.number().int().min(1).optional(),
   capabilities: z.array(z.string()).optional(),
   support_efforts: z.array(z.string()).optional(),
   default_effort: z.string().optional(),

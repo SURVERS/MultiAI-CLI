@@ -1,11 +1,11 @@
 import {
-  isKimiError,
+  isMultiAIError,
   type ContentPart as SdkContentPart,
   type Event,
   type PromptInput,
   type Session,
   type SessionSummary,
-} from "@moonshot-ai/kimi-code-sdk";
+} from "@multiai/sdk";
 
 import type { ContentPart as LegacyContentPart, ApprovalResponse } from "../../shared/legacy-sdk";
 import { Events } from "../../shared/bridge";
@@ -18,17 +18,17 @@ import {
   type TurnTerminalMetadata,
 } from "./event-adapter";
 import {
-  corePermissionForLegacyApproval,
-  legacyApprovalMetadata,
-  type LegacyApprovalFlags,
-} from "./legacy-approval";
+  corePermissionForSessionApproval,
+  sessionApprovalMetadata,
+  type SessionApprovalFlags,
+} from "./session-approval";
 import { ReverseRpcController } from "./reverse-rpc";
 
 export type RuntimeBroadcast = (event: string, data: unknown, webviewId?: string) => void;
 
 export interface SessionRuntimeOptions {
   readonly session: Session;
-  readonly legacyApproval: LegacyApprovalFlags;
+  readonly sessionApproval: SessionApprovalFlags;
   readonly broadcast: RuntimeBroadcast;
   readonly captureBaseline: (
     session: Pick<SessionSummary, "id" | "workDir" | "metadata">,
@@ -87,7 +87,7 @@ export class SessionRuntime {
   private exclusiveActionActive = false;
   private readonly terminalKeys = new Set<string>();
   private suppressedError: SuppressedError | undefined;
-  private legacyApproval: LegacyApprovalFlags;
+  private sessionApproval: SessionApprovalFlags;
   private closed = false;
 
   constructor(options: SessionRuntimeOptions) {
@@ -95,7 +95,7 @@ export class SessionRuntime {
     this.broadcast = options.broadcast;
     this.captureBaseline = options.captureBaseline;
     this.log = options.log;
-    this.legacyApproval = options.legacyApproval;
+    this.sessionApproval = options.sessionApproval;
     this.reverseRpc = new ReverseRpcController((event) => this.emitStreamEvent(event));
 
     // Forward every approval request to the user. The engine permission mode
@@ -123,19 +123,19 @@ export class SessionRuntime {
     return this.hasActiveWork || this.exclusiveActionActive;
   }
 
-  get legacyApprovalFlags(): LegacyApprovalFlags {
-    return this.legacyApproval;
+  get sessionApprovalFlags(): SessionApprovalFlags {
+    return this.sessionApproval;
   }
 
-  async toggleLegacyApproval(kind: keyof LegacyApprovalFlags): Promise<LegacyApprovalFlags> {
-    const next = { ...this.legacyApproval, [kind]: !this.legacyApproval[kind] };
+  async toggleLegacyApproval(kind: keyof SessionApprovalFlags): Promise<SessionApprovalFlags> {
+    const next = { ...this.sessionApproval, [kind]: !this.sessionApproval[kind] };
     await this.applyLegacyApproval(next);
     return next;
   }
 
   async setLegacyYoloMode(enabled: boolean): Promise<void> {
-    if (this.legacyApproval.yolo === enabled) return;
-    await this.applyLegacyApproval({ ...this.legacyApproval, yolo: enabled });
+    if (this.sessionApproval.yolo === enabled) return;
+    await this.applyLegacyApproval({ ...this.sessionApproval, yolo: enabled });
   }
 
   subscribe(webviewId: string): void {
@@ -417,14 +417,14 @@ export class SessionRuntime {
     this.webviewIds.clear();
   }
 
-  private async applyLegacyApproval(flags: LegacyApprovalFlags): Promise<void> {
+  private async applyLegacyApproval(flags: SessionApprovalFlags): Promise<void> {
     this.ensureOpen();
-    const permission = corePermissionForLegacyApproval(flags);
+    const permission = corePermissionForSessionApproval(flags);
     const status = await this.session.getStatus();
     const permissionChanged = status.permission !== permission;
     if (permissionChanged) await this.session.setPermission(permission);
     try {
-      await this.session.updateMetadata(legacyApprovalMetadata(flags));
+      await this.session.updateMetadata(sessionApprovalMetadata(flags));
     } catch (error) {
       if (permissionChanged) {
         await this.session.setPermission(status.permission).catch((rollbackError: unknown) => {
@@ -433,7 +433,7 @@ export class SessionRuntime {
       }
       throw error;
     }
-    this.legacyApproval = flags;
+    this.sessionApproval = flags;
   }
 
   private onSdkEvent(event: Event): void {
@@ -564,7 +564,7 @@ export class SessionRuntime {
   }
 
   private emitError(error: unknown, phase: ErrorPhase, options?: { readonly terminal?: boolean }): void {
-    const code = isKimiError(error) ? error.code : "internal";
+    const code = isMultiAIError(error) ? error.code : "internal";
     const detail = error instanceof Error ? error.message : String(error);
     this.log(`Session ${phase} error`, error);
     this.emitStreamEvent({

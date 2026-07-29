@@ -7,9 +7,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for submitting a bug report! It helps make Kimi Code better for everyone.
+        Thank you for submitting a bug report! It helps make MultiAI CLI better for everyone.
 
-        Make sure you are running the latest version of Kimi Code CLI. The bug you are experiencing may already have been fixed.
+        Make sure you are running the latest version of MultiAI CLI CLI. The bug you are experiencing may already have been fixed.
 
         Please try to include as much information as possible.
 
@@ -18,8 +18,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: What version of Kimi Code is running?
-      description: Copy the output of `kimi --version` or `/version`
+      label: What version of MultiAI CLI is running?
+      description: Copy the output of `multiai --version` or `/version`
     validations:
       required: true
   - type: input

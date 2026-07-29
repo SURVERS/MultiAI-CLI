@@ -83,7 +83,7 @@ export interface Model {
   readonly headers: Readonly<Record<string, string>>;
 
   readonly capabilities: ModelCapability;
-  readonly maxContextSize: number;
+  readonly maxContextSize?: number;
   readonly maxInputSize?: number;
   readonly maxOutputSize?: number;
   readonly displayName?: string;
@@ -119,7 +119,7 @@ export const modelCatalogItemSchema = z.object({
   provider: z.string().min(1),
   model: z.string().min(1),
   display_name: z.string().min(1).optional(),
-  max_context_size: z.number().int().min(1),
+  max_context_size: z.number().int().min(1).optional(),
   capabilities: z.array(z.string()).optional(),
   support_efforts: z.array(z.string()).optional(),
   default_effort: z.string().optional(),
@@ -194,7 +194,7 @@ export function toProtocolModelFallback(
     provider: effective.provider ?? '',
     model: modelId,
     display_name: effective.displayName ?? effective.model ?? modelId,
-    max_context_size: effective.maxContextSize ?? 0,
+    max_context_size: effective.maxContextSize,
     capabilities: effective.capabilities,
     support_efforts: effective.supportEfforts,
     default_effort: effective.defaultEffort,

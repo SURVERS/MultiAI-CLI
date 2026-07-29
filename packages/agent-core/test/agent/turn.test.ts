@@ -1,7 +1,7 @@
 /**
  * Agent turn integration contracts through the public RPC harness. Provider
  * generation and host-executed user tools are the only external boundaries.
- * Run with: pnpm --filter @moonshot-ai/agent-core test -- turn.test.ts
+ * Run with: pnpm --filter @multiai/agent-core test -- turn.test.ts
  */
 
 import { existsSync, mkdtempSync } from 'node:fs';
@@ -10,7 +10,7 @@ import { join } from 'pathe';
 import { setTimeout as delay } from 'node:timers/promises';
 import { Readable, type Writable } from 'node:stream';
 
-import type { Kaos, KaosProcess } from '@moonshot-ai/kaos';
+import type { Kaos, KaosProcess } from '@multiai/kaos';
 import { createControlledPromise } from '@antfu/utils';
 import {
   APIConnectionError,
@@ -23,7 +23,7 @@ import {
   type Message,
   type ModelCapability,
   type ToolCall,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 import { describe, expect, it, afterEach, vi } from 'vitest';
 
 import { HookEngine } from '../../src/session/hooks';
@@ -35,7 +35,7 @@ import {
   resolveMaxRetriesPerStep,
   resolveMaxStepsPerTurn,
 } from '../../src/agent/turn';
-import { ErrorCodes, KimiError } from '../../src/errors';
+import { ErrorCodes, MultiAIError } from '../../src/errors';
 import type { Logger, LogPayload } from '../../src/logging';
 import type {
   QueuedSubagentRunResult,
@@ -1187,10 +1187,10 @@ describe('Agent turn flow', () => {
       [wire] turn.prompt              { "input": [ { "type": "text", "text": "Hello without login" } ], "origin": { "kind": "user" }, "time": "<time>" }
       [emit] turn.started             { "turnId": 0, "origin": { "kind": "user" } }
       [wire] context.append_message   { "message": { "role": "user", "content": [ { "type": "text", "text": "Hello without login" } ], "toolCalls": [], "origin": { "kind": "user" } }, "time": "<time>" }
-      [emit] turn.ended               { "turnId": 0, "reason": "failed", "error": { "code": "model.not_configured", "message": "LLM not set, send \\"/login\\" to login", "name": "KimiError", "details": { "turnId": 0 }, "retryable": false } }
+      [emit] turn.ended               { "turnId": 0, "reason": "failed", "error": { "code": "model.not_configured", "message": "LLM not set, send \\"/login\\" to login", "name": "MultiAIError", "details": { "turnId": 0 }, "retryable": false } }
     `);
     expect(ctx.newEvents()).toMatchInlineSnapshot(
-      `[emit] error   { "code": "model.not_configured", "message": "LLM not set, send \\"/login\\" to login", "name": "KimiError", "details": { "turnId": 0 }, "retryable": false }`,
+      `[emit] error   { "code": "model.not_configured", "message": "LLM not set, send \\"/login\\" to login", "name": "MultiAIError", "details": { "turnId": 0 }, "retryable": false }`,
     );
   });
 
@@ -1827,9 +1827,9 @@ describe('Agent turn flow', () => {
     const tokenCalls: Array<boolean | undefined> = [];
     const oauthOptions = oauthAgentOptions(async (options) => {
       tokenCalls.push(options?.force);
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.PROVIDER_CONNECTION_ERROR,
-        'OAuth provider "managed:kimi-code" failed to fetch an access token: fetch failed',
+        'OAuth provider "managed:multiai" failed to fetch an access token: fetch failed',
       );
     });
     const generate = vi.fn<GenerateFn>();
@@ -1863,7 +1863,7 @@ describe('Agent turn flow', () => {
     const tokenCalls: Array<boolean | undefined> = [];
     const oauthOptions = oauthAgentOptions(async (options) => {
       tokenCalls.push(options?.force);
-      throw new KimiError(ErrorCodes.AUTH_LOGIN_REQUIRED, 'not logged in');
+      throw new MultiAIError(ErrorCodes.AUTH_LOGIN_REQUIRED, 'not logged in');
     });
     const generate = vi.fn<GenerateFn>();
     const ctx = testAgent({ ...oauthOptions, generate });
@@ -1937,8 +1937,8 @@ describe('Agent turn flow', () => {
       vi.unstubAllEnvs();
     });
 
-    it('honors KIMI_LOOP_MAX_STEPS_PER_TURN over config in agent turns', async () => {
-      vi.stubEnv('KIMI_LOOP_MAX_STEPS_PER_TURN', '1');
+    it('honors MULTIAI_LOOP_MAX_STEPS_PER_TURN over config in agent turns', async () => {
+      vi.stubEnv('MULTIAI_LOOP_MAX_STEPS_PER_TURN', '1');
       const ctx = testAgent({
         initialConfig: {
           providers: {},
@@ -1978,40 +1978,40 @@ describe('Agent turn flow', () => {
       );
     });
 
-    it('prefers KIMI_LOOP_MAX_STEPS_PER_TURN over config and ignores invalid values', () => {
+    it('prefers MULTIAI_LOOP_MAX_STEPS_PER_TURN over config and ignores invalid values', () => {
       expect(resolveMaxStepsPerTurn(100)).toBe(100);
       expect(resolveMaxStepsPerTurn()).toBeUndefined();
 
-      vi.stubEnv('KIMI_LOOP_MAX_STEPS_PER_TURN', '5');
+      vi.stubEnv('MULTIAI_LOOP_MAX_STEPS_PER_TURN', '5');
       expect(resolveMaxStepsPerTurn(100)).toBe(5);
       expect(resolveMaxStepsPerTurn()).toBe(5);
 
       // `0` is a valid override: it means "no cap", same as the config field.
-      vi.stubEnv('KIMI_LOOP_MAX_STEPS_PER_TURN', '0');
+      vi.stubEnv('MULTIAI_LOOP_MAX_STEPS_PER_TURN', '0');
       expect(resolveMaxStepsPerTurn(100)).toBe(0);
 
-      vi.stubEnv('KIMI_LOOP_MAX_STEPS_PER_TURN', 'abc');
+      vi.stubEnv('MULTIAI_LOOP_MAX_STEPS_PER_TURN', 'abc');
       expect(resolveMaxStepsPerTurn(100)).toBe(100);
-      vi.stubEnv('KIMI_LOOP_MAX_STEPS_PER_TURN', '-3');
+      vi.stubEnv('MULTIAI_LOOP_MAX_STEPS_PER_TURN', '-3');
       expect(resolveMaxStepsPerTurn(100)).toBe(100);
-      vi.stubEnv('KIMI_LOOP_MAX_STEPS_PER_TURN', '1.5');
+      vi.stubEnv('MULTIAI_LOOP_MAX_STEPS_PER_TURN', '1.5');
       expect(resolveMaxStepsPerTurn()).toBeUndefined();
     });
 
-    it('prefers KIMI_LOOP_MAX_RETRIES_PER_STEP over config and ignores invalid values', () => {
+    it('prefers MULTIAI_LOOP_MAX_RETRIES_PER_STEP over config and ignores invalid values', () => {
       expect(resolveMaxRetriesPerStep(10)).toBe(10);
       expect(resolveMaxRetriesPerStep()).toBeUndefined();
 
-      vi.stubEnv('KIMI_LOOP_MAX_RETRIES_PER_STEP', '3');
+      vi.stubEnv('MULTIAI_LOOP_MAX_RETRIES_PER_STEP', '3');
       expect(resolveMaxRetriesPerStep(10)).toBe(3);
       expect(resolveMaxRetriesPerStep()).toBe(3);
 
-      vi.stubEnv('KIMI_LOOP_MAX_RETRIES_PER_STEP', '0');
+      vi.stubEnv('MULTIAI_LOOP_MAX_RETRIES_PER_STEP', '0');
       expect(resolveMaxRetriesPerStep(10)).toBe(0);
 
-      vi.stubEnv('KIMI_LOOP_MAX_RETRIES_PER_STEP', 'not-a-number');
+      vi.stubEnv('MULTIAI_LOOP_MAX_RETRIES_PER_STEP', 'not-a-number');
       expect(resolveMaxRetriesPerStep(10)).toBe(10);
-      vi.stubEnv('KIMI_LOOP_MAX_RETRIES_PER_STEP', '-1');
+      vi.stubEnv('MULTIAI_LOOP_MAX_RETRIES_PER_STEP', '-1');
       expect(resolveMaxRetriesPerStep(10)).toBe(10);
     });
   });
@@ -2964,15 +2964,15 @@ function oauthAgentOptions(
     initialConfig: {
       defaultModel: 'kimi-code',
       providers: {
-        'managed:kimi-code': {
+        'managed:multiai': {
           type: 'vertexai',
           baseUrl: 'https://api.example/v1',
-          oauth: { storage: 'file', key: 'oauth/kimi-code' },
+          oauth: { storage: 'keyring', key: 'oauth/multiai' },
         },
       },
       models: {
         'kimi-code': {
-          provider: 'managed:kimi-code',
+          provider: 'managed:multiai',
           model: 'kimi-for-coding',
           maxContextSize: 1_000_000,
           capabilities: capabilities === undefined ? undefined : [...capabilities],

@@ -1,5 +1,5 @@
 /**
- * Test stubs for `KimiHarness` interactions that used to live as
+ * Test stubs for `MultiAIHarness` interactions that used to live as
  * dedicated convenience methods on the SDK (`auth.hasUsableToken`,
  * `listAvailableModels`). The methods are gone; the adapter now calls
  * the underlying SDK API directly (`auth.status`, `getConfig().models`)
@@ -7,16 +7,17 @@
  * file doesn't have to hand-roll them.
  */
 
-import type { ModelAlias } from '@moonshot-ai/kimi-code-sdk';
+import type { ModelAlias } from '@multiai/sdk';
 
 /** Stub `auth.status()` payload for an authenticated harness. */
 export const AUTHED_STATUS = {
-  providers: [{ providerName: 'kimi', hasToken: true }],
+  loggedIn: true,
+  provider: 'managed:multiai',
 } as const;
 
 /** Stub `auth.status()` payload for an unauthenticated harness. */
 export const UNAUTHED_STATUS = {
-  providers: [{ providerName: 'kimi', hasToken: false }],
+  loggedIn: false,
 } as const;
 
 /**

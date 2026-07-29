@@ -26,7 +26,7 @@ interface ConnectOptions {
 
 function openConn(url: string, opts?: ConnectOptions): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(url, [`kimi-code.bearer.${TOKEN}`], { headers: opts?.headers });
+    const ws = new WebSocket(url, [`multiai.bearer.${TOKEN}`], { headers: opts?.headers });
     ws.once('open', () => resolve(ws));
     ws.once('error', reject);
   });
@@ -34,7 +34,7 @@ function openConn(url: string, opts?: ConnectOptions): Promise<WebSocket> {
 
 function expectRejected(url: string, opts?: ConnectOptions): Promise<void> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(url, [`kimi-code.bearer.${TOKEN}`], { headers: opts?.headers });
+    const ws = new WebSocket(url, [`multiai.bearer.${TOKEN}`], { headers: opts?.headers });
     const done = (err?: Error): void => {
       clearTimeout(t);
       ws.removeAllListeners();

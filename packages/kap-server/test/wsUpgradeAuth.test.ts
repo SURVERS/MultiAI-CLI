@@ -6,7 +6,7 @@
  * upgrade is rejected with 401 before the socket completes the handshake. The
  * credential is the persistent bearer token (or, when configured, the
  * `rpcToken`); it may ride on the `Authorization` header or the
- * `kimi-code.bearer.<token>` subprotocol.
+ * `multiai.bearer.<token>` subprotocol.
  */
 
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -115,10 +115,10 @@ describe('WS upgrade auth', () => {
 
     it('accepts a valid bearer subprotocol and echoes it', async () => {
       const { ws, firstFrame } = await openConn(url(), {
-        protocols: [`kimi-code.bearer.${TOKEN}`],
+        protocols: [`multiai.bearer.${TOKEN}`],
       });
       sockets.push(ws);
-      expect(ws.protocol).toBe(`kimi-code.bearer.${TOKEN}`);
+      expect(ws.protocol).toBe(`multiai.bearer.${TOKEN}`);
       expect(firstFrame).toMatchObject({ type: firstType });
     });
 
@@ -131,7 +131,7 @@ describe('WS upgrade auth', () => {
     });
 
     it('rejects a wrong bearer token', async () => {
-      await expectRejected(url(), { protocols: ['kimi-code.bearer.wrong'] });
+      await expectRejected(url(), { protocols: ['multiai.bearer.wrong'] });
     });
 
     it('rejects a connection with no token', async () => {
@@ -141,6 +141,6 @@ describe('WS upgrade auth', () => {
 
   it('rejects upgrades to a non-WS path', async () => {
     const badUrl = `ws://127.0.0.1:${(server as RunningServer).port}/api/v1/other`;
-    await expectRejected(badUrl, { protocols: [`kimi-code.bearer.${TOKEN}`] });
+    await expectRejected(badUrl, { protocols: [`multiai.bearer.${TOKEN}`] });
   });
 });

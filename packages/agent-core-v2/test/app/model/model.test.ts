@@ -1,7 +1,7 @@
 /**
  * `model` domain tests — covers `effectiveModelConfig`, the `models` config
  * section registration + TOML transforms (now owned by the app/kosongConfig
- * persistence wrapper), and the `KIMI_MODEL_*` env overlay.
+ * persistence wrapper), and the `MULTIAI_MODEL_*` env overlay.
  *
  * The registry itself (`ModelService`) is a pure in-memory store covered by
  * `test/kosong/model/modelService.test.ts`; persistence through the config
@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ConfigRegistry } from '#/app/config/configService';
 import { ErrorCodes, Error2 } from '#/errors';
-import { kimiModelEnvOverlay, ENV_MODEL_ALIAS_KEY } from '#/app/kosongConfig/envOverlay';
+import { multiaiModelEnvOverlay, ENV_MODEL_ALIAS_KEY } from '#/app/kosongConfig/envOverlay';
 import {
   ENV_MODEL_PROVIDER_KEY,
   MODELS_SECTION,
@@ -125,7 +125,7 @@ describe('effectiveModelConfig', () => {
 
   it('does not infer Anthropic effort metadata for a Kimi provider routed through the Anthropic protocol', () => {
     const model: ModelRecord = {
-      provider: 'managed:kimi-code',
+      provider: 'managed:multiai',
       model: 'kimi-for-coding',
       maxContextSize: 262144,
       capabilities: ['thinking', 'always_thinking'],
@@ -302,7 +302,7 @@ function applyKimiModelEnvOverlay(
   env: EnvMap,
   effective: Record<string, unknown> = {},
 ): { readonly changed: readonly string[]; readonly effective: Record<string, unknown> } {
-  const changed = kimiModelEnvOverlay.apply(
+  const changed = multiaiModelEnvOverlay.apply(
     effective,
     (name) => env[name],
     (domain, value) => {
@@ -324,8 +324,8 @@ function expectConfigInvalid(fn: () => unknown): void {
   throw new Error('expected config.invalid');
 }
 
-describe('kimiModelEnvOverlay', () => {
-  it('does nothing when KIMI_MODEL_NAME is absent', () => {
+describe('multiaiModelEnvOverlay', () => {
+  it('does nothing when MULTIAI_MODEL_NAME is absent', () => {
     const effective = {
       models: {
         existing: { provider: 'p', model: 'm', maxContextSize: 1000 },
@@ -339,10 +339,10 @@ describe('kimiModelEnvOverlay', () => {
     expect(result.effective).toEqual(effective);
   });
 
-  it('applies request overrides when KIMI_MODEL_NAME is absent', () => {
+  it('applies request overrides when MULTIAI_MODEL_NAME is absent', () => {
     const { changed, effective } = applyKimiModelEnvOverlay({
-      KIMI_MODEL_TEMPERATURE: '0.3',
-      KIMI_MODEL_THINKING_KEEP: 'all',
+      MULTIAI_MODEL_TEMPERATURE: '0.3',
+      MULTIAI_MODEL_THINKING_KEEP: 'all',
     });
 
     expect(changed).toEqual(['modelOverrides']);
@@ -354,7 +354,7 @@ describe('kimiModelEnvOverlay', () => {
 
   it('synthesizes an env model alias and default model from the minimal env set', () => {
     const { changed, effective } = applyKimiModelEnvOverlay({
-      KIMI_MODEL_NAME: 'kimi-for-coding',
+      MULTIAI_MODEL_NAME: 'kimi-for-coding',
     });
 
     expect(changed).toEqual(['models', 'providers', 'defaultModel']);
@@ -374,7 +374,7 @@ describe('kimiModelEnvOverlay', () => {
 
   it('omits baseUrl for openai so the base SDK default applies at construction', () => {
     const { effective } = applyKimiModelEnvOverlay(
-      { KIMI_MODEL_NAME: 'env-model' },
+      { MULTIAI_MODEL_NAME: 'env-model' },
       { providers: { [ENV_MODEL_PROVIDER_KEY]: { type: 'openai' } } },
     );
 
@@ -388,7 +388,7 @@ describe('kimiModelEnvOverlay', () => {
 
   it('omits baseUrl for anthropic so the SDK picks its default', () => {
     const { effective } = applyKimiModelEnvOverlay(
-      { KIMI_MODEL_NAME: 'env-model' },
+      { MULTIAI_MODEL_NAME: 'env-model' },
       { providers: { [ENV_MODEL_PROVIDER_KEY]: { type: 'anthropic' } } },
     );
 
@@ -399,7 +399,7 @@ describe('kimiModelEnvOverlay', () => {
 
   it('honors an explicit baseUrl over the type default', () => {
     const { effective } = applyKimiModelEnvOverlay(
-      { KIMI_MODEL_NAME: 'env-model' },
+      { MULTIAI_MODEL_NAME: 'env-model' },
       {
         providers: {
           [ENV_MODEL_PROVIDER_KEY]: { type: 'openai', baseUrl: 'https://api.example.com/v1' },
@@ -414,7 +414,7 @@ describe('kimiModelEnvOverlay', () => {
 
   it('keeps an explicit env provider type instead of the kimi default', () => {
     const { changed, effective } = applyKimiModelEnvOverlay(
-      { KIMI_MODEL_NAME: 'env-model' },
+      { MULTIAI_MODEL_NAME: 'env-model' },
       { providers: { [ENV_MODEL_PROVIDER_KEY]: { type: 'openai', baseUrl: 'http://x' } } },
     );
 
@@ -427,7 +427,7 @@ describe('kimiModelEnvOverlay', () => {
   it('preserves configured aliases while adding the env alias', () => {
     const existing = { provider: 'p', model: 'm', maxContextSize: 1000 };
     const { effective } = applyKimiModelEnvOverlay(
-      { KIMI_MODEL_NAME: 'env-model' },
+      { MULTIAI_MODEL_NAME: 'env-model' },
       { models: { existing } },
     );
 
@@ -439,18 +439,18 @@ describe('kimiModelEnvOverlay', () => {
 
   it('maps extended model metadata and request overrides', () => {
     const { changed, effective } = applyKimiModelEnvOverlay({
-      KIMI_MODEL_NAME: 'env-model',
-      KIMI_MODEL_MAX_CONTEXT_SIZE: '1000000',
-      KIMI_MODEL_MAX_OUTPUT_SIZE: '8192',
-      KIMI_MODEL_CAPABILITIES: 'Image_In, thinking , tool_use',
-      KIMI_MODEL_DISPLAY_NAME: 'Custom Model',
-      KIMI_MODEL_REASONING_KEY: 'reasoning',
-      KIMI_MODEL_ADAPTIVE_THINKING: 'true',
-      KIMI_MODEL_TEMPERATURE: '0.3',
-      KIMI_MODEL_TOP_P: ' 0.95 ',
-      KIMI_MODEL_THINKING_KEEP: 'all',
-      KIMI_MODEL_MAX_COMPLETION_TOKENS: '4096',
-      KIMI_MODEL_MAX_TOKENS: '2048',
+      MULTIAI_MODEL_NAME: 'env-model',
+      MULTIAI_MODEL_MAX_CONTEXT_SIZE: '1000000',
+      MULTIAI_MODEL_MAX_OUTPUT_SIZE: '8192',
+      MULTIAI_MODEL_CAPABILITIES: 'Image_In, thinking , tool_use',
+      MULTIAI_MODEL_DISPLAY_NAME: 'Custom Model',
+      MULTIAI_MODEL_REASONING_KEY: 'reasoning',
+      MULTIAI_MODEL_ADAPTIVE_THINKING: 'true',
+      MULTIAI_MODEL_TEMPERATURE: '0.3',
+      MULTIAI_MODEL_TOP_P: ' 0.95 ',
+      MULTIAI_MODEL_THINKING_KEEP: 'all',
+      MULTIAI_MODEL_MAX_COMPLETION_TOKENS: '4096',
+      MULTIAI_MODEL_MAX_TOKENS: '2048',
     });
 
     expect(changed).toEqual(['models', 'providers', 'defaultModel', 'modelOverrides']);
@@ -474,32 +474,32 @@ describe('kimiModelEnvOverlay', () => {
     });
   });
 
-  it('falls back to legacy KIMI_MODEL_MAX_TOKENS for completion overrides', () => {
+  it('falls back to legacy MULTIAI_MODEL_MAX_TOKENS for completion overrides', () => {
     const { effective } = applyKimiModelEnvOverlay({
-      KIMI_MODEL_NAME: 'env-model',
-      KIMI_MODEL_MAX_TOKENS: '2048',
+      MULTIAI_MODEL_NAME: 'env-model',
+      MULTIAI_MODEL_MAX_TOKENS: '2048',
     });
 
     expect(effective['modelOverrides']).toEqual({ maxCompletionTokens: 2048 });
   });
 
   it.each([
-    ['KIMI_MODEL_MAX_CONTEXT_SIZE', '0'],
-    ['KIMI_MODEL_MAX_CONTEXT_SIZE', '1.5'],
-    ['KIMI_MODEL_MAX_OUTPUT_SIZE', 'nope'],
-    ['KIMI_MODEL_ADAPTIVE_THINKING', 'maybe'],
-    ['KIMI_MODEL_TEMPERATURE', 'abc'],
-    ['KIMI_MODEL_TEMPERATURE', '1.2.3'],
-    ['KIMI_MODEL_TOP_P', 'NaN'],
+    ['MULTIAI_MODEL_MAX_CONTEXT_SIZE', '0'],
+    ['MULTIAI_MODEL_MAX_CONTEXT_SIZE', '1.5'],
+    ['MULTIAI_MODEL_MAX_OUTPUT_SIZE', 'nope'],
+    ['MULTIAI_MODEL_ADAPTIVE_THINKING', 'maybe'],
+    ['MULTIAI_MODEL_TEMPERATURE', 'abc'],
+    ['MULTIAI_MODEL_TEMPERATURE', '1.2.3'],
+    ['MULTIAI_MODEL_TOP_P', 'NaN'],
   ])('throws config.invalid for invalid %s=%s', (key, value) => {
     expectConfigInvalid(() =>
-      applyKimiModelEnvOverlay({ KIMI_MODEL_NAME: 'env-model', [key]: value }),
+      applyKimiModelEnvOverlay({ MULTIAI_MODEL_NAME: 'env-model', [key]: value }),
     );
   });
 
   it('strips env-only model values before write-back', () => {
     expect(
-      kimiModelEnvOverlay.strip?.(
+      multiaiModelEnvOverlay.strip?.(
         'models',
         {
           user: { provider: 'p', model: 'm', maxContextSize: 1000 },
@@ -516,15 +516,15 @@ describe('kimiModelEnvOverlay', () => {
     });
 
     expect(
-      kimiModelEnvOverlay.strip?.('defaultModel', ENV_MODEL_ALIAS_KEY, {
+      multiaiModelEnvOverlay.strip?.('defaultModel', ENV_MODEL_ALIAS_KEY, {
         default_model: 'user',
       }),
     ).toBe('user');
-    expect(kimiModelEnvOverlay.strip?.('modelOverrides', { temperature: 0.3 }, {})).toBeUndefined();
+    expect(multiaiModelEnvOverlay.strip?.('modelOverrides', { temperature: 0.3 }, {})).toBeUndefined();
   });
 
   it('self-registers into ConfigRegistry without ModelService instantiation', () => {
     const freshRegistry = new ConfigRegistry();
-    expect(freshRegistry.listEffectiveOverlays()).toContain(kimiModelEnvOverlay);
+    expect(freshRegistry.listEffectiveOverlays()).toContain(multiaiModelEnvOverlay);
   });
 });

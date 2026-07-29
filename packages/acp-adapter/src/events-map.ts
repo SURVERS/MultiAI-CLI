@@ -16,7 +16,7 @@ import type {
   ToolProgressEvent,
   ToolResultEvent,
   TurnEndReason,
-} from '@moonshot-ai/kimi-code-sdk';
+} from '@multiai/sdk';
 
 import { displayBlockToAcpContent, toolResultToAcpContent } from './convert';
 import type { AcpStopReason } from './types';
@@ -95,7 +95,7 @@ export function acpToolCallId(turnId: number, toolCallId: string): string {
 }
 
 /**
- * Heuristic map from a Kimi tool's `name` to ACP {@link ToolKind}.
+ * Heuristic map from a MultiAI tool's `name` to ACP {@link ToolKind}.
  *
  * Pure, never throws — defaults to `'other'` whenever the name is
  * unrecognized so we never block streaming on an unknown tool. The
@@ -393,7 +393,7 @@ export function toolResultToSessionUpdate(
 }
 
 /**
- * Translate the kimi-code TodoList display block into an ACP `plan`
+ * Translate the MultiAI TodoList display block into an ACP `plan`
  * session update.
  *
  * Mapping rules (anchored at types.gen.d.ts:3530-3569 / :4849):
@@ -405,13 +405,13 @@ export function toolResultToSessionUpdate(
  *     so `done` rewrites to `completed`. Anything outside the known
  *     enum lands on `pending` as a safe default — we never want a
  *     plan emission to crash the prompt loop.
- *   - We default `priority` to `'medium'` because the kimi-code
+ *   - We default `priority` to `'medium'` because the MultiAI
  *     TodoList does not carry a priority axis today.
  *   - `title` → `content` (ACP names it `content` per :3548).
  *
  * Returns `null` if the items array is empty — there is no useful
  * client-side state in "I emit the plan now, but it's empty" beyond
- * the eventual `plan_removed` story (deferred until kimi-code grows
+ * the eventual `plan_removed` story (deferred until MultiAI grows
  * a clear-plan signal).
  */
 export function todoListToSessionUpdate(
@@ -458,7 +458,7 @@ function mapTodoStatus(status: string): PlanEntryStatus {
  * project it into an ACP `plan` session update. Returns `null` for
  * every other display kind (the caller drops them).
  *
- * The kimi-code TodoList tool publishes both a structured display
+ * The MultiAI TodoList tool publishes both a structured display
  * (`kind: 'todo_list'`) and a textual `tool.result` output. The
  * display is the canonical structured signal — we wire it to ACP
  * here instead of trying to parse the textual output.
@@ -474,8 +474,8 @@ export function planFromDisplayBlock(
 
 /**
  * Build a one-shot ACP `available_commands_update` session
- * notification. The Kimi adapter sits at the SDK layer, beneath the
- * TUI slash-command registry (`apps/kimi-code/src/tui/commands/`),
+ * notification. The MultiAI adapter sits at the SDK layer, beneath the
+ * TUI slash-command registry (`apps/multiai-cli/src/tui/commands/`),
  * so today we have no in-process source of structured slash commands
  * to enumerate. We still emit the wire-shape once per session so
  * clients that subscribe to the channel see a deterministic empty

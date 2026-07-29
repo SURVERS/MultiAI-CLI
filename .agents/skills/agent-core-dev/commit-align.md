@@ -1,6 +1,6 @@
 # Subskill — Commit align (triage a `main` commit against v2)
 
-Context: you are on the `kimi-code-v2` branch, in the phase of catching it up to **new commits that landed on `main`**. Those commits change `packages/agent-core` (v1); the job is to decide, for one commit at a time, whether v2 (`packages/agent-core-v2`) already has the corresponding logic — and if not, what the minimal fix is.
+Context: you are on the `multiai-cli-v2` branch, in the phase of catching it up to **new commits that landed on `main`**. Those commits change `packages/agent-core` (v1); the job is to decide, for one commit at a time, whether v2 (`packages/agent-core-v2`) already has the corresponding logic — and if not, what the minimal fix is.
 
 Use this when the user hands you **one commit hash plus a short description** ("look at `<commit>` — it fixed the steering race"). It is the small, per-commit sibling of [align.md](align.md): `align.md` ports a whole v1 domain into v2; this file triages a single `main` commit and says *port / adapt / skip*. If the triage reveals a whole missing domain, stop and switch to [align.md](align.md).
 

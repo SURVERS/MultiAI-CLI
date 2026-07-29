@@ -1,21 +1,21 @@
 {
-  "name": "@moonshot-ai/agent-core-v2",
+  "name": "@multiai/agent-core-v2",
   "version": "0.2.0",
   "private": true,
-  "description": "The unified agent engine for Kimi (v2 — DI Scope architecture)",
+  "description": "The unified agent engine for MultiAI (v2 — DI Scope architecture)",
   "license": "MIT",
   "author": "Moonshot AI",
-  "homepage": "https://github.com/MoonshotAI/kimi-code/tree/main/packages/agent-core-v2#readme",
+  "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/agent-core-v2#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MoonshotAI/kimi-code.git",
+    "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",
     "directory": "packages/agent-core-v2"
   },
   "bugs": {
-    "url": "https://github.com/MoonshotAI/kimi-code/issues"
+    "url": "https://github.com/SURVERS/MultiAI-CLI/issues"
   },
   "keywords": [
-    "kimi",
+    "multiai",
     "agent",
     "ai",
     "llm",
@@ -63,11 +63,11 @@
     "@google/genai": "^1.49.0",
     "@jsquash/webp": "^1.5.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@moonshot-ai/kimi-code-oauth": "workspace:^",
-    "@moonshot-ai/minidb": "workspace:^",
-    "@moonshot-ai/protocol": "workspace:^",
-    "@moonshot-ai/tree-sitter-bash": "workspace:^",
     "@mozilla/readability": "^0.6.0",
+    "@multiai/minidb": "workspace:^",
+    "@multiai/oauth": "workspace:^",
+    "@multiai/protocol": "workspace:^",
+    "@multiai/tree-sitter-bash": "workspace:^",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "chokidar": "^4.0.3",

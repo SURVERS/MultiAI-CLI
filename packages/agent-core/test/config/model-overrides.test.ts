@@ -5,7 +5,7 @@ import type { ModelAlias } from '#/config/schema';
 
 function alias(overrides?: ModelAlias['overrides']): ModelAlias {
   return {
-    provider: 'managed:kimi-code',
+    provider: 'managed:multiai',
     model: 'kimi-k2',
     maxContextSize: 262144,
     capabilities: ['thinking'],
@@ -127,7 +127,7 @@ describe('effectiveModelAlias', () => {
 
   it('does not infer Anthropic effort metadata for a Kimi provider routed through the Anthropic protocol', () => {
     const model: ModelAlias = {
-      provider: 'managed:kimi-code',
+      provider: 'managed:multiai',
       model: 'kimi-for-coding',
       maxContextSize: 262144,
       capabilities: ['thinking', 'always_thinking'],

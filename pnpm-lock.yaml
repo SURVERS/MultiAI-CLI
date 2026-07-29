@@ -11,10 +11,10 @@ catalogs:
       version: 4.3.6
 
 overrides:
-  kimi-code>@tailwindcss/vite: 4.1.18
+  multiai-cli>@tailwindcss/vite: 4.1.18
   ssh2@1.17.0>cpu-features: '-'
   ssh2@1.17.0>nan: '-'
-  kimi-code>tailwindcss: 4.1.18
+  multiai-cli>tailwindcss: 4.1.18
 
 importers:
 
@@ -72,41 +72,38 @@ importers:
         specifier: 4.1.4
         version: 4.1.4(@types/node@22.19.17)(@vitest/coverage-v8@4.1.4)(jsdom@25.0.1)(msw@2.15.0(@types/node@22.19.17)(typescript@6.0.2))(vite@8.0.8(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  apps/kimi-code:
+  apps/multiai-cli:
     devDependencies:
-      '@moonshot-ai/acp-adapter':
+      '@multiai/acp-adapter':
         specifier: workspace:^
         version: link:../../packages/acp-adapter
-      '@moonshot-ai/agent-core-v2':
+      '@multiai/agent-core-v2':
         specifier: workspace:^
         version: link:../../packages/agent-core-v2
-      '@moonshot-ai/kap-server':
+      '@multiai/kap-server':
         specifier: workspace:^
         version: link:../../packages/kap-server
-      '@moonshot-ai/kimi-code-oauth':
+      '@multiai/oauth':
         specifier: workspace:^
         version: link:../../packages/oauth
-      '@moonshot-ai/kimi-code-sdk':
-        specifier: workspace:^
-        version: link:../../packages/node-sdk
-      '@moonshot-ai/kimi-telemetry':
-        specifier: workspace:^
-        version: link:../../packages/telemetry
-      '@moonshot-ai/kimi-web':
-        specifier: workspace:^
-        version: link:../kimi-web
-      '@moonshot-ai/migration-legacy':
-        specifier: workspace:^
-        version: link:../../packages/migration-legacy
-      '@moonshot-ai/pi-tui':
+      '@multiai/pi-tui':
         specifier: workspace:^
         version: link:../../packages/pi-tui
-      '@moonshot-ai/vis-server':
+      '@multiai/sdk':
+        specifier: workspace:^
+        version: link:../../packages/node-sdk
+      '@multiai/telemetry':
+        specifier: workspace:^
+        version: link:../../packages/telemetry
+      '@multiai/vis-server':
         specifier: workspace:^
         version: link:../vis/server
-      '@moonshot-ai/vis-web':
+      '@multiai/vis-web':
         specifier: workspace:*
         version: link:../vis/web
+      '@multiai/web':
+        specifier: workspace:^
+        version: link:../multiai-web
       '@types/semver':
         specifier: ^7.7.0
         version: 7.7.1
@@ -150,16 +147,19 @@ importers:
       '@mariozechner/clipboard':
         specifier: ^0.3.9
         version: 0.3.9
+      '@napi-rs/keyring':
+        specifier: ^1.3.0
+        version: 1.3.0
       node-pty:
         specifier: ^1.1.0
         version: 1.1.0
 
-  apps/kimi-inspect:
+  apps/multiai-inspect:
     dependencies:
-      '@moonshot-ai/agent-core-v2':
+      '@multiai/agent-core-v2':
         specifier: workspace:^
         version: link:../../packages/agent-core-v2
-      '@moonshot-ai/transcript':
+      '@multiai/transcript':
         specifier: workspace:^
         version: link:../../packages/transcript
       '@tanstack/react-query':
@@ -197,7 +197,7 @@ importers:
         specifier: 4.1.4
         version: 4.1.4(@types/node@22.19.17)(@vitest/coverage-v8@4.1.4)(jsdom@25.0.1)(msw@2.15.0(@types/node@22.19.17)(typescript@6.0.2))(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.3))
 
-  apps/kimi-web:
+  apps/multiai-web:
     dependencies:
       '@chenglou/pretext':
         specifier: 0.0.8
@@ -275,10 +275,10 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.14(hono@4.12.14)
-      '@moonshot-ai/agent-core':
+      '@multiai/agent-core':
         specifier: workspace:^
         version: link:../../../packages/agent-core
-      '@moonshot-ai/kosong':
+      '@multiai/kosong':
         specifier: workspace:^
         version: link:../../../packages/kosong
       hono:
@@ -358,12 +358,9 @@ importers:
       '@fontsource-variable/inter':
         specifier: 5.2.8
         version: 5.2.8
-      '@moonshot-ai/kimi-code-sdk':
+      '@multiai/sdk':
         specifier: workspace:^
         version: link:../../packages/node-sdk
-      '@moonshot-ai/migration-legacy':
-        specifier: workspace:^
-        version: link:../../packages/migration-legacy
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.16(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -522,13 +519,13 @@ importers:
       '@agentclientprotocol/sdk':
         specifier: ^0.23.0
         version: 0.23.0(zod@4.3.6)
-      '@moonshot-ai/agent-core':
+      '@multiai/agent-core':
         specifier: workspace:^
         version: link:../agent-core
-      '@moonshot-ai/kaos':
+      '@multiai/kaos':
         specifier: workspace:^
         version: link:../kaos
-      '@moonshot-ai/kimi-code-sdk':
+      '@multiai/sdk':
         specifier: workspace:^
         version: link:../node-sdk
     devDependencies:
@@ -547,21 +544,21 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@4.3.6)
-      '@moonshot-ai/kaos':
-        specifier: workspace:^
-        version: link:../kaos
-      '@moonshot-ai/kimi-code-oauth':
-        specifier: workspace:^
-        version: link:../oauth
-      '@moonshot-ai/kosong':
-        specifier: workspace:^
-        version: link:../kosong
-      '@moonshot-ai/protocol':
-        specifier: workspace:^
-        version: link:../protocol
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
+      '@multiai/kaos':
+        specifier: workspace:^
+        version: link:../kaos
+      '@multiai/kosong':
+        specifier: workspace:^
+        version: link:../kosong
+      '@multiai/oauth':
+        specifier: workspace:^
+        version: link:../oauth
+      '@multiai/protocol':
+        specifier: workspace:^
+        version: link:../protocol
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -683,21 +680,21 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@4.3.6)
-      '@moonshot-ai/kimi-code-oauth':
-        specifier: workspace:^
-        version: link:../oauth
-      '@moonshot-ai/minidb':
-        specifier: workspace:^
-        version: link:../minidb
-      '@moonshot-ai/protocol':
-        specifier: workspace:^
-        version: link:../protocol
-      '@moonshot-ai/tree-sitter-bash':
-        specifier: workspace:^
-        version: link:../tree-sitter-bash
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
+      '@multiai/minidb':
+        specifier: workspace:^
+        version: link:../minidb
+      '@multiai/oauth':
+        specifier: workspace:^
+        version: link:../oauth
+      '@multiai/protocol':
+        specifier: workspace:^
+        version: link:../protocol
+      '@multiai/tree-sitter-bash':
+        specifier: workspace:^
+        version: link:../tree-sitter-bash
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -835,13 +832,13 @@ importers:
       '@fastify/swagger':
         specifier: ^9.7.0
         version: 9.7.0
-      '@moonshot-ai/agent-core-v2':
+      '@multiai/agent-core-v2':
         specifier: workspace:^
         version: link:../agent-core-v2
-      '@moonshot-ai/kimi-code-oauth':
+      '@multiai/oauth':
         specifier: workspace:^
         version: link:../oauth
-      '@moonshot-ai/transcript':
+      '@multiai/transcript':
         specifier: workspace:^
         version: link:../transcript
       bcryptjs:
@@ -878,14 +875,14 @@ importers:
 
   packages/klient:
     dependencies:
-      '@moonshot-ai/agent-core-v2':
+      '@multiai/agent-core-v2':
         specifier: workspace:^
         version: link:../agent-core-v2
       zod:
         specifier: 'catalog:'
         version: 4.3.6
     devDependencies:
-      '@moonshot-ai/protocol':
+      '@multiai/protocol':
         specifier: workspace:^
         version: link:../protocol
       '@types/ws':
@@ -923,22 +920,6 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.18.0)
 
-  packages/migration-legacy:
-    dependencies:
-      '@moonshot-ai/agent-core':
-        specifier: workspace:^
-        version: link:../agent-core
-      smol-toml:
-        specifier: ^1.6.1
-        version: 1.6.1
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-    devDependencies:
-      '@moonshot-ai/kaos':
-        specifier: workspace:^
-        version: link:../kaos
-
   packages/minidb: {}
 
   packages/node-sdk:
@@ -956,24 +937,24 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@moonshot-ai/agent-core':
+      '@multiai/agent-core':
         specifier: workspace:^
         version: link:../agent-core
-      '@moonshot-ai/agent-core-v2':
+      '@multiai/agent-core-v2':
         specifier: workspace:^
         version: link:../agent-core-v2
-      '@moonshot-ai/kaos':
+      '@multiai/kaos':
         specifier: workspace:^
         version: link:../kaos
-      '@moonshot-ai/kimi-code-oauth':
-        specifier: workspace:^
-        version: link:../oauth
-      '@moonshot-ai/klient':
+      '@multiai/klient':
         specifier: workspace:^
         version: link:../klient
-      '@moonshot-ai/kosong':
+      '@multiai/kosong':
         specifier: workspace:^
         version: link:../kosong
+      '@multiai/oauth':
+        specifier: workspace:^
+        version: link:../oauth
       '@types/yazl':
         specifier: ^2.4.6
         version: 2.4.6
@@ -983,6 +964,12 @@ importers:
 
   packages/oauth:
     dependencies:
+      '@napi-rs/keyring':
+        specifier: ^1.3.0
+        version: 1.3.0
+      jose:
+        specifier: ^6.2.2
+        version: 6.2.2
       proper-lockfile:
         specifier: ^4.1.2
         version: 4.1.2
@@ -2512,6 +2499,87 @@ packages:
   '@mswjs/interceptors@0.41.9':
     resolution: {integrity: sha512-VVPPgHyQ6ShqnrmDWuxjmUIsO9gWyOZFmuOfLd9LfBGQJwZfy0gvv9pbHSJuoFNIYC7ZDX9aoFwowjcdSC4E8w==}
     engines: {node: '>=18'}
+
+  '@napi-rs/keyring-darwin-arm64@1.3.0':
+    resolution: {integrity: sha512-pl76hJvdYUBn6I24bXiOBMA9nbDapo3I5B+f3OorjDU4dUMSypXeKbOVehJe8fhgTiH24flMyTS3aAIy43xegQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@napi-rs/keyring-darwin-x64@1.3.0':
+    resolution: {integrity: sha512-YcJtEV5LA3cvA4z3BurgxH5IhTsW1JfIvcAAcqcecwk06Si9F9NqkxbZVIfDwQ8oRHgaBmT3zZJnLAotCrVahw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@napi-rs/keyring-freebsd-x64@1.3.0':
+    resolution: {integrity: sha512-vlLf31TGhfRAaxLDBhg8b89ss0HHD/lyNmL5F3UjSaz5CUXElsJmKYq9fqA/B+cZKUEUcLHHGhF0I/CqcFdaVw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@napi-rs/keyring-linux-arm-gnueabihf@1.3.0':
+    resolution: {integrity: sha512-KiWdMMu/Inz/bHHIAGrnF7r54FZDYXuHO6UFF/rhIrshUsxbMG1Rl9lEymNtqqsVo927G0VYcb02FzWQ3iBQRQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
+
+  '@napi-rs/keyring-linux-arm64-gnu@1.3.0':
+    resolution: {integrity: sha512-eyKGpY40lm9Jvs1aD294XRH4y7+TlJM0YVAryZeXA6TX0mb4gMkxVXwSQv7MCwgah7raeUd0dKUb4BPAYIgcMg==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@napi-rs/keyring-linux-arm64-musl@1.3.0':
+    resolution: {integrity: sha512-iIK6JWHXAJqDrEyLY3TmswwloVyt2vj+04TZnew+uSJ9gnDO8EwRbp3/iw3LpWaXiDO7VomGO6y8I0Id8uBZSw==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@napi-rs/keyring-linux-riscv64-gnu@1.3.0':
+    resolution: {integrity: sha512-/PGqrwn6EwgtK6vccASSXJRfOSP4vN1F4ASsIQ+7MdrK6hNvAJ1FZPrIuD5gGGdxezo3F++To2Wq7DbuGIeuNQ==}
+    engines: {node: '>= 10'}
+    cpu: [riscv64]
+    os: [linux]
+    libc: [glibc]
+
+  '@napi-rs/keyring-linux-x64-gnu@1.3.0':
+    resolution: {integrity: sha512-2PDK1WKWTu9lBGq9VvNEkSlQD3O7YwVpmnyN2M3cy4v7NJ/8gDMd9GXv3G+FVXN13uhp4gnnPBS+ScefmEeD2A==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@napi-rs/keyring-linux-x64-musl@1.3.0':
+    resolution: {integrity: sha512-oJ2HkX8YUo46QBkn0pG+HuIKQNqr523q6vBobCn+P95s4C4K6/kLBqHY/1bg5J4ap31DzsznhnFKcfBNBsjCnw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@napi-rs/keyring-win32-arm64-msvc@1.3.0':
+    resolution: {integrity: sha512-tOd3c/uAaeoE4ycVlmAdSvygz0Zt3zdca6Y7gokBeIbaRDWpjDIUOpU3MvML59XAaqyuKGsVVu0F/DZb1lHPmw==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@napi-rs/keyring-win32-ia32-msvc@1.3.0':
+    resolution: {integrity: sha512-sPSqeAFZMGqP1R++M2JTza7GQJJ/TpCo6JU6Vcd4jnebvOaEDs9b7eipakU1PJdSvhpC2yXMCNRk9gXfrhuwHQ==}
+    engines: {node: '>= 10'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@napi-rs/keyring-win32-x64-msvc@1.3.0':
+    resolution: {integrity: sha512-4DnCWXwDc0HRKwyRlG5y0VhKZW2tNRQfKKfyj6IX/KWfDNyq9hn4n+GL1auyDcOO/v8PwnhmYo2+rOOqCkvvOg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+
+  '@napi-rs/keyring@1.3.0':
+    resolution: {integrity: sha512-WrOw/bcXm0f9qHkumlT1QlArXSTWqaY9sunsDpOk+yCCorCKMxvWT/a3xko4EYHVdeZoh00yI2TydXn6eyICDA==}
+    engines: {node: '>= 10'}
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
@@ -11705,6 +11773,57 @@ snapshots:
       outvariant: 1.4.3
       strict-event-emitter: 0.5.1
 
+  '@napi-rs/keyring-darwin-arm64@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-darwin-x64@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-freebsd-x64@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-linux-arm-gnueabihf@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-linux-arm64-gnu@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-linux-arm64-musl@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-linux-riscv64-gnu@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-linux-x64-gnu@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-linux-x64-musl@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-win32-arm64-msvc@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-win32-ia32-msvc@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring-win32-x64-msvc@1.3.0':
+    optional: true
+
+  '@napi-rs/keyring@1.3.0':
+    optionalDependencies:
+      '@napi-rs/keyring-darwin-arm64': 1.3.0
+      '@napi-rs/keyring-darwin-x64': 1.3.0
+      '@napi-rs/keyring-freebsd-x64': 1.3.0
+      '@napi-rs/keyring-linux-arm-gnueabihf': 1.3.0
+      '@napi-rs/keyring-linux-arm64-gnu': 1.3.0
+      '@napi-rs/keyring-linux-arm64-musl': 1.3.0
+      '@napi-rs/keyring-linux-riscv64-gnu': 1.3.0
+      '@napi-rs/keyring-linux-x64-gnu': 1.3.0
+      '@napi-rs/keyring-linux-x64-musl': 1.3.0
+      '@napi-rs/keyring-win32-arm64-msvc': 1.3.0
+      '@napi-rs/keyring-win32-ia32-msvc': 1.3.0
+      '@napi-rs/keyring-win32-x64-msvc': 1.3.0
+
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:
       '@emnapi/core': 1.10.0
@@ -13685,7 +13804,7 @@ snapshots:
       obug: 2.1.1
       std-env: 4.0.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.4(@types/node@22.19.17)(@vitest/coverage-v8@4.1.4)(jsdom@25.0.1)(msw@2.15.0(@types/node@22.19.17)(typescript@6.0.2))(vite@8.0.8(@types/node@22.19.17)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      vitest: 4.1.4(@types/node@22.19.17)(@vitest/coverage-v8@4.1.4)(jsdom@25.0.1)(msw@2.15.0(@types/node@22.19.17)(typescript@6.0.2))(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.3))
 
   '@vitest/expect@4.1.4':
     dependencies:

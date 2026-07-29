@@ -14,10 +14,10 @@ import {
   type StreamedMessage,
   type StreamedMessagePart,
   type ToolCall,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { KimiConfig } from '../../../src/config';
+import type { MultiAIConfig } from '../../../src/config';
 import type { AgentOptions } from '../../../src/agent';
 import {
   COMPACTION_SUMMARY_PREFIX,
@@ -2249,7 +2249,7 @@ describe('FullCompaction', () => {
   });
 
   it('honors completion budget env hard caps during compaction', async () => {
-    vi.stubEnv('KIMI_MODEL_MAX_COMPLETION_TOKENS', '8192');
+    vi.stubEnv('MULTIAI_MODEL_MAX_COMPLETION_TOKENS', '8192');
     let callCount = 0;
     const compactionMaxCompletionTokens: unknown[] = [];
     const generate: GenerateFn = async (provider, _system, _tools, _history, callbacks) => {
@@ -2283,7 +2283,7 @@ describe('FullCompaction', () => {
   });
 
   it('honors completion budget env opt-out during compaction', async () => {
-    vi.stubEnv('KIMI_MODEL_MAX_COMPLETION_TOKENS', '0');
+    vi.stubEnv('MULTIAI_MODEL_MAX_COMPLETION_TOKENS', '0');
     let callCount = 0;
     const compactionMaxCompletionTokens: unknown[] = [];
     const generate: GenerateFn = async (provider, _system, _tools, _history, callbacks) => {
@@ -2339,9 +2339,9 @@ describe('FullCompaction', () => {
       provider: CATALOGUED_PROVIDER,
       modelCapabilities: CATALOGUED_MODEL_CAPABILITIES,
     });
-    // Set maxOutputSize on the harness's internal kimiConfig — the
+    // Set maxOutputSize on the harness's internal multiAIConfig — the
     // compaction path reads it via ConfigState.maxOutputSize.
-    const models = (ctx as unknown as { kimiConfig: KimiConfig }).kimiConfig.models;
+    const models = (ctx as unknown as { multiAIConfig: MultiAIConfig }).multiAIConfig.models;
     models![CATALOGUED_PROVIDER.model] = {
       ...models![CATALOGUED_PROVIDER.model]!,
       maxOutputSize: 384000,
@@ -2492,10 +2492,10 @@ describe('FullCompaction', () => {
       [wire] usage.record                { "model": "mock-model", "usage": { "inputOther": 154, "output": 11, "inputCacheRead": 0, "inputCacheCreation": 0 }, "usageScope": "turn", "time": "<time>" }
       [emit] agent.status.updated        { "model": "mock-model", "contextTokens": 165, "maxContextTokens": 1000000, "contextUsage": 0.000165, "planMode": false, "swarmMode": false, "permission": "manual", "usage": { "byModel": { "mock-model": { "inputOther": 1289, "output": 20, "inputCacheRead": 0, "inputCacheCreation": 0 } }, "total": { "inputOther": 1289, "output": 20, "inputCacheRead": 0, "inputCacheCreation": 0 }, "currentTurn": { "inputOther": 154, "output": 11, "inputCacheRead": 0, "inputCacheCreation": 0 } } }
       [emit] turn.step.interrupted       { "turnId": 0, "step": 2, "reason": "error", "message": "Compaction limit exceeded (1)" }
-      [emit] turn.ended                  { "turnId": 0, "reason": "failed", "error": { "code": "context.overflow", "message": "Compaction limit exceeded (1)", "name": "KimiError", "details": { "maxCompactions": 1, "turnId": 0 }, "retryable": true } }
+      [emit] turn.ended                  { "turnId": 0, "reason": "failed", "error": { "code": "context.overflow", "message": "Compaction limit exceeded (1)", "name": "MultiAIError", "details": { "maxCompactions": 1, "turnId": 0 }, "retryable": true } }
     `);
     expect(ctx.newEvents()).toMatchInlineSnapshot(
-      `[emit] error   { "code": "context.overflow", "message": "Compaction limit exceeded (1)", "name": "KimiError", "details": { "maxCompactions": 1, "turnId": 0 }, "retryable": true }`,
+      `[emit] error   { "code": "context.overflow", "message": "Compaction limit exceeded (1)", "name": "MultiAIError", "details": { "maxCompactions": 1, "turnId": 0 }, "retryable": true }`,
     );
     expect(ctx.llmInputs()).toMatchInlineSnapshot(`
       call 1:
@@ -2528,7 +2528,7 @@ function enableMicroCompactionFlag(): void {
 function getMicroCompactionFlagEnv(): string {
   // Micro compaction is disabled and its flag has been removed from the registry;
   // the env var name is kept so the (skipped) test still type-checks.
-  return 'KIMI_CODE_EXPERIMENTAL_MICRO_COMPACTION';
+  return 'MULTIAI_EXPERIMENTAL_MICRO_COMPACTION';
 }
 
 function deferred<T>() {
@@ -2562,15 +2562,15 @@ function oauthTestAgentOptions(
     initialConfig: {
       defaultModel: 'kimi-code',
       providers: {
-        'managed:kimi-code': {
+        'managed:multiai': {
           type: 'vertexai',
           baseUrl: 'https://api.example/v1',
-          oauth: { storage: 'file', key: 'oauth/kimi-code' },
+          oauth: { storage: 'keyring', key: 'oauth/multiai' },
         },
       },
       models: {
         'kimi-code': {
-          provider: 'managed:kimi-code',
+          provider: 'managed:multiai',
           model: 'kimi-for-coding',
           maxContextSize: 1_000_000,
         },

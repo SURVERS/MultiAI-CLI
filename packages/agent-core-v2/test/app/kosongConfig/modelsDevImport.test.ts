@@ -265,7 +265,7 @@ describe('IModelsDevImportService', () => {
   it('rejects importing over an OAuth-managed provider', async () => {
     setModelsDevUpstreamForTest({ fetchImpl: fetchJson(CATALOG) });
     const { imports } = createHost({
-      providers: { openai: { type: 'openai', oauth: { storage: 'file', key: 'oauth/openai' } } },
+      providers: { openai: { type: 'openai', oauth: { storage: 'keyring', key: 'oauth/openai' } } },
     });
     await expectError2(
       imports.importModelsDevProvider({ catalogId: 'openai' }),
@@ -322,7 +322,7 @@ describe('IModelsDevImportService', () => {
   it('rejects a registry import that would rewrite an OAuth-managed provider', async () => {
     setModelsDevUpstreamForTest({ fetchImpl: fetchJson(REGISTRY_DOC) });
     const { imports } = createHost({
-      providers: { 'acme-gpt': { type: 'openai', oauth: { storage: 'file', key: 'oauth/x' } } },
+      providers: { 'acme-gpt': { type: 'openai', oauth: { storage: 'keyring', key: 'oauth/x' } } },
     });
     await expectError2(
       imports.importCustomRegistry({ url: REGISTRY_URL }),

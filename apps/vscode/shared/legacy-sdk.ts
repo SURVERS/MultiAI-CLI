@@ -171,7 +171,7 @@ export interface ModelConfig {
   default_effort?: string;
 }
 
-export interface KimiConfig {
+export interface MultiAIConfig {
   defaultModel: string | null;
   defaultThinking: boolean;
   defaultThinkingEffort?: string;

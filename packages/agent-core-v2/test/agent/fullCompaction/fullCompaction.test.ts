@@ -2571,7 +2571,7 @@ describe('FullCompaction', () => {
   });
 
   it('honors completion budget env hard caps during compaction', async () => {
-    vi.stubEnv('KIMI_MODEL_MAX_COMPLETION_TOKENS', '8192');
+    vi.stubEnv('MULTIAI_MODEL_MAX_COMPLETION_TOKENS', '8192');
     let callCount = 0;
     const compactionMaxCompletionTokens: unknown[] = [];
     const generate: GenerateFn = async (_provider, _system, _tools, _history, callbacks, options) => {
@@ -2607,7 +2607,7 @@ describe('FullCompaction', () => {
   it.each(['0', '-1'])(
     'honors completion budget env opt-out (%s) during compaction',
     async (maxCompletionTokens) => {
-      vi.stubEnv('KIMI_MODEL_MAX_COMPLETION_TOKENS', maxCompletionTokens);
+      vi.stubEnv('MULTIAI_MODEL_MAX_COMPLETION_TOKENS', maxCompletionTokens);
       let callCount = 0;
       const compactionMaxCompletionTokens: unknown[] = [];
       const generate: GenerateFn = async (_provider, _system, _tools, _history, callbacks, options) => {
@@ -2664,7 +2664,7 @@ describe('FullCompaction', () => {
       provider: CATALOGUED_PROVIDER,
       modelCapabilities: CATALOGUED_MODEL_CAPABILITIES,
     });
-    const models = (ctx as unknown as MutableKimiConfig).kimiConfig.models;
+    const models = (ctx as unknown as MutableMultiAIConfig).multiAIConfig.models;
     models![CATALOGUED_PROVIDER.model] = {
       ...models![CATALOGUED_PROVIDER.model]!,
       maxOutputSize: 64_000,
@@ -2928,15 +2928,15 @@ function oauthTestAgentOptions(
     initialConfig: {
       defaultModel: 'kimi-code',
       providers: {
-        'managed:kimi-code': {
+        'managed:multiai': {
           type: 'google-genai',
           baseUrl: 'https://api.example/v1',
-          oauth: { storage: 'file', key: 'oauth/kimi-code' },
+          oauth: { storage: 'keyring', key: 'oauth/multiai' },
         },
       },
       models: {
         'kimi-code': {
-          provider: 'managed:kimi-code',
+          provider: 'managed:multiai',
           model: 'kimi-for-coding',
           maxContextSize: 1_000_000,
         },
@@ -2956,8 +2956,8 @@ function oauthTestAgentOptions(
   };
 }
 
-type MutableKimiConfig = {
-  kimiConfig: {
+type MutableMultiAIConfig = {
+  multiAIConfig: {
     models?: Record<string, { maxOutputSize?: number }>;
   };
 };

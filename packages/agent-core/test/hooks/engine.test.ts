@@ -2,7 +2,7 @@ import { realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { describe, expect, it, vi } from 'vitest';
-import type { ContentPart } from '@moonshot-ai/kosong';
+import type { ContentPart } from '@multiai/kosong';
 
 // Dynamic-import contract: locks the public shape of the future HookEngine
 // without forcing TS module resolution to find a file that doesn't exist yet.
@@ -378,9 +378,9 @@ describe('HookEngine', () => {
     const engine = new HookEngine([
       {
         event: 'PreToolUse',
-        command: 'node -e "process.stdout.write(process.env.KIMI_PLUGIN_TEST ?? \'missing\')"',
+        command: 'node -e "process.stdout.write(process.env.MULTIAI_PLUGIN_TEST ?? \'missing\')"',
         timeout: 5,
-        env: { KIMI_PLUGIN_TEST: 'plugin-value' },
+        env: { MULTIAI_PLUGIN_TEST: 'plugin-value' },
       },
     ]);
     const results = await engine.trigger('PreToolUse', { inputData: {} });

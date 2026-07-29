@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { KimiHarness } from '@moonshot-ai/kimi-code-sdk';
+import type { MultiAIHarness } from '@multiai/sdk';
 
 import {
   buildModelOption,
@@ -21,7 +21,7 @@ function makeHarnessWithModels(
     supportEfforts?: readonly string[];
     defaultEffort?: string;
   }>,
-): { harness: KimiHarness; getConfig: ReturnType<typeof vi.fn> } {
+): { harness: MultiAIHarness; getConfig: ReturnType<typeof vi.fn> } {
   // Mirror the `listAvailableModels` derivation: `id` is the config map
   // key, `model` defaults to id, `displayName` to model. The test fixtures
   // below pick names that exercise the three thinkingSupported triggers
@@ -54,7 +54,7 @@ function makeHarnessWithModels(
     }
   }
   const getConfig = vi.fn(async () => ({ models, providers }));
-  return { harness: { getConfig } as unknown as KimiHarness, getConfig };
+  return { harness: { getConfig } as unknown as MultiAIHarness, getConfig };
 }
 
 describe('buildModelOption', () => {
@@ -365,7 +365,7 @@ describe('buildSessionConfigOptions', () => {
   });
 
   it('handles missing getConfig (partial-stub harness) by suppressing the toggle and shipping an empty model picker', async () => {
-    const harness = {} as unknown as KimiHarness;
+    const harness = {} as unknown as MultiAIHarness;
 
     const result = await buildSessionConfigOptions(harness, '', 'off', 'default');
 

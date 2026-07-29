@@ -1,8 +1,8 @@
-import { ErrorCodes, KimiError } from '#/errors';
+import { ErrorCodes, MultiAIError } from '#/errors';
 import { MAX_MCP_TIMEOUT_MS, type McpServerConfig } from '#/config/schema';
 import { log as defaultLog } from '#/logging/logger';
 import type { Logger } from '#/logging/types';
-import type { Tool } from '@moonshot-ai/kosong';
+import type { Tool } from '@multiai/kosong';
 
 import { abortable } from '../utils/abort';
 import { HttpMcpClient } from './client-http';
@@ -40,8 +40,8 @@ export type McpStatusListener = (entry: McpServerEntry) => void;
 
 const DEFAULT_STARTUP_TIMEOUT_MS = 30_000;
 
-export const MCP_STARTUP_TIMEOUT_ENV = 'KIMI_MCP_STARTUP_TIMEOUT_MS';
-export const MCP_TOOL_TIMEOUT_ENV = 'KIMI_MCP_TOOL_TIMEOUT_MS';
+export const MCP_STARTUP_TIMEOUT_ENV = 'MULTIAI_MCP_STARTUP_TIMEOUT_MS';
+export const MCP_TOOL_TIMEOUT_ENV = 'MULTIAI_MCP_TOOL_TIMEOUT_MS';
 
 /** Parse an env override; anything but an integer from 1 to MAX_MCP_TIMEOUT_MS is ignored. */
 function parseTimeoutMsEnv(raw: string): number | undefined {
@@ -53,7 +53,7 @@ function parseTimeoutMsEnv(raw: string): number | undefined {
 
 /**
  * Resolve the global default MCP server startup (connect + tool discovery)
- * timeout. Precedence: `KIMI_MCP_STARTUP_TIMEOUT_MS` (integer ms) →
+ * timeout. Precedence: `MULTIAI_MCP_STARTUP_TIMEOUT_MS` (integer ms) →
  * `configMs` (`[mcp] startup_timeout_ms`) → `undefined` (the manager's
  * built-in default applies). A per-server `startupTimeoutMs` in `mcp.json`
  * always wins over the resolved value.
@@ -69,7 +69,7 @@ export function resolveMcpStartupTimeoutMs(configMs?: number): number | undefine
 
 /**
  * Resolve the global default single MCP tool-call timeout. Precedence:
- * `KIMI_MCP_TOOL_TIMEOUT_MS` (integer ms) → `configMs`
+ * `MULTIAI_MCP_TOOL_TIMEOUT_MS` (integer ms) → `configMs`
  * (`[mcp] tool_timeout_ms`) → `undefined` (the client built-in default
  * applies). A per-server `toolTimeoutMs` in `mcp.json` always wins over the
  * resolved value.
@@ -297,10 +297,10 @@ export class McpConnectionManager {
   async reconnect(name: string): Promise<void> {
     const entry = this.entries.get(name);
     if (entry === undefined) {
-      throw new KimiError(ErrorCodes.MCP_SERVER_NOT_FOUND, `Unknown MCP server: ${name}`);
+      throw new MultiAIError(ErrorCodes.MCP_SERVER_NOT_FOUND, `Unknown MCP server: ${name}`);
     }
     if (entry.config.enabled === false) {
-      throw new KimiError(ErrorCodes.MCP_SERVER_DISABLED, `MCP server is disabled: ${name}`);
+      throw new MultiAIError(ErrorCodes.MCP_SERVER_DISABLED, `MCP server is disabled: ${name}`);
     }
     const attemptId = this.beginConnectAttempt(entry);
     await this.closeClient(entry);

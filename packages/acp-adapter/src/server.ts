@@ -2,7 +2,7 @@
  * ACP `AgentSideConnection` wrapper.
  *
  * Phase 3 implements `initialize`, `session/new`, and `session/cancel`
- * against {@link KimiHarness}. `prompt` is wired in step 3.4. `initialize`
+ * against {@link MultiAIHarness}. `prompt` is wired in step 3.4. `initialize`
  * advertises the terminal-auth method (see {@link TERMINAL_AUTH_METHOD}).
  */
 
@@ -45,15 +45,15 @@ import {
   type Stream,
 } from '@agentclientprotocol/sdk';
 import type {
-  KimiConfig,
-  KimiHarness,
+  MultiAIConfig,
+  MultiAIHarness,
   ModelAlias,
   ProviderConfig,
   Session,
   SessionSummary,
-} from '@moonshot-ai/kimi-code-sdk';
-import { log } from '@moonshot-ai/kimi-code-sdk';
-import { LocalKaos, type Kaos } from '@moonshot-ai/kaos';
+} from '@multiai/sdk';
+import { log } from '@multiai/sdk';
+import { LocalKaos, type Kaos } from '@multiai/kaos';
 
 import { TERMINAL_AUTH_METHOD, buildTerminalAuthMethod } from './auth-methods';
 import { redirectConsoleToStderr } from './log-guard';
@@ -112,20 +112,20 @@ function toResolvedSlashCommands(
 }
 
 /**
- * Inline auth gate — moved out of `KimiAuthFacade.hasUsableToken()` so
+ * Inline auth gate — moved out of `MultiAIAuthFacade.hasUsableToken()` so
  * the SDK doesn't have to carry an ACP-specific convenience method.
  * OAuth tokens still count as authed, but ACP can also start when the
  * active model resolves to a provider with config-file credentials.
  */
-async function harnessIsAuthed(harness: KimiHarness): Promise<boolean> {
+async function harnessIsAuthed(harness: MultiAIHarness): Promise<boolean> {
   const status = await harness.auth.status();
-  if (status.providers.some((entry) => entry.hasToken)) return true;
+  if (status.loggedIn) return true;
   return hasUsableConfiguredDefaultModel(harness);
 }
 
-async function hasUsableConfiguredDefaultModel(harness: KimiHarness): Promise<boolean> {
+async function hasUsableConfiguredDefaultModel(harness: MultiAIHarness): Promise<boolean> {
   if (typeof harness.getConfig !== 'function') return false;
-  let config: KimiConfig;
+  let config: MultiAIConfig;
   try {
     config = await harness.getConfig();
   } catch (error) {
@@ -143,7 +143,7 @@ async function hasUsableConfiguredDefaultModel(harness: KimiHarness): Promise<bo
   return provider !== undefined && providerHasNonOAuthCredentials(provider);
 }
 
-function providerForAlias(config: KimiConfig, alias: ModelAlias): ProviderConfig | undefined {
+function providerForAlias(config: MultiAIConfig, alias: ModelAlias): ProviderConfig | undefined {
   const providerName = alias.provider ?? config.defaultProvider;
   return providerName === undefined ? undefined : config.providers[providerName];
 }
@@ -208,7 +208,7 @@ function effortStringOrUndefined(effort: unknown): string | undefined {
 
 /**
  * Agent-side ACP handler. Routes `initialize` + `session/new` + `session/cancel`
- * into {@link KimiHarness}; refuses methods that are not yet wired with a
+ * into {@link MultiAIHarness}; refuses methods that are not yet wired with a
  * JSON-RPC "method not found" error so clients see a structured failure
  * rather than a silent hang.
  *
@@ -237,15 +237,15 @@ export class AcpServer implements Agent {
   private innerKaos: Kaos | undefined = undefined;
 
   constructor(
-    private readonly harness: KimiHarness,
+    private readonly harness: MultiAIHarness,
     private readonly conn?: AgentSideConnection | undefined,
     opts?: {
       agentInfo?: Implementation;
       /**
-       * Env vars to advertise in `authMethods[0].env` so the `kimi login`
+       * Env vars to advertise in `authMethods[0].env` so the `multiai login`
        * subprocess the client spawns (via `terminal-auth`) lands its
        * token under the same data root the ACP server uses. Intended for
-       * sandboxed test setups (e.g. `{ KIMI_CODE_HOME: '/tmp/...' }`);
+       * sandboxed test setups (e.g. `{ MULTIAI_HOME: '/tmp/...' }`);
        * leave undefined in production so the advertised env stays empty.
        */
       terminalAuthEnv?: Readonly<Record<string, string>>;
@@ -272,7 +272,7 @@ export class AcpServer implements Agent {
        * them to {@link Session.activateSkill} instead of forwarding the
        * raw slash text — matching the TUI's slash-command behavior so
        * skill activations don't fall back to model-driven Bash
-       * exploration of `~/.kimi-code/skills/`.
+       * exploration of `~/.multiai/skills/`.
        */
       slashCommands?: SlashCommandsResolver;
     },
@@ -350,7 +350,7 @@ export class AcpServer implements Agent {
     // are warn-dropped inside the conversion. `mcpServers` is NOT a
     // declared field on `CreateSessionOptions` — the SDK is a
     // transparent passthrough for unknown fields (see
-    // `packages/node-sdk/src/kimi-harness.ts:createSession` and
+    // `packages/node-sdk/src/multiai-harness.ts:createSession` and
     // `packages/node-sdk/src/rpc.ts:createSession`), so the kernel
     // (`CreateSessionPayload.mcpServers` in agent-core) receives the
     // record verbatim. The `@ts-expect-error` documents this contract;
@@ -646,7 +646,7 @@ export class AcpServer implements Agent {
    * Re-check whether the on-disk token is usable; does NOT trigger an
    * actual OAuth flow. The stdio JSON-RPC channel has no TTY to render
    * the device-code prompt — clients are expected to spawn
-   * `kimi login` themselves via the terminal-auth method advertised in
+   * `multiai login` themselves via the terminal-auth method advertised in
    * `initialize.authMethods` (`args:['login']`, see {@link TERMINAL_AUTH_METHOD})
    * and then re-invoke `authenticate('login')` to confirm the token
    * landed on disk. Mirrors kimi-cli `acp/server.py:374-398` semantics
@@ -805,7 +805,7 @@ export class AcpServer implements Agent {
 
   /**
    * Handle ACP `session/list`. Forwards to
-   * {@link KimiHarness.listSessions} (optionally filtered by `cwd` —
+   * {@link MultiAIHarness.listSessions} (optionally filtered by `cwd` —
    * the SDK calls it `workDir`) and projects each
    * {@link SessionSummary} into an ACP {@link SessionInfo}.
    *
@@ -839,7 +839,7 @@ export class AcpServer implements Agent {
    *
    * Future work (PLAN D9): route slash-command bridge / model-list /
    * mode-list extensions through here once the adapter has access to
-   * the kimi-code app's registry. Phase 11 keeps it as a no-op stub.
+   * the MultiAI app's registry. Phase 11 keeps it as a no-op stub.
    */
   async extMethod(
     method: string,
@@ -872,7 +872,7 @@ export class AcpServer implements Agent {
    *
    * Tolerant to partial-stub harnesses (`getConfig` missing or
    * throwing) — adapter-level unit tests routinely construct minimal
-   * `KimiHarness` shapes that only stub `auth.status` + `createSession`.
+   * `MultiAIHarness` shapes that only stub `auth.status` + `createSession`.
    * Production callers always supply a real harness with both methods;
    * the swallow-and-fallback path exists purely for test ergonomics.
    *
@@ -1041,7 +1041,7 @@ export class AcpServer implements Agent {
  * in-memory pair instead of process stdio.
  */
 export async function runAcpServerWithStream(
-  harness: KimiHarness,
+  harness: MultiAIHarness,
   stream: Stream,
   opts?: {
     agentInfo?: Implementation;
@@ -1061,7 +1061,7 @@ export async function runAcpServerWithStream(
  * is bridged through `Readable.toWeb` / `Writable.toWeb`.
  *
  * Phase 11.1 wires SIGINT / SIGTERM to a single-shot cleanup that calls
- * {@link KimiHarness.close} so an editor terminating the agent process
+ * {@link MultiAIHarness.close} so an editor terminating the agent process
  * (Zed closing the panel, JetBrains stopping the run config, the user
  * pressing Ctrl-C) drains in-flight sessions before the OS reaps the
  * process. The handlers are installed via `.once(...)` and explicitly
@@ -1075,7 +1075,7 @@ export async function runAcpServerWithStream(
  * handlers (which vitest itself relies on).
  */
 export async function runAcpServer(
-  harness: KimiHarness,
+  harness: MultiAIHarness,
   opts?: {
     input?: NodeJS.ReadableStream;
     output?: NodeJS.WritableStream;
@@ -1087,7 +1087,7 @@ export async function runAcpServer(
      */
     agentInfo?: Implementation;
     /**
-     * Env vars to forward to the `kimi login` subprocess clients spawn
+     * Env vars to forward to the `multiai login` subprocess clients spawn
      * via `terminal-auth`. See {@link AcpServer} ctor for the use case.
      */
     terminalAuthEnv?: Readonly<Record<string, string>>;
@@ -1171,7 +1171,7 @@ export async function runAcpServer(
 }
 
 /**
- * Project a Kimi SDK {@link SessionSummary} into the ACP
+ * Project a MultiAI SDK {@link SessionSummary} into the ACP
  * {@link SessionInfo} shape used by `session/list`.
  *
  * Field mapping (mirrors the Python reference at

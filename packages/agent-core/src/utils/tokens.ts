@@ -1,4 +1,4 @@
-import type { ContentPart, Message, Tool } from '@moonshot-ai/kosong';
+import type { ContentPart, Message, Tool } from '@multiai/kosong';
 
 /**
  * Structural subset of kosong's {@link Message} that token estimation reads.

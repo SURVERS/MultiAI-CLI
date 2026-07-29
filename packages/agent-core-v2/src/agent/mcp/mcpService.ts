@@ -20,7 +20,7 @@ import { defineState } from '#/_base/state/stateRegistry';
 import type { Tool as KosongTool } from '#/kosong/contract/tool';
 
 import { Disposable, type IDisposable } from "#/_base/di/lifecycle";
-import type { KimiErrorPayload } from '#/_base/errors/serialize';
+import type { MultiAIErrorPayload } from '#/_base/errors/serialize';
 import { ErrorCodes, makeErrorPayload } from "#/errors";
 import { abortable } from '#/_base/utils/abort';
 import { IAgentStateService } from '#/agent/state/agentState';
@@ -44,7 +44,7 @@ import {
   type McpToolCollision,
 } from './mcpDiscoveryOps';
 
-export interface ErrorEvent extends KimiErrorPayload {
+export interface ErrorEvent extends MultiAIErrorPayload {
   readonly type: 'error';
 }
 

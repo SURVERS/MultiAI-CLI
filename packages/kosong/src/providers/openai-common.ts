@@ -109,7 +109,7 @@ export function isOpenAIInsufficientQuotaCode(code: string | null | undefined): 
 }
 
 function isOpenAIInsufficientQuotaError(error: OpenAIAPIError): boolean {
-  if (error.status !== 429) return false;
+  if (error.status !== 402 && error.status !== 429) return false;
   if (typeof error.code === 'string' && isOpenAIInsufficientQuotaCode(error.code)) return true;
   if (typeof error.type === 'string' && isOpenAIInsufficientQuotaCode(error.type)) return true;
   // Gateways sometimes flatten the JSON body into the message text; the
@@ -150,10 +150,16 @@ export function convertOpenAIError(
     const reqId = error.requestID ?? null;
     const retryAfterMs = parseRetryAfterMs(error.headers);
     const traceId = parseTraceId(error.headers);
-    // Quota/balance exhaustion is a 429 but deterministic until the account
+    // Quota/balance exhaustion is deterministic until the account
     // is recharged — it must not classify as a retryable rate limit.
     if (isOpenAIInsufficientQuotaError(error)) {
-      return new APIProviderQuotaExhaustedError(error.message, reqId, retryAfterMs, traceId);
+      return new APIProviderQuotaExhaustedError(
+        error.message,
+        reqId,
+        retryAfterMs,
+        traceId,
+        error.status,
+      );
     }
     return normalizeAPIStatusError(error.status, error.message, reqId, retryAfterMs, traceId);
   }

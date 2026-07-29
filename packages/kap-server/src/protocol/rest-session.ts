@@ -17,14 +17,14 @@
 
 import { z } from 'zod';
 
-import { messageSchema } from '@moonshot-ai/agent-core-v2/agent/contextMemory/protocolMessage';
+import { messageSchema } from '@multiai/agent-core-v2/agent/contextMemory/protocolMessage';
 import {
   sessionStatusResponseSchema,
   sessionWarningSchema,
   sessionWarningsResponseSchema,
   updateSessionProfileRequestSchema,
   type UpdateSessionProfileRequest,
-} from '@moonshot-ai/agent-core-v2/app/sessionLegacy/sessionProtocol';
+} from '@multiai/agent-core-v2/app/sessionLegacy/sessionProtocol';
 
 import { goalSnapshotSchema } from './goal';
 import { cursorQuerySchema, pageResponseSchema } from './pagination';
@@ -46,7 +46,7 @@ export type {
   SessionWarning,
   SessionWarningsResponse,
   UpdateSessionProfileRequest,
-} from '@moonshot-ai/agent-core-v2/app/sessionLegacy/sessionProtocol';
+} from '@multiai/agent-core-v2/app/sessionLegacy/sessionProtocol';
 
 export const createSessionRequestSchema = sessionCreateSchema;
 export type CreateSessionRequest = z.infer<typeof createSessionRequestSchema>;
@@ -95,7 +95,7 @@ export const exportSessionRequestSchema = z
       })
       .optional(),
     // Desktop hosts set this to bundle the on-disk desktop app log
-    // (`<home>/logs/kimi-code-desktop.log`) into the archive; the server reads
+    // (`<home>/logs/multiai-desktop.log`) into the archive; the server reads
     // the file itself, so no log content crosses the request.
     desktop: z.boolean().optional(),
   })

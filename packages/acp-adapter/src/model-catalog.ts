@@ -3,8 +3,8 @@
  * config snapshot into a flat list of selectable models for the ACP
  * `configOptions` picker (`packages/acp-adapter/src/config-options.ts`).
  *
- * Used to live inside `@moonshot-ai/kimi-code-sdk` as
- * `KimiHarness.listAvailableModels()`; moved here so the SDK keeps a
+ * Used to live inside `@multiai/sdk` as
+ * `MultiAIHarness.listAvailableModels()`; moved here so the SDK keeps a
  * minimal surface and ACP-specific heuristics (thinking-capability
  * derivation, the toggleable-models allow-list) stay scoped to the
  * adapter.
@@ -31,8 +31,8 @@
  * declare `protocol`.
  */
 
-import { effectiveModelAlias, type ProviderType } from '@moonshot-ai/agent-core';
-import type { KimiHarness, ModelAlias } from '@moonshot-ai/kimi-code-sdk';
+import { effectiveModelAlias, type ProviderType } from '@multiai/agent-core';
+import type { MultiAIHarness, ModelAlias } from '@multiai/sdk';
 
 /**
  * One catalog row per configured model alias, suitable for an ACP
@@ -137,10 +137,10 @@ export function deriveDefaultThinkingEffort(
  * field.
  */
 export async function listModelsFromHarness(
-  harness: KimiHarness,
+  harness: MultiAIHarness,
 ): Promise<readonly AcpModelEntry[]> {
   if (typeof harness.getConfig !== 'function') return [];
-  let config: Awaited<ReturnType<KimiHarness['getConfig']>>;
+  let config: Awaited<ReturnType<MultiAIHarness['getConfig']>>;
   try {
     config = await harness.getConfig();
   } catch {
@@ -171,7 +171,7 @@ export async function listModelsFromHarness(
  * `effectiveModelAlias` only applies to non-Kimi providers, and then only to
  * model names that still carry a Claude marker — a custom-named Claude model
  * on a `type = "anthropic"` provider still gets an inferred effort list,
- * while managed Kimi models and clearly non-Claude names keep only their
+ * while external Kimi models and clearly non-Claude names keep only their
  * catalog-declared efforts.
  */
 function providerTypeOf(

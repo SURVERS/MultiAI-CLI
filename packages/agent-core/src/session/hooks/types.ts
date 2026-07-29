@@ -1,4 +1,4 @@
-import type { ContentPart } from '@moonshot-ai/kosong';
+import type { ContentPart } from '@multiai/kosong';
 
 export const HOOK_EVENT_TYPES = [
   'PreToolUse',

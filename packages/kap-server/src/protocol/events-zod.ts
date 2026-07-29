@@ -8,8 +8,8 @@
  */
 import { z } from 'zod';
 
-import { isoDateTimeSchema } from '@moonshot-ai/agent-core-v2/_base/utils/isoDateTime';
-import type { TurnEndReason } from '@moonshot-ai/agent-core-v2/agent/loop/turnEvents';
+import { isoDateTimeSchema } from '@multiai/agent-core-v2/_base/utils/isoDateTime';
+import type { TurnEndReason } from '@multiai/agent-core-v2/agent/loop/turnEvents';
 import type {
   CompactionSummaryOrigin,
   CronJobOrigin,
@@ -24,16 +24,16 @@ import type {
   SystemTriggerOrigin,
   TaskOrigin,
   UserPromptOrigin,
-} from '@moonshot-ai/agent-core-v2/agent/contextMemory/types';
-import { messageContentSchema } from '@moonshot-ai/agent-core-v2/agent/contextMemory/protocolMessage';
-import type { HookResultEvent } from '@moonshot-ai/agent-core-v2/agent/externalHooks/externalHooksService';
+} from '@multiai/agent-core-v2/agent/contextMemory/types';
+import { messageContentSchema } from '@multiai/agent-core-v2/agent/contextMemory/protocolMessage';
+import type { HookResultEvent } from '@multiai/agent-core-v2/agent/externalHooks/externalHooksService';
 import type {
   CompactionBlockedEvent,
   CompactionCancelledEvent,
   CompactionCompletedEvent,
   CompactionStartedEvent,
-} from '@moonshot-ai/agent-core-v2/agent/fullCompaction/compactionOps';
-import type { CompactionResult } from '@moonshot-ai/agent-core-v2/agent/fullCompaction/types';
+} from '@multiai/agent-core-v2/agent/fullCompaction/compactionOps';
+import type { CompactionResult } from '@multiai/agent-core-v2/agent/fullCompaction/types';
 import type {
   GoalActor,
   GoalBudgetLimits,
@@ -44,7 +44,7 @@ import type {
   GoalSnapshot,
   GoalStatus,
   GoalToolResult,
-} from '@moonshot-ai/agent-core-v2/agent/goal/types';
+} from '@multiai/agent-core-v2/agent/goal/types';
 import type {
   AssistantDeltaEvent,
   ThinkingDeltaEvent,
@@ -52,41 +52,41 @@ import type {
   TurnStepCompletedEvent,
   TurnStepInterruptedEvent,
   TurnStepStartedEvent,
-} from '@moonshot-ai/agent-core-v2/agent/loop/turnEvents';
+} from '@multiai/agent-core-v2/agent/loop/turnEvents';
 import type {
   McpServerStatusEvent,
   McpServerStatusPayload,
   ToolListUpdatedEvent,
   ToolListUpdatedReason,
-} from '@moonshot-ai/agent-core-v2/agent/mcp/mcpService';
-import type { McpOAuthAuthorizationUrlUpdateData } from '@moonshot-ai/agent-core-v2/agent/mcp/tools/auth';
-import type { PermissionMode } from '@moonshot-ai/agent-core-v2/agent/permissionPolicy/types';
-import type { WarningEvent } from '@moonshot-ai/agent-core-v2/agent/profile/profileService';
-import type { PluginCommandActivatedEvent } from '@moonshot-ai/agent-core-v2/agent/rpc/rpcService';
+} from '@multiai/agent-core-v2/agent/mcp/mcpService';
+import type { McpOAuthAuthorizationUrlUpdateData } from '@multiai/agent-core-v2/agent/mcp/tools/auth';
+import type { PermissionMode } from '@multiai/agent-core-v2/agent/permissionPolicy/types';
+import type { WarningEvent } from '@multiai/agent-core-v2/agent/profile/profileService';
+import type { PluginCommandActivatedEvent } from '@multiai/agent-core-v2/agent/rpc/rpcService';
 import type {
   ShellCompletedEvent,
   ShellOutputEvent,
   ShellStartedEvent,
-} from '@moonshot-ai/agent-core-v2/agent/shellCommand/shellCommandService';
+} from '@multiai/agent-core-v2/agent/shellCommand/shellCommandService';
 
-import type { TurnStepRetryingEvent } from '@moonshot-ai/agent-core-v2/agent/stepRetry/stepRetryService';
-import type { AgentTaskStatus } from '@moonshot-ai/agent-core-v2/agent/task/types';
+import type { TurnStepRetryingEvent } from '@multiai/agent-core-v2/agent/stepRetry/stepRetryService';
+import type { AgentTaskStatus } from '@multiai/agent-core-v2/agent/task/types';
 import type {
   ToolCallStartedEvent,
   ToolProgressEvent,
   ToolResultEvent,
-} from '@moonshot-ai/agent-core-v2/agent/toolExecutor/toolExecutorEvents';
-import type { UsageStatus } from '@moonshot-ai/agent-core-v2/agent/usage/usage';
-import type { FinishReason } from '@moonshot-ai/agent-core-v2/kosong/contract/provider';
-import type { TokenUsage } from '@moonshot-ai/agent-core-v2/kosong/contract/usage';
+} from '@multiai/agent-core-v2/agent/toolExecutor/toolExecutorEvents';
+import type { UsageStatus } from '@multiai/agent-core-v2/agent/usage/usage';
+import type { FinishReason } from '@multiai/agent-core-v2/kosong/contract/provider';
+import type { TokenUsage } from '@multiai/agent-core-v2/kosong/contract/usage';
 import type {
   SubagentCompletedEvent,
   SubagentFailedEvent,
   SubagentSpawnedEvent,
   SubagentStartedEvent,
-} from '@moonshot-ai/agent-core-v2/session/subagent/mirrorAgentRun';
-import type { SubagentSuspendedEvent } from '@moonshot-ai/agent-core-v2/session/swarm/sessionSwarmService';
-import type { ToolUpdate } from '@moonshot-ai/agent-core-v2/tool/toolContract';
+} from '@multiai/agent-core-v2/session/subagent/mirrorAgentRun';
+import type { SubagentSuspendedEvent } from '@multiai/agent-core-v2/session/swarm/sessionSwarmService';
+import type { ToolUpdate } from '@multiai/agent-core-v2/tool/toolContract';
 
 import { ToolInputDisplaySchema } from './display';
 import { configResponseSchema } from './rest-config';

@@ -163,7 +163,7 @@ function ManifestCard({ meta }: { meta: ImportInfo }) {
   const m = meta.manifest;
   const candidates: [string, string | undefined][] = [
     ['original session', m?.sessionId],
-    ['kimi-code version', m?.kimiCodeVersion],
+    ['MultiAI CLI version', m?.multiAIVersion],
     ['wire protocol', m?.wireProtocolVersion],
     ['os', m?.os],
     ['node', m?.nodejsVersion],

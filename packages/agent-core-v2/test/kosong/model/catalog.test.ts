@@ -34,6 +34,7 @@ import '#/kosong/provider/bases/google-genai/index';
 import '#/kosong/provider/bases/openai/index';
 import '#/kosong/provider/protocolAdapterRegistry';
 import '#/kosong/provider/providers/kimi/kimi.contrib';
+import '#/kosong/provider/providers/multiai/multiai.contrib';
 import '#/kosong/provider/providers/standard.contrib';
 import {
   IProviderService,
@@ -59,7 +60,10 @@ import { IModelOAuthTokens } from '#/kosong/model/modelOAuth';
 
 import { StubConfigService, stubModelOAuthTokens, stubTokenProvider } from '../stubs';
 
-const HOST_HEADERS = { 'User-Agent': 'kimi-test/1.0', 'X-Msh-Device-Id': 'device-1' };
+const HOST_HEADERS = {
+  'User-Agent': 'multiai-test/1.0',
+  'X-MultiAI-Device-Id': 'device-1',
+};
 
 function createHost(
   sections: Record<string, unknown> = {},
@@ -120,13 +124,13 @@ function silentModelWrite(models: IModelService, records: Record<string, ModelRe
 let savedCustomHeaders: string | undefined;
 
 beforeEach(() => {
-  savedCustomHeaders = process.env['KIMI_CODE_CUSTOM_HEADERS'];
-  delete process.env['KIMI_CODE_CUSTOM_HEADERS'];
+  savedCustomHeaders = process.env['MULTIAI_CUSTOM_HEADERS'];
+  delete process.env['MULTIAI_CUSTOM_HEADERS'];
 });
 
 afterEach(() => {
-  if (savedCustomHeaders === undefined) delete process.env['KIMI_CODE_CUSTOM_HEADERS'];
-  else process.env['KIMI_CODE_CUSTOM_HEADERS'] = savedCustomHeaders;
+  if (savedCustomHeaders === undefined) delete process.env['MULTIAI_CUSTOM_HEADERS'];
+  else process.env['MULTIAI_CUSTOM_HEADERS'] = savedCustomHeaders;
 });
 
 describe('Model assembly (pure data)', () => {
@@ -142,11 +146,7 @@ describe('Model assembly (pure data)', () => {
       expect(model.baseUrl).toBe('https://api.moonshot.ai/v1');
       expect(model.maxContextSize).toBe(262144);
       expect(model.capabilities.max_context_tokens).toBe(262144);
-      // Kimi's definition declares `hostHeaders: 'full'`.
-      expect(model.headers).toMatchObject({
-        'User-Agent': 'kimi-test/1.0',
-        'X-Msh-Device-Id': 'device-1',
-      });
+      expect(model.headers).toEqual({ 'User-Agent': 'multiai-test/1.0' });
     } finally {
       host.dispose();
     }
@@ -178,7 +178,7 @@ describe('Model assembly (pure data)', () => {
       const model = catalog.get('gpt');
       expect(model.protocol).toBe('openai');
       expect(model.providerType).toBe('openai');
-      expect(model.headers).toEqual({ 'User-Agent': 'kimi-test/1.0' });
+      expect(model.headers).toEqual({ 'User-Agent': 'multiai-test/1.0' });
     } finally {
       host.dispose();
     }
@@ -363,13 +363,13 @@ describe('Model assembly (pure data)', () => {
       const model = catalog.get('m');
       expect(model.providerType).toBe('my-vendor');
       expect(model.protocol).toBe('openai');
-      expect(model.headers).toEqual({ 'User-Agent': 'kimi-test/1.0' });
+      expect(model.headers).toEqual({ 'User-Agent': 'multiai-test/1.0' });
     } finally {
       host.dispose();
     }
   });
 
-  it('throws config.invalid for unknown models, missing providers, and incomplete records', () => {
+  it('throws config.invalid for unknown models, missing providers, and incomplete flat records', () => {
     const expectInvalid = (sections: Record<string, unknown>, id: string): void => {
       const { host, catalog } = createHost(sections);
       try {
@@ -387,11 +387,20 @@ describe('Model assembly (pure data)', () => {
       { models: { noname: { protocol: 'openai', baseUrl: 'https://x.test', maxContextSize: 1 } } },
       'noname',
     );
-    // Structured kimi model without maxContextSize.
-    expectInvalid(
-      { ...kimiSections, models: { noctx: { provider: 'kimi', model: 'm' } } },
-      'noctx',
-    );
+  });
+
+  it('accepts sparse structured model records with an unknown context length', () => {
+    const { host, catalog } = createHost({
+      ...kimiSections,
+      models: { sparse: { provider: 'kimi', model: 'm' } },
+    });
+    try {
+      const model = catalog.get('sparse');
+      expect(model.name).toBe('m');
+      expect(model.maxContextSize).toBeUndefined();
+    } finally {
+      host.dispose();
+    }
   });
 
   it('findByName matches name, model, and aliases', () => {
@@ -418,7 +427,7 @@ describe('Model assembly (pure data)', () => {
     const { host, catalog } = createHost(
       {
         providers: {
-          kimi: { type: 'kimi', oauth: { storage: 'file', key: 'kimi' }, baseUrl: 'https://api.moonshot.ai/v1' },
+          kimi: { type: 'kimi', oauth: { storage: 'keyring', key: 'kimi' }, baseUrl: 'https://api.moonshot.ai/v1' },
         },
         models: { k1: { provider: 'kimi', model: 'kimi-k2', maxContextSize: 1 } },
       },
@@ -503,9 +512,31 @@ describe('headers merge order', () => {
       const model: Model = catalog.get('k1');
       expect(model.headers).toEqual({
         'User-Agent': 'custom-ua',
-        'X-Msh-Device-Id': 'device-1',
         'X-Custom': 'c',
       });
+    } finally {
+      host.dispose();
+    }
+  });
+
+  it('sends the full host identity to the managed MultiAI provider', () => {
+    const { host, catalog } = createHost({
+      providers: {
+        'managed:multiai': {
+          type: 'multiai',
+          apiKey: 'access-token',
+          baseUrl: 'https://multiai.example.test/v1',
+        },
+      },
+      models: {
+        'multiai/model-a': {
+          provider: 'managed:multiai',
+          model: 'model-a',
+        },
+      },
+    });
+    try {
+      expect(catalog.get('multiai/model-a').headers).toMatchObject(HOST_HEADERS);
     } finally {
       host.dispose();
     }
@@ -1153,7 +1184,7 @@ describe('ModelCatalog enumeration', () => {
           model: 'bad-model',
           baseUrl: 'https://x.test/v1',
           apiKey: 'sk',
-          oauth: { storage: 'file', key: 'oauth/bad' },
+          oauth: { storage: 'keyring', key: 'oauth/bad' },
           maxContextSize: 1000,
           displayName: 'Bad',
         },
@@ -1219,7 +1250,7 @@ describe('ModelCatalog enumeration', () => {
   it('marks an OAuth provider connected when a cached token exists', async () => {
     const { host, catalog } = createHost(
       {
-        providers: { acme: { type: 'kimi', oauth: { storage: 'file', key: 'oauth/acme' } } },
+        providers: { acme: { type: 'kimi', oauth: { storage: 'keyring', key: 'oauth/acme' } } },
         models: {},
       },
       stubModelOAuthTokens(undefined, 'cached-token'),
@@ -1291,7 +1322,7 @@ describe('ModelCatalog setDefaultModel', () => {
           model: 'bad-model',
           baseUrl: 'https://x.test/v1',
           apiKey: 'sk',
-          oauth: { storage: 'file', key: 'oauth/bad' },
+          oauth: { storage: 'keyring', key: 'oauth/bad' },
         },
       },
     });

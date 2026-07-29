@@ -2,7 +2,7 @@
  * Scenario: session agent-profile catalog — file-source discovery, priority
  * merge, explicit fatal semantics, and config-driven reload. Exercises the
  * real scoped catalog and source services against real temp directories.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/session/sessionAgentProfileCatalog/sessionAgentProfileCatalog.test.ts`.
  */
 
@@ -268,7 +268,7 @@ describe('SessionAgentProfileCatalogService', () => {
       await writeAgent(join(fixture.homeDir, 'agents'), 'shared.md', agentMd('shared', 'from user'));
       await writeAgent(join(fixture.homeDir, 'agents'), 'user-only.md', agentMd('user-only', 'user agent'));
       await writeAgent(
-        join(fixture.workDir, '.kimi-code', 'agents'),
+        join(fixture.workDir, '.multiai', 'agents'),
         'shared.md',
         agentMd('shared', 'from project'),
       );
@@ -289,7 +289,7 @@ describe('SessionAgentProfileCatalogService', () => {
       await writeAgent(fixture.extraDir, 'shared.md', agentMd('shared', 'from extra'));
       await writeAgent(fixture.extraDir, 'user-extra.md', agentMd('user-extra', 'from extra'));
       await writeAgent(
-        join(fixture.workDir, '.kimi-code', 'agents'),
+        join(fixture.workDir, '.multiai', 'agents'),
         'shared.md',
         agentMd('shared', 'from project'),
       );
@@ -395,11 +395,11 @@ describe('SessionAgentProfileCatalogService', () => {
   it('skips invalid project files and still loads valid ones', async () => {
     await withFixture(async (fixture) => {
       await writeAgent(
-        join(fixture.workDir, '.kimi-code', 'agents'),
+        join(fixture.workDir, '.multiai', 'agents'),
         'bad.md',
         '---\nname: bad\n---\n\nbody\n',
       );
-      await writeAgent(join(fixture.workDir, '.kimi-code', 'agents'), 'good.md', agentMd('good', 'valid'));
+      await writeAgent(join(fixture.workDir, '.multiai', 'agents'), 'good.md', agentMd('good', 'valid'));
       const { host, session } = makeSession(fixture);
       const catalog = session.accessor.get(ISessionAgentProfileCatalog);
       await catalog.load();
@@ -412,7 +412,7 @@ describe('SessionAgentProfileCatalogService', () => {
   it('keeps the builtin default when a same-name file does not opt in to override', async () => {
     await withFixture(async (fixture) => {
       await writeAgent(
-        join(fixture.workDir, '.kimi-code', 'agents'),
+        join(fixture.workDir, '.multiai', 'agents'),
         'agent.md',
         agentMd('agent', 'project default override'),
       );
@@ -428,7 +428,7 @@ describe('SessionAgentProfileCatalogService', () => {
   it('lets a file profile explicitly override the builtin default', async () => {
     await withFixture(async (fixture) => {
       await writeAgent(
-        join(fixture.workDir, '.kimi-code', 'agents'),
+        join(fixture.workDir, '.multiai', 'agents'),
         'agent.md',
         agentMd('agent', 'project default override', true),
       );
@@ -449,7 +449,7 @@ describe('SessionAgentProfileCatalogService', () => {
         agentMd('agent', 'user default override', true),
       );
       await writeAgent(
-        join(fixture.workDir, '.kimi-code', 'agents'),
+        join(fixture.workDir, '.multiai', 'agents'),
         'agent.md',
         agentMd('agent', 'project default without override'),
       );
@@ -598,7 +598,7 @@ describe('SessionAgentProfileCatalogService', () => {
     await withFixture(async (fixture) => {
       await writeFile(join(fixture.homeDir, 'SYSTEM.md'), 'system md prompt');
       await writeAgent(
-        join(fixture.workDir, '.kimi-code', 'agents'),
+        join(fixture.workDir, '.multiai', 'agents'),
         'agent.md',
         agentMd('agent', 'project default override', true),
       );

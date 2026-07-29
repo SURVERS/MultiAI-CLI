@@ -292,7 +292,7 @@ export interface CreateGoalPayload {
   readonly replace?: boolean;
 }
 
-export interface GetKimiConfigPayload {
+export interface GetMultiAIConfigPayload {
   readonly reload?: boolean;
 }
 
@@ -300,9 +300,9 @@ export interface ConfigDiagnostics {
   readonly warnings: readonly string[];
 }
 
-export type SetKimiConfigPayload = ResolvedConfig;
+export type SetMultiAIConfigPayload = ResolvedConfig;
 
-export interface RemoveKimiProviderPayload {
+export interface RemoveProviderPayload {
   readonly providerId: string;
 }
 
@@ -344,10 +344,10 @@ type SessionAPIWithId = WithSessionId<SessionAPI>;
 export interface CoreAPI extends SessionAPIWithId {
   getCoreInfo: (payload: EmptyPayload) => CoreInfo;
   getExperimentalFeatures: (payload: EmptyPayload) => readonly ExperimentalFeatureState[];
-  getKimiConfig: (payload: GetKimiConfigPayload) => ResolvedConfig;
+  getMultiAIConfig: (payload: GetMultiAIConfigPayload) => ResolvedConfig;
   getConfigDiagnostics: (payload: EmptyPayload) => ConfigDiagnostics;
-  setKimiConfig: (payload: SetKimiConfigPayload) => ResolvedConfig;
-  removeKimiProvider: (payload: RemoveKimiProviderPayload) => ResolvedConfig;
+  setMultiAIConfig: (payload: SetMultiAIConfigPayload) => ResolvedConfig;
+  removeProvider: (payload: RemoveProviderPayload) => ResolvedConfig;
   createSession: (payload: CreateSessionPayload) => SessionSummary;
   closeSession: (payload: CloseSessionPayload) => void;
   archiveSession: (payload: ArchiveSessionPayload) => void;

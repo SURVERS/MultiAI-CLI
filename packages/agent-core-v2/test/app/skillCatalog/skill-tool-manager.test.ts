@@ -33,7 +33,7 @@ function recordContainsSkillLoaded(record: unknown, skillName: string): boolean 
       return (
         part.type === 'text' &&
         typeof part.text === 'string' &&
-        part.text.includes(`<kimi-skill-loaded name="${skillName}"`)
+        part.text.includes(`<multiai-skill-loaded name="${skillName}"`)
       );
     }) ?? false
   );
@@ -246,9 +246,9 @@ describe('ToolManager SkillTool wire behavior', () => {
             text: [
               'Skill tool loaded instructions for this request. Follow them.',
               '',
-              '<kimi-skill-loaded name="review" trigger="model-tool" source="user" dir="/skills/review" args="">',
+              '<multiai-skill-loaded name="review" trigger="model-tool" source="user" dir="/skills/review" args="">',
               'body of review',
-              '</kimi-skill-loaded>',
+              '</multiai-skill-loaded>',
             ].join('\n'),
           },
         ],
@@ -345,7 +345,7 @@ describe('ToolManager SkillTool workspace refresh', () => {
   beforeEach(async () => {
     tmp = await mkdtemp(join(tmpdir(), 'kimi-core-skill-tool-refresh-'));
     const workDir = join(tmp, 'work');
-    const skillDir = join(workDir, '.kimi-code', 'skills', 'review');
+    const skillDir = join(workDir, '.multiai', 'skills', 'review');
     await mkdir(skillDir, { recursive: true });
     await writeFile(
       join(skillDir, 'SKILL.md'),

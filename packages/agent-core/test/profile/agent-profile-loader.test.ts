@@ -43,15 +43,15 @@ describe('agent profile loader', () => {
     const systemPath = await write(
       'system.md',
       [
-        'os={{ KIMI_OS }}',
-        'cwd={{ KIMI_WORK_DIR }}',
-        'listing={{ KIMI_WORK_DIR_LS }}',
-        'agents={{ KIMI_AGENTS_MD }}',
-        'skills={{ KIMI_SKILLS }}',
+        'os={{ MULTIAI_OS }}',
+        'cwd={{ MULTIAI_WORK_DIR }}',
+        'listing={{ MULTIAI_WORK_DIR_LS }}',
+        'agents={{ MULTIAI_AGENTS_MD }}',
+        'skills={{ MULTIAI_SKILLS }}',
         'parent={{ parentOnly }}',
         'child={{ childOnly }}',
         'role={{ ROLE_ADDITIONAL }}',
-        '{% if KIMI_OS == "macOS" %}nunjucks-ok{% endif %}',
+        '{% if MULTIAI_OS == "macOS" %}nunjucks-ok{% endif %}',
       ].join('\n'),
     );
     await write(
@@ -249,7 +249,7 @@ describe('default agent profiles', () => {
       cwd: '/workspace/two',
     });
 
-    expect(first).toContain('You are Kimi Code CLI');
+    expect(first).toContain('You are MultiAI CLI');
     expect(first).toContain('Available skills');
     expect(first).toContain('/workspace/one');
     expect(second).toContain('/workspace/two');

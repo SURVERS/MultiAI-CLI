@@ -1,4 +1,4 @@
-import type { ChatProvider, ModelCapability } from '@moonshot-ai/kosong';
+import type { ChatProvider, ModelCapability } from '@multiai/kosong';
 
 /** Completion-token budget for the next LLM request. */
 export interface CompletionBudgetConfig {
@@ -21,11 +21,11 @@ export function resolveCompletionBudget(args: {
   readonly env?: NodeJS.ProcessEnv;
 }): CompletionBudgetConfig | undefined {
   const env = args.env ?? process.env;
-  const fromNew = parseEnvBudget(env['KIMI_MODEL_MAX_COMPLETION_TOKENS']);
+  const fromNew = parseEnvBudget(env['MULTIAI_MODEL_MAX_COMPLETION_TOKENS']);
   if (fromNew !== 'absent') {
     return fromNew === 'disabled' ? undefined : { hardCap: fromNew };
   }
-  const fromLegacy = parseEnvBudget(env['KIMI_MODEL_MAX_TOKENS']);
+  const fromLegacy = parseEnvBudget(env['MULTIAI_MODEL_MAX_TOKENS']);
   if (fromLegacy !== 'absent') {
     return fromLegacy === 'disabled' ? undefined : { hardCap: fromLegacy };
   }

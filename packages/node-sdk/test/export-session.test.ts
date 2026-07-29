@@ -7,8 +7,8 @@ import * as zlib from 'node:zlib';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
-  createKimiHarness,
-  KimiError,
+  createMultiAIHarness,
+  MultiAIError,
   type SessionSummary,
 } from '#/index';
 import { resolveGlobalLogPath } from '../../agent-core/src/logging/logger';
@@ -149,7 +149,7 @@ describe('exportSessionDirectory', () => {
       sessionLastActivity: '2026-04-18T10:00:03.000Z',
       title: 'Export Test',
       workspaceDir: workDir,
-      kimiCodeVersion: '1.0.0-test',
+      multiAIVersion: '1.0.0-test',
     });
     expect(result.manifest.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 
@@ -182,7 +182,7 @@ describe('exportSessionDirectory', () => {
     });
 
     expect(dirname(result.zipPath)).toBe(toPosix(resolve('.')));
-    expect(basename(result.zipPath)).toMatch(/^kimi-debug-session_-\d{8}-\d{6}\.zip$/);
+    expect(basename(result.zipPath)).toMatch(/^multiai-debug-session_-\d{8}-\d{6}\.zip$/);
     expect(existsSync(result.zipPath)).toBe(true);
     await rm(result.zipPath, { force: true });
   });
@@ -233,9 +233,9 @@ describe('exportSessionDirectory', () => {
     });
 
     expect(result.manifest.globalLogPath).toBeUndefined();
-    expect(result.entries).not.toContain('logs/global/kimi-code.log');
+    expect(result.entries).not.toContain('logs/global/multiai.log');
     const entries = readZipEntries(await readFile(outputPath));
-    expect(entries.has('logs/global/kimi-code.log')).toBe(false);
+    expect(entries.has('logs/global/multiai.log')).toBe(false);
     const manifest = JSON.parse(entries.get('manifest.json')!.toString('utf-8')) as Record<
       string,
       unknown
@@ -289,18 +289,18 @@ describe('exportSessionDirectory', () => {
         summary: makeSummary({ id: sid, sessionDir, workDir: tmp }),
       }),
     ).rejects.toMatchObject({
-      name: 'KimiError',
+      name: 'MultiAIError',
       code: 'session.export_not_found',
-    } satisfies Partial<KimiError>);
+    } satisfies Partial<MultiAIError>);
   });
 });
 
-describe('KimiHarness.exportSession', () => {
+describe('MultiAIHarness.exportSession', () => {
   it('exports a created session through the public Harness API', async () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
       telemetry: recordingTelemetry(records),
@@ -335,13 +335,13 @@ describe('KimiHarness.exportSession', () => {
 
   it('rejects missing session ids', async () => {
     const homeDir = await makeTempDir();
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     const missingExport = harness.exportSession({ id: 'ses_missing', version: '1.0.0-test' });
-    await expect(missingExport).rejects.toBeInstanceOf(KimiError);
+    await expect(missingExport).rejects.toBeInstanceOf(MultiAIError);
     await expect(missingExport).rejects.toMatchObject({
       code: 'session.not_found',
       details: { sessionId: 'ses_missing' },
-    } satisfies Partial<KimiError>);
+    } satisfies Partial<MultiAIError>);
   });
 });

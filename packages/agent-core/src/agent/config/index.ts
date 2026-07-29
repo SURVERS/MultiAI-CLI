@@ -4,7 +4,7 @@ import {
   type ChatProvider,
   type ModelCapability,
   type ProviderConfig,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 
 import {
   applyAnthropicThinkingKeep,
@@ -14,7 +14,7 @@ import {
 } from '#/config/kimi-env-params';
 
 import type { Agent } from '..';
-import { ErrorCodes, KimiError } from '../../errors';
+import { ErrorCodes, MultiAIError } from '../../errors';
 import type { AgentConfigData, AgentConfigUpdateData } from './types';
 import {
   resolveThinkingEffort,
@@ -56,7 +56,7 @@ export class ConfigState {
     if (changed.thinkingEffort !== undefined) {
       unforcedThinkingEffort = resolveThinkingEffort(
         changed.thinkingEffort,
-        this.agent.kimiConfig?.thinking,
+        this.agent.multiAIConfig?.thinking,
         targetModel,
         kimiProtocol,
       );
@@ -68,7 +68,7 @@ export class ConfigState {
       // efforts include the provider-level protocol inference.
       unforcedThinkingEffort = resolveThinkingEffort(
         this._unforcedThinkingEffort,
-        this.agent.kimiConfig?.thinking,
+        this.agent.multiAIConfig?.thinking,
         targetModel,
         kimiProtocol,
       );
@@ -121,7 +121,7 @@ export class ConfigState {
     if (!supportsThinkingEffort(effort, model, kimiProtocol)) {
       const efforts = model?.supportEfforts ?? [];
       const supported = efforts.length === 0 ? 'off' : ['off', ...efforts].join(', ');
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.MODEL_CONFIG_INVALID,
         `Thinking effort "${effort}" is not supported by model "${this.modelAlias}". Supported efforts: ${supported}.`,
       );
@@ -157,7 +157,7 @@ export class ConfigState {
   get providerConfig(): ProviderConfig {
     const provider = this.resolvedProviderConfig?.provider;
     if (provider === undefined) {
-      throw new KimiError(ErrorCodes.MODEL_NOT_CONFIGURED, 'Provider not set');
+      throw new MultiAIError(ErrorCodes.MODEL_NOT_CONFIGURED, 'Provider not set');
     }
     return provider;
   }
@@ -177,10 +177,10 @@ export class ConfigState {
     // All provider-level request config is applied here so every request built
     // from config.provider — the main loop AND full-history compaction — carries it:
     //   - withThinking: preserve thinking during compaction (#464)
-    //   - sampling params: KIMI_MODEL_TEMPERATURE / KIMI_MODEL_TOP_P
+    //   - sampling params: MULTIAI_MODEL_TEMPERATURE / MULTIAI_MODEL_TOP_P
     //   - thinking.effort: the resolved ConfigState value, including the
-    //     KIMI_MODEL_THINKING_EFFORT override while thinking is on
-    //   - thinking.keep: env KIMI_MODEL_THINKING_KEEP > config thinking.keep > default "all"
+    //     MULTIAI_MODEL_THINKING_EFFORT override while thinking is on
+    //   - thinking.keep: env MULTIAI_MODEL_THINKING_KEEP > config thinking.keep > default "all"
     //     (only while thinking is on). Drives Kimi's `thinking.keep` and, on the
     //     Anthropic path, a `context_management` `clear_thinking_20251015` edit.
     const providerConfig = this.providerConfig;
@@ -190,7 +190,7 @@ export class ConfigState {
     }
     const provider = this.providerMemo.provider.withThinking(this.thinkingEffort);
     const withSampling = applyKimiEnvSamplingParams(provider);
-    const configKeep = this.agent.kimiConfig?.thinking?.keep;
+    const configKeep = this.agent.multiAIConfig?.thinking?.keep;
     const withKimiKeep = applyKimiEnvThinkingKeep(
       withSampling,
       this.thinkingEffort,
@@ -202,7 +202,7 @@ export class ConfigState {
 
   get model(): string {
     if (this._modelAlias === undefined) {
-      throw new KimiError(ErrorCodes.MODEL_NOT_CONFIGURED, 'Model not set');
+      throw new MultiAIError(ErrorCodes.MODEL_NOT_CONFIGURED, 'Model not set');
     }
     return this._modelAlias;
   }
@@ -242,7 +242,7 @@ export class ConfigState {
         defaultEffort: resolved.defaultEffort,
       };
     }
-    return alias === undefined ? undefined : this.agent.kimiConfig?.models?.[alias];
+    return alias === undefined ? undefined : this.agent.multiAIConfig?.models?.[alias];
   }
 
   get profileName(): string | undefined {

@@ -16,11 +16,11 @@ import {
   type PluginManifestKind,
 } from './types';
 
-const KIMI_PLUGIN_ROOT_PATH = 'kimi.plugin.json';
-const KIMI_PLUGIN_DIR_PATH = '.kimi-plugin/plugin.json';
+const MULTIAI_PLUGIN_ROOT_PATH = 'kimi.plugin.json';
+const MULTIAI_PLUGIN_DIR_PATH = '.kimi-plugin/plugin.json';
 
 // Fields that look like third-party runtime extensions (Claude / Codex / old
-// Kimi CLI). We do not run them; emit an info diagnostic so plugin authors and
+// MultiAI CLI). We do not run them; emit an info diagnostic so plugin authors and
 // users can see why a field is silently ignored.
 const UNSUPPORTED_RUNTIME_FIELDS = [
   'tools',
@@ -40,8 +40,8 @@ export interface ParsedManifestResult {
 }
 
 export async function parseManifest(pluginRoot: string): Promise<ParsedManifestResult> {
-  const rootJsonPath = path.join(pluginRoot, KIMI_PLUGIN_ROOT_PATH);
-  const dirJsonPath = path.join(pluginRoot, KIMI_PLUGIN_DIR_PATH);
+  const rootJsonPath = path.join(pluginRoot, MULTIAI_PLUGIN_ROOT_PATH);
+  const dirJsonPath = path.join(pluginRoot, MULTIAI_PLUGIN_DIR_PATH);
   const rootJsonExists = await isFile(rootJsonPath);
   const dirJsonExists = await isFile(dirJsonPath);
 
@@ -50,7 +50,7 @@ export async function parseManifest(pluginRoot: string): Promise<ParsedManifestR
       diagnostics: [
         {
           severity: 'error',
-          message: `No manifest at ${KIMI_PLUGIN_ROOT_PATH} or ${KIMI_PLUGIN_DIR_PATH}`,
+          message: `No manifest at ${MULTIAI_PLUGIN_ROOT_PATH} or ${MULTIAI_PLUGIN_DIR_PATH}`,
         },
       ],
     };
@@ -142,7 +142,7 @@ function recordUnsupportedRuntimeFields(
     if (raw[field] === undefined) continue;
     diagnostics.push({
       severity: 'info',
-      message: `"${field}" is present but not supported by Kimi plugins`,
+      message: `"${field}" is present but not supported by MultiAI plugins`,
     });
   }
 }

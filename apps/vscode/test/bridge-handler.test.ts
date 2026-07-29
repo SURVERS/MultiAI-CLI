@@ -2,7 +2,7 @@
  * Scenario: untrusted Webview RPC messages cross into the VS Code extension host.
  * Responsibilities: validate requests, preserve public model metadata, omit private paths, and recover visibly from persisted state errors.
  * Wiring: the real BridgeHandler and handlers; VS Code and the public Node SDK harness boundary are replaced.
- * Run: pnpm --filter kimi-code exec vitest run --config vitest.config.ts test/bridge-handler.test.ts
+ * Run: pnpm --filter multiai-cli exec vitest run --config vitest.config.ts test/bridge-handler.test.ts
  */
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -22,7 +22,7 @@ const host = vi.hoisted(() => {
     dispose: vi.fn(),
   };
   const harness = {
-    homeDir: "/tmp/kimi-code-test-home",
+    homeDir: "/tmp/multiai-cli-test-home",
     close: vi.fn(async () => undefined),
     getConfig: vi.fn(),
     setConfig: vi.fn(async () => undefined),
@@ -73,9 +73,9 @@ vi.mock("vscode", () => ({
   window: { showWarningMessage: host.showWarningMessage },
 }));
 
-vi.mock("@moonshot-ai/kimi-code-sdk", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@moonshot-ai/kimi-code-sdk")>();
-  return { ...original, createKimiHarness: () => host.harness };
+vi.mock("@multiai/sdk", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@multiai/sdk")>();
+  return { ...original, createMultiAIHarness: () => host.harness };
 });
 
 let bridge: BridgeHandler;
@@ -85,7 +85,7 @@ let writeLog: Mock<(message: string) => void>;
 let workspaceState: { get: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), "kimi-vscode-bridge-"));
+  root = await mkdtemp(join(tmpdir(), "multiai-vscode-bridge-"));
   host.workspaceFolders.splice(0, host.workspaceFolders.length, { uri: new host.Uri(root) });
   showLogs = vi.fn();
   writeLog = vi.fn();
@@ -262,7 +262,7 @@ describe("Webview RPC boundary (validates requests before host dispatch)", () =>
     ] as never);
 
     const result = await bridge.handle(
-      { id: "rpc-1", method: Methods.GetKimiSessions },
+      { id: "rpc-1", method: Methods.GetMultiAISessions },
       "view-1",
     );
 
@@ -292,7 +292,7 @@ describe("Webview RPC boundary (validates requests before host dispatch)", () =>
     const result = await bridge.handle(
       {
         id: "rpc-1",
-        method: Methods.ForkKimiSession,
+        method: Methods.ForkMultiAISession,
         params: { sessionId: "session-1", turnIndex: 0 },
       },
       "view-1",
@@ -325,7 +325,7 @@ describe("Webview RPC boundary (validates requests before host dispatch)", () =>
     const result = await bridge.handle(
       {
         id: "rpc-1",
-        method: Methods.ForkKimiSession,
+        method: Methods.ForkMultiAISession,
         params: { sessionId: "session-1", turnIndex: 0 },
       },
       "view-1",
@@ -350,7 +350,7 @@ describe("Webview RPC boundary (validates requests before host dispatch)", () =>
     const result = await bridge.handle(
       {
         id: "rpc-1",
-        method: Methods.ForkKimiSession,
+        method: Methods.ForkMultiAISession,
         params: { sessionId: "session-1", turnIndex: 0 },
       },
       "view-1",
@@ -384,8 +384,8 @@ describe("Webview RPC boundary (validates requests before host dispatch)", () =>
     const result = await bridge.handle(
       {
         id: "rpc-1",
-        method: Methods.LoadKimiSessionHistory,
-        params: { kimiSessionId: "session-1" },
+        method: Methods.LoadMultiAISessionHistory,
+        params: { multiaiSessionId: "session-1" },
       },
       "view-1",
     );
@@ -410,8 +410,8 @@ describe("Webview RPC boundary (validates requests before host dispatch)", () =>
     const failed = await bridge.handle(
       {
         id: "rpc-1",
-        method: Methods.LoadKimiSessionHistory,
-        params: { kimiSessionId: "session-1" },
+        method: Methods.LoadMultiAISessionHistory,
+        params: { multiaiSessionId: "session-1" },
       },
       "view-1",
     );
@@ -430,7 +430,7 @@ describe("Webview RPC boundary (validates requests before host dispatch)", () =>
 
 describe("Webview config saves (thinking effort persistence parity with the TUI)", () => {
   const effortModel = {
-    provider: "managed:kimi-code",
+    provider: "managed:multiai",
     model: "reasoning",
     supportEfforts: ["low", "high", "max"],
     defaultEffort: "high",
@@ -521,7 +521,7 @@ function createResumedSession(id: string, workDir: string) {
     sessionDir: join("/private/kimi/sessions", id),
     createdAt: 1,
     updatedAt: 2,
-    metadata: { vscode_legacy_approval: { yolo: false, afk: false } },
+    metadata: { vscode_multiai_approval: { yolo: false, afk: false } },
   };
   return {
     id,

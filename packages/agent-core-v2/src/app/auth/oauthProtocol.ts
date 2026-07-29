@@ -1,9 +1,5 @@
 /**
- * `auth` domain — the v1 OAuth wire DTO schemas.
- *
- * Request/response shapes of the v1 `/oauth/*` endpoints plus the managed
- * OAuth provider model-refresh response, defined as zod schemas so the
- * transports validate against the same contract the `IOAuthService` returns.
+ * `auth` domain — OAuth and account wire DTO schemas.
  */
 
 import { z } from 'zod';
@@ -19,54 +15,65 @@ export const oauthFlowStatusEnum = z.enum([
 ]);
 export type OAuthFlowStatus = z.infer<typeof oauthFlowStatusEnum>;
 
-/**
- * Result of `POST /v1/oauth/login`.
- *
- * Two shapes, discriminated by `status`:
- *   - `pending`: a real device-code flow was started; the `verification_*`,
- *     `user_code`, `expires_*`, and `interval` fields are populated so the
- *     client can render the device-code step and start polling.
- *   - `authenticated`: the toolkit already had a usable token and short-
- *     circuited via its `ensureFresh` fast path, so no device code was
- *     issued. The client can skip the device-code step and treat the login
- *     as already complete.
- */
-export const oauthFlowStartPendingSchema = z.object({
+export const oauthPersistenceSchema = z.enum(['keyring', 'session']);
+export type OAuthPersistence = z.infer<typeof oauthPersistenceSchema>;
+
+const oauthFlowCommon = {
   flow_id: z.string().min(1),
   provider: z.string().min(1),
+  persistence: oauthPersistenceSchema,
+  expires_in: z.number().int().positive(),
+  expires_at: isoDateTimeSchema,
+};
+
+export const oauthBrowserFlowStartSchema = z.object({
+  ...oauthFlowCommon,
+  method: z.literal('browser'),
+  status: z.literal('pending'),
+  authorization_uri: z.string().url(),
+  redirect_uri: z.string().url(),
+});
+export type OAuthBrowserFlowStart = z.infer<typeof oauthBrowserFlowStartSchema>;
+
+export const oauthDeviceFlowStartSchema = z.object({
+  ...oauthFlowCommon,
+  method: z.literal('device'),
   status: z.literal('pending'),
   verification_uri: z.string().url(),
   verification_uri_complete: z.string().url(),
   user_code: z.string().min(1),
-  expires_in: z.number().int().positive(),
   interval: z.number().int().positive(),
-  expires_at: isoDateTimeSchema,
 });
-export type OAuthFlowStartPending = z.infer<typeof oauthFlowStartPendingSchema>;
+export type OAuthDeviceFlowStart = z.infer<typeof oauthDeviceFlowStartSchema>;
 
 export const oauthFlowStartAuthenticatedSchema = z.object({
   flow_id: z.string().min(1),
   provider: z.string().min(1),
+  method: z.enum(['browser', 'device']),
+  persistence: oauthPersistenceSchema,
   status: z.literal('authenticated'),
 });
-export type OAuthFlowStartAuthenticated = z.infer<typeof oauthFlowStartAuthenticatedSchema>;
+export type OAuthFlowStartAuthenticated = z.infer<
+  typeof oauthFlowStartAuthenticatedSchema
+>;
 
-export const oauthFlowStartSchema = z.discriminatedUnion('status', [
-  oauthFlowStartPendingSchema,
+export const oauthFlowStartSchema = z.union([
+  oauthBrowserFlowStartSchema,
+  oauthDeviceFlowStartSchema,
   oauthFlowStartAuthenticatedSchema,
 ]);
 export type OAuthFlowStart = z.infer<typeof oauthFlowStartSchema>;
 
 export const oauthFlowSnapshotSchema = z.object({
-  flow_id: z.string().min(1),
-  provider: z.string().min(1),
+  ...oauthFlowCommon,
+  method: z.enum(['browser', 'device']),
   status: oauthFlowStatusEnum,
-  verification_uri: z.string().url(),
-  verification_uri_complete: z.string().url(),
-  user_code: z.string().min(1),
-  expires_in: z.number().int().positive(),
-  expires_at: isoDateTimeSchema,
-  interval: z.number().int().positive(),
+  authorization_uri: z.string().url().optional(),
+  redirect_uri: z.string().url().optional(),
+  verification_uri: z.string().url().optional(),
+  verification_uri_complete: z.string().url().optional(),
+  user_code: z.string().min(1).optional(),
+  interval: z.number().int().positive().optional(),
   resolved_at: isoDateTimeSchema.optional(),
   error_message: z.string().optional(),
 });
@@ -84,6 +91,58 @@ export const oauthLogoutResponseSchema = z.object({
 });
 export type OAuthLogoutResponse = z.infer<typeof oauthLogoutResponseSchema>;
 
+const subscriptionLimitSchema = z.object({
+  enabled: z.boolean(),
+  remaining_percent: z.number(),
+  reset_at: z.string().optional(),
+});
+
+export const accountSnapshotSchema = z.object({
+  user: z.object({
+    sub: z.string().min(1),
+    display_name: z.string().optional(),
+    avatar_url: z.string().optional(),
+    email: z.string().optional(),
+    email_verified: z.boolean().optional(),
+  }),
+  account: z.object({
+    wallet: z.object({
+      total: z.number(),
+      classic: z.number(),
+      new: z.number(),
+      billing_mode: z.string(),
+    }),
+    subscription: z.object({
+      active: z.boolean(),
+      available: z.boolean(),
+      limits: z.object({
+        five_hour: subscriptionLimitSchema,
+        weekly: subscriptionLimitSchema,
+        monthly: subscriptionLimitSchema,
+      }),
+    }),
+    generated_at: z.string(),
+  }),
+  keys: z.array(
+    z.object({
+      id: z.number().int(),
+      name: z.string(),
+      key: z.string(),
+      status: z.string(),
+    }),
+  ),
+  connection: z.object({
+    id: z.string(),
+    client_id: z.string(),
+    client_name: z.string(),
+    device_name: z.string(),
+    scopes: z.array(z.string()),
+    expires_at: z.string(),
+  }),
+  generated_at: z.string(),
+});
+export type AccountSnapshot = z.infer<typeof accountSnapshotSchema>;
+
 const providerRefreshChangeSchema = z.object({
   provider_id: z.string().min(1),
   provider_name: z.string().min(1),
@@ -91,70 +150,11 @@ const providerRefreshChangeSchema = z.object({
   removed: z.number().int().min(0),
 });
 
-const providerRefreshFailureSchema = z.object({
-  provider: z.string().min(1),
-  reason: z.string().min(1),
-});
-
-// Same response shape as the modelCatalog refresh endpoint; defined
-// self-contained here because the two domains sit at different layers and the
-// `auth` domain owns the OAuth-provider refresh operation.
 export const refreshOAuthProviderModelsResponseSchema = z.object({
   changed: z.array(providerRefreshChangeSchema),
   unchanged: z.array(z.string().min(1)),
-  failed: z.array(providerRefreshFailureSchema),
+  failed: z.array(z.object({ provider: z.string().min(1), reason: z.string().min(1) })),
 });
 export type RefreshOAuthProviderModelsResponse = z.infer<
   typeof refreshOAuthProviderModelsResponseSchema
 >;
-
-// ---------------------------------------------------------------------------
-// Managed-account usage (`GET /v1/oauth/usage`) — mirrors the toolkit's
-// `AuthManagedUsageResult` (camelCase domain model → snake_case wire DTO).
-// ---------------------------------------------------------------------------
-
-export const usageWindowSchema = z.object({
-  duration: z.number().int(),
-  unit: z.enum(['minute', 'hour', 'day', 'week']),
-});
-export type UsageWindow = z.infer<typeof usageWindowSchema>;
-
-export const usageRowSchema = z.object({
-  name: z.string().optional(),
-  window: usageWindowSchema.optional(),
-  used: z.number().int(),
-  limit: z.number().int(),
-  reset_at: z.string().optional(),
-});
-export type UsageRow = z.infer<typeof usageRowSchema>;
-
-export const boosterWalletSchema = z.object({
-  balance_cents: z.number().int(),
-  total_cents: z.number().int(),
-  monthly_charge_limit_enabled: z.boolean(),
-  monthly_charge_limit_cents: z.number().int(),
-  monthly_used_cents: z.number().int(),
-  currency: z.string(),
-});
-export type BoosterWallet = z.infer<typeof boosterWalletSchema>;
-
-export const managedUsageOkSchema = z.object({
-  kind: z.literal('ok'),
-  summary: usageRowSchema.nullable(),
-  limits: z.array(usageRowSchema),
-  extra_usage: boosterWalletSchema.nullable(),
-});
-export type ManagedUsageOk = z.infer<typeof managedUsageOkSchema>;
-
-export const managedUsageErrorSchema = z.object({
-  kind: z.literal('error'),
-  message: z.string(),
-  status: z.number().int().optional(),
-});
-export type ManagedUsageError = z.infer<typeof managedUsageErrorSchema>;
-
-export const managedUsageResultSchema = z.discriminatedUnion('kind', [
-  managedUsageOkSchema,
-  managedUsageErrorSchema,
-]);
-export type ManagedUsageResult = z.infer<typeof managedUsageResultSchema>;

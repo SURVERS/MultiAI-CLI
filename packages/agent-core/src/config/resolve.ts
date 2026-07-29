@@ -1,4 +1,4 @@
-import { ErrorCodes, KimiError } from '#/errors';
+import { ErrorCodes, MultiAIError } from '#/errors';
 
 const TRUE_BOOLEAN_ENV_VALUES = new Set(['1', 'true', 'yes', 'on']);
 const FALSE_BOOLEAN_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
@@ -28,9 +28,9 @@ export function parseBooleanEnv(value: string | undefined): boolean | undefined 
 }
 
 /**
- * Parse a floating-point environment value (e.g. `KIMI_MODEL_TEMPERATURE`).
- * Returns `undefined` when unset/blank; throws `KimiError(CONFIG_INVALID)` on a
- * non-numeric value so a typo fails fast like the other `KIMI_MODEL_*` vars.
+ * Parse a floating-point environment value (e.g. `MULTIAI_MODEL_TEMPERATURE`).
+ * Returns `undefined` when unset/blank; throws `MultiAIError(CONFIG_INVALID)` on a
+ * non-numeric value so a typo fails fast like the other `MULTIAI_MODEL_*` vars.
  * No range validation — callers pass values the upstream API accepts.
  */
 export function parseFloatEnv(value: string | undefined, varName: string): number | undefined {
@@ -38,7 +38,7 @@ export function parseFloatEnv(value: string | undefined, varName: string): numbe
   if (trimmed === undefined || trimmed.length === 0) return undefined;
   const parsed = Number(trimmed);
   if (!Number.isFinite(parsed)) {
-    throw new KimiError(ErrorCodes.CONFIG_INVALID, `${varName} must be a number, got "${value}".`);
+    throw new MultiAIError(ErrorCodes.CONFIG_INVALID, `${varName} must be a number, got "${value}".`);
   }
   return parsed;
 }

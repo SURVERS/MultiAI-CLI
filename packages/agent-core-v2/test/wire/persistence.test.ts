@@ -3,7 +3,7 @@
  *
  * Resolves real append-log and Agent wire services by interface over file or
  * in-memory storage. Controlled storage promises expose rewrite durability
- * without wall-clock waits. Run with `pnpm --filter @moonshot-ai/agent-core-v2
+ * without wall-clock waits. Run with `pnpm --filter @multiai/agent-core-v2
  * exec vitest run test/wire/persistence.test.ts`.
  */
 

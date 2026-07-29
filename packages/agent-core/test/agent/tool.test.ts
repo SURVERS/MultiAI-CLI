@@ -2,11 +2,11 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { ToolCall } from '@moonshot-ai/kosong';
+import type { ToolCall } from '@multiai/kosong';
 import { describe, expect, it, vi } from 'vitest';
 
 import { budgetToolResultForModel } from '../../src/agent/turn/tool-result-budget';
-import type { KimiConfig } from '../../src/config';
+import type { MultiAIConfig } from '../../src/config';
 import { HookEngine } from '../../src/session/hooks';
 import { ProviderManager } from '../../src/session/provider-manager';
 import type { SessionSubagentHost } from '../../src/session/subagent-host';
@@ -276,7 +276,7 @@ describe('Agent tools', () => {
     // provider, so hasProvider is false at Agent construction and
     // initializeBuiltinTools() is skipped — the state the asynchronous
     // free-tokens / OAuth model registration produces.
-    const liveConfig: KimiConfig = { providers: {}, models: {} };
+    const liveConfig: MultiAIConfig = { providers: {}, models: {} };
     const ctx = testAgent({
       providerManager: new ProviderManager({ config: () => liveConfig }),
     });

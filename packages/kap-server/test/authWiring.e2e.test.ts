@@ -137,7 +137,7 @@ describe('production auth wiring', () => {
     const token = (await readFile(join(home as string, 'server.token'), 'utf8')).trim();
     const wsUrl = `ws://127.0.0.1:${(server as RunningServer).port}/api/v1/ws`;
 
-    const { ws, firstFrame } = await openConn(wsUrl, [`kimi-code.bearer.${token}`]);
+    const { ws, firstFrame } = await openConn(wsUrl, [`multiai.bearer.${token}`]);
     sockets.push(ws);
     expect(firstFrame).toMatchObject({ type: 'server_hello' });
 

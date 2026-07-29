@@ -13,9 +13,9 @@ import {
   Disposable,
   getScopedServiceDescriptors,
   LifecycleScope,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 
-import type { ScopedEntry, ServiceIdentifier } from '@moonshot-ai/agent-core-v2';
+import type { ScopedEntry, ServiceIdentifier } from '@multiai/agent-core-v2';
 
 export interface ChannelMethodDescriptor {
   readonly name: string;
@@ -133,7 +133,7 @@ function describeMethods(
 
 /**
  * Describe EVERY registered scoped Service — served by
- * `GET /api/v1/debug/channels` so dev tooling (kimi-inspect) can load the
+ * `GET /api/v1/debug/channels` so dev tooling (multiai-inspect) can load the
  * full protocol surface 1:1.
  */
 export function describeAllChannels(): readonly ChannelDescriptor[] {

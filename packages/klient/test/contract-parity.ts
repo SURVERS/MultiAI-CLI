@@ -3,7 +3,7 @@
  * types they mirror. Plain `.ts` (not `.test.ts`) — vitest must not pick it
  * up; `tsc -p tsconfig.json --noEmit` is the check.
  *
- * Wire shapes the engine imports from `@moonshot-ai/protocol` are reached
+ * Wire shapes the engine imports from `@multiai/protocol` are reached
  * through indexed access on the engine service interfaces, since klient does
  * not depend on the protocol package directly.
  */
@@ -20,10 +20,10 @@ import type {
   BackgroundRef,
   ToolCallRef,
   TurnPhase,
-} from '@moonshot-ai/agent-core-v2/agent/activityView/activityView';
-import type { AgentContextData } from '@moonshot-ai/agent-core-v2/agent/contextMemory/types';
-import type { TurnEndReason } from '@moonshot-ai/agent-core-v2/agent/loop/turnEvents';
-import type { PlanData } from '@moonshot-ai/agent-core-v2/agent/plan/plan';
+} from '@multiai/agent-core-v2/agent/activityView/activityView';
+import type { AgentContextData } from '@multiai/agent-core-v2/agent/contextMemory/types';
+import type { TurnEndReason } from '@multiai/agent-core-v2/agent/loop/turnEvents';
+import type { PlanData } from '@multiai/agent-core-v2/agent/plan/plan';
 import type {
   AgentAPI,
   CancelPlanPayload,
@@ -37,22 +37,22 @@ import type {
   SetModelResult,
   ShellCommandResult,
   StopTaskPayload,
-} from '@moonshot-ai/agent-core-v2/agent/rpc/core-api';
-import type { UsageStatus } from '@moonshot-ai/agent-core-v2/agent/usage/usage';
-import type { ISessionScopeHandle } from '@moonshot-ai/agent-core-v2/_base/di/scope';
+} from '@multiai/agent-core-v2/agent/rpc/core-api';
+import type { UsageStatus } from '@multiai/agent-core-v2/agent/usage/usage';
+import type { ISessionScopeHandle } from '@multiai/agent-core-v2/_base/di/scope';
 import type {
   CreateChildSessionOptions,
   CreateSessionOptions,
   ForkSessionOptions,
-} from '@moonshot-ai/agent-core-v2/app/sessionLifecycle/sessionLifecycle';
+} from '@multiai/agent-core-v2/app/sessionLifecycle/sessionLifecycle';
 import type {
   ApprovalRequest,
   ApprovalResponse,
-} from '@moonshot-ai/agent-core-v2/session/approval/approval';
+} from '@multiai/agent-core-v2/session/approval/approval';
 import type {
   Interaction,
   InteractionResolution,
-} from '@moonshot-ai/agent-core-v2/session/interaction/interaction';
+} from '@multiai/agent-core-v2/session/interaction/interaction';
 import type {
   QuestionAnswers,
   QuestionItem,
@@ -60,38 +60,38 @@ import type {
   QuestionRequest,
   QuestionResponse,
   QuestionResult,
-} from '@moonshot-ai/agent-core-v2/session/question/question';
+} from '@multiai/agent-core-v2/session/question/question';
 import type {
   AgentMeta,
   SessionMeta,
   SessionMetadataChangedEvent,
   SessionMetaPatch,
-} from '@moonshot-ai/agent-core-v2/session/sessionMetadata/sessionMetadata';
+} from '@multiai/agent-core-v2/session/sessionMetadata/sessionMetadata';
 import type {
   AuthStatus,
   IOAuthService,
-} from '@moonshot-ai/agent-core-v2/app/auth/auth';
-import type { IBootstrapService } from '@moonshot-ai/agent-core-v2/app/bootstrap/bootstrap';
+} from '@multiai/agent-core-v2/app/auth/auth';
+import type { IBootstrapService } from '@multiai/agent-core-v2/app/bootstrap/bootstrap';
 import type {
   ConfigDiagnostic,
   ConfigInspectValue,
   ConfigTarget,
-} from '@moonshot-ai/agent-core-v2/app/config/config';
-import type { ExperimentalFeatureState } from '@moonshot-ai/agent-core-v2/app/flag/flag';
+} from '@multiai/agent-core-v2/app/config/config';
+import type { ExperimentalFeatureState } from '@multiai/agent-core-v2/app/flag/flag';
 import type {
   FsBrowseResponse,
   FsHomeResponse,
-} from '@moonshot-ai/agent-core-v2/app/hostFolderBrowser/hostFolderBrowser';
-import type { ModelRecord } from '@moonshot-ai/agent-core-v2/kosong/model/model';
-import type { IModelCatalog } from '@moonshot-ai/agent-core-v2/kosong/model/catalog';
-import type { IProviderDiscoveryService } from '@moonshot-ai/agent-core-v2/app/kosongConfig/discovery';
+} from '@multiai/agent-core-v2/app/hostFolderBrowser/hostFolderBrowser';
+import type { ModelRecord } from '@multiai/agent-core-v2/kosong/model/model';
+import type { IModelCatalog } from '@multiai/agent-core-v2/kosong/model/catalog';
+import type { IProviderDiscoveryService } from '@multiai/agent-core-v2/app/kosongConfig/discovery';
 import type {
   GetPluginInfoInput,
   InstallPluginInput,
   RemovePluginInput,
   SetPluginEnabledInput,
   SetPluginMcpServerEnabledInput,
-} from '@moonshot-ai/agent-core-v2/app/plugin/plugin';
+} from '@multiai/agent-core-v2/app/plugin/plugin';
 import type {
   PluginCommandDef,
   PluginDiagnostic,
@@ -102,17 +102,17 @@ import type {
   PluginSummary,
   PluginUpdateStatus,
   ReloadSummary,
-} from '@moonshot-ai/agent-core-v2/app/plugin/types';
-import type { ProviderConfig } from '@moonshot-ai/agent-core-v2/kosong/provider/provider';
+} from '@multiai/agent-core-v2/app/plugin/types';
+import type { ProviderConfig } from '@multiai/agent-core-v2/kosong/provider/provider';
 import type {
   SessionListQuery,
   SessionSummary,
-} from '@moonshot-ai/agent-core-v2/app/sessionIndex/sessionIndex';
+} from '@multiai/agent-core-v2/app/sessionIndex/sessionIndex';
 import type {
   Workspace,
   WorkspaceUpdate,
-} from '@moonshot-ai/agent-core-v2/app/workspace/workspace';
-// Test-only: `@moonshot-ai/protocol` is a devDependency; importing its types
+} from '@multiai/agent-core-v2/app/workspace/workspace';
+// Test-only: `@multiai/protocol` is a devDependency; importing its types
 // here (never in `src/`) strengthens parity for the agent event stream.
 import type {
   AssistantDeltaEvent,
@@ -125,7 +125,7 @@ import type {
   TurnEndedEvent,
   TurnStartedEvent,
   WarningEvent,
-} from '@moonshot-ai/protocol';
+} from '@multiai/protocol';
 
 import {
   activityLastTurnStateSchema,
@@ -273,7 +273,7 @@ type AssertWireToEngine<TSchema extends z.ZodType, TEngine> = [z.infer<TSchema>]
   : never;
 
 // Protocol wire shapes, derived from the engine interfaces (no direct
-// `@moonshot-ai/protocol` dependency in klient).
+// `@multiai/protocol` dependency in klient).
 type OAuthFlowStart = Awaited<ReturnType<IOAuthService['startLogin']>>;
 type OAuthFlowSnapshot = NonNullable<ReturnType<IOAuthService['getFlow']>>;
 type OAuthLoginCancelResponse = Awaited<ReturnType<IOAuthService['cancelLogin']>>;

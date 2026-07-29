@@ -3,7 +3,7 @@
  *
  * Exercises initial injection and source-specific refresh behavior through the
  * real `AgentPluginService`, with plugin and session catalog boundaries stubbed.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/agent/plugin/agentPlugin.test.ts`.
  */
 

@@ -11,7 +11,7 @@
  * `Session.resume()` reads unconditionally — seeded at creation, backfilled
  * and persisted on load for documents written before the seeding existed
  * (without touching `updatedAt`, so a format heal never reorders session
- * listings) — keeping sessions on a shared `KIMI_CODE_HOME` resumable by
+ * listings) — keeping sessions on a shared `MULTIAI_HOME` resumable by
  * released v1 builds. Re-registering an agent whose metadata is unchanged is
  * a no-op (no write, no mirror, no event), so resuming a session — which
  * re-registers its agents as they materialize — never bumps `updatedAt` and

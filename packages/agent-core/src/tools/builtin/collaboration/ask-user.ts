@@ -16,7 +16,7 @@ import { z } from 'zod';
 import type { Agent } from '../../../agent';
 import { QuestionBackgroundTask } from '../../../agent/background';
 import type { BuiltinTool } from '../../../agent/tool';
-import { ErrorCodes, KimiError } from '../../../errors';
+import { ErrorCodes, MultiAIError } from '../../../errors';
 import { errorMessage, isAbortError } from '../../../loop/errors';
 import type { ExecutableToolContext, ExecutableToolResult, ToolExecution } from '../../../loop/types';
 import type {
@@ -226,7 +226,7 @@ export class AskUserQuestionTool implements BuiltinTool<AskUserQuestionInput> {
     } catch (error) {
       if (isAbortError(error) || signal.aborted) throw error;
 
-      if (error instanceof KimiError && error.code === ErrorCodes.NOT_IMPLEMENTED) {
+      if (error instanceof MultiAIError && error.code === ErrorCodes.NOT_IMPLEMENTED) {
         return {
           isError: true,
           output: QUESTION_UNSUPPORTED_FAILURE_MESSAGE,

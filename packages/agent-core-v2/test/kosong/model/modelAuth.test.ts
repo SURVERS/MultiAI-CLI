@@ -47,20 +47,20 @@ describe('resolveModelAuthMaterial', () => {
     ).toEqual({ apiKey: 'model-key' });
     expect(
       authMaterial({
-        model: { model: 'm', oauth: { storage: 'file', key: 'k' }, providerId: 'p1' },
+        model: { model: 'm', oauth: { storage: 'keyring', key: 'k' }, providerId: 'p1' },
         provider: { type: 'openai', apiKey: 'provider-key' },
       }),
-    ).toEqual({ oauth: { storage: 'file', key: 'k' }, oauthProviderKey: 'p1' });
+    ).toEqual({ oauth: { storage: 'keyring', key: 'k' }, oauthProviderKey: 'p1' });
   });
 
   it('rejects apiKey+oauth on the same level as config.invalid', () => {
     expect(() =>
-      authMaterial({ model: { model: 'm', apiKey: 'k', oauth: { storage: 'file', key: 'k' } } }),
+      authMaterial({ model: { model: 'm', apiKey: 'k', oauth: { storage: 'keyring', key: 'k' } } }),
     ).toThrowError(expect.objectContaining({ code: ConfigErrors.codes.CONFIG_INVALID }));
     expect(() =>
       authMaterial({
         model: { model: 'm' },
-        provider: { type: 'openai', apiKey: 'k', oauth: { storage: 'file', key: 'k' } },
+        provider: { type: 'openai', apiKey: 'k', oauth: { storage: 'keyring', key: 'k' } },
       }),
     ).toThrowError(expect.objectContaining({ code: ConfigErrors.codes.CONFIG_INVALID }));
   });

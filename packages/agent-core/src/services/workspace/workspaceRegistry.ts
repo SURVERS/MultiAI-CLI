@@ -2,7 +2,7 @@
 
 import { Disposable, createDecorator } from '../../di';
 
-import type { Workspace } from '@moonshot-ai/protocol';
+import type { Workspace } from '@multiai/protocol';
 
 export class WorkspaceNotFoundError extends Error {
   readonly workspaceId: string;

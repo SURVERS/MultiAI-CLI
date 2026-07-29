@@ -1,4 +1,4 @@
-import type { ContentPart, ThinkingEffort, TokenUsage } from '@moonshot-ai/kosong';
+import type { ContentPart, ThinkingEffort, TokenUsage } from '@multiai/kosong';
 
 import type { LoopRecordedEvent } from '../../loop';
 import type { GoalActor, GoalBudgetLimits, GoalStatus } from '../goal';
@@ -146,7 +146,7 @@ export interface AgentRecordEvents {
     /**
      * Provider-effective thinking effort — for Kimi providers this is derived
      * from the request body's thinking payload, so env overrides
-     * (`KIMI_MODEL_THINKING_EFFORT`) are already reflected.
+     * (`MULTIAI_MODEL_THINKING_EFFORT`) are already reflected.
      */
     thinkingEffort?: ThinkingEffort;
     /**

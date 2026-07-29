@@ -14,7 +14,7 @@
  * so the base path here is relative: `/debug`.
  */
 
-import type { Scope } from '@moonshot-ai/agent-core-v2';
+import type { Scope } from '@multiai/agent-core-v2';
 
 import { describeAllChannels, resolveAnyScopedServiceId } from './channelRegistry';
 import { type RouteHost, registerServiceDispatcherRoutes } from './serviceDispatcherRoutes';

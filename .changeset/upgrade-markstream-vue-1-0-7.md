@@ -1,5 +1,5 @@
 ---
-"@moonshot-ai/kimi-code": patch
+"@multiai/cli": patch
 ---
 
 web: Fix garbled line numbers in code blocks.

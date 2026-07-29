@@ -10,7 +10,7 @@ import { VSCodeSettings } from "./config/vscode-settings";
 import { handlers, type BroadcastFn, type HandlerContext, type ReloadWebviewFn, type ShowLogsFn } from "./handlers";
 import { BaselineManager, type BaselineSession } from "./managers/baseline.manager";
 import { FileManager } from "./managers/file.manager";
-import { KimiRuntime } from "./runtime/kimi-runtime";
+import { MultiAIRuntime } from "./runtime/multiai-runtime";
 import type { SessionRuntime } from "./runtime/session-runtime";
 import { areSameFsPath } from "./utils/fs-path";
 import {
@@ -24,7 +24,7 @@ import {
 
 export class BridgeHandler {
   readonly baselineManager: BaselineManager;
-  readonly runtime: KimiRuntime;
+  readonly runtime: MultiAIRuntime;
 
   private readonly customWorkDirs = new Map<string, string>();
   private readonly fileManager: FileManager;
@@ -37,7 +37,7 @@ export class BridgeHandler {
     private readonly showLogs: ShowLogsFn,
     private readonly writeLog: (message: string) => void,
   ) {
-    this.runtime = new KimiRuntime({
+    this.runtime = new MultiAIRuntime({
       version: VSCodeSettings.getExtensionConfig().version,
       broadcast,
       captureBaseline: (session, filePath, webviewIds) => {
@@ -290,14 +290,14 @@ export class BridgeHandler {
   private trace(id: string, method: string, durationMs: number, ok: boolean): void {
     // Deliberately exclude params, prompt text, file paths, and credentials.
     const line = `[bridge] id=${id} method=${method} ok=${String(ok)} durationMs=${durationMs}`;
-    console.debug(`[kimi-vscode] ${line}`);
+    console.debug(`[multiai-vscode] ${line}`);
     this.writeLog(line);
   }
 
   private logRuntimeError(message: string, error?: unknown): void {
     const detail = errorDetail(error);
     const line = `${message}${detail ? `: ${detail}` : ""}`;
-    console.error(`[kimi-vscode] ${line}`);
+    console.error(`[multiai-vscode] ${line}`);
     this.writeLog(line);
   }
 }

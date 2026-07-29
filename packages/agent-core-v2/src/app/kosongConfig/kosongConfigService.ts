@@ -15,7 +15,7 @@
  *    config-originated push), so a persist never echoes back as a sync.
  *  - env-pinned pointers: a registry-originated default-pointer write lands
  *    in the user layer even when an effective overlay pins the section
- *    (`KIMI_MODEL_NAME` → `defaultModel`); the bridge then re-asserts the
+ *    (`MULTIAI_MODEL_NAME` → `defaultModel`); the bridge then re-asserts the
  *    pinned effective value into the registry, so a registry read can never
  *    diverge from the effective config view.
  *
@@ -186,7 +186,7 @@ export class KosongConfigService extends Disposable implements IKosongConfigServ
     return this.enqueue(async () => {
       if (this.config.get<string>(domain) === value) return;
       await this.replaceWithRetry(domain, value);
-      // An effective overlay may pin the section (e.g. `KIMI_MODEL_NAME`
+      // An effective overlay may pin the section (e.g. `MULTIAI_MODEL_NAME`
       // pins `defaultModel` to the reserved env model): the write then lands
       // only in the user layer — the effective value does not move and no
       // change event fires — while the registry keeps the unpinned value.

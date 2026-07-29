@@ -13,7 +13,7 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import type { KimiHarness, SessionSummary } from '@moonshot-ai/kimi-code-sdk';
+import type { MultiAIHarness, SessionSummary } from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS } from './_helpers/harness-stubs';
@@ -51,7 +51,7 @@ interface CapturedListOptions {
 function makeHarness(
   summaries: SessionSummary[],
   captured: CapturedListOptions[] = [],
-): KimiHarness {
+): MultiAIHarness {
   return {
     auth: { status: async () => AUTHED_STATUS },
     listSessions: async (options: { workDir?: string; sessionId?: string } = {}) => {
@@ -61,10 +61,10 @@ function makeHarness(
       }
       return summaries;
     },
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
 }
 
-function openConn(harness: KimiHarness): ClientSideConnection {
+function openConn(harness: MultiAIHarness): ClientSideConnection {
   const { agentStream, clientStream } = makeInMemoryStreamPair();
   new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
   return new ClientSideConnection((_a) => new StubClient(), clientStream);
@@ -89,7 +89,7 @@ describe('AcpServer session/list', () => {
         id: 'sess-a',
         title: 'My first chat',
         workDir: '/repo/a',
-        sessionDir: '/home/.kimi/sessions/sess-a',
+        sessionDir: '/home/.multiai/sessions/sess-a',
         createdAt: updated1Ms - 1_000,
         updatedAt: updated1Ms,
       },
@@ -97,7 +97,7 @@ describe('AcpServer session/list', () => {
         id: 'sess-b',
         title: 'Refactor',
         workDir: '/repo/b',
-        sessionDir: '/home/.kimi/sessions/sess-b',
+        sessionDir: '/home/.multiai/sessions/sess-b',
         createdAt: updated2Ms - 1_000,
         updatedAt: updated2Ms,
       },
@@ -128,14 +128,14 @@ describe('AcpServer session/list', () => {
       {
         id: 'sess-here',
         workDir: '/repo/here',
-        sessionDir: '/home/.kimi/sessions/sess-here',
+        sessionDir: '/home/.multiai/sessions/sess-here',
         createdAt: 0,
         updatedAt: 0,
       },
       {
         id: 'sess-elsewhere',
         workDir: '/repo/elsewhere',
-        sessionDir: '/home/.kimi/sessions/sess-elsewhere',
+        sessionDir: '/home/.multiai/sessions/sess-elsewhere',
         createdAt: 0,
         updatedAt: 0,
       },
@@ -157,7 +157,7 @@ describe('AcpServer session/list', () => {
       {
         id: 'sess-untitled',
         workDir: '/repo/u',
-        sessionDir: '/home/.kimi/sessions/sess-untitled',
+        sessionDir: '/home/.multiai/sessions/sess-untitled',
         createdAt: 0,
         updatedAt: 1,
       },
@@ -165,7 +165,7 @@ describe('AcpServer session/list', () => {
         id: 'sess-empty-title',
         title: '',
         workDir: '/repo/e',
-        sessionDir: '/home/.kimi/sessions/sess-empty-title',
+        sessionDir: '/home/.multiai/sessions/sess-empty-title',
         createdAt: 0,
         updatedAt: 2,
       },

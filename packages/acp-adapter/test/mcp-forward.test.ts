@@ -19,9 +19,9 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import type { KimiHarness, Session } from '@moonshot-ai/kimi-code-sdk';
-import { log } from '@moonshot-ai/kimi-code-sdk';
-import type { McpServerConfig } from '@moonshot-ai/agent-core';
+import type { MultiAIHarness, Session } from '@multiai/sdk';
+import { log } from '@multiai/sdk';
+import type { McpServerConfig } from '@multiai/agent-core';
 
 import { acpMcpServersToConfigs } from '../src/mcp';
 import { AcpServer } from '../src/server';
@@ -60,7 +60,7 @@ function makeHarness(
   sessionId: string,
   captured: CapturedCall[],
 ): {
-  harness: KimiHarness;
+  harness: MultiAIHarness;
 } {
   const fakeSession = {
     id: sessionId,
@@ -70,13 +70,13 @@ function makeHarness(
   } as unknown as Session;
   const harness = {
     auth: {
-      status: async () => ({ providers: [{ providerName: 'kimi', hasToken: true }] }),
+      status: async () => ({ loggedIn: true, provider: 'managed:multiai' }),
     },
     createSession: async (options: CapturedCall['options']) => {
       captured.push({ options });
       return fakeSession;
     },
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
   return { harness };
 }
 

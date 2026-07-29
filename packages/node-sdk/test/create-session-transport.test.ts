@@ -3,9 +3,9 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { Kaos } from '@moonshot-ai/kaos';
-import { createKimiHarness, KimiHarness } from '#/index';
-import type { KimiError } from '#/index';
+import type { Kaos } from '@multiai/kaos';
+import { createMultiAIHarness, MultiAIHarness } from '#/index';
+import type { MultiAIError } from '#/index';
 import type { ResumeSessionInput, ResumedSessionSummary } from '#/types';
 import { SDKRpcClientBase } from '#/rpc';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -89,12 +89,12 @@ class StubRpc extends SDKRpcClientBase {
   }
 }
 
-describe('KimiHarness.createSession transport link', () => {
+describe('MultiAIHarness.createSession transport link', () => {
   it('emits session_started with client attribution when a session is opened', async () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
       telemetry: recordingTelemetry(records),
@@ -112,7 +112,7 @@ describe('KimiHarness.createSession transport link', () => {
         sessionId: session.id,
         properties: {
           client_id: null,
-          client_name: 'kimi-code-cli',
+          client_name: 'multiai-cli',
           client_version: '0.0.0-test',
           ui_mode: 'shell',
           resumed: false,
@@ -134,7 +134,7 @@ describe('KimiHarness.createSession transport link', () => {
         sessionId: session.id,
         properties: {
           client_id: null,
-          client_name: 'kimi-code-cli',
+          client_name: 'multiai-cli',
           client_version: '0.0.0-test',
           ui_mode: 'shell',
           resumed: true,
@@ -154,7 +154,7 @@ describe('KimiHarness.createSession transport link', () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
       telemetry: recordingTelemetry(records),
@@ -172,7 +172,7 @@ describe('KimiHarness.createSession transport link', () => {
         sessionId: session.id,
         properties: {
           client_id: null,
-          client_name: 'kimi-code-cli',
+          client_name: 'multiai-cli',
           client_version: '0.0.0-test',
           ui_mode: 'print',
           resumed: false,
@@ -187,7 +187,7 @@ describe('KimiHarness.createSession transport link', () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
       telemetry: recordingTelemetry(records),
@@ -205,7 +205,7 @@ describe('KimiHarness.createSession transport link', () => {
         sessionId: session.id,
         properties: {
           client_id: null,
-          client_name: 'kimi-code-cli',
+          client_name: 'multiai-cli',
           client_version: '0.0.0-test',
           ui_mode: 'shell',
           resumed: false,
@@ -222,7 +222,7 @@ describe('KimiHarness.createSession transport link', () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
       telemetry: recordingTelemetry(records),
@@ -241,7 +241,7 @@ describe('KimiHarness.createSession transport link', () => {
         sessionId: session.id,
         properties: {
           client_id: null,
-          client_name: 'kimi-code-cli',
+          client_name: 'multiai-cli',
           client_version: '0.0.0-test',
           ui_mode: 'shell',
           resumed: false,
@@ -261,7 +261,7 @@ describe('KimiHarness.createSession transport link', () => {
         sessionId: session.id,
         properties: {
           client_id: null,
-          client_name: 'kimi-code-cli',
+          client_name: 'multiai-cli',
           client_version: '0.0.0-test',
           ui_mode: 'shell',
           resumed: true,
@@ -278,7 +278,7 @@ describe('KimiHarness.createSession transport link', () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
       telemetry: recordingTelemetry(records),
@@ -302,7 +302,7 @@ describe('KimiHarness.createSession transport link', () => {
         sessionId: session.id,
         properties: {
           client_id: null,
-          client_name: 'kimi-code-cli',
+          client_name: 'multiai-cli',
           client_version: '0.0.0-test',
           ui_mode: 'shell',
           resumed: false,
@@ -318,7 +318,7 @@ describe('KimiHarness.createSession transport link', () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
       telemetry: recordingTelemetry(records),
@@ -341,7 +341,7 @@ describe('KimiHarness.createSession transport link', () => {
         sessionId: forked.id,
         properties: {
           client_id: null,
-          client_name: 'kimi-code-cli',
+          client_name: 'multiai-cli',
           client_version: '0.0.0-test',
           ui_mode: 'shell',
           resumed: true,
@@ -361,7 +361,7 @@ describe('KimiHarness.createSession transport link', () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     const records: TelemetryRecord[] = [];
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       homeDir,
       telemetry: recordingTelemetry(records),
     });
@@ -392,7 +392,7 @@ describe('KimiHarness.createSession transport link', () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     await writeTestModelConfig(homeDir);
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
     });
@@ -462,7 +462,7 @@ effort = "medium"
 `,
       'utf-8',
     );
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
     });
@@ -491,7 +491,7 @@ effort = "medium"
   it('does not require provider config or API keys before prompt is implemented', async () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
     });
@@ -508,21 +508,21 @@ effort = "medium"
 
   it('requires a non-empty workDir on createSession', async () => {
     const homeDir = await makeTempDir();
-    const harness = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
+    const harness = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
 
     try {
       await expect(
         harness.createSession({ id: 'ses_missing_workdir' } as never),
       ).rejects.toMatchObject({
-        name: 'KimiError',
+        name: 'MultiAIError',
         code: 'request.work_dir_required',
-      } satisfies Partial<KimiError>);
+      } satisfies Partial<MultiAIError>);
       await expect(
         harness.createSession({ id: 'ses_blank_workdir', workDir: '   ' }),
       ).rejects.toMatchObject({
-        name: 'KimiError',
+        name: 'MultiAIError',
         code: 'request.work_dir_required',
-      } satisfies Partial<KimiError>);
+      } satisfies Partial<MultiAIError>);
     } finally {
       await harness.close();
     }
@@ -534,7 +534,7 @@ effort = "medium"
     // Project-local mcp.json is intentionally ignored, so plant the malformed
     // file under the user home dir where the loader actually reads from.
     await writeFile(join(homeDir, 'mcp.json'), '{not json}', 'utf-8');
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
     });
@@ -543,7 +543,7 @@ effort = "medium"
       await expect(
         harness.createSession({ id: 'ses_bad_mcp_config', workDir }),
       ).rejects.toMatchObject({
-        name: 'KimiError',
+        name: 'MultiAIError',
         code: 'config.invalid',
       });
       expect(await harness.listSessions({ workDir })).toEqual([]);
@@ -557,7 +557,7 @@ effort = "medium"
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     await writeTestModelConfig(homeDir);
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
     });
@@ -590,7 +590,7 @@ effort = "medium"
   it('permanently deletes an active session', async () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
     });
@@ -611,13 +611,13 @@ effort = "medium"
 
   it('returns session.not_found when deleteSession targets a missing id', async () => {
     const homeDir = await makeTempDir();
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+    const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
 
     try {
       await expect(harness.deleteSession('ses_delete_missing')).rejects.toMatchObject({
-        name: 'KimiError',
+        name: 'MultiAIError',
         code: 'session.not_found',
-      } satisfies Partial<KimiError>);
+      } satisfies Partial<MultiAIError>);
     } finally {
       await harness.close();
     }
@@ -626,7 +626,7 @@ effort = "medium"
   it('allows a deleted session id to be created again', async () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
+    const harness = createMultiAIHarness({ identity: TEST_IDENTITY, homeDir });
     const sessionId = 'ses_delete_recreate';
 
     try {
@@ -642,33 +642,10 @@ effort = "medium"
     }
   });
 
-  it('preserves a legacy source directory referenced by session metadata', async () => {
-    const homeDir = await makeTempDir();
-    const workDir = await makeTempDir();
-    const legacySourceDir = await makeTempDir();
-    const markerPath = join(legacySourceDir, 'legacy-marker.txt');
-    await writeFile(markerPath, 'legacy source remains', 'utf-8');
-    const harness = createKimiHarness({ identity: TEST_IDENTITY, homeDir });
-
-    try {
-      const session = await harness.createSession({
-        id: 'ses_delete_migrated',
-        workDir,
-        metadata: { kimi_cli_source_path: legacySourceDir },
-      });
-
-      await harness.deleteSession(session.id);
-
-      await expect(readFile(markerPath, 'utf-8')).resolves.toBe('legacy source remains');
-    } finally {
-      await harness.close();
-    }
-  });
-
   it('applies initial thinking and permission runtime options', async () => {
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
     });
@@ -712,7 +689,7 @@ effort = "medium"
     const homeDir = await makeTempDir();
     const workDir = await makeTempDir();
     await writeFile(join(homeDir, 'config.toml'), 'default_permission_mode = "auto"\n', 'utf-8');
-    const harness = createKimiHarness({
+    const harness = createMultiAIHarness({
       identity: TEST_IDENTITY,
       homeDir,
     });
@@ -750,7 +727,7 @@ effort = "medium"
   it('rebinds an active session when resumeSession receives a new Kaos', async () => {
     const records: TelemetryRecord[] = [];
     const rpc = new StubRpc();
-    const harness = new KimiHarness(rpc, {
+    const harness = new MultiAIHarness(rpc, {
       homeDir: '/tmp/home',
       configPath: '/tmp/config.toml',
       auth: { status: async () => ({ providers: [] }) } as never,
@@ -774,7 +751,7 @@ effort = "medium"
   });
 });
 
-function coreSessionIds(harness: KimiHarness): readonly string[] {
+function coreSessionIds(harness: MultiAIHarness): readonly string[] {
   const core = (
     harness as unknown as {
       readonly rpc: { readonly core: { readonly sessions: ReadonlyMap<string, unknown> } };

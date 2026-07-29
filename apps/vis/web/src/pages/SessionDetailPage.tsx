@@ -69,8 +69,8 @@ export function SessionDetailPage() {
         </div>
         {session.imported && session.importMeta ? (
           <div className="mt-1 flex flex-wrap items-center gap-3 font-mono text-[10.5px] text-fg-3">
-            {session.importMeta.manifest?.kimiCodeVersion ? (
-              <span>kimi-code v{session.importMeta.manifest.kimiCodeVersion}</span>
+            {session.importMeta.manifest?.multiAIVersion ? (
+              <span>MultiAI CLI v{session.importMeta.manifest.multiAIVersion}</span>
             ) : null}
             {session.importMeta.manifest?.os ? <span>· {session.importMeta.manifest.os}</span> : null}
             {session.importMeta.manifest?.exportedAt ? (

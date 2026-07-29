@@ -11,11 +11,11 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'MoonshotAI'
+    if: github.repository_owner == 'SURVERS'
     outputs:
       packages_published: ${{ steps.changesets.outputs.published }}
-      kimi_native_release: ${{ steps.kimi-release.outputs.should_publish }}
-      kimi_release_tag: ${{ steps.kimi-release.outputs.tag }}
+      multiai_native_release: ${{ steps.multiai-release.outputs.should_publish }}
+      multiai_release_tag: ${{ steps.multiai-release.outputs.tag }}
     permissions:
       contents: write
       pull-requests: write
@@ -42,12 +42,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Kimi Code built-in catalog
+      - name: Generate MultiAI CLI built-in catalog
         shell: bash
         run: |
-          CATALOG_FILE="$RUNNER_TEMP/kimi-code-built-in-catalog.json"
-          node apps/kimi-code/scripts/update-catalog.mjs --out "$CATALOG_FILE"
-          echo "KIMI_CODE_BUILT_IN_CATALOG_FILE=$CATALOG_FILE" >> "$GITHUB_ENV"
+          CATALOG_FILE="$RUNNER_TEMP/multiai-cli-built-in-catalog.json"
+          node apps/multiai-cli/scripts/update-catalog.mjs --out "$CATALOG_FILE"
+          echo "MULTIAI_BUILT_IN_CATALOG_FILE=$CATALOG_FILE" >> "$GITHUB_ENV"
 
       - name: Build packages
         run: pnpm build
@@ -64,10 +64,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # NPM_TOKEN is not needed with Trusted Publishing (OIDC)
 
-      - name: Resolve Kimi Code native release
+      - name: Resolve MultiAI CLI native release
         if: steps.changesets.outputs.published == 'true'
-        id: kimi-release
-        run: node apps/kimi-code/scripts/native/resolve-release.mjs
+        id: multiai-release
+        run: node apps/multiai-cli/scripts/native/resolve-release.mjs
         env:
           CHANGESETS_PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
 
@@ -84,10 +84,10 @@ jobs:
   native-artifacts:
     name: Native release artifact
     needs: release
-    if: needs.release.outputs.kimi_native_release == 'true'
+    if: needs.release.outputs.multiai_native_release == 'true'
     uses: ./.github/workflows/_native-build.yml
     with:
-      upload-artifact-prefix: kimi-code-native
+      upload-artifact-prefix: multiai-cli-native
       retention-days: 7
       sign-macos: true
     secrets:
@@ -102,7 +102,7 @@ jobs:
     needs:
       - release
       - native-artifacts
-    if: needs.release.outputs.kimi_native_release == 'true'
+    if: needs.release.outputs.multiai_native_release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -114,17 +114,17 @@ jobs:
       - name: Download native artifacts
         uses: actions/download-artifact@v8
         with:
-          pattern: kimi-code-native-*
+          pattern: multiai-cli-native-*
           path: dist-native-release
           merge-multiple: true
 
       - name: Produce manifest.json
         env:
-          RELEASE_TAG: ${{ needs.release.outputs.kimi_release_tag }}
-        run: node apps/kimi-code/scripts/native/produce-manifest.mjs dist-native-release "$RELEASE_TAG"
+          RELEASE_TAG: ${{ needs.release.outputs.multiai_release_tag }}
+        run: node apps/multiai-cli/scripts/native/produce-manifest.mjs dist-native-release "$RELEASE_TAG"
 
       - name: Upload assets to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.release.outputs.kimi_release_tag }}
+          RELEASE_TAG: ${{ needs.release.outputs.multiai_release_tag }}
         run: gh release upload "$RELEASE_TAG" dist-native-release/* --clobber

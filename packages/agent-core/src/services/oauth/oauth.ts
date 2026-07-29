@@ -19,7 +19,7 @@
  *   3. Same-provider new flow superseding (→ 'cancelled')
  *
  * **Token + config** land via the toolkit's provisioning path: on success,
- * the `managed:kimi-code` provider + models entry are written to
+ * the `managed:multiai` provider + models entry are written to
  * `config.toml`, and the cached token is saved to credentials. Frontend
  * follow-up: hit `GET /v1/auth` to confirm `ready: true`.
  *
@@ -40,7 +40,7 @@
  *
  *                   meanwhile, the background facade.login() polls...
  *
- *           ┌─ resolves with KimiAuthLoginResult  →  flow status = 'authenticated'
+ *           ┌─ resolves with MultiAIAuthLoginResult  →  flow status = 'authenticated'
  *           │                                        +  config.toml provisioned
  *           │                                        +  token saved to credentials
  *           │
@@ -68,14 +68,14 @@ import type {
   OAuthFlowStart,
   OAuthLoginCancelResponse,
   OAuthLogoutResponse,
-} from '@moonshot-ai/protocol';
+} from '@multiai/protocol';
 
 export interface IOAuthService {
   readonly _serviceBrand: undefined;
 
   /**
    * Kick off a device-code flow for `providerName` (default
-   * `'managed:kimi-code'`). Requests the device authorization synchronously
+   * `'managed:multiai'`). Requests the device authorization synchronously
    * (1-2 round-trips to the OAuth host), starts background polling, and
    * returns the verification URLs + flow_id.
    *

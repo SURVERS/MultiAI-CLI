@@ -13,16 +13,16 @@ import {
   type ContentPart,
   type Message,
   type TokenUsage,
-} from '@moonshot-ai/kosong';
+} from '@multiai/kosong';
 import { basename } from 'pathe';
 
 import type { Agent } from '..';
 import {
   ErrorCodes,
-  type KimiErrorPayload,
-  isKimiError,
+  type MultiAIErrorPayload,
+  isMultiAIError,
   makeErrorPayload,
-  toKimiErrorPayload,
+  toMultiAIErrorPayload,
 } from '#/errors';
 import { isAbortError, isMaxStepsExceededError } from '../../loop/errors';
 import {
@@ -828,7 +828,7 @@ export class TurnFlow {
     while (true) {
       signal.throwIfAborted();
       const model = this.agent.config.model;
-      const loopControl = this.agent.kimiConfig?.loopControl;
+      const loopControl = this.agent.multiAIConfig?.loopControl;
       const maxStepsPerTurn = resolveMaxStepsPerTurn(loopControl?.maxStepsPerTurn);
       const maxRetriesPerStep = resolveMaxRetriesPerStep(loopControl?.maxRetriesPerStep);
       let stopForGoalBudget = false;
@@ -901,7 +901,7 @@ export class TurnFlow {
               if (flushedSteeredMessages) return { continue: true };
               signal.throwIfAborted();
 
-              // Print-mode drain: when `kimi -p` ends a turn while background
+              // Print-mode drain: when `multiai -p` ends a turn while background
               // subagents are still running, hold the turn open and idle-wait
               // until they finish. Their completions steer into the buffer
               // during the wait and are flushed afterward, so the model gets
@@ -1005,7 +1005,7 @@ export class TurnFlow {
                   toolName: ctx.toolCall.name,
                   toolInput: toolInputRecord(ctx.args),
                   toolCallId: ctx.toolCall.id,
-                  error: isError === true ? toKimiErrorPayload(toolOutputText(output)) : undefined,
+                  error: isError === true ? toMultiAIErrorPayload(toolOutputText(output)) : undefined,
                   toolOutput: isError === true ? undefined : toolOutputText(output).slice(0, 2000),
                 },
               });
@@ -1027,7 +1027,7 @@ export class TurnFlow {
       } catch (error) {
         const isContextOverflow =
           error instanceof APIContextOverflowError ||
-          (isKimiError(error) && error.code === ErrorCodes.CONTEXT_OVERFLOW);
+          (isMultiAIError(error) && error.code === ErrorCodes.CONTEXT_OVERFLOW);
         const estimatedRequestTokens = isContextOverflow
           ? this.agent.fullCompaction.estimateCurrentRequestTokens()
           : undefined;
@@ -1045,7 +1045,7 @@ export class TurnFlow {
           this.agent.log.warn('turn hit max steps', {
             turnId,
             steps: this.currentStepByTurn.get(turnId) ?? this.currentStep,
-            limit: isKimiError(error) ? error.details?.['maxSteps'] : undefined,
+            limit: isMultiAIError(error) ? error.details?.['maxSteps'] : undefined,
           });
         } else {
           this.agent.log.error('turn failed', { turnId, error });
@@ -1281,12 +1281,12 @@ export class TurnFlow {
   }
 }
 
-const MAX_STEPS_PER_TURN_ENV = 'KIMI_LOOP_MAX_STEPS_PER_TURN';
-const MAX_RETRIES_PER_STEP_ENV = 'KIMI_LOOP_MAX_RETRIES_PER_STEP';
+const MAX_STEPS_PER_TURN_ENV = 'MULTIAI_LOOP_MAX_STEPS_PER_TURN';
+const MAX_RETRIES_PER_STEP_ENV = 'MULTIAI_LOOP_MAX_RETRIES_PER_STEP';
 
 /**
  * Resolve the effective per-turn step cap. Precedence:
- * `KIMI_LOOP_MAX_STEPS_PER_TURN` (non-negative integer) → config
+ * `MULTIAI_LOOP_MAX_STEPS_PER_TURN` (non-negative integer) → config
  * (`loop_control.max_steps_per_turn`) → `undefined` (no cap). `0` means no
  * cap, same as the config field; an invalid env value is ignored.
  */
@@ -1296,7 +1296,7 @@ export function resolveMaxStepsPerTurn(configValue?: number): number | undefined
 
 /**
  * Resolve the effective per-step retry budget. Precedence:
- * `KIMI_LOOP_MAX_RETRIES_PER_STEP` (non-negative integer) → config
+ * `MULTIAI_LOOP_MAX_RETRIES_PER_STEP` (non-negative integer) → config
  * (`loop_control.max_retries_per_step`) → `undefined` (the loop's built-in
  * default). An invalid env value is ignored.
  */
@@ -1439,8 +1439,8 @@ function mapLoopEvent(event: LoopEvent, turnId: number): AgentEvent | undefined 
   }
 }
 
-function summarizeTurnError(error: unknown, turnId: number): KimiErrorPayload {
-  const payload = toKimiErrorPayload(error);
+function summarizeTurnError(error: unknown, turnId: number): MultiAIErrorPayload {
+  const payload = toMultiAIErrorPayload(error);
   const details = { ...payload.details, turnId };
 
   // Substitute a friendlier TUI-aware message for model-not-configured.
@@ -1453,7 +1453,7 @@ function summarizeTurnError(error: unknown, turnId: number): KimiErrorPayload {
   return { ...payload, details };
 }
 
-function providerFilteredPayload(turnId: number): KimiErrorPayload {
+function providerFilteredPayload(turnId: number): MultiAIErrorPayload {
   return {
     code: ErrorCodes.PROVIDER_FILTERED,
     message: 'Provider safety policy blocked the response.',
@@ -1543,7 +1543,7 @@ interface ApiErrorClassification {
   readonly statusCode?: number;
 }
 
-function classifyApiError(error: unknown, summary: KimiErrorPayload): ApiErrorClassification {
+function classifyApiError(error: unknown, summary: MultiAIErrorPayload): ApiErrorClassification {
   // Quota/balance exhaustion shares status 429 with rate limits but fails
   // fast instead of retrying — keep the two apart in telemetry.
   if (error instanceof APIProviderQuotaExhaustedError) {
@@ -1582,16 +1582,16 @@ function apiStatusCode(error: unknown): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
-function summaryStatusCode(summary: KimiErrorPayload): number | undefined {
+function summaryStatusCode(summary: MultiAIErrorPayload): number | undefined {
   const statusCode = summary.details?.['statusCode'];
   return typeof statusCode === 'number' ? statusCode : undefined;
 }
 
-function isApiConnectionError(error: unknown, summary: KimiErrorPayload): boolean {
+function isApiConnectionError(error: unknown, summary: MultiAIErrorPayload): boolean {
   return error instanceof APIConnectionError || summary.name === 'APIConnectionError';
 }
 
-function isApiTimeoutError(error: unknown, summary: KimiErrorPayload): boolean {
+function isApiTimeoutError(error: unknown, summary: MultiAIErrorPayload): boolean {
   return (
     error instanceof APITimeoutError ||
     summary.name === 'APITimeoutError' ||
@@ -1599,7 +1599,7 @@ function isApiTimeoutError(error: unknown, summary: KimiErrorPayload): boolean {
   );
 }
 
-function isApiEmptyResponseError(error: unknown, summary: KimiErrorPayload): boolean {
+function isApiEmptyResponseError(error: unknown, summary: MultiAIErrorPayload): boolean {
   return error instanceof APIEmptyResponseError || summary.name === 'APIEmptyResponseError';
 }
 

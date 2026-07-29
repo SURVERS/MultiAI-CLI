@@ -1,6 +1,6 @@
 # Hooks
 
-Hooks are an automatic trigger mechanism: you tell Kimi Code CLI in advance "whenever X happens, run this script." The script runs on your local machine, and you can put any logic inside it. Typical use cases:
+Hooks are an automatic trigger mechanism: you tell MultiAI CLI in advance "whenever X happens, run this script." The script runs on your local machine, and you can put any logic inside it. Typical use cases:
 
 - **Security interception**: Before the Agent executes a shell command, check whether it contains dangerous operations (such as `rm -rf`) and block execution if so
 - **Desktop notifications**: When a background task completes, pop up a system notification to bring you back to review the results
@@ -28,18 +28,18 @@ Precisely because of fail-open, Hooks are suitable for alerts and lightweight in
 The following hook flashes a notification in the terminal title bar each time a background task completes (macOS requires `terminal-notifier` to be installed):
 
 ```toml
-# Written in ~/.kimi-code/config.toml
+# Written in ~/.multiai/config.toml
 [[hooks]]
 event = "Notification"           # Trigger: when a background task status changes
 matcher = "task\\.completed"     # Only care about "completed" notifications
-command = "terminal-notifier -title Kimi -message 'Task done'"
+command = "terminal-notifier -title MultiAI -message 'Task done'"
 ```
 
 Save the config, start a new session, and a notification will appear the next time a background task completes.
 
 ## Configuration
 
-All hook rules are written in the `[[hooks]]` array in `~/.kimi-code/config.toml`, where each entry is one rule:
+All hook rules are written in the `[[hooks]]` array in `~/.multiai/config.toml`, where each entry is one rule:
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -123,7 +123,7 @@ The following hook checks the command content before the Agent calls the `Bash` 
 [[hooks]]
 event = "PreToolUse"
 matcher = "Bash"
-command = "node ~/.kimi-code/hooks/block-dangerous-bash.mjs"
+command = "node ~/.multiai/hooks/block-dangerous-bash.mjs"
 timeout = 5
 ```
 
@@ -145,7 +145,7 @@ process.stdin.on('end', () => {
 });
 ```
 
-After blocking, Kimi Code CLI writes the blocking reason back into the context, and the model can use this to choose a safer alternative.
+After blocking, MultiAI CLI writes the blocking reason back into the context, and the model can use this to choose a safer alternative.
 
 ::: warning Note
 This example only demonstrates the blocking mechanism — it is not a production-grade security parser. Real scenarios are better served by whitelists, or a dedicated shell parser to handle quoting, variable expansion, and multi-command sequences.

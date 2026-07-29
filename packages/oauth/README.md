@@ -1,8 +1,8 @@
-# @moonshot-ai/kimi-code-oauth
+# @multiai/oauth
 
-OAuth toolkit for Kimi Code managed authentication.
+OAuth toolkit for MultiAI CLI managed authentication.
 
-Part of the [Kimi Code](https://github.com/MoonshotAI/kimi-code) monorepo.
+Part of the [MultiAI CLI](https://github.com/SURVERS/MultiAI-CLI) monorepo.
 
 See the main repository for documentation, issues, and contribution guidelines.
 

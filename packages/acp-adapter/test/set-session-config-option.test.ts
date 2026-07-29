@@ -16,10 +16,10 @@ import {
 import type {
   ApprovalHandler,
   Event,
-  KimiHarness,
+  MultiAIHarness,
   PermissionMode,
   Session,
-} from '@moonshot-ai/kimi-code-sdk';
+} from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS, makeModelsMap } from './_helpers/harness-stubs';
@@ -92,7 +92,7 @@ function makeFakeSession(sessionId: string, statusEffort?: string): FakeSessionH
   return { session, planModeCalls, setPermissionCalls, setModelCalls, setThinkingCalls };
 }
 
-function makeHarness(handle: FakeSessionHandle): KimiHarness {
+function makeHarness(handle: FakeSessionHandle): MultiAIHarness {
   return {
     auth: { status: async () => AUTHED_STATUS },
     createSession: async () => handle.session,
@@ -104,11 +104,11 @@ function makeHarness(handle: FakeSessionHandle): KimiHarness {
         { id: 'kimi-v2', name: 'Kimi v2', thinkingSupported: false },
       ]),
     }),
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
 }
 
 async function openSession(
-  harness: KimiHarness,
+  harness: MultiAIHarness,
 ): Promise<{ client: ClientSideConnection; capturing: CapturingClient; sessionId: string }> {
   const { agentStream, clientStream } = makeInMemoryStreamPair();
   new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -244,7 +244,7 @@ describe('AcpServer session/set_config_option', () => {
           { id: 'kimi-deep', name: 'Kimi Deep', thinkingSupported: true, alwaysThinking: true },
         ]),
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
     const { client, capturing, sessionId } = await openSession(harness);
     capturing.notifications.length = 0;
 
@@ -288,7 +288,7 @@ describe('AcpServer session/set_config_option', () => {
           },
         ]),
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
     const { client, capturing, sessionId } = await openSession(harness);
     capturing.notifications.length = 0;
 
@@ -339,7 +339,7 @@ describe('AcpServer session/set_config_option', () => {
           },
         ]),
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
     const { client, capturing, sessionId } = await openSession(harness);
     capturing.notifications.length = 0;
 
@@ -372,7 +372,7 @@ describe('AcpServer session/set_config_option', () => {
           },
         ]),
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
     const { client, capturing, sessionId } = await openSession(harness);
     capturing.notifications.length = 0;
 
@@ -409,7 +409,7 @@ describe('AcpServer session/set_config_option', () => {
           },
         ]),
       }),
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
     const { client, capturing, sessionId } = await openSession(harness);
     capturing.notifications.length = 0;
 

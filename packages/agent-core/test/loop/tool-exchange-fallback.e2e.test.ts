@@ -17,7 +17,7 @@
  * Any other error propagates unchanged and the builders are never consulted.
  */
 
-import { APIRequestTooLargeError, APIStatusError, type Message } from '@moonshot-ai/kosong';
+import { APIRequestTooLargeError, APIStatusError, type Message } from '@multiai/kosong';
 import { describe, expect, it } from 'vitest';
 
 import {

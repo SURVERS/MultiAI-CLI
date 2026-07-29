@@ -1,53 +1,37 @@
 /**
- * `auth` domain (cross-cutting) — `IOAuthService` / `IAuthSummaryService`
- * implementation.
- *
- * Owns the device-code OAuth flows and the auth readiness view; reads and
- * writes provider configuration through `provider`, refreshes the managed
- * OAuth provider's server-side model configuration through `config`, publishes
- * model-catalog changes through `event`, reports through `telemetry`,
- * logs through `log`, and delegates
- * the device-code protocol, token storage, and token refresh to `IOAuthToolkit`
- * (provided by `OAuthToolkitService` over `@moonshot-ai/kimi-code-oauth`,
- * which locates token storage through `bootstrap`). Bound at App scope.
+ * `auth` domain — MultiAI OAuth and auth-readiness implementation.
  */
 
 import { randomUUID } from 'node:crypto';
 
 import {
-  DeviceCodeTimeoutError,
-  KIMI_CODE_PLATFORM_ID,
-  KIMI_CODE_PROVIDER_NAME,
-  KimiOAuthToolkit,
-  kimiCodeBaseUrl,
-  OAuthError,
-  applyManagedKimiCodeConfig,
-  clearManagedKimiCodeConfig,
-  fetchManagedKimiCodeModels,
-  resolveKimiCodeLoginAuth,
-  resolveKimiCodeOAuthRef,
-  resolveKimiCodeRuntimeAuth,
-  type AuthManagedUsageResult,
-  type BearerTokenProvider,
-  type DeviceAuthorization,
-  type ManagedKimiConfigShape,
-} from '@moonshot-ai/kimi-code-oauth';
-import type {
-  OAuthFlowSnapshot,
-  OAuthFlowStart,
-  OAuthFlowStartPending,
-  OAuthFlowStatus,
-  OAuthLoginCancelResponse,
-  OAuthLogoutResponse,
-  RefreshOAuthProviderModelsResponse,
-} from './oauthProtocol';
+  MULTIAI_API_BASE_URL,
+  MULTIAI_OAUTH_ISSUER,
+  MULTIAI_OAUTH_KEY,
+  MULTIAI_PROVIDER_NAME,
+  MultiAIAccountUnavailableError,
+  MultiAIOAuthError,
+  MultiAIOAuthLoginRequiredError,
+  MultiAIOAuthToolkit,
+  applyManagedMultiAIConfig,
+  clearManagedMultiAIConfig,
+  type ManagedMultiAIConfigShape,
+  type MultiAIAuthorization,
+  type MultiAIBearerTokenProvider,
+} from '@multiai/oauth';
 
 import { Disposable } from '#/_base/di/lifecycle';
 import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/di/scope';
+import { ILogService } from '#/_base/log/log';
 import { IBootstrapService } from '#/app/bootstrap/bootstrap';
 import { IConfigService } from '#/app/config/config';
 import { IEventService } from '#/app/event/event';
-import { ILogService } from '#/_base/log/log';
+import {
+  DEFAULT_MODEL_SECTION,
+  MODELS_SECTION,
+  PROVIDERS_SECTION,
+  THINKING_SECTION,
+} from '#/app/kosongConfig/configSection';
 import {
   deriveProviderId,
   effectiveModelConfig,
@@ -56,19 +40,11 @@ import {
 } from '#/kosong/model/modelAuth';
 import { IModelService, type ModelRecord } from '#/kosong/model/model';
 import {
-  DEFAULT_MODEL_SECTION,
-  MODELS_SECTION,
-  PROVIDERS_SECTION,
-  THINKING_SECTION,
-} from '#/app/kosongConfig/configSection';
-import {
   IProviderService,
   type OAuthRef,
   type ProviderConfig,
   type ProvidersChangedEvent,
 } from '#/kosong/provider/provider';
-import { isOAuthCatalogVendor } from '#/kosong/provider/providerDefinition';
-import { ITelemetryService } from '#/app/telemetry/telemetry';
 
 import {
   AuthModelNotResolvedError,
@@ -78,148 +54,112 @@ import {
   IAuthSummaryService,
   IOAuthService,
   IOAuthToolkit,
+  type OAuthLoginRequest,
 } from './auth';
+import type {
+  OAuthFlowSnapshot,
+  OAuthFlowStart,
+  OAuthFlowStatus,
+  OAuthLoginCancelResponse,
+  OAuthLogoutResponse,
+  RefreshOAuthProviderModelsResponse,
+} from './oauthProtocol';
 
+const FLOW_TIMEOUT_MS = 10 * 60 * 1000;
 const TERMINAL_RETENTION_MS = 5 * 60 * 1000;
-const DEFAULT_DEVICE_EXPIRES_IN_SEC = 15 * 60;
-const SERVICES_SECTION = 'services';
 
 interface FlowState {
   readonly flowId: string;
   readonly provider: string;
+  readonly method: 'browser' | 'device';
+  readonly persistence: 'keyring' | 'session';
   readonly controller: AbortController;
-  readonly oauthRef: OAuthRef | undefined;
-  readonly loginBaseUrl: string | undefined;
-  device: DeviceAuthorization | undefined;
+  authorization: MultiAIAuthorization | undefined;
   status: OAuthFlowStatus;
   expiresAt: number;
-  gcTimer: ReturnType<typeof setTimeout> | undefined;
   errorMessage: string | undefined;
   resolvedAt: string | undefined;
+  gcTimer: ReturnType<typeof setTimeout> | undefined;
 }
 
 export class OAuthService extends Disposable implements IOAuthService {
   declare readonly _serviceBrand: undefined;
-  private readonly flows = new Map<string, FlowState>();
 
+  private readonly flows = new Map<string, FlowState>();
   private refreshChain: Promise<unknown> = Promise.resolve();
 
   constructor(
     @IOAuthToolkit private readonly toolkit: IOAuthToolkit,
-    @IProviderService private readonly providerService: IProviderService,
+    @IProviderService private readonly providers: IProviderService,
     @IConfigService private readonly config: IConfigService,
-    @ITelemetryService private readonly telemetry: ITelemetryService,
     @ILogService private readonly log: ILogService,
     @IEventService private readonly events: IEventService,
   ) {
     super();
-    this._register(providerService.onDidChangeProviders((event) => {
-      this.invalidateFlows(event);
-    }));
+    this._register(this.providers.onDidChangeProviders((event) => this.invalidateFlows(event)));
   }
 
-  async startLogin(provider = KIMI_CODE_PROVIDER_NAME): Promise<OAuthFlowStart> {
-    this.log.info('oauth startLogin: enter', { provider });
-    const loginAuth = this.resolveLoginAuth(provider);
-    this.log.info('oauth startLogin: resolved login auth', {
-      provider,
-      hasOAuthRef: loginAuth.oauthRef !== undefined,
-      hasBaseUrl: loginAuth.baseUrl !== undefined,
-      hasOAuthHost: loginAuth.oauthHost !== undefined,
-    });
+  async startLogin(request: OAuthLoginRequest | string): Promise<OAuthFlowStart> {
+    const normalized: OAuthLoginRequest =
+      typeof request === 'string'
+        ? { provider: request, method: 'device', persistence: 'keyring' }
+        : request;
+    const provider = normalized.provider ?? MULTIAI_PROVIDER_NAME;
+    if (provider !== MULTIAI_PROVIDER_NAME) {
+      throw new MultiAIOAuthError(
+        'unsupported_provider',
+        `OAuth login is not supported for provider "${provider}".`,
+      );
+    }
     this.abortExisting(provider);
-
     const state: FlowState = {
       flowId: `oauth_${randomUUID()}`,
       provider,
+      method: normalized.method,
+      persistence: normalized.persistence,
       controller: new AbortController(),
-      oauthRef: loginAuth.oauthRef,
-      loginBaseUrl: loginAuth.baseUrl,
-      device: undefined,
+      authorization: undefined,
       status: 'pending',
-      expiresAt: Date.now() + DEFAULT_DEVICE_EXPIRES_IN_SEC * 1000,
-      gcTimer: undefined,
+      expiresAt: Date.now() + FLOW_TIMEOUT_MS,
       errorMessage: undefined,
       resolvedAt: undefined,
+      gcTimer: undefined,
     };
     this.flows.set(provider, state);
 
-    let resolveDevice!: (auth: DeviceAuthorization) => void;
-    let rejectDevice!: (error: unknown) => void;
-    const deviceReady = new Promise<DeviceAuthorization>((resolve, reject) => {
-      resolveDevice = resolve;
-      rejectDevice = reject;
+    let resolveAuthorization!: (authorization: MultiAIAuthorization) => void;
+    let rejectAuthorization!: (error: unknown) => void;
+    const authorizationReady = new Promise<MultiAIAuthorization>((resolve, reject) => {
+      resolveAuthorization = resolve;
+      rejectAuthorization = reject;
     });
-
-    this.log.info('oauth startLogin: calling toolkit.login', { provider });
-    const loginPromise = this.toolkit.login(provider, {
+    const login = this.toolkit.login({
+      method: normalized.method,
+      persistence: normalized.persistence,
       signal: state.controller.signal,
-      oauthRef: loginAuth.oauthRef,
-      baseUrl: loginAuth.baseUrl,
-      oauthHost: loginAuth.oauthHost,
-      onDeviceCode: (auth) => {
-        this.log.info('oauth startLogin: onDeviceCode fired', { provider });
-        state.device = auth;
-        if (auth.expiresIn !== null) {
-          state.expiresAt = Date.now() + auth.expiresIn * 1000;
-        }
-        resolveDevice(auth);
+      onAuthorization: (authorization) => {
+        state.authorization = authorization;
+        state.expiresAt = Date.now() + authorization.expiresIn * 1000;
+        resolveAuthorization(authorization);
       },
     });
-    const fastPath: Promise<OAuthFlowStart | undefined> = loginPromise.then(async () => {
-      if (state.device !== undefined) return undefined;
-      this.log.info('oauth startLogin: toolkit resolved without device code (already authenticated)', {
-        provider,
-      });
-      await this.completeAlreadyAuthenticatedLogin(state);
-      return {
-        flow_id: state.flowId,
-        provider: state.provider,
-        status: 'authenticated',
-      };
-    });
-
-    loginPromise.then(
-      () => {
-        this.log.info('oauth startLogin: toolkit.login resolved', {
-          provider,
-          deviceArrived: state.device !== undefined,
-        });
-        if (state.device !== undefined) {
-          this.handleSuccess(state);
-        }
-      },
-      (error) => {
-        this.log.warn('oauth startLogin: toolkit.login rejected', {
-          provider,
-          error: error instanceof Error ? error.message : String(error),
-        });
+    login.then(
+      () => void this.finalizeLogin(state),
+      (error: unknown) => {
         this.handleFailure(state, error);
-        rejectDevice(error);
+        rejectAuthorization(error);
       },
     );
-
-    this.log.info('oauth startLogin: awaiting device flow start', { provider });
-    const winner = await Promise.race([
-      deviceReady.then((device) => ({ kind: 'device' as const, device })),
-      fastPath.then((result) => ({ kind: 'fast' as const, result })),
-    ]);
-    if (winner.kind === 'fast' && winner.result !== undefined) {
-      this.log.info('oauth startLogin: fast path returned authenticated', { provider });
-      return winner.result;
-    }
-    const device = winner.kind === 'device' ? winner.device : await deviceReady;
-    this.log.info('oauth startLogin: deviceReady resolved', { provider });
-    return this.toFlowStart(state, device);
+    return this.toFlowStart(state, await authorizationReady);
   }
 
-  getFlow(provider = KIMI_CODE_PROVIDER_NAME): OAuthFlowSnapshot | undefined {
+  getFlow(provider = MULTIAI_PROVIDER_NAME): OAuthFlowSnapshot | undefined {
     const state = this.flows.get(provider);
-    if (state === undefined || state.device === undefined) return undefined;
-    return this.toSnapshot(state, state.device);
+    if (state?.authorization === undefined) return undefined;
+    return this.toSnapshot(state, state.authorization);
   }
 
-  cancelLogin(provider = KIMI_CODE_PROVIDER_NAME): Promise<OAuthLoginCancelResponse> {
+  cancelLogin(provider = MULTIAI_PROVIDER_NAME): Promise<OAuthLoginCancelResponse> {
     const state = this.flows.get(provider);
     if (state === undefined || state.status !== 'pending') {
       return Promise.resolve({ cancelled: false, status: state?.status ?? 'cancelled' });
@@ -229,54 +169,84 @@ export class OAuthService extends Disposable implements IOAuthService {
     return Promise.resolve({ cancelled: true, status: 'cancelled' });
   }
 
-  async logout(provider = KIMI_CODE_PROVIDER_NAME): Promise<OAuthLogoutResponse> {
-    const oauthRef =
-      provider === KIMI_CODE_PROVIDER_NAME
-        ? this.resolveRuntimeOAuthRef(provider)
-        : this.readOAuthRefOptional(provider);
-    const result = await this.toolkit.logout(provider, oauthRef);
+  async logout(provider = MULTIAI_PROVIDER_NAME): Promise<OAuthLogoutResponse> {
+    await this.toolkit.logout(this.oauthRef(provider));
     this.abortExisting(provider);
-    await this.deprovisionProvider(provider);
-    return { logged_out: true, provider: result.providerName };
+    await this.deprovision();
+    return { logged_out: true, provider };
   }
 
-  async status(provider = KIMI_CODE_PROVIDER_NAME): Promise<AuthStatus> {
-    this.log.info('oauth status: enter', { provider });
-    const oauthRef = this.readOAuthRefOptional(provider);
+  async status(provider = MULTIAI_PROVIDER_NAME): Promise<AuthStatus> {
+    if (provider !== MULTIAI_PROVIDER_NAME) return { loggedIn: false };
     try {
-      const token = await this.getCachedAccessToken(provider, oauthRef);
-      this.log.info('oauth status: got token', { provider, hasToken: token !== undefined });
-      return token === undefined ? { loggedIn: false } : { loggedIn: true, provider };
+      const status = await this.toolkit.status();
+      return {
+        loggedIn: status.loggedIn,
+        provider: status.loggedIn ? provider : undefined,
+        identity: status.identity,
+      };
     } catch (error) {
-      this.log.warn('oauth status: getCachedAccessToken threw', {
-        provider,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      if (error instanceof MultiAIOAuthLoginRequiredError) return { loggedIn: false };
       throw error;
     }
   }
 
-  resolveTokenProvider(provider: string, oauthRef?: OAuthRef): BearerTokenProvider | undefined {
-    return this.toolkit.tokenProvider(provider, this.resolveRuntimeOAuthRef(provider, oauthRef));
+  resolveTokenProvider(
+    provider: string,
+    oauthRef?: OAuthRef,
+  ): MultiAIBearerTokenProvider | undefined {
+    if (provider !== MULTIAI_PROVIDER_NAME) return undefined;
+    const tokenProvider = this.toolkit.tokenProvider(toMultiAITokenRef(oauthRef));
+    return {
+      getAccessToken: async (options) => {
+        try {
+          return await tokenProvider.getAccessToken(options);
+        } catch (error) {
+          if (
+            error instanceof MultiAIOAuthLoginRequiredError ||
+            error instanceof MultiAIAccountUnavailableError
+          ) {
+            await this.deprovision();
+          }
+          throw error;
+        }
+      },
+    };
   }
 
-  getCachedAccessToken(provider: string, oauthRef?: OAuthRef): Promise<string | undefined> {
-    return this.toolkit.getCachedAccessToken(provider, this.resolveRuntimeOAuthRef(provider, oauthRef));
+  async getCachedAccessToken(provider: string, oauthRef?: OAuthRef): Promise<string | undefined> {
+    if (provider !== MULTIAI_PROVIDER_NAME) return undefined;
+    const cached = this.toolkit.getCachedAccessToken();
+    if (cached !== undefined) return cached;
+    try {
+      return await this.toolkit.tokenProvider(toMultiAITokenRef(oauthRef)).getAccessToken();
+    } catch (error) {
+      if (
+        error instanceof MultiAIOAuthLoginRequiredError ||
+        error instanceof MultiAIAccountUnavailableError
+      ) {
+        await this.deprovision();
+        return undefined;
+      }
+      throw error;
+    }
   }
 
-  getManagedUsage(provider = KIMI_CODE_PROVIDER_NAME): Promise<AuthManagedUsageResult> {
-    // Same resolution path as the managed model refresh: env-aware base url +
-    // oauth ref, so a self-hosted/proxied login environment reports its own
-    // usage endpoint. The toolkit handles token freshness and error mapping.
-    const configured = this.providerService.get(provider);
-    const auth = resolveKimiCodeRuntimeAuth({
-      configuredBaseUrl: configured?.baseUrl,
-      configuredOAuthRef: configured?.oauth,
-    });
-    return this.toolkit.getManagedUsage(provider, {
-      oauthRef: auth.oauthRef,
-      baseUrl: auth.baseUrl,
-    });
+  async getAccount(provider = MULTIAI_PROVIDER_NAME) {
+    if (provider !== MULTIAI_PROVIDER_NAME) {
+      throw new MultiAIOAuthLoginRequiredError();
+    }
+    try {
+      return await this.toolkit.getAccountSnapshot();
+    } catch (error) {
+      if (
+        error instanceof MultiAIOAuthLoginRequiredError ||
+        error instanceof MultiAIAccountUnavailableError
+      ) {
+        await this.deprovision();
+      }
+      throw error;
+    }
   }
 
   refreshOAuthProviderModels(): Promise<RefreshOAuthProviderModelsResponse> {
@@ -289,297 +259,212 @@ export class OAuthService extends Disposable implements IOAuthService {
   }
 
   private async doRefreshOAuthProviderModels(): Promise<RefreshOAuthProviderModelsResponse> {
-    const changed: RefreshOAuthProviderModelsResponse['changed'] = [];
-    const unchanged: string[] = [];
-    const failed: RefreshOAuthProviderModelsResponse['failed'] = [];
-
     await this.config.reload();
-    const current = this.readUserConfigShape();
-    const provider = current.providers[KIMI_CODE_PROVIDER_NAME];
-    if (!isOAuthCatalogProvider(provider)) {
-      return { changed, unchanged, failed };
+    const current = this.readConfig();
+    if (current.providers[MULTIAI_PROVIDER_NAME] === undefined) {
+      return { changed: [], unchanged: [], failed: [] };
     }
-
     try {
-      const auth = resolveKimiCodeRuntimeAuth({
-        configuredBaseUrl: provider.baseUrl,
-        configuredOAuthRef: provider.oauth,
-      });
-      const tokenProvider = this.resolveTokenProvider(KIMI_CODE_PROVIDER_NAME, auth.oauthRef);
-      if (tokenProvider === undefined) {
-        throw new Error('OAuth token provider is not configured.');
-      }
-      const token = await tokenProvider.getAccessToken();
-      const models = await fetchManagedKimiCodeModels({
-        accessToken: token,
-        baseUrl: auth.baseUrl,
-      });
-      if (models.length === 0) {
-        return { changed, unchanged, failed };
-      }
-
+      const before = providerModelIds(current);
+      const models = await this.toolkit.getModels();
       const next = structuredClone(current);
-      applyManagedKimiCodeConfig(next, {
-        models,
-        baseUrl: auth.baseUrl,
-        oauthKey: auth.oauthRef.key,
-        oauthHost: auth.oauthRef.oauthHost,
+      applyManagedMultiAIConfig(next, models, {
         preserveDefaultModel: true,
+        baseUrl: MULTIAI_API_BASE_URL,
+        issuer: MULTIAI_OAUTH_ISSUER,
       });
-      const refreshedAliasKeys = providerRefreshAliasKeys(
-        current,
-        next,
-        KIMI_CODE_PROVIDER_NAME,
-        `${KIMI_CODE_PLATFORM_ID}/`,
-      );
-      restoreProviderAliases(
-        next,
-        preserveUserProviderAliases(current, KIMI_CODE_PROVIDER_NAME, refreshedAliasKeys),
-      );
-      restoreDefaultSelection(next, current.defaultModel, current.thinking?.enabled);
-      clampDanglingDefault(next);
-
-      if (providerModelsEqual(current, next, KIMI_CODE_PROVIDER_NAME, refreshedAliasKeys)) {
-        unchanged.push(KIMI_CODE_PROVIDER_NAME);
-      } else {
-        const { added, removed } = computeChanges(
-          collectModelIdsForAliases(current, refreshedAliasKeys),
-          collectModelIdsForAliases(next, refreshedAliasKeys),
-        );
-        await this.config.replace(PROVIDERS_SECTION, next.providers);
-        await this.config.replace(MODELS_SECTION, next.models ?? {});
-        // defaultModel/thinking hold the final computed values — write them
-        // with replace (set-undefined cannot delete; set-object would merge
-        // stale keys into the previous thinking config).
-        await this.config.replace(DEFAULT_MODEL_SECTION, next.defaultModel);
-        await this.config.replace(THINKING_SECTION, next.thinking);
-        changed.push({
-          provider_id: KIMI_CODE_PROVIDER_NAME,
-          provider_name: 'Kimi Code',
-          added,
-          removed,
-        });
+      const after = providerModelIds(next);
+      if (setsEqual(before, after)) {
+        return { changed: [], unchanged: [MULTIAI_PROVIDER_NAME], failed: [] };
       }
-    } catch (error) {
-      failed.push({
-        provider: KIMI_CODE_PROVIDER_NAME,
-        reason: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    const result = { changed, unchanged, failed };
-    if (result.changed.length > 0) {
+      await this.writeConfig(next);
+      const result: RefreshOAuthProviderModelsResponse = {
+        changed: [
+          {
+            provider_id: MULTIAI_PROVIDER_NAME,
+            provider_name: 'MultiAI',
+            added: [...after].filter((id) => !before.has(id)).length,
+            removed: [...before].filter((id) => !after.has(id)).length,
+          },
+        ],
+        unchanged: [],
+        failed: [],
+      };
       this.events.publish({ type: 'event.model_catalog.changed', payload: result });
+      return result;
+    } catch (error) {
+      if (
+        error instanceof MultiAIOAuthLoginRequiredError ||
+        error instanceof MultiAIAccountUnavailableError
+      ) {
+        await this.deprovision();
+      }
+      return {
+        changed: [],
+        unchanged: [],
+        failed: [
+          {
+            provider: MULTIAI_PROVIDER_NAME,
+            reason: error instanceof Error ? error.message : String(error),
+          },
+        ],
+      };
     }
-    return result;
   }
 
-  private readUserConfigShape(): ManagedKimiConfigShape {
+  private async finalizeLogin(state: FlowState): Promise<void> {
+    if (state.status !== 'pending') return;
+    try {
+      const models = await this.toolkit.getModels();
+      const next = structuredClone(this.readConfig());
+      applyManagedMultiAIConfig(next, models, {
+        preserveDefaultModel: true,
+        baseUrl: MULTIAI_API_BASE_URL,
+        issuer: MULTIAI_OAUTH_ISSUER,
+      });
+      await this.writeConfig(next);
+      if (state.status === 'pending') this.setTerminal(state, 'authenticated');
+    } catch (error) {
+      this.handleFailure(state, error);
+    }
+  }
+
+  private async deprovision(): Promise<void> {
+    const next = structuredClone(this.readConfig());
+    const cleanup = clearManagedMultiAIConfig(next);
+    if (
+      !cleanup.removedProvider &&
+      cleanup.removedModels.length === 0 &&
+      !cleanup.defaultModelCleared
+    ) {
+      return;
+    }
+    await this.writeConfig(next);
+  }
+
+  private readConfig(): ManagedMultiAIConfigShape {
     const providers =
       this.config.inspect<Record<string, ProviderConfig>>(PROVIDERS_SECTION).userValue ?? {};
-    const models = this.config.inspect<Record<string, ModelRecord>>(MODELS_SECTION).userValue ?? {};
-    const services =
-      this.config.inspect<ManagedKimiConfigShape['services']>(SERVICES_SECTION).userValue;
-    const defaultModel = this.config.inspect<string>(DEFAULT_MODEL_SECTION).userValue;
-    const thinking =
-      this.config.inspect<ManagedKimiConfigShape['thinking']>(THINKING_SECTION).userValue;
+    const models =
+      this.config.inspect<Record<string, ModelRecord>>(MODELS_SECTION).userValue ?? {};
     return {
-      providers: { ...providers } as ManagedKimiConfigShape['providers'],
-      models: { ...models } as ManagedKimiConfigShape['models'],
-      services: services === undefined ? undefined : { ...services },
-      defaultModel,
-      thinking: thinking === undefined ? undefined : { ...thinking },
+      providers: { ...providers } as ManagedMultiAIConfigShape['providers'],
+      models: { ...models } as ManagedMultiAIConfigShape['models'],
+      defaultModel: this.config.inspect<string>(DEFAULT_MODEL_SECTION).userValue,
+      thinking:
+        this.config.inspect<Record<string, unknown>>(THINKING_SECTION).userValue,
     };
   }
 
-  private resolveLoginAuth(provider: string): {
-    readonly oauthRef: OAuthRef | undefined;
-    readonly baseUrl: string | undefined;
-    readonly oauthHost: string | undefined;
-  } {
-    const config = this.providerService.get(provider);
-    if (provider !== KIMI_CODE_PROVIDER_NAME) {
-      return { oauthRef: config?.oauth, baseUrl: undefined, oauthHost: undefined };
-    }
-    const loginAuth = resolveKimiCodeLoginAuth({
-      configuredBaseUrl: config?.baseUrl,
-      configuredOAuthRef: config?.oauth,
-    });
-    const oauthRef =
-      loginAuth.oauthRef ??
-      resolveKimiCodeOAuthRef({
-        oauthHost: loginAuth.oauthHost,
-        baseUrl: loginAuth.baseUrl,
-      });
-    return {
-      oauthRef,
-      baseUrl: loginAuth.baseUrl,
-      oauthHost: loginAuth.oauthHost,
-    };
+  private async writeConfig(config: ManagedMultiAIConfigShape): Promise<void> {
+    await this.config.replace(PROVIDERS_SECTION, config.providers);
+    await this.config.replace(MODELS_SECTION, config.models ?? {});
+    await this.config.replace(DEFAULT_MODEL_SECTION, config.defaultModel);
+    await this.config.replace(THINKING_SECTION, config.thinking);
   }
 
-  private readOAuthRefOptional(provider: string): OAuthRef | undefined {
-    return this.providerService.get(provider)?.oauth;
-  }
-
-  private resolveRuntimeOAuthRef(provider: string, oauthRef?: OAuthRef): OAuthRef | undefined {
-    if (provider !== KIMI_CODE_PROVIDER_NAME) return oauthRef;
-    const config = this.providerService.get(provider);
-    return resolveKimiCodeRuntimeAuth({
-      configuredBaseUrl: config?.baseUrl,
-      configuredOAuthRef: oauthRef ?? config?.oauth,
-    }).oauthRef;
+  private oauthRef(provider: string): OAuthRef | undefined {
+    return provider === MULTIAI_PROVIDER_NAME
+      ? this.providers.get(provider)?.oauth
+      : undefined;
   }
 
   private abortExisting(provider: string): void {
-    const existing = this.flows.get(provider);
-    if (existing !== undefined && existing.status === 'pending') {
-      existing.controller.abort();
-      this.setTerminal(existing, 'cancelled');
-    }
+    const state = this.flows.get(provider);
+    if (state === undefined || state.status !== 'pending') return;
+    state.controller.abort();
+    this.setTerminal(state, 'cancelled');
   }
 
   private invalidateFlows(event: ProvidersChangedEvent): void {
-    const affected = new Set([...event.removed, ...event.changed]);
-    if (affected.size === 0) return;
+    const changed = new Set([...event.changed, ...event.removed]);
     for (const state of this.flows.values()) {
-      if (!affected.has(state.provider)) continue;
-      if (state.status !== 'pending') continue;
+      if (state.status !== 'pending' || !changed.has(state.provider)) continue;
       state.controller.abort();
       state.errorMessage = 'Provider configuration changed during login.';
       this.setTerminal(state, 'cancelled');
     }
   }
 
-  private handleSuccess(state: FlowState): void {
+  private handleFailure(state: FlowState, error: unknown): void {
     if (state.status !== 'pending') return;
-    void this.finalizeAuthentication(state);
-  }
-
-  private async completeAlreadyAuthenticatedLogin(state: FlowState): Promise<void> {
-    await this.finalizeAuthentication(state);
-  }
-
-  private async finalizeAuthentication(state: FlowState): Promise<void> {
-    try {
-      await this.provisionProvider(state.provider, state.oauthRef, state.loginBaseUrl);
-      if (state.status !== 'pending') return;
-      if (state.provider === KIMI_CODE_PROVIDER_NAME) {
-        await this.refreshOAuthProviderModelsBestEffort(state.provider);
-        if (state.status !== 'pending') return;
-      }
-    } catch (error) {
-      this.log.warn('oauth provider provisioning failed', {
-        provider: state.provider,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    } finally {
-      if (state.status === 'pending') {
-        this.setTerminal(state, 'authenticated');
-      }
-    }
-  }
-
-  private async provisionProvider(
-    provider: string,
-    oauthRef: OAuthRef | undefined,
-    loginBaseUrl: string | undefined,
-  ): Promise<void> {
-    if (oauthRef === undefined && provider !== KIMI_CODE_PROVIDER_NAME) return;
-    const baseUrl =
-      loginBaseUrl ?? this.providerService.get(provider)?.baseUrl ?? kimiCodeBaseUrl();
-    await this.providerService.set(provider, {
-      type: 'kimi',
-      baseUrl,
-      apiKey: '',
-      oauth: oauthRef,
-    });
-  }
-
-  private async refreshOAuthProviderModelsBestEffort(provider: string): Promise<void> {
-    const result = await this.refreshOAuthProviderModels();
-    if (result.failed.length > 0) {
-      this.log.warn('oauth startLogin: model refresh failed on already-authenticated fast path', {
-        provider,
-        failures: result.failed,
-      });
-    }
-  }
-
-  private async deprovisionProvider(provider: string): Promise<void> {
-    if (provider !== KIMI_CODE_PROVIDER_NAME) return;
-    const next = structuredClone(this.readUserConfigShape());
-    const cleanup = clearManagedKimiCodeConfig(next);
-    if (
-      !cleanup.removedProvider &&
-      cleanup.removedModels.length === 0 &&
-      !cleanup.defaultModelCleared &&
-      cleanup.removedServices.length === 0
-    ) {
-      return;
-    }
-    if (cleanup.defaultModelCleared) {
-      next.thinking = undefined;
-    }
-    if (cleanup.removedProvider) {
-      await this.config.replace(PROVIDERS_SECTION, next.providers);
-    }
-    if (cleanup.removedModels.length > 0) {
-      await this.config.replace(MODELS_SECTION, next.models ?? {});
-    }
-    if (cleanup.removedServices.length > 0) {
-      await this.config.replace(SERVICES_SECTION, next.services);
-    }
-    if (cleanup.defaultModelCleared) {
-      // Delete, not merge: `set(domain, undefined)` resolves back to the base
-      // value by design — only `replace(domain, undefined)` actually removes
-      // the key, and leaving defaultModel dangling to a just-removed managed
-      // model keeps /api/v1/auth reporting ready=true after logout.
-      await this.config.replace(DEFAULT_MODEL_SECTION, undefined);
-      await this.config.replace(THINKING_SECTION, undefined);
-    }
-  }
-
-  private handleFailure(state: FlowState, err: unknown): void {
-    if (state.status !== 'pending') return;
-    state.errorMessage = err instanceof Error ? err.message : String(err);
-    this.setTerminal(state, classifyFailure(err));
+    state.errorMessage = error instanceof Error ? error.message : String(error);
+    const status: OAuthFlowStatus =
+      error instanceof MultiAIOAuthError && error.code === 'expired_token'
+        ? 'expired'
+        : error instanceof MultiAIOAuthError && error.code === 'cancelled'
+          ? 'cancelled'
+          : 'denied';
+    this.setTerminal(state, status);
   }
 
   private setTerminal(state: FlowState, status: OAuthFlowStatus): void {
     state.status = status;
     state.resolvedAt = new Date().toISOString();
     const timer = setTimeout(() => {
-      if (this.flows.get(state.provider) === state) {
-        this.flows.delete(state.provider);
-      }
+      if (this.flows.get(state.provider) === state) this.flows.delete(state.provider);
     }, TERMINAL_RETENTION_MS);
     timer.unref();
     state.gcTimer = timer;
   }
 
-  private toFlowStart(state: FlowState, device: DeviceAuthorization): OAuthFlowStartPending {
-    const expiresIn = device.expiresIn ?? DEFAULT_DEVICE_EXPIRES_IN_SEC;
-    return {
+  private toFlowStart(
+    state: FlowState,
+    authorization: MultiAIAuthorization,
+  ): OAuthFlowStart {
+    const common = {
       flow_id: state.flowId,
       provider: state.provider,
-      verification_uri: device.verificationUri,
-      verification_uri_complete: device.verificationUriComplete,
-      user_code: device.userCode,
-      expires_in: expiresIn,
-      interval: device.interval,
-      status: 'pending',
+      persistence: state.persistence,
+      status: 'pending' as const,
+      expires_in: authorization.expiresIn,
       expires_at: new Date(state.expiresAt).toISOString(),
     };
+    return authorization.method === 'browser'
+      ? {
+          ...common,
+          method: 'browser',
+          authorization_uri: authorization.authorizationUri,
+          redirect_uri: authorization.redirectUri,
+        }
+      : {
+          ...common,
+          method: 'device',
+          verification_uri: authorization.verificationUri,
+          verification_uri_complete: authorization.verificationUriComplete,
+          user_code: authorization.userCode,
+          interval: authorization.interval,
+        };
   }
 
-  private toSnapshot(state: FlowState, device: DeviceAuthorization): OAuthFlowSnapshot {
-    return {
-      ...this.toFlowStart(state, device),
+  private toSnapshot(
+    state: FlowState,
+    authorization: MultiAIAuthorization,
+  ): OAuthFlowSnapshot {
+    const common = {
+      flow_id: state.flowId,
+      provider: state.provider,
+      method: state.method,
+      persistence: state.persistence,
       status: state.status,
+      expires_in: authorization.expiresIn,
+      expires_at: new Date(state.expiresAt).toISOString(),
       resolved_at: state.resolvedAt,
       error_message: state.errorMessage,
     };
+    return authorization.method === 'browser'
+      ? {
+          ...common,
+          authorization_uri: authorization.authorizationUri,
+          redirect_uri: authorization.redirectUri,
+        }
+      : {
+          ...common,
+          verification_uri: authorization.verificationUri,
+          verification_uri_complete: authorization.verificationUriComplete,
+          user_code: authorization.userCode,
+          interval: authorization.interval,
+        };
   }
 }
 
@@ -587,74 +472,37 @@ export class AuthSummaryService implements IAuthSummaryService {
   declare readonly _serviceBrand: undefined;
 
   constructor(
-    @IProviderService private readonly providerService: IProviderService,
-    @IModelService private readonly modelService: IModelService,
+    @IProviderService private readonly providers: IProviderService,
+    @IModelService private readonly models: IModelService,
     @IConfigService private readonly config: IConfigService,
     @IOAuthService private readonly oauth: IOAuthService,
-    @ILogService private readonly log: ILogService,
   ) {}
 
   async summarize(): Promise<readonly AuthStatus[]> {
-    const providers = this.providerService.list();
-    const oauthProviders = Object.entries(providers).filter(
-      ([, config]) => config.oauth !== undefined,
-    );
-    this.log.info('auth summarize: enter', {
-      total: Object.keys(providers).length,
-      oauthProviders: oauthProviders.map(([name]) => name),
-    });
-    const statuses: AuthStatus[] = [];
-    for (const [name] of oauthProviders) {
-      try {
-        statuses.push(await this.oauth.status(name));
-      } catch (error) {
-        this.log.warn('auth summarize: status threw', {
-          provider: name,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-    return statuses;
+    return [await this.oauth.status()];
   }
 
   async ensureReady(modelOverride?: string): Promise<void> {
-    // Reload so external file edits reach the kosong registries through the
-    // persistence bridge, then read the RUNTIME state from the registries —
-    // the config sections are only their persistence and may lag a pending
-    // kosong-originated persist.
     await this.config.reload();
-    const providers = this.providerService.list();
-    const models = this.modelService.list();
-    const modelId = modelOverride ?? this.modelService.getDefaultModel();
+    const providers = this.providers.list();
+    const models = this.models.list();
+    const modelId = modelOverride ?? this.models.getDefaultModel();
     const configured = modelId === undefined || modelId === '' ? undefined : models[modelId];
     if (Object.keys(providers).length === 0 && !isProviderlessModel(configured)) {
       throw new AuthProvisioningRequiredError();
     }
-    if (modelId === undefined || modelId === '') {
-      throw new AuthModelNotResolvedError(undefined);
-    }
-    if (configured === undefined) {
-      throw new AuthModelNotResolvedError(modelId);
-    }
+    if (modelId === undefined || modelId === '') throw new AuthModelNotResolvedError(undefined);
+    if (configured === undefined) throw new AuthModelNotResolvedError(modelId);
 
     const model = effectiveModelConfig(configured);
     const providerId = model.providerId ?? model.provider;
-    const provider = providerId === undefined ? undefined : this.providerService.get(providerId);
+    const provider = providerId === undefined ? undefined : this.providers.get(providerId);
     if (providerId !== undefined && provider === undefined) {
       throw new AuthModelNotResolvedError(modelId, providerId);
     }
-
     const providerName = providerId ?? providerNameFromFlatModel(model);
-    if (providerName === undefined) {
-      throw new AuthModelNotResolvedError(modelId);
-    }
-
-    const auth = resolveModelAuthMaterial({
-      modelId,
-      model,
-      provider,
-      providerName,
-    });
+    if (providerName === undefined) throw new AuthModelNotResolvedError(modelId);
+    const auth = resolveModelAuthMaterial({ modelId, model, provider, providerName });
     if (auth.apiKey !== undefined) return;
     if (auth.oauth !== undefined) {
       const providerKey = auth.oauthProviderKey ?? providerName;
@@ -666,12 +514,29 @@ export class AuthSummaryService implements IAuthSummaryService {
   }
 }
 
-function classifyFailure(err: unknown): OAuthFlowStatus {
-  if (err instanceof DeviceCodeTimeoutError) return 'expired';
-  if (err instanceof OAuthError) {
-    return err.message.toLowerCase().includes('aborted') ? 'cancelled' : 'denied';
+function toMultiAITokenRef(oauthRef: OAuthRef | undefined) {
+  return {
+    key: oauthRef?.key ?? MULTIAI_OAUTH_KEY,
+    issuer: oauthRef?.issuer,
+  };
+}
+
+function providerModelIds(config: ManagedMultiAIConfigShape): Set<string> {
+  const ids = new Set<string>();
+  for (const model of Object.values(config.models ?? {})) {
+    const record = model as { provider?: unknown; model?: unknown };
+    if (
+      record.provider === MULTIAI_PROVIDER_NAME &&
+      typeof record.model === 'string'
+    ) {
+      ids.add(record.model);
+    }
   }
-  return 'denied';
+  return ids;
+}
+
+function setsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
+  return left.size === right.size && [...left].every((value) => right.has(value));
 }
 
 function isProviderlessModel(model: ModelRecord | undefined): boolean {
@@ -689,185 +554,32 @@ function providerNameFromFlatModel(model: ModelRecord): string | undefined {
   return baseUrl === undefined ? undefined : deriveProviderId(baseUrl);
 }
 
-interface ManagedModel {
-  readonly provider: string;
-  readonly model: string;
-  readonly maxContextSize: number;
-  readonly capabilities?: readonly string[];
-  readonly displayName?: string;
-}
-
-/**
- * Whether the provider is backed by the OAuth model catalog: the vendor's
- * provider definitions declare `modelSource: 'oauth-catalog'` (a registry
- * answer, not a vendor string compare) and the provider config carries an
- * OAuth ref.
- */
-function isOAuthCatalogProvider(
-  provider: ProviderConfig | Record<string, unknown> | undefined,
-): provider is ProviderConfig & { oauth: OAuthRef } {
-  const type = (provider as ProviderConfig | undefined)?.type;
-  return (
-    provider !== undefined &&
-    isOAuthCatalogVendor(type) &&
-    (provider as ProviderConfig).oauth !== undefined
-  );
-}
-
-function collectModelIdsForAliases(
-  config: ManagedKimiConfigShape,
-  aliasKeys: ReadonlySet<string>,
-): Set<string> {
-  const ids = new Set<string>();
-  for (const aliasKey of aliasKeys) {
-    const alias = managedModel(config, aliasKey);
-    if (alias !== undefined && alias.model.length > 0) ids.add(alias.model);
-  }
-  return ids;
-}
-
-function providerAliasKeys(config: ManagedKimiConfigShape, providerId: string): Set<string> {
-  const keys = new Set<string>();
-  for (const [alias, model] of Object.entries(config.models ?? {})) {
-    if ((model as ManagedModel).provider === providerId) keys.add(alias);
-  }
-  return keys;
-}
-
-function generatedProviderAliasKeys(
-  config: ManagedKimiConfigShape,
-  providerId: string,
-  aliasPrefix: string,
-): Set<string> {
-  const keys = new Set<string>();
-  for (const [alias, model] of Object.entries(config.models ?? {})) {
-    if ((model as ManagedModel).provider === providerId && alias.startsWith(aliasPrefix)) {
-      keys.add(alias);
-    }
-  }
-  return keys;
-}
-
-function computeChanges(
-  oldIds: Set<string>,
-  newIds: Set<string>,
-): { added: number; removed: number } {
-  let added = 0;
-  for (const id of newIds) {
-    if (!oldIds.has(id)) added++;
-  }
-  let removed = 0;
-  for (const id of oldIds) {
-    if (!newIds.has(id)) removed++;
-  }
-  return { added, removed };
-}
-
-function providerModelsEqual(
-  config: ManagedKimiConfigShape,
-  nextConfig: ManagedKimiConfigShape,
-  providerId: string,
-  aliasKeys: ReadonlySet<string>,
-): boolean {
-  return (
-    providerModelSnapshot(config, providerId, aliasKeys) ===
-    providerModelSnapshot(nextConfig, providerId, aliasKeys)
-  );
-}
-
-function providerModelSnapshot(
-  config: ManagedKimiConfigShape,
-  providerId: string,
-  aliasKeys: ReadonlySet<string>,
-): string {
-  const snapshots: Array<{ alias: string; model: ManagedModel }> = [];
-  for (const alias of aliasKeys) {
-    const model = managedModel(config, alias);
-    if (model === undefined || model.provider !== providerId) continue;
-    snapshots.push({
-      alias,
-      model: {
-        ...model,
-        capabilities:
-          model.capabilities === undefined ? undefined : model.capabilities.toSorted(),
-      },
-    });
-  }
-  snapshots.sort((a, b) => a.alias.localeCompare(b.alias));
-  return JSON.stringify(snapshots);
-}
-
-function providerRefreshAliasKeys(
-  config: ManagedKimiConfigShape,
-  nextConfig: ManagedKimiConfigShape,
-  providerId: string,
-  aliasPrefix: string,
-): Set<string> {
-  const keys = generatedProviderAliasKeys(config, providerId, aliasPrefix);
-  for (const key of providerAliasKeys(nextConfig, providerId)) keys.add(key);
-  return keys;
-}
-
-function preserveUserProviderAliases(
-  config: ManagedKimiConfigShape,
-  providerId: string,
-  refreshedAliasKeys: ReadonlySet<string>,
-): Record<string, ManagedModel> {
-  const preserved: Record<string, ManagedModel> = {};
-  for (const [alias, model] of Object.entries(config.models ?? {})) {
-    const entry = model as ManagedModel;
-    if (entry.provider !== providerId || refreshedAliasKeys.has(alias)) continue;
-    preserved[alias] = structuredClone(entry);
-  }
-  return preserved;
-}
-
-function restoreProviderAliases(
-  config: ManagedKimiConfigShape,
-  aliases: Record<string, ManagedModel>,
-): void {
-  if (Object.keys(aliases).length === 0) return;
-  config.models = {
-    ...config.models,
-    ...aliases,
-  } as ManagedKimiConfigShape['models'];
-}
-
-function restoreDefaultSelection(
-  config: ManagedKimiConfigShape,
-  defaultModel: string | undefined,
-  defaultEnabled: boolean | undefined,
-): void {
-  if (defaultModel === undefined || config.models?.[defaultModel] === undefined) return;
-  config.defaultModel = defaultModel;
-  const capabilities = managedModel(config, defaultModel)?.capabilities ?? [];
-  const enabled = capabilities.includes('always_thinking') ? true : defaultEnabled;
-  if (enabled !== undefined) {
-    config.thinking = { ...config.thinking, enabled };
-  }
-}
-
-function clampDanglingDefault(config: ManagedKimiConfigShape): void {
-  if (config.defaultModel !== undefined && config.models?.[config.defaultModel] === undefined) {
-    config.defaultModel = undefined;
-    config.thinking = undefined;
-  }
-}
-
-function managedModel(
-  config: ManagedKimiConfigShape,
-  alias: string,
-): ManagedModel | undefined {
-  return config.models?.[alias] as ManagedModel | undefined;
-}
-
-class OAuthToolkitService extends KimiOAuthToolkit implements IOAuthToolkit {
+class OAuthToolkitService extends MultiAIOAuthToolkit implements IOAuthToolkit {
   declare readonly _serviceBrand: undefined;
+
   constructor(@IBootstrapService bootstrap: IBootstrapService) {
     super({ homeDir: bootstrap.homeDir });
   }
 }
 
-registerScopedService(LifecycleScope.App, IOAuthService, OAuthService, ScopeActivation.OnScopeCreated, 'auth');
-registerScopedService(LifecycleScope.App, IOAuthToolkit, OAuthToolkitService, ScopeActivation.OnScopeCreated, 'auth');
-registerScopedService(LifecycleScope.App, IAuthSummaryService, AuthSummaryService, ScopeActivation.OnScopeCreated, 'auth');
+registerScopedService(
+  LifecycleScope.App,
+  IOAuthService,
+  OAuthService,
+  ScopeActivation.OnScopeCreated,
+  'auth',
+);
+registerScopedService(
+  LifecycleScope.App,
+  IOAuthToolkit,
+  OAuthToolkitService,
+  ScopeActivation.OnScopeCreated,
+  'auth',
+);
+registerScopedService(
+  LifecycleScope.App,
+  IAuthSummaryService,
+  AuthSummaryService,
+  ScopeActivation.OnScopeCreated,
+  'auth',
+);

@@ -21,14 +21,14 @@
  * differentiate them.
  *
  * **Implementation** (`AuthSummaryService`): Reads the live config via
- * `ICoreProcessService.rpc.getKimiConfig({})` and the managed-OAuth credential
+ * `ICoreProcessService.rpc.getMultiAIConfig({})` and the managed-OAuth credential
  * state via a cached-token lookup. Both are cheap (in-process RPC +
  * a token-file existence probe), so we run them on every call instead of
  * caching — keeps the staleness window at zero.
  */
 
 import { createDecorator } from '../../di';
-import type { AuthSummary } from '@moonshot-ai/protocol';
+import type { AuthSummary } from '@multiai/protocol';
 
 export interface IAuthSummaryService {
   readonly _serviceBrand: undefined;

@@ -2,7 +2,7 @@
  * `subagent` domain (L6) — `ISessionSecondaryModelWarningService` contract:
  * early validation of the configured secondary model.
  *
- * The secondary-model pointer (`[secondary_model]` / `KIMI_SECONDARY_MODEL`)
+ * The secondary-model pointer (`[secondary_model]` / `MULTIAI_SECONDARY_MODEL`)
  * is otherwise validated lazily at spawn time, so a typo surfaces as a
  * mid-conversation tool failure handed back to the parent model. This service
  * front-loads the same resolution to session start (main-agent creation): an

@@ -15,7 +15,7 @@ import {
   type UpdateSessionMetadataPayload,
 } from '../../src';
 import { TestInstantiationService } from '../../src/di/test';
-import { emptySessionUsage, type Event, type Session } from '@moonshot-ai/protocol';
+import { emptySessionUsage, type Event, type Session } from '@multiai/protocol';
 
 import {
   IApprovalService,

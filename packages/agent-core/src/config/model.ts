@@ -2,7 +2,7 @@ import {
   BUDGET_THINKING_EFFORTS,
   matchKnownAnthropicModelProfile,
   matchUnknownClaudeProfile,
-} from '@moonshot-ai/kosong/providers/anthropic-profile';
+} from '@multiai/kosong/providers/anthropic-profile';
 
 import type { ModelAlias, ProviderType } from './schema';
 
@@ -26,7 +26,9 @@ export function effectiveModelAlias(
   // lowering max_context_size must not leave a stale, larger cap behind).
   // Build a copy for the clamp — never rewrite the caller's config record.
   const clamped =
-    effective.maxInputSize !== undefined && effective.maxInputSize > effective.maxContextSize
+    effective.maxInputSize !== undefined &&
+    effective.maxContextSize !== undefined &&
+    effective.maxInputSize > effective.maxContextSize
       ? { ...effective, maxInputSize: effective.maxContextSize }
       : effective;
 

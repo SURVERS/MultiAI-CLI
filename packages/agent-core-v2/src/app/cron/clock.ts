@@ -24,7 +24,7 @@
  * It is not overridable — accepting an external monotonic clock would
  * defeat the safety net the lock heartbeat depends on.
  *
- * `wallNow` resolution is driven by the `KIMI_CRON_CLOCK` env var; see
+ * `wallNow` resolution is driven by the `MULTIAI_CRON_CLOCK` env var; see
  * `resolveClockSources` below. Defaults to `Date.now()`.
  */
 import { closeSync, openSync, readSync } from 'node:fs';
@@ -95,7 +95,7 @@ function readFileWall(filePath: string): number {
 function debugInvalidSpec(spec: string, reason: string, debug: boolean): void {
   if (debug) {
     process.stderr.write(
-      `[cron/clock] invalid KIMI_CRON_CLOCK spec ${JSON.stringify(spec)}: ${reason} — falling back to system clock\n`,
+      `[cron/clock] invalid MULTIAI_CRON_CLOCK spec ${JSON.stringify(spec)}: ${reason} — falling back to system clock\n`,
     );
   }
 }

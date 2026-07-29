@@ -1,8 +1,8 @@
-import { classifyKimiQuotaError } from '@moonshot-ai/kosong';
+import { classifyKimiQuotaError } from '@multiai/kosong';
 import { describe, expect, it } from 'vitest';
 
-import type { KimiConfig, ModelAlias } from '../../src/config';
-import { ErrorCodes, KimiError } from '../../src/errors';
+import type { MultiAIConfig, ModelAlias } from '../../src/config';
+import { ErrorCodes, MultiAIError } from '../../src/errors';
 import { ProviderManager } from '../../src/session/provider-manager';
 import { resolveThinkingEffort } from '../../src/agent/config/thinking';
 
@@ -10,19 +10,19 @@ import { resolveThinkingEffort } from '../../src/agent/config/thinking';
 // the current ProviderManager API. Kept local so the existing test bodies do
 // not need to change.
 function resolveRuntimeProvider(input: {
-  readonly config: KimiConfig;
+  readonly config: MultiAIConfig;
   readonly model?: string;
-  readonly kimiRequestHeaders?: Record<string, string>;
+  readonly multiAIRequestHeaders?: Record<string, string>;
   readonly promptCacheKey?: string;
 }): ReturnType<ProviderManager['resolveProviderConfig']> {
   const manager = new ProviderManager({
     config: input.config,
-    kimiRequestHeaders: input.kimiRequestHeaders,
+    multiAIRequestHeaders: input.multiAIRequestHeaders,
     promptCacheKey: input.promptCacheKey,
   });
   const model = input.model ?? input.config.defaultModel;
   if (model === undefined) {
-    throw new KimiError(
+    throw new MultiAIError(
       ErrorCodes.CONFIG_INVALID,
       'No model is selected. Set default_model in config.toml or pass a configured model alias.',
     );
@@ -30,10 +30,10 @@ function resolveRuntimeProvider(input: {
   return manager.resolveProviderConfig(model);
 }
 
-const BASE_CONFIG: KimiConfig = {
+const BASE_CONFIG: MultiAIConfig = {
   defaultModel: 'kimi-code/kimi-for-coding',
   providers: {
-    'managed:kimi-code': {
+    'managed:multiai': {
       type: 'kimi',
       apiKey: 'test-key',
       baseUrl: 'https://api.example/v1',
@@ -41,7 +41,7 @@ const BASE_CONFIG: KimiConfig = {
   },
   models: {
     'kimi-code/kimi-for-coding': {
-      provider: 'managed:kimi-code',
+      provider: 'managed:multiai',
       model: 'kimi-for-coding',
       maxContextSize: 1_000_000,
       capabilities: ['thinking', 'image_in', 'video_in', 'tool_use'],
@@ -49,10 +49,10 @@ const BASE_CONFIG: KimiConfig = {
   },
 };
 
-const TEST_KIMI_HEADERS = {
-  'User-Agent': 'kimi-code-cli/0.0.0-test',
-  'X-Msh-Platform': 'kimi_code_cli',
-  'X-Msh-Version': '0.0.0-test',
+const TEST_MULTIAI_HEADERS = {
+  'User-Agent': 'multiai-cli/0.0.0-test',
+  'X-MultiAI-Platform': 'multiai_cli',
+  'X-MultiAI-Version': '0.0.0-test',
 };
 
 describe('resolveRuntimeProvider model metadata', () => {
@@ -114,11 +114,11 @@ describe('resolveRuntimeProvider model metadata', () => {
       config: {
         ...BASE_CONFIG,
         providers: {
-          'managed:kimi-code': {
+          'managed:multiai': {
             type: 'kimi',
             apiKey: '',
             baseUrl: 'https://api.example/v1',
-            oauth: { storage: 'file', key: 'oauth/kimi-code' },
+            oauth: { storage: 'keyring', key: 'oauth/multiai' },
           },
         },
       },
@@ -139,7 +139,7 @@ describe('resolveRuntimeProvider model metadata', () => {
         ...BASE_CONFIG,
         models: {
           'kimi-code/kimi-for-coding': {
-            provider: 'managed:kimi-code',
+            provider: 'managed:multiai',
             model: 'kimi-for-coding',
             maxContextSize: 1_000_000,
           },
@@ -181,7 +181,7 @@ describe('resolveRuntimeProvider model metadata', () => {
         config: BASE_CONFIG,
         model: 'kimi-code',
       }),
-    ).toThrow(KimiError);
+    ).toThrow(MultiAIError);
   });
 
   it('allows vertexai providers without an apiKey', () => {
@@ -206,24 +206,24 @@ describe('resolveRuntimeProvider model metadata', () => {
     expect(resolved.provider).toMatchObject({ type: 'vertexai' });
   });
 
-  it('throws when the selected model alias has no maxContextSize', () => {
+  it('keeps the context limit unknown when a sparse model alias omits maxContextSize', () => {
     const config = {
       ...BASE_CONFIG,
       models: {
-        broken: {
-          provider: 'managed:kimi-code',
+        sparse: {
+          provider: 'managed:multiai',
           model: 'kimi-for-coding',
           capabilities: ['thinking'],
         },
       },
-    } as unknown as KimiConfig;
+    } as unknown as MultiAIConfig;
 
-    expect(() =>
-      resolveRuntimeProvider({
-        config,
-        model: 'broken',
-      }),
-    ).toThrow(/max_context_size/);
+    const resolved = resolveRuntimeProvider({
+      config,
+      model: 'sparse',
+    });
+    expect(resolved.modelCapabilities.max_context_tokens).toBe(0);
+    expect(resolved.modelCapabilities.thinking).toBe(true);
   });
 });
 
@@ -308,7 +308,7 @@ describe('resolveRuntimeProvider maxOutputSize forwarding', () => {
           offEffort: 'none',
         },
       },
-    } as KimiConfig;
+    } as MultiAIConfig;
 
     expect(resolveRuntimeProvider({ config, model: 'gateway/grok' }).provider).toMatchObject({
       type: 'openai',
@@ -374,7 +374,7 @@ describe('resolveRuntimeProvider maxOutputSize forwarding', () => {
           maxContextSize: 1000,
         },
       },
-    } as KimiConfig;
+    } as MultiAIConfig;
 
     expect(resolveRuntimeProvider({ config, model: 'gateway/tenant-model' }).provider).toMatchObject(
       { type: 'openai', baseUrl: 'https://tenant.example.test/v1' },
@@ -418,7 +418,7 @@ describe('resolveRuntimeProvider maxOutputSize forwarding', () => {
           baseUrl: 'https://tenant.example.test/v1',
         },
       },
-    } as KimiConfig;
+    } as MultiAIConfig;
 
     expect(resolveRuntimeProvider({ config, model: 'kimi/tenant' }).provider).toMatchObject({
       type: 'kimi',
@@ -642,7 +642,7 @@ describe('resolveRuntimeProvider maxOutputSize forwarding', () => {
 });
 
 describe('resolveRuntimeProvider Kimi request headers', () => {
-  it('does not set defaultHeaders when no kimiRequestHeaders or customHeaders exist', () => {
+  it('does not set defaultHeaders when no multiAIRequestHeaders or customHeaders exist', () => {
     const resolved = resolveRuntimeProvider({ config: BASE_CONFIG });
 
     expect(resolved.provider).toMatchObject({
@@ -652,12 +652,12 @@ describe('resolveRuntimeProvider Kimi request headers', () => {
     expect('defaultHeaders' in resolved.provider).toBe(false);
   });
 
-  it('uses only customHeaders when kimiRequestHeaders are missing', () => {
+  it('uses only customHeaders when multiAIRequestHeaders are missing', () => {
     const resolved = resolveRuntimeProvider({
       config: {
         ...BASE_CONFIG,
         providers: {
-          'managed:kimi-code': {
+          'managed:multiai': {
             type: 'kimi',
             apiKey: 'test-key',
             baseUrl: 'https://api.example/v1',
@@ -677,15 +677,15 @@ describe('resolveRuntimeProvider Kimi request headers', () => {
     });
   });
 
-  it('passes kimiRequestHeaders through to Kimi provider defaultHeaders', () => {
+  it('passes multiAIRequestHeaders through to Kimi provider defaultHeaders', () => {
     const resolved = resolveRuntimeProvider({
       config: BASE_CONFIG,
-      kimiRequestHeaders: TEST_KIMI_HEADERS,
+      multiAIRequestHeaders: TEST_MULTIAI_HEADERS,
     });
 
     expect(resolved.provider).toMatchObject({
       type: 'kimi',
-      defaultHeaders: TEST_KIMI_HEADERS,
+      defaultHeaders: TEST_MULTIAI_HEADERS,
     });
   });
 
@@ -703,36 +703,36 @@ describe('resolveRuntimeProvider Kimi request headers', () => {
     });
   });
 
-  it('lets provider customHeaders override kimiRequestHeaders', () => {
+  it('lets provider customHeaders override multiAIRequestHeaders', () => {
     const resolved = resolveRuntimeProvider({
       config: {
         ...BASE_CONFIG,
         providers: {
-          'managed:kimi-code': {
+          'managed:multiai': {
             type: 'kimi',
             apiKey: 'test-key',
             baseUrl: 'https://api.example/v1',
             customHeaders: {
               'User-Agent': 'Custom/1',
-              'X-Msh-Version': 'override-version',
+              'X-MultiAI-Version': 'override-version',
             },
           },
         },
       },
-      kimiRequestHeaders: TEST_KIMI_HEADERS,
+      multiAIRequestHeaders: TEST_MULTIAI_HEADERS,
     });
 
     expect(resolved.provider).toMatchObject({
       type: 'kimi',
       defaultHeaders: {
         'User-Agent': 'Custom/1',
-        'X-Msh-Platform': 'kimi_code_cli',
-        'X-Msh-Version': 'override-version',
+        'X-MultiAI-Platform': 'multiai_cli',
+        'X-MultiAI-Version': 'override-version',
       },
     });
   });
 
-  it('applies only the User-Agent from kimiRequestHeaders to non-Kimi providers', () => {
+  it('applies only the User-Agent from multiAIRequestHeaders to non-Kimi providers', () => {
     const resolved = resolveRuntimeProvider({
       config: {
         defaultModel: 'gpt-alias',
@@ -750,7 +750,7 @@ describe('resolveRuntimeProvider Kimi request headers', () => {
           },
         },
       },
-      kimiRequestHeaders: TEST_KIMI_HEADERS,
+      multiAIRequestHeaders: TEST_MULTIAI_HEADERS,
       promptCacheKey: 'session-test',
     });
 
@@ -759,15 +759,14 @@ describe('resolveRuntimeProvider Kimi request headers', () => {
       model: 'gpt-runtime',
       apiKey: 'sk-openai',
       defaultHeaders: {
-        'User-Agent': TEST_KIMI_HEADERS['User-Agent'],
+        'User-Agent': TEST_MULTIAI_HEADERS['User-Agent'],
       },
     });
-    // Device identity headers (`X-Msh-*`) stay Kimi-only — they must not leak
-    // to third-party providers.
+    // Device identity headers stay first-party-only.
     const headers = (resolved.provider as { defaultHeaders?: Record<string, string> })
       .defaultHeaders;
     expect(headers).toBeDefined();
-    expect('X-Msh-Platform' in headers!).toBe(false);
+    expect('X-MultiAI-Platform' in headers!).toBe(false);
   });
 });
 
@@ -889,7 +888,7 @@ describe('resolveRuntimeProvider customHeaders propagation', () => {
   });
 
   it('keeps customHeaders isolated between resolved provider instances', () => {
-    const config: KimiConfig = {
+    const config: MultiAIConfig = {
       defaultModel: 'gpt-alias',
       providers: {
         openai: {
@@ -970,7 +969,7 @@ describe('ProviderManager prompt cache key', () => {
   });
 
   it('reads the current config when constructed with a function', () => {
-    let sharedConfig: KimiConfig = { providers: {} };
+    let sharedConfig: MultiAIConfig = { providers: {} };
     const manager = new ProviderManager({
       config: () => sharedConfig,
       promptCacheKey: 'session-test',
@@ -989,15 +988,15 @@ describe('ProviderManager prompt cache key', () => {
 });
 
 describe('ProviderManager OAuth auth', () => {
-  function oauthConfig(): KimiConfig {
+  function oauthConfig(): MultiAIConfig {
     return {
       ...BASE_CONFIG,
       providers: {
-        'managed:kimi-code': {
+        'managed:multiai': {
           type: 'kimi',
           apiKey: '',
           baseUrl: 'https://api.example/v1',
-          oauth: { storage: 'file', key: 'oauth/kimi-code' },
+          oauth: { storage: 'keyring', key: 'oauth/multiai' },
         },
       },
     };
@@ -1025,7 +1024,7 @@ describe('ProviderManager OAuth auth', () => {
       config: oauthConfig(),
       resolveOAuthTokenProvider: () => ({
         async getAccessToken() {
-          throw new KimiError(ErrorCodes.AUTH_LOGIN_REQUIRED, 'not logged in');
+          throw new MultiAIError(ErrorCodes.AUTH_LOGIN_REQUIRED, 'not logged in');
         },
       }),
     });
@@ -1252,7 +1251,7 @@ describe('per-model protocol routing', () => {
       },
     });
 
-    expect(resolved.providerName).toBe('managed:kimi-code');
+    expect(resolved.providerName).toBe('managed:multiai');
     expect(resolved.provider).toMatchObject({
       type: 'anthropic',
       model: 'kimi-for-coding',

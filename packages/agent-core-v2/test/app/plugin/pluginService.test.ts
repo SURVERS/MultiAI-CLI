@@ -7,14 +7,14 @@
  * discovery are stubbed, while the installed-file store remains real except
  * for controlled read/write failures used for concurrency and rollback.
  *
- * Run: pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run test/app/plugin/pluginService.test.ts
+ * Run: pnpm --filter @multiai/agent-core-v2 exec vitest run test/app/plugin/pluginService.test.ts
  */
 
 import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { KIMI_CODE_PROVIDER_NAME } from '@moonshot-ai/kimi-code-oauth';
+import { MULTIAI_PROVIDER_NAME } from '@multiai/oauth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -493,15 +493,15 @@ describe('PluginService (plugin boundary)', () => {
     }
   });
 
-  it('injects the managed Kimi endpoint env into stdio plugin MCP servers only', async () => {
+  it('does not expose managed MultiAI account endpoints to plugin MCP servers', async () => {
     const home = await makeHome();
     await writeValidInstalledFile(home);
     const host = makeHost(
       home,
       stubProviderService({
-        [KIMI_CODE_PROVIDER_NAME]: {
+        [MULTIAI_PROVIDER_NAME]: {
           baseUrl: 'https://api.example.test/',
-          oauth: { storage: 'file', key: 'kimi', oauthHost: 'https://auth.example.test' },
+          oauth: { storage: 'keyring', key: 'kimi', issuer: 'https://auth.example.test' },
         },
       }),
     );
@@ -521,34 +521,26 @@ describe('PluginService (plugin boundary)', () => {
       expect(servers['plugin-demo:finance']).toEqual(
         expect.objectContaining({
           env: expect.objectContaining({
-            KIMI_CODE_BASE_URL: 'https://api.example.test/',
-            KIMI_CODE_OAUTH_HOST: 'https://auth.example.test',
             CUSTOM: '1',
-            KIMI_CODE_HOME: home,
-            KIMI_PLUGIN_ROOT: await realpath(managedRoot),
+            MULTIAI_HOME: home,
+            MULTIAI_PLUGIN_ROOT: await realpath(managedRoot),
           }),
         }),
       );
-      expect(JSON.stringify(servers['plugin-demo:docs'])).not.toContain('KIMI_CODE_BASE_URL');
+      const env = (servers['plugin-demo:finance'] as { env?: Record<string, string> }).env ?? {};
+      expect(env).not.toHaveProperty('MULTIAI_BASE_URL');
+      expect(env).not.toHaveProperty('MULTIAI_OAUTH_HOST');
+      expect(JSON.stringify(servers['plugin-demo:docs'])).not.toContain('MULTIAI_BASE_URL');
     } finally {
       host.dispose();
     }
   });
 
-  it('waits for provider config before injecting persisted managed endpoints', async () => {
+  it('does not wait for provider readiness when resolving plugin servers', async () => {
     const home = await makeHome();
     await writeValidInstalledFile(home);
-    const providerConfigs: Record<string, ProviderConfig> = {};
-    const readyAccessed = deferred<void>();
     const readyGate = deferred<void>();
-    const providers = stubProviderService(providerConfigs, readyGate.promise);
-    Object.defineProperty(providers, 'ready', {
-      get: () => {
-        readyAccessed.resolve(undefined);
-        return readyGate.promise;
-      },
-    });
-    const host = makeHost(home, providers);
+    const host = makeHost(home, stubProviderService({}, readyGate.promise));
     try {
       const svc = host.app.accessor.get(IPluginService);
       const pluginRoot = await makePluginDir('ready-demo', {
@@ -557,19 +549,11 @@ describe('PluginService (plugin boundary)', () => {
       createdDirs.push(pluginRoot);
       await svc.installPlugin({ source: pluginRoot });
 
-      const servers = svc.enabledMcpServers();
-      await readyAccessed.promise;
-      providerConfigs[KIMI_CODE_PROVIDER_NAME] = {
-        baseUrl: 'https://ready.example.test/',
-        oauth: { storage: 'file', key: 'kimi', oauthHost: 'https://auth.ready.example.test' },
-      };
-      readyGate.resolve(undefined);
-
-      await expect(servers).resolves.toMatchObject({
+      await expect(svc.enabledMcpServers()).resolves.toMatchObject({
         'plugin-ready-demo:finance': {
           env: {
-            KIMI_CODE_BASE_URL: 'https://ready.example.test/',
-            KIMI_CODE_OAUTH_HOST: 'https://auth.ready.example.test',
+            MULTIAI_HOME: home,
+            MULTIAI_PLUGIN_ROOT: expect.any(String),
           },
         },
       });
@@ -578,20 +562,20 @@ describe('PluginService (plugin boundary)', () => {
     }
   });
 
-  it('prefers explicit KIMI_CODE_BASE_URL / KIMI_OAUTH_HOST env over the persisted provider', async () => {
+  it('does not forward process-level MultiAI OAuth endpoint overrides to plugins', async () => {
     const home = await makeHome();
     await writeValidInstalledFile(home);
     const host = makeHost(
       home,
       stubProviderService({
-        [KIMI_CODE_PROVIDER_NAME]: {
+        [MULTIAI_PROVIDER_NAME]: {
           baseUrl: 'https://api.example.test',
-          oauth: { storage: 'file', key: 'kimi', oauthHost: 'https://auth.example.test' },
+          oauth: { storage: 'keyring', key: 'kimi', issuer: 'https://auth.example.test' },
         },
       }),
       {
-        KIMI_CODE_BASE_URL: 'https://env.example.test/',
-        KIMI_OAUTH_HOST: 'https://legacy.example.test',
+        MULTIAI_BASE_URL: 'https://env.example.test/',
+        MULTIAI_OAUTH_HOST: 'https://legacy.example.test',
       },
     );
     try {
@@ -605,12 +589,12 @@ describe('PluginService (plugin boundary)', () => {
       const servers = await svc.enabledMcpServers();
       expect(servers['plugin-demo:finance']).toEqual(
         expect.objectContaining({
-          env: expect.objectContaining({
-            KIMI_CODE_BASE_URL: 'https://env.example.test',
-            KIMI_CODE_OAUTH_HOST: 'https://legacy.example.test',
-          }),
+          env: expect.objectContaining({ MULTIAI_HOME: home }),
         }),
       );
+      const env = (servers['plugin-demo:finance'] as { env?: Record<string, string> }).env ?? {};
+      expect(env).not.toHaveProperty('MULTIAI_BASE_URL');
+      expect(env).not.toHaveProperty('MULTIAI_OAUTH_HOST');
     } finally {
       host.dispose();
     }
@@ -631,8 +615,8 @@ describe('PluginService (plugin boundary)', () => {
       const servers = await svc.enabledMcpServers();
       const env = (servers['plugin-demo:finance'] as { env?: Record<string, string> }).env ?? {};
       expect(env['CUSTOM']).toBe('1');
-      expect(env).not.toHaveProperty('KIMI_CODE_BASE_URL');
-      expect(env).not.toHaveProperty('KIMI_CODE_OAUTH_HOST');
+      expect(env).not.toHaveProperty('MULTIAI_BASE_URL');
+      expect(env).not.toHaveProperty('MULTIAI_OAUTH_HOST');
     } finally {
       host.dispose();
     }

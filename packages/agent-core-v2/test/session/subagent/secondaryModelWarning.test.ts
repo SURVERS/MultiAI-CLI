@@ -105,7 +105,7 @@ describe('SessionSecondaryModelWarningService', () => {
     const warning = svc.getSecondaryModelWarning();
     expect(warning?.code).toBe(SECONDARY_MODEL_INVALID_WARNING_CODE);
     expect(warning?.message).toContain('"provider/typo"');
-    expect(warning?.message).toContain('KIMI_SECONDARY_MODEL');
+    expect(warning?.message).toContain('MULTIAI_SECONDARY_MODEL');
     expect(warning?.message).toContain('not configured');
     expect(published).toEqual([
       { type: 'warning', code: warning?.code, message: warning?.message },
@@ -121,7 +121,7 @@ describe('SessionSecondaryModelWarningService', () => {
     expect(warning?.code).toBe(SECONDARY_MODEL_EFFORT_WARNING_CODE);
     expect(warning?.message).toContain('"hihg"');
     expect(warning?.message).toContain('low, high');
-    expect(warning?.message).toContain('KIMI_SECONDARY_EFFORT');
+    expect(warning?.message).toContain('MULTIAI_SECONDARY_EFFORT');
   });
 
   it.each([

@@ -2,12 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   CoreRPC,
-  GetKimiConfigPayload,
-  KimiConfig,
-  KimiConfigPatch,
-  SetKimiConfigPayload,
+  GetMultiAIConfigPayload,
+  MultiAIConfig,
+  MultiAIConfigPatch,
+  SetMultiAIConfigPayload,
 } from '../../src';
-import { KIMI_CODE_PROVIDER_NAME } from '@moonshot-ai/kimi-code-oauth';
+import { MULTIAI_PROVIDER_NAME } from '@multiai/oauth';
 
 import {
   type ICoreProcessService,
@@ -20,7 +20,7 @@ import {
 } from '../../src/services';
 import type { ServicesAuthFacade } from '../../src/services/auth/managedAuth';
 import type { IEventService } from '../../src/services/event/event';
-import type { Event as ProtocolEvent } from '@moonshot-ai/protocol';
+import type { Event as ProtocolEvent } from '@multiai/protocol';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -35,41 +35,41 @@ function makeEnv(): IEnvironmentService {
   };
 }
 
-function makeCore(configRef: { current: KimiConfig }): {
+function makeCore(configRef: { current: MultiAIConfig }): {
   core: ICoreProcessService;
-  getCalls: GetKimiConfigPayload[];
-  setCalls: KimiConfigPatch[];
+  getCalls: GetMultiAIConfigPayload[];
+  setCalls: MultiAIConfigPatch[];
   removeCalls: string[];
 } {
-  const getCalls: GetKimiConfigPayload[] = [];
-  const setCalls: KimiConfigPatch[] = [];
+  const getCalls: GetMultiAIConfigPayload[] = [];
+  const setCalls: MultiAIConfigPatch[] = [];
   const removeCalls: string[] = [];
   const rpc: Partial<CoreRPC> = {
-    getKimiConfig: vi.fn(async (payload: GetKimiConfigPayload) => {
+    getMultiAIConfig: vi.fn(async (payload: GetMultiAIConfigPayload) => {
       getCalls.push(payload);
       return configRef.current;
     }),
-    setKimiConfig: vi.fn(async (payload: SetKimiConfigPayload) => {
+    setMultiAIConfig: vi.fn(async (payload: SetMultiAIConfigPayload) => {
       setCalls.push(payload);
-      const next: KimiConfig = { ...configRef.current };
+      const next: MultiAIConfig = { ...configRef.current };
       if (payload.providers !== undefined) {
-        next.providers = payload.providers as KimiConfig['providers'];
+        next.providers = payload.providers as MultiAIConfig['providers'];
       }
       if (payload.models !== undefined) {
-        next.models = payload.models as KimiConfig['models'];
+        next.models = payload.models as MultiAIConfig['models'];
       }
       if (payload.defaultModel !== undefined) next.defaultModel = payload.defaultModel;
       if (payload.thinking !== undefined) next.thinking = payload.thinking;
       configRef.current = next;
       return configRef.current;
     }),
-    removeKimiProvider: vi.fn(async ({ providerId }) => {
+    removeProvider: vi.fn(async ({ providerId }) => {
       removeCalls.push(providerId);
       const providers = { ...configRef.current.providers };
       delete providers[providerId];
       const models = Object.fromEntries(
         Object.entries(configRef.current.models ?? {}).filter(([, model]) => model.provider !== providerId),
-      ) as KimiConfig['models'];
+      ) as MultiAIConfig['models'];
       configRef.current = {
         ...configRef.current,
         providers,
@@ -115,7 +115,7 @@ function makeEventService(): { svc: IEventService; published: ProtocolEvent[] } 
   return { svc, published };
 }
 
-function catalogConfig(): KimiConfig {
+function catalogConfig(): MultiAIConfig {
   return {
     providers: {
       kimi: {
@@ -304,215 +304,86 @@ describe('ModelCatalogService', () => {
     );
   });
 
-  it('refreshes managed OAuth models and preserves always-thinking defaults', async () => {
-    const configRef: { current: KimiConfig } = {
+  it('delegates managed MultiAI OAuth model refreshes to the auth service', async () => {
+    const configRef: { current: MultiAIConfig } = {
       current: {
         providers: {
-          [KIMI_CODE_PROVIDER_NAME]: {
-            type: 'kimi',
+          [MULTIAI_PROVIDER_NAME]: {
+            type: 'openai_responses',
             apiKey: '',
-            baseUrl: 'https://api.example.test/coding/v1',
-            oauth: { storage: 'file', key: 'oauth/kimi-code' },
+            baseUrl: 'https://multiai.example.test/v1',
+            oauth: {
+              storage: 'keyring',
+              key: 'oauth/multiai',
+              issuer: 'https://multiai.example.test',
+            },
           },
         },
-        defaultModel: 'kimi-code/kimi-for-coding',
-        thinking: { enabled: false },
+        defaultModel: 'multiai/model-a',
         models: {
-          'kimi-code/kimi-for-coding': {
-            provider: KIMI_CODE_PROVIDER_NAME,
-            model: 'kimi-for-coding',
-            maxContextSize: 131_072,
-            capabilities: ['thinking'],
+          'multiai/model-a': {
+            provider: MULTIAI_PROVIDER_NAME,
+            model: 'model-a',
           },
         },
       },
     };
     const { core, removeCalls, setCalls } = makeCore(configRef);
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
-      data: [
-        {
-          id: 'kimi-for-coding',
-          context_length: 262_144,
-          supports_reasoning: true,
-          supports_thinking_type: 'only',
-          supports_image_in: false,
-          supports_video_in: false,
-        },
-      ],
-    })));
+    const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const svc = ModelCatalogService._createForTest(makeEnv(), core, authFacade());
 
-    await expect(svc.refreshOAuthProviderModels()).resolves.toMatchObject({
-      changed: [{ provider_id: KIMI_CODE_PROVIDER_NAME, added: 0, removed: 0 }],
+    await expect(svc.refreshOAuthProviderModels()).resolves.toEqual({
+      changed: [],
+      unchanged: [],
       failed: [],
     });
 
-    expect(removeCalls).toEqual([KIMI_CODE_PROVIDER_NAME]);
-    expect(setCalls.at(-1)).toMatchObject({
-      defaultModel: 'kimi-code/kimi-for-coding',
-      thinking: { enabled: true },
-      models: {
-        'kimi-code/kimi-for-coding': {
-          capabilities: ['thinking', 'always_thinking', 'tool_use'],
-          maxContextSize: 262_144,
-        },
-      },
-    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(removeCalls).toEqual([]);
+    expect(setCalls).toEqual([]);
   });
 
-  it('keeps the kimi-code provider on the REST base and records the model protocol when anthropic', async () => {
-    const configRef: { current: KimiConfig } = {
+  it('does not publish catalog events for managed MultiAI during generic refresh', async () => {
+    const configRef: { current: MultiAIConfig } = {
       current: {
         providers: {
-          [KIMI_CODE_PROVIDER_NAME]: {
-            type: 'kimi',
+          [MULTIAI_PROVIDER_NAME]: {
+            type: 'openai_responses',
             apiKey: '',
-            baseUrl: 'https://api.example.test/coding/v1',
-            oauth: { storage: 'file', key: 'oauth/kimi-code' },
+            baseUrl: 'https://multiai.example.test/v1',
+            oauth: {
+              storage: 'keyring',
+              key: 'oauth/multiai',
+              issuer: 'https://multiai.example.test',
+            },
           },
         },
-        defaultModel: 'kimi-code/kimi-for-coding',
         models: {
-          'kimi-code/kimi-for-coding': {
-            provider: KIMI_CODE_PROVIDER_NAME,
-            model: 'kimi-for-coding',
-            maxContextSize: 200_000,
+          'multiai/model-a': {
+            provider: MULTIAI_PROVIDER_NAME,
+            model: 'model-a',
           },
         },
       },
     };
-    const { core, setCalls } = makeCore(configRef);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () =>
-        new Response(
-          JSON.stringify({
-            data: [
-              {
-                id: 'kimi-for-coding',
-                context_length: 200_000,
-                protocol: 'anthropic',
-              },
-            ],
-          }),
-        ),
-      ),
-    );
-    const svc = ModelCatalogService._createForTest(makeEnv(), core, authFacade());
-
-    await svc.refreshOAuthProviderModels();
-
-    const last = setCalls.at(-1) as Record<string, unknown>;
-    const providers = last['providers'] as Record<string, { type: string; baseUrl: string }>;
-    const models = last['models'] as Record<string, { provider: string; protocol?: string }>;
-    // Provider type/baseUrl stay on the kimi wire + REST base; the anthropic
-    // transport is carried on the model alias for per-model resolution.
-    expect(providers[KIMI_CODE_PROVIDER_NAME]?.type).toBe('kimi');
-    expect(providers[KIMI_CODE_PROVIDER_NAME]?.baseUrl).toBe('https://api.example.test/coding/v1');
-    expect(models['kimi-code/kimi-for-coding']?.provider).toBe(KIMI_CODE_PROVIDER_NAME);
-    expect(models['kimi-code/kimi-for-coding']?.protocol).toBe('anthropic');
-  });
-
-  it('publishes event.model_catalog.changed when a broad refresh changes the catalog', async () => {
-    const configRef: { current: KimiConfig } = {
-      current: {
-        providers: {
-          [KIMI_CODE_PROVIDER_NAME]: {
-            type: 'kimi',
-            apiKey: '',
-            baseUrl: 'https://api.example.test/coding/v1',
-            oauth: { storage: 'file', key: 'oauth/kimi-code' },
-          },
-        },
-        defaultModel: 'kimi-code/kimi-for-coding',
-        models: {
-          'kimi-code/kimi-for-coding': {
-            provider: KIMI_CODE_PROVIDER_NAME,
-            model: 'kimi-for-coding',
-            maxContextSize: 131_072,
-            capabilities: ['thinking'],
-          },
-        },
-      },
-    };
-    const { core } = makeCore(configRef);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(
-        async () =>
-          new Response(
-            JSON.stringify({
-              data: [{ id: 'kimi-for-coding', context_length: 262_144, supports_reasoning: true }],
-            }),
-          ),
-      ),
-    );
+    const { core, removeCalls, setCalls } = makeCore(configRef);
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
     const { svc: eventService, published } = makeEventService();
     const svc = ModelCatalogService._createForTest(makeEnv(), core, authFacade(), eventService);
 
     const result = await svc.refreshProviderModels();
 
-    expect(result.changed).toEqual([
-      { provider_id: KIMI_CODE_PROVIDER_NAME, provider_name: 'Kimi Code', added: 0, removed: 0 },
-    ]);
-    expect(published).toEqual([
-      {
-        type: 'event.model_catalog.changed',
-        agentId: 'main',
-        sessionId: '__global__',
-        changed: result.changed,
-        unchanged: result.unchanged,
-        failed: [],
-      },
-    ]);
-  });
-
-  it('does not publish an event when the refresh is a no-op', async () => {
-    const configRef: { current: KimiConfig } = {
-      current: {
-        providers: {
-          [KIMI_CODE_PROVIDER_NAME]: {
-            type: 'kimi',
-            apiKey: '',
-            baseUrl: 'https://api.example.test/coding/v1',
-            oauth: { storage: 'file', key: 'oauth/kimi-code' },
-          },
-        },
-        models: {
-          'kimi-code/kimi-for-coding': {
-            provider: KIMI_CODE_PROVIDER_NAME,
-            model: 'kimi-for-coding',
-            maxContextSize: 262_144,
-            capabilities: ['thinking', 'tool_use'],
-          },
-        },
-      },
-    };
-    const { core } = makeCore(configRef);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(
-        async () =>
-          new Response(
-            JSON.stringify({
-              data: [{ id: 'kimi-for-coding', context_length: 262_144, supports_reasoning: true }],
-            }),
-          ),
-      ),
-    );
-    const { svc: eventService, published } = makeEventService();
-    const svc = ModelCatalogService._createForTest(makeEnv(), core, authFacade(), eventService);
-
-    const result = await svc.refreshProviderModels();
-
-    expect(result.changed).toEqual([]);
-    expect(result.unchanged).toEqual([KIMI_CODE_PROVIDER_NAME]);
+    expect(result).toEqual({ changed: [], unchanged: [], failed: [] });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(removeCalls).toEqual([]);
+    expect(setCalls).toEqual([]);
     expect(published).toEqual([]);
   });
 
   it('sends the host User-Agent on custom-registry fetches', async () => {
-    const configRef: { current: KimiConfig } = {
+    const configRef: { current: MultiAIConfig } = {
       current: {
         providers: {
           acme: {
@@ -529,8 +400,8 @@ describe('ModelCatalogService', () => {
       },
     };
     const { core } = makeCore(configRef);
-    (core as { kimiRequestHeaders?: Record<string, string> }).kimiRequestHeaders = {
-      'User-Agent': 'kimi-code-cli/test',
+    (core as { multiAIRequestHeaders?: Record<string, string> }).multiAIRequestHeaders = {
+      'User-Agent': 'multiai-cli/test',
     };
     const fetchMock = vi.fn(
       async () =>
@@ -554,7 +425,7 @@ describe('ModelCatalogService', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'https://registry.example.test/api.json',
       expect.objectContaining({
-        headers: expect.objectContaining({ 'User-Agent': 'kimi-code-cli/test' }),
+        headers: expect.objectContaining({ 'User-Agent': 'multiai-cli/test' }),
       }),
     );
   });

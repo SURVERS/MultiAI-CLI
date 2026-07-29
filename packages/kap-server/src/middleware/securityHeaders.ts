@@ -18,7 +18,7 @@
  *     distributed CSS). `form-action`, `base-uri`, and `frame-ancestors`
  *     do NOT fall back to `default-src`, so they are set explicitly.
  *     Invariant: the served bundle must contain no inline scripts (guarded
- *     by a kimi-web test), so plain `script-src` falling back to
+ *     by a multiai-web test), so plain `script-src` falling back to
  *     `default-src 'self'` suffices.
  *     `style-src` needs 'unsafe-inline': KaTeX math and Shiki highlighting
  *     are rendered off-thread and injected via innerHTML with per-glyph

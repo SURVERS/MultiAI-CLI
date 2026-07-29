@@ -161,13 +161,13 @@ export * from './di';
 // VSCode-style `Event<T>` symbol collides with `./rpc`'s `Event` (agent-core
 // protocol Event union, exported via `export * from './rpc'` above). Callers
 // that need the emitter `Event<T>` type import it from the explicit sub-path
-// `@moonshot-ai/agent-core/base/common/event` (declared in `package.json`
+// `@multiai/agent-core/base/common/event` (declared in `package.json`
 // `exports`). This keeps the existing top-level `Event` semantics stable for
 // consumers like `services/src/event/event.ts` while letting new code reach
 // for the emitter type without naming clashes.
 export { Emitter } from './base/common/event';
 
-// ─── In-process services (merged from @moonshot-ai/services) ─────────────────
+// ─── In-process services (merged from @multiai/services) ─────────────────
 // Re-exports the `IXxxService` contracts, default `XxxService` implementations,
 // `toProtocol*` translators and error classes. Importing this barrel triggers
 // the `registerSingleton(...)` side-effects at the bottom of each `*Service.ts`,

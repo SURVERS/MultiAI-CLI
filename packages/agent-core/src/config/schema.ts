@@ -1,6 +1,6 @@
 import { HOOK_EVENT_TYPES } from '../session/hooks/types';
 import { parsePattern } from '#/agent/permission/matches-rule';
-import { ErrorCodes, KimiError } from '#/errors';
+import { ErrorCodes, MultiAIError } from '#/errors';
 import { z } from 'zod';
 
 export const ProviderTypeSchema = z.enum([
@@ -15,9 +15,9 @@ export const ProviderTypeSchema = z.enum([
 export type ProviderType = z.infer<typeof ProviderTypeSchema>;
 
 export const OAuthRefSchema = z.object({
-  storage: z.enum(['file', 'keyring']),
+  storage: z.literal('keyring'),
   key: z.string().min(1),
-  oauthHost: z.string().min(1).optional(),
+  issuer: z.string().url().optional(),
 });
 
 export type OAuthRef = z.infer<typeof OAuthRefSchema>;
@@ -40,7 +40,7 @@ export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 const ModelAliasBaseSchema = z.object({
   provider: z.string(),
   model: z.string(),
-  maxContextSize: z.number().int().min(1),
+  maxContextSize: z.number().int().min(1).optional(),
   // Declared prompt/input cap when below the total window (e.g. gpt-5: 400k
   // window, 272k input). Compaction and other prompt-budget checks prefer it
   // over max_context_size; completion budgeting keeps the total window.
@@ -67,7 +67,7 @@ const ModelAliasBaseSchema = z.object({
   offEffort: z.string().optional(),
   // Route the Anthropic transport through the beta Messages API
   // (`POST /v1/messages?beta=true`) instead of the standard endpoint. Used by
-  // managed Kimi Code models that declare `protocol: 'anthropic'`.
+  // managed MultiAI CLI models that declare `protocol: 'anthropic'`.
   betaApi: z.boolean().optional(),
   // Per-model endpoint override, paired with `protocol`. Catalog imports set
   // it when a gateway provider serves this model over a different endpoint
@@ -179,14 +179,14 @@ export const McpConfigSchema = z.object({
   /**
    * Global default MCP server startup (connect + tool discovery) timeout in
    * milliseconds. A per-server `startupTimeoutMs` in `mcp.json` and the
-   * KIMI_MCP_STARTUP_TIMEOUT_MS env var both win over this value. Defaults
+   * MULTIAI_MCP_STARTUP_TIMEOUT_MS env var both win over this value. Defaults
    * to 30s when unset.
    */
   startupTimeoutMs: McpTimeoutMsSchema.optional(),
   /**
    * Global default single MCP tool-call timeout in milliseconds. A
    * per-server `toolTimeoutMs` in `mcp.json` and the
-   * KIMI_MCP_TOOL_TIMEOUT_MS env var both win over this value. Falls back to
+   * MULTIAI_MCP_TOOL_TIMEOUT_MS env var both win over this value. Falls back to
    * the client built-in default when unset.
    */
   toolTimeoutMs: McpTimeoutMsSchema.optional(),
@@ -197,14 +197,14 @@ export type McpConfig = z.infer<typeof McpConfigSchema>;
 export const ImageConfigSchema = z.object({
   /**
    * Longest-edge ceiling (px) applied when compressing images for the model.
-   * Overrides the built-in default; the KIMI_IMAGE_MAX_EDGE_PX env var wins
+   * Overrides the built-in default; the MULTIAI_IMAGE_MAX_EDGE_PX env var wins
    * over this value.
    */
   maxEdgePx: z.number().int().min(1).optional(),
   /**
    * Raw-byte budget for images the model reads for itself (ReadMediaFile's
    * default path). Overrides the built-in default; the
-   * KIMI_IMAGE_READ_BYTE_BUDGET env var wins over this value. Explicit
+   * MULTIAI_IMAGE_READ_BYTE_BUDGET env var wins over this value. Explicit
    * region / full_resolution reads use the provider-scale per-image limit
    * instead.
    */
@@ -323,7 +323,7 @@ export const McpServerConfigSchema = z.preprocess((raw) => {
 
 export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 
-export const KimiConfigSchema = z.object({
+export const MultiAIConfigSchema = z.object({
   providers: z.record(z.string(), ProviderConfigSchema).default({}),
   defaultProvider: z.string().optional(),
   defaultModel: z.string().optional(),
@@ -349,7 +349,7 @@ export const KimiConfigSchema = z.object({
   raw: z.record(z.string(), z.unknown()).optional(),
 });
 
-export type KimiConfig = z.infer<typeof KimiConfigSchema>;
+export type MultiAIConfig = z.infer<typeof MultiAIConfigSchema>;
 
 const ProviderConfigPatchSchema = ProviderConfigSchema.partial();
 const ModelAliasPatchSchema = ModelAliasSchema.partial();
@@ -368,7 +368,7 @@ const ServicesConfigPatchSchema = z.object({
   moonshotFetch: MoonshotServiceConfigPatchSchema.optional(),
 });
 
-export const KimiConfigPatchSchema = z
+export const MultiAIConfigPatchSchema = z
   .object({
     providers: z.record(z.string(), ProviderConfigPatchSchema).optional(),
     defaultProvider: z.string().optional(),
@@ -395,19 +395,19 @@ export const KimiConfigPatchSchema = z
   })
   .strict();
 
-export type KimiConfigPatch = z.infer<typeof KimiConfigPatchSchema>;
+export type MultiAIConfigPatch = z.infer<typeof MultiAIConfigPatchSchema>;
 
-export function getDefaultConfig(): KimiConfig {
+export function getDefaultConfig(): MultiAIConfig {
   return {
     providers: {},
   };
 }
 
-export function validateConfig(config: unknown): KimiConfig {
+export function validateConfig(config: unknown): MultiAIConfig {
   try {
-    return KimiConfigSchema.parse(config);
+    return MultiAIConfigSchema.parse(config);
   } catch (error) {
-    throw new KimiError(ErrorCodes.CONFIG_INVALID, `Invalid configuration: ${formatConfigValidationError(error)}`, {
+    throw new MultiAIError(ErrorCodes.CONFIG_INVALID, `Invalid configuration: ${formatConfigValidationError(error)}`, {
       cause: error,
     });
   }

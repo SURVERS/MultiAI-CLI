@@ -181,7 +181,7 @@ describe('MessageLegacyService', () => {
   it('projects a kimi-file video reference to a structured file source without leaking the path', async () => {
     const videoPart = {
       type: 'video_url',
-      videoUrl: { url: 'kimi-file://file_9?path=%2Fcache%2Fclip.mp4' },
+      videoUrl: { url: 'multiai-file://file_9?path=%2Fcache%2Fclip.mp4' },
     } as unknown as ContentPart;
     const svc = buildService({
       summary,

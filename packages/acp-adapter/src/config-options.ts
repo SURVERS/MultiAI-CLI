@@ -32,7 +32,7 @@
  */
 
 import type { SessionConfigOption, SessionConfigSelectOption } from '@agentclientprotocol/sdk';
-import type { KimiHarness } from '@moonshot-ai/kimi-code-sdk';
+import type { MultiAIHarness } from '@multiai/sdk';
 
 import { ACP_MODES, type AcpModeId } from './modes';
 import { listModelsFromHarness, type AcpModelEntry } from './model-catalog';
@@ -207,7 +207,7 @@ export function buildModeOption(currentModeId: AcpModeId): SessionConfigOption {
  * mutate it.
  */
 export async function buildSessionConfigOptions(
-  harness: KimiHarness,
+  harness: MultiAIHarness,
   currentBaseModelId: string,
   currentThinkingEffort: string,
   currentModeId: AcpModeId,

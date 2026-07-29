@@ -16,4 +16,4 @@
  * main-agent bootstrap lives in exactly one place.
  */
 
-export { ensureMainAgent, MAIN_AGENT_ID } from '@moonshot-ai/agent-core-v2';
+export { ensureMainAgent, MAIN_AGENT_ID } from '@multiai/agent-core-v2';

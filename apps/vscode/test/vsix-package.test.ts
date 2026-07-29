@@ -4,7 +4,7 @@
  * dev state, manifest/resource hygiene, unresolved imports, and entry loading.
  * Wiring: real Node packaging/verifier CLIs and filesystem; VSIX directory
  * fixtures replace only the external Marketplace archive producer.
- * Run: pnpm --filter kimi-code exec vitest run --config vitest.config.ts test/vsix-package.test.ts
+ * Run: pnpm --filter multiai-cli exec vitest run --config vitest.config.ts test/vsix-package.test.ts
  */
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
@@ -31,12 +31,12 @@ describe('VSIX package CLI (target planning and validation)', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout.match(/Would package /g)).toHaveLength(6);
-    expect(result.stdout).toContain('kimi-code-darwin-x64.vsix');
-    expect(result.stdout).toContain('kimi-code-darwin-arm64.vsix');
-    expect(result.stdout).toContain('kimi-code-linux-x64.vsix');
-    expect(result.stdout).toContain('kimi-code-linux-arm64.vsix');
-    expect(result.stdout).toContain('kimi-code-win32-x64.vsix');
-    expect(result.stdout).toContain('kimi-code-win32-arm64.vsix');
+    expect(result.stdout).toContain('multiai-cli-darwin-x64.vsix');
+    expect(result.stdout).toContain('multiai-cli-darwin-arm64.vsix');
+    expect(result.stdout).toContain('multiai-cli-linux-x64.vsix');
+    expect(result.stdout).toContain('multiai-cli-linux-arm64.vsix');
+    expect(result.stdout).toContain('multiai-cli-win32-x64.vsix');
+    expect(result.stdout).toContain('multiai-cli-win32-arm64.vsix');
   });
 
   it('accepts a Windows ARM target when the output path contains spaces', async () => {
@@ -54,7 +54,7 @@ describe('VSIX package CLI (target planning and validation)', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout.match(/Would package /g)).toHaveLength(1);
-    expect(result.stdout).toContain('kimi-code-win32-arm64.vsix');
+    expect(result.stdout).toContain('multiai-cli-win32-arm64.vsix');
   });
 
   it('rejects an unknown target before a build starts', () => {
@@ -128,6 +128,30 @@ describe('VSIX verifier CLI (package contract and failure details)', () => {
     expect(result.stderr).toContain('Bare runtime dependency "left-pad"');
   });
 
+  it('does not mistake an object require method for a module import', async () => {
+    const fixture = await makeVsixFixture('linux-arm64');
+    await writeFile(
+      join(fixture, 'extension', 'dist', 'extension.js'),
+      [
+        'class Environment {',
+        "  require(name) { return name === 'osKind' ? 'Linux' : undefined; }",
+        "  get osKind() { return this.require('osKind'); }",
+        '}',
+        'export function activate() { return new Environment().osKind; }',
+        '',
+      ].join('\n'),
+    );
+
+    const result = runNode(verifierScript, [
+      '--target',
+      'linux-arm64',
+      '--directory',
+      fixture,
+    ]);
+
+    expect(result.status).toBe(0);
+  });
+
   it('rejects generated session state inside the package', async () => {
     const fixture = await makeVsixFixture('win32-arm64');
     const stateDir = join(fixture, 'extension', 'runtime', 'profile');
@@ -165,22 +189,22 @@ describe('VSIX verifier CLI (package contract and failure details)', () => {
 
 describe('Extension Development Host setup (isolated local state)', () => {
   it('creates the complete isolated directory layout for a debug launch', async () => {
-    const parent = await makeTempDir('kimi-dev-profile-');
+    const parent = await makeTempDir('multiai-dev-profile-');
     const baseDir = join(parent, 'vscode-extension-dev');
 
     const result = runNode(prepareDevScript, ['--base-dir', baseDir]);
 
     expect(result.status).toBe(0);
     await expect(readFile(join(baseDir, 'workspace', 'README.md'), 'utf8')).resolves.toContain(
-      'Isolated Kimi Code extension development workspace',
+      'Isolated MultiAI CLI extension development workspace',
     );
     await expect(directoryExists(join(baseDir, 'user-data'))).resolves.toBe(true);
     await expect(directoryExists(join(baseDir, 'extensions'))).resolves.toBe(true);
-    await expect(directoryExists(join(baseDir, 'kimi-home'))).resolves.toBe(true);
+    await expect(directoryExists(join(baseDir, 'multiai-home'))).resolves.toBe(true);
   });
 
   it('refuses to clear a directory without the dedicated safety suffix', async () => {
-    const unsafeDir = await makeTempDir('kimi-dev-unsafe-');
+    const unsafeDir = await makeTempDir('multiai-dev-unsafe-');
     await writeFile(join(unsafeDir, 'keep.txt'), 'keep');
 
     const result = runNode(prepareDevScript, ['--base-dir', unsafeDir]);
@@ -221,12 +245,9 @@ async function makeVsixFixture(target: string): Promise<string> {
       join(distDir, 'extension.js'),
       "/** @type {import('../types/index').Extension} */\nimport * as vscode from 'vscode';\nexport function activate() { return vscode; }\n",
     ),
-    writeFile(join(distDir, 'webview.js'), 'globalThis.__kimiWebview = true;\n'),
-    writeFile(join(distDir, 'kimi-banner-dark.svg'), '<svg />'),
-    writeFile(join(distDir, 'kimi-banner-light.svg'), '<svg />'),
-    writeFile(join(distDir, 'kimi-logo.png'), 'fixture'),
-    writeFile(join(resourcesDir, 'kimi-icon-storefront.png'), 'fixture'),
-    writeFile(join(resourcesDir, 'kimi-icon.svg'), '<svg />'),
+    writeFile(join(distDir, 'webview.js'), 'globalThis.__multiaiWebview = true;\n'),
+    writeFile(join(resourcesDir, 'multiai-icon-storefront.png'), 'fixture'),
+    writeFile(join(resourcesDir, 'multiai-icon.svg'), '<svg />'),
   ]);
   return root;
 }

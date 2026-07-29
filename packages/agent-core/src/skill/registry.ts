@@ -100,9 +100,9 @@ export class SessionSkillRegistry implements AgentSkillRegistry {
     const instructions = plugin.instructions;
     if (instructions === undefined || instructions.trim().length === 0) return content;
     return (
-      `<kimi-plugin-instructions plugin="${escapeXmlAttr(plugin.id)}">\n` +
+      `<multiai-plugin-instructions plugin="${escapeXmlAttr(plugin.id)}">\n` +
       `${instructions}\n` +
-      `</kimi-plugin-instructions>\n\n${content}`
+      `</multiai-plugin-instructions>\n\n${content}`
     );
   }
 
@@ -125,7 +125,7 @@ export class SessionSkillRegistry implements AgentSkillRegistry {
     return [...this.skipped];
   }
 
-  getKimiSkillsDescription(): string {
+  getMultiAISkillsDescription(): string {
     const rendered = renderGroupedSkills(this.listSkills(), formatFullSkill);
     return rendered.length === 0 ? 'No skills' : rendered;
   }

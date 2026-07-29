@@ -2,11 +2,11 @@
  * ReadMediaFileTool public execution contract: capability and path gating,
  * model-safe media delivery, compression/crop behavior, and actionable
  * failures. Real codecs are used; Kaos is the only stubbed I/O boundary.
- * Run with: pnpm --filter @moonshot-ai/agent-core test -- read-media.test.ts
+ * Run with: pnpm --filter @multiai/agent-core test -- read-media.test.ts
  */
 
-import type { Kaos } from '@moonshot-ai/kaos';
-import type { ContentPart, ModelCapability } from '@moonshot-ai/kosong';
+import type { Kaos } from '@multiai/kaos';
+import type { ContentPart, ModelCapability } from '@multiai/kosong';
 import { Jimp } from 'jimp';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

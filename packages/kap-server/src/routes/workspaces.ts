@@ -28,7 +28,7 @@ import {
   IWorkspaceSessions,
   type Scope,
   type Workspace,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { isAbsolute } from 'node:path';
 
 import { z } from 'zod';

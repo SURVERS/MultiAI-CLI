@@ -15,8 +15,8 @@ import {
   ISessionLifecycleService,
   ISessionMetadata,
   IWorkspaceService,
-} from '@moonshot-ai/agent-core-v2';
-import type { ServiceIdentifier } from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
+import type { ServiceIdentifier } from '@multiai/agent-core-v2';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { type RunningServer, startServer } from '../src/start';

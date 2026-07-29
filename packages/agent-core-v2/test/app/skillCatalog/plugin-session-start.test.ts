@@ -3,7 +3,7 @@
  *
  * Exercises the real agent injection and wire replay path through the shared
  * test-agent harness, with plugin contributions supplied in memory.
- * Run: `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run: `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/app/skillCatalog/plugin-session-start.test.ts`.
  */
 
@@ -120,7 +120,7 @@ describe('plugin session-start dynamic injection', () => {
 
     const text = lastReminder(ctx);
     expect(text).toContain('<plugin_session_start plugin="superpowers" skill="using-superpowers">');
-    expect(text).toContain('<kimi-plugin-instructions plugin="superpowers">');
+    expect(text).toContain('<multiai-plugin-instructions plugin="superpowers">');
     expect(text).toContain('AskUserQuestion');
     expect(text).toContain('TodoList');
     expect(text).toContain('body of skill');
@@ -142,7 +142,7 @@ describe('plugin session-start dynamic injection', () => {
     const text = lastReminder(ctx);
     expect(text).toContain('<plugin_session_start plugin="superpowers" skill="using-superpowers">');
     expect(text).toContain('body');
-    expect(text).not.toContain('<kimi-plugin-instructions plugin="superpowers">');
+    expect(text).not.toContain('<multiai-plugin-instructions plugin="superpowers">');
     expect(text).not.toContain('AskUserQuestion');
   });
 

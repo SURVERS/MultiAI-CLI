@@ -98,7 +98,7 @@ import {
   type ContextMessage,
   type IAgentScopeHandle,
   type Scope,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { ErrorCode } from '../protocol/error-codes';
 import { pageResponseSchema } from '../protocol/pagination';
 import {

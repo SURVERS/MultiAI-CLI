@@ -1,7 +1,7 @@
 /**
  * `_base/execEnv` (L0) — Python-compatible text decoding with `errors` handling.
  *
- * Vendored from `@moonshot-ai/kaos` `internal.ts`. Kept as a pure helper with
+ * Vendored from `@multiai/kaos` `internal.ts`. Kept as a pure helper with
  * no DI dependencies. Used by session-scoped fs implementations to read text
  * files with the same `strict`/`replace`/`ignore` semantics Python's
  * `open(..., errors=)` provides.

@@ -18,7 +18,7 @@ describe('resolveLoggingConfig', () => {
   it('uses defaults when env is empty', () => {
     const cfg = resolveLoggingConfig({ homeDir: '/home/kimi', env: {} });
     expect(cfg.level).toBe(DEFAULT_LOG_LEVEL);
-    expect(cfg.globalLogPath).toBe('/home/kimi/logs/kimi-code.log');
+    expect(cfg.globalLogPath).toBe('/home/kimi/logs/multiai.log');
     expect(cfg.globalMaxBytes).toBe(DEFAULT_GLOBAL_MAX_BYTES);
     expect(cfg.globalFiles).toBe(DEFAULT_GLOBAL_FILES);
     expect(cfg.sessionMaxBytes).toBe(DEFAULT_SESSION_MAX_BYTES);
@@ -29,11 +29,11 @@ describe('resolveLoggingConfig', () => {
     const cfg = resolveLoggingConfig({
       homeDir: '/h',
       env: {
-        KIMI_LOG_LEVEL: 'debug',
-        KIMI_LOG_GLOBAL_MAX_BYTES: '1024',
-        KIMI_LOG_GLOBAL_FILES: '7',
-        KIMI_LOG_SESSION_MAX_BYTES: '2048',
-        KIMI_LOG_SESSION_FILES: '4',
+        MULTIAI_LOG_LEVEL: 'debug',
+        MULTIAI_LOG_GLOBAL_MAX_BYTES: '1024',
+        MULTIAI_LOG_GLOBAL_FILES: '7',
+        MULTIAI_LOG_SESSION_MAX_BYTES: '2048',
+        MULTIAI_LOG_SESSION_FILES: '4',
       },
     });
     expect(cfg.level).toBe('debug');
@@ -47,9 +47,9 @@ describe('resolveLoggingConfig', () => {
     const cfg = resolveLoggingConfig({
       homeDir: '/h',
       env: {
-        KIMI_LOG_LEVEL: 'verbose',
-        KIMI_LOG_GLOBAL_MAX_BYTES: '-5',
-        KIMI_LOG_GLOBAL_FILES: 'abc',
+        MULTIAI_LOG_LEVEL: 'verbose',
+        MULTIAI_LOG_GLOBAL_MAX_BYTES: '-5',
+        MULTIAI_LOG_GLOBAL_FILES: 'abc',
       },
     });
     expect(cfg.level).toBe(DEFAULT_LOG_LEVEL);
@@ -59,27 +59,27 @@ describe('resolveLoggingConfig', () => {
 
   it('resolves the log path regardless of env', () => {
     const cfg = resolveLoggingConfig({ homeDir: '/h', env: {} });
-    expect(cfg.globalLogPath).toBe('/h/logs/kimi-code.log');
+    expect(cfg.globalLogPath).toBe('/h/logs/multiai.log');
   });
 });
 
 describe('path resolution', () => {
   it('resolves the global log path under homeDir/logs', () => {
-    expect(resolveGlobalLogPath('/home/kimi')).toBe('/home/kimi/logs/kimi-code.log');
+    expect(resolveGlobalLogPath('/home/kimi')).toBe('/home/kimi/logs/multiai.log');
   });
 
   it('resolves the session log path under sessionDir/logs', () => {
-    expect(resolveSessionLogPath('/sessions/s1')).toBe('/sessions/s1/logs/kimi-code.log');
+    expect(resolveSessionLogPath('/sessions/s1')).toBe('/sessions/s1/logs/multiai.log');
   });
 });
 
 describe('logSeed', () => {
   it('seeds ILogOptions into a App scope', () => {
-    const cfg = resolveLoggingConfig({ homeDir: '/h', env: { KIMI_LOG_LEVEL: 'warn' } });
+    const cfg = resolveLoggingConfig({ homeDir: '/h', env: { MULTIAI_LOG_LEVEL: 'warn' } });
     const host = createScopedTestHost(logSeed(cfg));
     const opts = host.app.accessor.get(ILogOptions);
     expect(opts.level).toBe('warn');
-    expect(opts.globalLogPath).toBe('/h/logs/kimi-code.log');
+    expect(opts.globalLogPath).toBe('/h/logs/multiai.log');
     host.dispose();
   });
 });

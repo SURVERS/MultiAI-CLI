@@ -4,7 +4,7 @@
  * Exercises the real connection manager and Session while stdio/HTTP MCP
  * processes provide the external boundary; timeout forwarding tests stub only
  * the MCP SDK client boundary. Run with `pnpm --filter
- * @moonshot-ai/agent-core exec vitest run test/mcp/connection-manager.test.ts`.
+ * @multiai/agent-core exec vitest run test/mcp/connection-manager.test.ts`.
  */
 
 import { realpathSync } from 'node:fs';
@@ -15,7 +15,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { testKaos } from '../fixtures/test-kaos';
-import type { ProviderConfig } from '@moonshot-ai/kosong';
+import type { ProviderConfig } from '@multiai/kosong';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { randomUUID } from 'node:crypto';
@@ -31,7 +31,7 @@ import type {
 } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { z } from 'zod';
 
-import { KimiError } from '../../src/errors';
+import { MultiAIError } from '../../src/errors';
 import { ProviderManager } from '../../src/session/provider-manager';
 import {
   MCP_STARTUP_TIMEOUT_ENV,
@@ -268,10 +268,10 @@ describe('McpConnectionManager', () => {
     }
   }, 7000);
 
-  it('reconnect throws a coded KimiError when the server name is unknown', async () => {
+  it('reconnect throws a coded MultiAIError when the server name is unknown', async () => {
     const cm = new McpConnectionManager();
     try {
-      await expect(cm.reconnect('nope')).rejects.toBeInstanceOf(KimiError);
+      await expect(cm.reconnect('nope')).rejects.toBeInstanceOf(MultiAIError);
       await expect(cm.reconnect('nope')).rejects.toMatchObject({ code: 'mcp.server_not_found' });
     } finally {
       await cm.shutdown();
@@ -286,7 +286,7 @@ describe('McpConnectionManager', () => {
       });
 
       const reconnect = cm.reconnect('off');
-      await expect(reconnect).rejects.toBeInstanceOf(KimiError);
+      await expect(reconnect).rejects.toBeInstanceOf(MultiAIError);
       await expect(reconnect).rejects.toMatchObject({ code: 'mcp.server_disabled' });
       expect(cm.get('off')).toMatchObject({
         status: 'disabled',
@@ -696,7 +696,7 @@ describe('McpConnectionManager', () => {
           transport: 'stdio',
           command: process.execPath,
           args: [crashAfterConnectFixture],
-          env: { KIMI_TEST_MCP_EXIT_AFTER_MS: '500', KIMI_TEST_MCP_STDERR: 'fatal: out of memory' },
+          env: { MULTIAI_TEST_MCP_EXIT_AFTER_MS: '500', MULTIAI_TEST_MCP_STDERR: 'fatal: out of memory' },
           startupTimeoutMs: 4_000,
         },
       });
@@ -730,13 +730,13 @@ describe('McpConnectionManager', () => {
           transport: 'stdio',
           command: process.execPath,
           args: [stderrThenExitFixture],
-          env: { KIMI_TEST_MCP_STDERR: 'fatal: missing API token KIMI_X' },
+          env: { MULTIAI_TEST_MCP_STDERR: 'fatal: missing API token MULTIAI_X' },
           startupTimeoutMs: 4_000,
         },
       });
       const entry = cm.get('nope');
       expect(entry?.status).toBe('failed');
-      expect(entry?.error).toContain('fatal: missing API token KIMI_X');
+      expect(entry?.error).toContain('fatal: missing API token MULTIAI_X');
     } finally {
       await cm.shutdown();
     }
@@ -863,9 +863,9 @@ describe('McpConnectionManager', () => {
 
 describe('Session MCP startup', () => {
   it('stores default MCP OAuth credentials under the configured Kimi home', async () => {
-    const tmp = await mkdtemp(join(tmpdir(), 'kimi-session-mcp-oauth-home-'));
+    const tmp = await mkdtemp(join(tmpdir(), 'multiai-session-mcp-oauth-home-'));
     const processHome = join(tmp, 'process-home');
-    const kimiHome = join(tmp, 'kimi-home');
+    const multiaiHome = join(tmp, 'kimi-home');
     const oldHome = process.env['HOME'];
     process.env['HOME'] = processHome;
 
@@ -873,7 +873,7 @@ describe('Session MCP startup', () => {
       id: 'test-mcp-oauth',
       kaos: testKaos.withCwd(tmp),
       homedir: join(tmp, 'session'),
-      kimiHomeDir: kimiHome,
+      multiaiHomeDir: multiaiHome,
       rpc: sessionRpc(),
     });
 
@@ -890,13 +890,13 @@ describe('Session MCP startup', () => {
 
       await expect(
         readFile(
-          join(kimiHome, 'credentials', 'mcp', `${provider.storeKey}-tokens.json`),
+          join(multiaiHome, 'credentials', 'mcp', `${provider.storeKey}-tokens.json`),
           'utf-8',
         ),
       ).resolves.toContain('session-token');
       await expect(
         readFile(
-          join(processHome, '.kimi-code', 'credentials', 'mcp', `${provider.storeKey}-tokens.json`),
+          join(processHome, '.multiai', 'credentials', 'mcp', `${provider.storeKey}-tokens.json`),
           'utf-8',
         ),
       ).rejects.toMatchObject({ code: 'ENOENT' });
@@ -909,7 +909,7 @@ describe('Session MCP startup', () => {
   });
 
   it('does not block main agent creation on slow MCP startup', async () => {
-    const tmp = await mkdtemp(join(tmpdir(), 'kimi-session-mcp-startup-'));
+    const tmp = await mkdtemp(join(tmpdir(), 'multiai-session-mcp-startup-'));
     // The child never completes the MCP handshake — it idles, keeping startup
     // in-flight — but exits the instant the parent closes stdin, so
     // session.close() does not wait out the SDK transport's close grace. The
@@ -948,7 +948,7 @@ describe('Session MCP startup', () => {
   }, 7000);
 
   it('starts stdio MCP servers in the session cwd when config.cwd is omitted', async () => {
-    const tmp = await mkdtemp(join(tmpdir(), 'kimi-session-mcp-cwd-'));
+    const tmp = await mkdtemp(join(tmpdir(), 'multiai-session-mcp-cwd-'));
     const session = new Session({
       id: 'test-mcp-cwd',
       kaos: testKaos.withCwd(tmp),
@@ -982,7 +982,7 @@ describe('Session MCP startup', () => {
   }, 7000);
 
   it("times out tool calls using the Session's global MCP config", async () => {
-    const tmp = await mkdtemp(join(tmpdir(), 'kimi-session-mcp-global-timeout-'));
+    const tmp = await mkdtemp(join(tmpdir(), 'multiai-session-mcp-global-timeout-'));
     const session = new Session({
       id: 'test-mcp-global-timeout',
       kaos: testKaos.withCwd(tmp),
@@ -995,7 +995,7 @@ describe('Session MCP startup', () => {
             transport: 'stdio',
             command: process.execPath,
             args: [slowToolStdioFixture],
-            env: { KIMI_TEST_MCP_TOOL_DELAY_MS: '300' },
+            env: { MULTIAI_TEST_MCP_TOOL_DELAY_MS: '300' },
           },
         },
       },
@@ -1013,7 +1013,7 @@ describe('Session MCP startup', () => {
   }, 15000);
 
   it('waits for initial MCP startup before the first prompt reaches the model', async () => {
-    const tmp = await mkdtemp(join(tmpdir(), 'kimi-session-mcp-prompt-'));
+    const tmp = await mkdtemp(join(tmpdir(), 'multiai-session-mcp-prompt-'));
     const events: SessionRpcEvent[] = [];
     let resolveTurnEnded!: () => void;
     const turnEnded = new Promise<void>((resolve) => {
@@ -1038,7 +1038,7 @@ describe('Session MCP startup', () => {
             transport: 'stdio',
             command: process.execPath,
             args: [stdioFixture],
-            env: { KIMI_TEST_MCP_START_DELAY_MS: '250' },
+            env: { MULTIAI_TEST_MCP_START_DELAY_MS: '250' },
             startupTimeoutMs: 2_000,
           },
         },
@@ -1086,7 +1086,7 @@ describe('Session MCP startup', () => {
   }, 7000);
 
   it('emits tool.list.updated(mcp.disconnected) when reconnect drops the live tools', async () => {
-    const tmp = await mkdtemp(join(tmpdir(), 'kimi-session-mcp-reconnect-'));
+    const tmp = await mkdtemp(join(tmpdir(), 'multiai-session-mcp-reconnect-'));
     const events: SessionRpcEvent[] = [];
     const session = new Session({
       id: 'test-mcp-mixed',

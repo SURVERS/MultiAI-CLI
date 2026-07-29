@@ -14,7 +14,7 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import type { Event, KimiHarness, Session } from '@moonshot-ai/kimi-code-sdk';
+import type { Event, MultiAIHarness, Session } from '@multiai/sdk';
 
 import { AcpServer } from '../src/server';
 import { AUTHED_STATUS } from './_helpers/harness-stubs';
@@ -149,7 +149,7 @@ describe('AcpServer tool.result → tool_call_update', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -200,7 +200,7 @@ describe('AcpServer tool.result → tool_call_update', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -247,7 +247,7 @@ describe('AcpServer tool.result → tool_call_update', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -293,7 +293,7 @@ describe('AcpServer tool.call.started with diff display', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -350,7 +350,7 @@ describe('AcpServer tool.call.started with diff display', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -391,7 +391,7 @@ describe('AcpServer tool.call.started with diff display', () => {
     const harness = {
       auth: { status: async () => AUTHED_STATUS },
       createSession: async () => session,
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);

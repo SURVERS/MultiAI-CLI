@@ -164,7 +164,7 @@ describe('AppLogService (scoped)', () => {
     await rm(homeDir, { recursive: true, force: true });
   });
 
-  function buildHost(cfg = resolveLoggingConfig({ homeDir, env: { KIMI_LOG_LEVEL: 'info' } })) {
+  function buildHost(cfg = resolveLoggingConfig({ homeDir, env: { MULTIAI_LOG_LEVEL: 'info' } })) {
     return createScopedTestHost(logSeed(cfg));
   }
 
@@ -180,7 +180,7 @@ describe('AppLogService (scoped)', () => {
   });
 
   it('reads its level from ILogOptions', async () => {
-    const host = buildHost(resolveLoggingConfig({ homeDir, env: { KIMI_LOG_LEVEL: 'debug' } }));
+    const host = buildHost(resolveLoggingConfig({ homeDir, env: { MULTIAI_LOG_LEVEL: 'debug' } }));
     const log = host.app.accessor.get(ILogService);
     log.debug('debug-shown');
     await log.flush();

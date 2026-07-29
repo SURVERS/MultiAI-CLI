@@ -4,7 +4,7 @@
  * Resolves the real `AgentTaskService` by interface, uses real `ProcessTask`
  * adapters where process signals are observable, and stubs only persistence,
  * wire, loop, and telemetry boundaries. Run with
- * `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run test/agent/task/taskService.test.ts`.
+ * `pnpm --filter @multiai/agent-core-v2 exec vitest run test/agent/task/taskService.test.ts`.
  */
 
 import { Readable, type Writable } from 'node:stream';

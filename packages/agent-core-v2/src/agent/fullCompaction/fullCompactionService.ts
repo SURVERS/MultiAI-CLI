@@ -58,7 +58,7 @@ import { inputTotal, type TokenUsage } from '#/kosong/contract/usage';
 import { IEventBus } from '#/app/event/eventBus';
 import type { CompactionFailedEvent, CompactionFinishedEvent } from '#/app/telemetry/events';
 import { ITelemetryService } from '#/app/telemetry/telemetry';
-import { ErrorCodes, Error2, isCodedError, isError2, toKimiErrorPayload, unwrapErrorCause } from "#/errors";
+import { ErrorCodes, Error2, isCodedError, isError2, toMultiAIErrorPayload, unwrapErrorCause } from "#/errors";
 import { IWireService } from '#/wire/wire';
 import compactionInstructionTemplate from './compaction-instruction.md?raw';
 import {
@@ -583,7 +583,7 @@ export class AgentFullCompactionService extends Disposable implements IAgentFull
       }
       this.eventBus.publish({
         type: 'error',
-        ...toKimiErrorPayload(error),
+        ...toMultiAIErrorPayload(error),
       });
       throw error;
     } finally {

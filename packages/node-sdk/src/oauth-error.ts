@@ -1,19 +1,18 @@
-import { ErrorCodes, KimiError } from '@moonshot-ai/agent-core';
+import { ErrorCodes, MultiAIError } from '@multiai/agent-core';
 import {
-  OAuthConnectionError,
-  OAuthUnauthorizedError,
-  RetryableRefreshError,
-} from '@moonshot-ai/kimi-code-oauth';
+  MultiAIOAuthError,
+  MultiAIOAuthLoginRequiredError,
+} from '@multiai/oauth';
 
 /**
- * Classify an OAuth token-fetch failure into the public {@link KimiError}
+ * Classify an OAuth token-fetch failure into the public {@link MultiAIError}
  * protocol so callers (turn serialization, SDK clients, ACP) can react on
  * `code` rather than on class identity.
  *
  * Only errors we can positively identify are mapped:
- *  - `OAuthUnauthorizedError` → `auth.login_required` (drive the user through
+ *  - `MultiAIOAuthLoginRequiredError` → `auth.login_required` (drive the user through
  *    `/login`).
- *  - `OAuthConnectionError` / `RetryableRefreshError` →
+ *  - transient MultiAI OAuth failures →
  *    `provider.connection_error` (transient; the user can retry).
  *
  * Anything else returns `undefined` so the caller rethrows it raw and lets it
@@ -22,16 +21,19 @@ import {
  * lock failure as `auth.login_required` would send the user down the wrong
  * remediation path.
  */
-export function mapOAuthTokenError(error: unknown, providerName: string): KimiError | undefined {
-  if (error instanceof OAuthUnauthorizedError) {
-    return new KimiError(
+export function mapOAuthTokenError(error: unknown, providerName: string): MultiAIError | undefined {
+  if (error instanceof MultiAIOAuthLoginRequiredError) {
+    return new MultiAIError(
       ErrorCodes.AUTH_LOGIN_REQUIRED,
       `OAuth provider "${providerName}" requires login before it can be used.`,
       { cause: error },
     );
   }
-  if (error instanceof OAuthConnectionError || error instanceof RetryableRefreshError) {
-    return new KimiError(
+  if (
+    error instanceof MultiAIOAuthError &&
+    ['metadata_unavailable', 'temporarily_unavailable', 'server_error'].includes(error.code)
+  ) {
+    return new MultiAIError(
       ErrorCodes.PROVIDER_CONNECTION_ERROR,
       `OAuth provider "${providerName}" failed to fetch an access token: ${error.message}`,
       { cause: error },

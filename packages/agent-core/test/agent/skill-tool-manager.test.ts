@@ -177,9 +177,9 @@ describe('ToolManager SkillTool registration', () => {
             text: [
               'Skill tool loaded instructions for this request. Follow them.',
               '',
-              '<kimi-skill-loaded name="review" trigger="model-tool" source="user" dir="/skills/review" args="">',
+              '<multiai-skill-loaded name="review" trigger="model-tool" source="user" dir="/skills/review" args="">',
               'body of review',
-              '</kimi-skill-loaded>',
+              '</multiai-skill-loaded>',
             ].join('\n'),
           },
         ],
@@ -204,7 +204,7 @@ describe('ToolManager SkillTool registration', () => {
     try {
       const homeDir = join(tmp, 'home');
       const workDir = join(tmp, 'work');
-      const skillDir = join(workDir, '.kimi-code', 'skills', 'review');
+      const skillDir = join(workDir, '.multiai', 'skills', 'review');
       await mkdir(skillDir, { recursive: true });
       await writeFile(
         join(skillDir, 'SKILL.md'),

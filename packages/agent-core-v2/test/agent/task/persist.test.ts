@@ -4,7 +4,7 @@
  * Constructs the plain `AgentTaskPersistence` helper over real node-fs storage
  * resolved by interface, covering primary writes, local-first reads, the
  * previous v2 session-root fallback, and exact output paths. Run with
- * `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run test/agent/task/persist.test.ts`.
+ * `pnpm --filter @multiai/agent-core-v2 exec vitest run test/agent/task/persist.test.ts`.
  */
 
 import { mkdir, rm, stat, writeFile } from 'node:fs/promises';

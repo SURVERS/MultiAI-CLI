@@ -1,21 +1,21 @@
 {
-  "name": "@moonshot-ai/kimi-code-sdk",
+  "name": "@multiai/sdk",
   "version": "0.14.0",
   "private": true,
-  "description": "TypeScript SDK for the Kimi Code Agent",
+  "description": "TypeScript SDK for the MultiAI coding agent",
   "license": "MIT",
-  "author": "Moonshot AI",
-  "homepage": "https://github.com/MoonshotAI/kimi-code/tree/main/packages/node-sdk#readme",
+  "author": "MultiAI",
+  "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/node-sdk#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MoonshotAI/kimi-code.git",
+    "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",
     "directory": "packages/node-sdk"
   },
   "bugs": {
-    "url": "https://github.com/MoonshotAI/kimi-code/issues"
+    "url": "https://github.com/SURVERS/MultiAI-CLI/issues"
   },
   "keywords": [
-    "kimi",
+    "multiai",
     "sdk",
     "typescript",
     "agent",
@@ -59,12 +59,12 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@moonshot-ai/agent-core": "workspace:^",
-    "@moonshot-ai/agent-core-v2": "workspace:^",
-    "@moonshot-ai/kaos": "workspace:^",
-    "@moonshot-ai/kimi-code-oauth": "workspace:^",
-    "@moonshot-ai/klient": "workspace:^",
-    "@moonshot-ai/kosong": "workspace:^",
+    "@multiai/agent-core": "workspace:^",
+    "@multiai/agent-core-v2": "workspace:^",
+    "@multiai/kaos": "workspace:^",
+    "@multiai/klient": "workspace:^",
+    "@multiai/kosong": "workspace:^",
+    "@multiai/oauth": "workspace:^",
     "@types/yazl": "^2.4.6",
     "jimp": "^1.6.1"
   }

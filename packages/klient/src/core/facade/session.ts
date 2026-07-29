@@ -7,24 +7,24 @@
  * wire).
  */
 
-import type { AgentActivityState } from '@moonshot-ai/agent-core-v2/agent/activityView/activityView';
+import type { AgentActivityState } from '@multiai/agent-core-v2/agent/activityView/activityView';
 import type {
   AgentMeta,
   SessionMeta,
   SessionMetaPatch,
-} from '@moonshot-ai/agent-core-v2/session/sessionMetadata/sessionMetadata';
+} from '@multiai/agent-core-v2/session/sessionMetadata/sessionMetadata';
 import type {
   ApprovalRequest,
   ApprovalResponse,
-} from '@moonshot-ai/agent-core-v2/session/approval/approval';
+} from '@multiai/agent-core-v2/session/approval/approval';
 import type {
   QuestionRequest,
   QuestionResult,
-} from '@moonshot-ai/agent-core-v2/session/question/question';
+} from '@multiai/agent-core-v2/session/question/question';
 import type {
   Interaction,
   InteractionKind,
-} from '@moonshot-ai/agent-core-v2/session/interaction/interaction';
+} from '@multiai/agent-core-v2/session/interaction/interaction';
 
 import type { ScopeRef } from '../channel.js';
 import type { ScopedCaller } from './global.js';

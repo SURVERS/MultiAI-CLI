@@ -1,7 +1,7 @@
 /**
  * `GET /sessions/{session_id}/snapshot` — IM-style initial sync.
  *
- * **Reader strategy** (controlled by `KIMI_SNAPSHOT_READER`):
+ * **Reader strategy** (controlled by `MULTIAI_SNAPSHOT_READER`):
  *
  *   - `auto` (default) — delegate to `ISnapshotReader`, which reads
  *     `state.json` + `agents/main/wire.jsonl` directly from disk and bypasses
@@ -10,7 +10,7 @@
  *   - `legacy` — fall back to `resume` + live service assembly. Pure operator
  *     escape hatch; no silent per-request fallback.
  *
- * **Timeout**: the auto path races against a hard `KIMI_SNAPSHOT_TIMEOUT_MS`
+ * **Timeout**: the auto path races against a hard `MULTIAI_SNAPSHOT_TIMEOUT_MS`
  * ceiling (default 4000ms, under traefik's 5s cut-off). Timeout returns 50001
  * with a structured `snapshot.timeout` log line so the gateway never sees a 499.
  *
@@ -31,8 +31,8 @@ import {
   toProtocolMessage,
   type IAgentScopeHandle,
   type Scope,
-} from '@moonshot-ai/agent-core-v2';
-import type { Message } from '@moonshot-ai/agent-core-v2/agent/contextMemory/protocolMessage';
+} from '@multiai/agent-core-v2';
+import type { Message } from '@multiai/agent-core-v2/agent/contextMemory/protocolMessage';
 import { ErrorCode } from '../protocol/error-codes';
 import {
   sessionSnapshotResponseSchema,

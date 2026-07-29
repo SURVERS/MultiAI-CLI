@@ -4,13 +4,13 @@
  * editor mentions use relative paths inside the working directory and absolute paths outside.
  * Wiring: real temporary local files plus the public handler/bridge surfaces;
  * VS Code host APIs are the only stubbed boundary.
- * Run: pnpm --filter kimi-code exec vitest run --config vitest.config.ts test/workspace-paths.test.ts
+ * Run: pnpm --filter multiai-cli exec vitest run --config vitest.config.ts test/workspace-paths.test.ts
  */
 import { mkdtemp, mkdir, readFile, readdir, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Event, Session } from "@moonshot-ai/kimi-code-sdk";
+import type { Event, Session } from "@multiai/sdk";
 import type * as vscode from "vscode";
 import { Methods } from "../shared/bridge";
 import { BridgeHandler } from "../src/bridge-handler";
@@ -133,12 +133,12 @@ vi.mock("vscode", () => ({
   },
 }));
 
-vi.mock("@moonshot-ai/kimi-code-sdk", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@moonshot-ai/kimi-code-sdk")>();
+vi.mock("@multiai/sdk", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@multiai/sdk")>();
   return {
     ...original,
-    createKimiHarness: () => ({
-      homeDir: "/tmp/kimi-code-test-home",
+    createMultiAIHarness: () => ({
+      homeDir: "/tmp/multiai-cli-test-home",
       close: vi.fn(),
     }),
   };
@@ -151,7 +151,7 @@ let sessionRuntimes: SessionRuntime[];
 let extraRoots: string[];
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), "kimi-vscode-workspace-paths-"));
+  root = await mkdtemp(join(tmpdir(), "multiai-vscode-workspace-paths-"));
   vscodeHost.workspaceFolders.splice(0, vscodeHost.workspaceFolders.length, { uri: vscodeHost.Uri.file(root) });
   vscodeHost.readDirectory.mockImplementation(async (uri: { fsPath: string }) =>
     (await readdir(uri.fsPath, { withFileTypes: true })).map((entry) => [
@@ -222,7 +222,11 @@ describe("Webview workspace paths (selected-directory containment)", () => {
     const outside = join(root, "outside");
     await Promise.all([mkdir(workDir), mkdir(outside)]);
     await writeFile(join(outside, "secret.txt"), "secret");
-    await symlink(outside, join(workDir, "outside-link"));
+    await symlink(
+      outside,
+      join(workDir, "outside-link"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
 
     const files = await getProjectFiles(workDir, { directory: "." });
 
@@ -266,7 +270,9 @@ describe("Webview workspace paths (selected-directory containment)", () => {
     expect(files).toEqual([{ path: "remote.ts", name: "remote.ts", isDirectory: false }]);
   });
 
-  it("refuses to open a symlink whose target lies outside the selected working directory", async () => {
+  it.skipIf(process.platform === "win32")(
+    "refuses to open a symlink whose target lies outside the selected working directory",
+    async () => {
     const workDir = join(root, "project");
     const outside = join(root, "outside.txt");
     await mkdir(workDir);
@@ -278,11 +284,14 @@ describe("Webview workspace paths (selected-directory containment)", () => {
 
     expect(result).toEqual({ ok: false });
     expect(vscodeHost.executeCommand).not.toHaveBeenCalled();
-  });
+    },
+  );
 
-  it("omits an outside symlink when an SDK Write event requests baseline capture", async () => {
+  it.skipIf(process.platform === "win32")(
+    "omits an outside symlink when an SDK Write event requests baseline capture",
+    async () => {
     const workDir = join(root, "project");
-    const outsideRoot = await mkdtemp(join(tmpdir(), "kimi-vscode-baseline-outside-"));
+    const outsideRoot = await mkdtemp(join(tmpdir(), "multiai-vscode-baseline-outside-"));
     extraRoots.push(outsideRoot);
     const outside = join(outsideRoot, "outside.txt");
     const linkedFile = join(workDir, "linked.txt");
@@ -305,7 +314,7 @@ describe("Webview workspace paths (selected-directory containment)", () => {
     } as unknown as Session;
     const runtime = new SessionRuntime({
       session,
-      legacyApproval: { yolo: false, afk: false },
+      sessionApproval: { yolo: false, afk: false },
       broadcast: vi.fn(),
       captureBaseline: (summary, filePath, webviewIds) => {
         bridge.captureFileBaseline(summary, filePath, webviewIds);
@@ -325,7 +334,8 @@ describe("Webview workspace paths (selected-directory containment)", () => {
     });
 
     await expect(bridge.baselineManager.getChanges({ id: "session-1", workDir })).resolves.toEqual([]);
-  });
+    },
+  );
 
   it("builds an editor mention relative to the selected working directory", async () => {
     const workDir = join(root, "project", "subproject");
@@ -362,7 +372,7 @@ describe("Webview workspace paths (selected-directory containment)", () => {
   });
 
   it("builds an absolute editor mention when the file is outside the workspace root", async () => {
-    const otherRoot = await mkdtemp(join(tmpdir(), "kimi-vscode-mention-outside-"));
+    const otherRoot = await mkdtemp(join(tmpdir(), "multiai-vscode-mention-outside-"));
     extraRoots.push(otherRoot);
     const outside = join(otherRoot, "App.java");
     await writeFile(outside, "class App {}");
@@ -424,10 +434,14 @@ describe("Webview workspace paths (selected-directory containment)", () => {
   });
 
   it("rejects a selected working directory whose symlink target leaves the workspace", async () => {
-    const outside = await mkdtemp(join(tmpdir(), "kimi-vscode-outside-"));
+    const outside = await mkdtemp(join(tmpdir(), "multiai-vscode-outside-"));
     extraRoots.push(outside);
     const linkedWorkDir = join(root, "linked-project");
-    await symlink(outside, linkedWorkDir);
+    await symlink(
+      outside,
+      linkedWorkDir,
+      process.platform === "win32" ? "junction" : "dir",
+    );
     const bridge = createBridge();
 
     const result = await bridge.handle(

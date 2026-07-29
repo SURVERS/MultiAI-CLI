@@ -13,7 +13,7 @@
  * windows or capabilities. The network fetch, cache, and config writes live
  * beside this file (`modelsDevUpstream`, `modelsDevImportService`).
  *
- * Ported from `@moonshot-ai/kosong`'s `catalog.ts` so the engine stays
+ * Ported from `@multiai/kosong`'s `catalog.ts` so the engine stays
  * self-contained; the two copies must be kept in lockstep while the v1
  * lineage (agent-core / node-sdk / CLI) still consumes the kosong one.
  */

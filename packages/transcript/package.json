@@ -1,5 +1,5 @@
 {
-  "name": "@moonshot-ai/transcript",
+  "name": "@multiai/transcript",
   "version": "0.0.1",
   "private": true,
   "description": "Isomorphic transcript rendering data layer: agent-granular L1 store, idempotent L2 operations, granularity-gated L3 subscriptions, framework-free L4 view registry.",
@@ -7,11 +7,11 @@
   "author": "Moonshot AI",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MoonshotAI/kimi-code.git",
+    "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",
     "directory": "packages/transcript"
   },
   "bugs": {
-    "url": "https://github.com/MoonshotAI/kimi-code/issues"
+    "url": "https://github.com/SURVERS/MultiAI-CLI/issues"
   },
   "type": "module",
   "imports": {

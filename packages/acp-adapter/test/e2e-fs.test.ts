@@ -35,8 +35,8 @@ import {
   type WriteTextFileRequest,
   type WriteTextFileResponse,
 } from '@agentclientprotocol/sdk';
-import type { Kaos } from '@moonshot-ai/kaos';
-import type { Event, KimiHarness, Session } from '@moonshot-ai/kimi-code-sdk';
+import type { Kaos } from '@multiai/kaos';
+import type { Event, MultiAIHarness, Session } from '@multiai/sdk';
 import { describe, expect, it } from 'vitest';
 
 import { AcpServer } from '../src/server';
@@ -136,7 +136,7 @@ describe('end-to-end FS reverse-RPC', () => {
         createdSession = makeReadingSession(capturedSessionId, targetPath, options.kaos);
         return createdSession;
       },
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);
@@ -223,7 +223,7 @@ describe('end-to-end FS reverse-RPC', () => {
           },
         } as unknown as Session;
       },
-    } as unknown as KimiHarness;
+    } as unknown as MultiAIHarness;
 
     const { agentStream, clientStream } = makeInMemoryStreamPair();
     new AgentSideConnection((c) => new AcpServer(harness, c), agentStream);

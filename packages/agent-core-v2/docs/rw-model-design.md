@@ -2,7 +2,7 @@
 
 > 目标：为 agent-core-v2 定义一套**唯一**的读写模型，统一 view、topic、写 operation、
 > 订阅方式，消解回环、定义方式不一致、事件可见性混乱等问题。本文基于对
-> agent-core-v2 / server-v2 / TUI（apps/kimi-code）三方现状的完整调研，
+> agent-core-v2 / server-v2 / TUI（apps/multiai-cli）三方现状的完整调研，
 > 所有断言均有 file:line 证据。
 >
 > 阅读顺序：§1 问题 → §2 概念模型（核心） → §3–§6 各原语规范 → §7 订阅协议 →

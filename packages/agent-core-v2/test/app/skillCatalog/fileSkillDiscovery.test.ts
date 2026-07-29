@@ -3,7 +3,7 @@
  *
  * Verifies real SKILL.md parsing, collision handling, nested bundles, and
  * diagnostics through the ISkillDiscovery contract with only logging stubbed.
- * Run with `pnpm --filter @moonshot-ai/agent-core-v2 exec vitest run
+ * Run with `pnpm --filter @multiai/agent-core-v2 exec vitest run
  * test/app/skillCatalog/fileSkillDiscovery.test.ts`.
  */
 

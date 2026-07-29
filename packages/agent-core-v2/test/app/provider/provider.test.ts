@@ -32,12 +32,12 @@ describe('providers config section', () => {
 });
 
 describe('provider config section helpers', () => {
-  it('declares KIMI_MODEL_* bindings for the env provider', () => {
+  it('declares MULTIAI_MODEL_* bindings for the env provider', () => {
     expect(providersEnvBindings).toEqual({
       [ENV_MODEL_PROVIDER_KEY]: {
-        apiKey: 'KIMI_MODEL_API_KEY',
-        type: 'KIMI_MODEL_PROVIDER_TYPE',
-        baseUrl: 'KIMI_MODEL_BASE_URL',
+        apiKey: 'MULTIAI_MODEL_API_KEY',
+        type: 'MULTIAI_MODEL_PROVIDER_TYPE',
+        baseUrl: 'MULTIAI_MODEL_BASE_URL',
       },
     });
   });
@@ -61,7 +61,7 @@ describe('provider config section helpers', () => {
           api_key: 'sk',
           base_url: 'https://api.example.com/v1',
           custom_headers: { 'X-Test': '1' },
-          oauth: { storage: 'file', key: 'token', oauth_host: 'https://auth.example.com' },
+          oauth: { storage: 'keyring', key: 'token', oauth_host: 'https://auth.example.com' },
         },
       }),
     ).toEqual({
@@ -70,7 +70,7 @@ describe('provider config section helpers', () => {
         apiKey: 'sk',
         baseUrl: 'https://api.example.com/v1',
         customHeaders: { 'X-Test': '1' },
-        oauth: { storage: 'file', key: 'token', oauthHost: 'https://auth.example.com' },
+        oauth: { storage: 'keyring', key: 'token', oauthHost: 'https://auth.example.com' },
       },
     });
   });
@@ -84,7 +84,7 @@ describe('provider config section helpers', () => {
             apiKey: 'sk',
             baseUrl: 'https://api.example.com/v1',
             customHeaders: { 'X-Test': '1' },
-            oauth: { storage: 'file', key: 'token', oauthHost: 'https://auth.example.com' },
+            oauth: { storage: 'keyring', key: 'token', oauthHost: 'https://auth.example.com' },
           },
         },
         {},
@@ -95,7 +95,7 @@ describe('provider config section helpers', () => {
         api_key: 'sk',
         base_url: 'https://api.example.com/v1',
         custom_headers: { 'X-Test': '1' },
-        oauth: { storage: 'file', key: 'token', oauth_host: 'https://auth.example.com' },
+        oauth: { storage: 'keyring', key: 'token', oauth_host: 'https://auth.example.com' },
       },
     });
   });

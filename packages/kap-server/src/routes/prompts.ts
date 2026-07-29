@@ -22,8 +22,8 @@ import {
   IEventService,
   IFileService,
   ISessionMetadata,
-  buildKimiFileUrl,
-  parseKimiFileUrl,
+  buildMultiAIFileUrl,
+  parseMultiAIFileUrl,
   promptMetadataTextFromContentParts,
   ProfileError,
   type ContentPart,
@@ -51,7 +51,7 @@ import {
   type ImageCompressionTelemetry,
   type ISessionScopeHandle,
   type Scope,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { ErrorCode } from '../protocol/error-codes';
 import {
   promptAbortResponseSchema,
@@ -256,7 +256,7 @@ export function registerPromptsRoutes(app: PromptRouteHost, core: Scope): void {
         // Media resolution runs BEFORE any control mutation, so a failed
         // submission leaves the session's controls untouched. Prompt videos
         // are materialized to a local copy and carried into context as an
-        // internal `kimi-file://` reference; the engine resolves them to a
+        // internal `multiai-file://` reference; the engine resolves them to a
         // provider form (upload / inline / `<video path>` tag) at request
         // time, so the edge no longer uploads.
         const telemetry = core.accessor.get(ITelemetryService).withContext({ sessionId: session_id });
@@ -435,12 +435,12 @@ function corePartsToProtocol(content: readonly ContentPart[]): PromptSubmission[
         ? { type: 'image', source: { kind: 'url', url: part.imageUrl.url, id: part.imageUrl.id } }
         : { type: 'image', source: { kind: 'base64', media_type: match[1]!, data: match[2]! } });
     } else if (part.type === 'video_url') {
-      // An internal `kimi-file://<id>?path=…` reference projects back to the
+      // An internal `multiai-file://<id>?path=…` reference projects back to the
       // daemon upload it came from — the materialization path never leaks to
       // the client.
-      const kimiFile = parseKimiFileUrl(part.videoUrl.url);
-      if (kimiFile !== undefined) {
-        parts.push({ type: 'video', source: { kind: 'file', file_id: kimiFile.fileId } });
+      const multiaiFile = parseMultiAIFileUrl(part.videoUrl.url);
+      if (multiaiFile !== undefined) {
+        parts.push({ type: 'video', source: { kind: 'file', file_id: multiaiFile.fileId } });
         continue;
       }
       const match = /^data:([^;]+);base64,(.*)$/.exec(part.videoUrl.url);
@@ -692,13 +692,13 @@ async function resolvePromptMediaFiles(
 
     // Uploaded video: materialize a local copy the model can open as a
     // fallback, and carry the upload into context as an internal
-    // `kimi-file://<id>?path=<materialized path>` reference. The engine
+    // `multiai-file://<id>?path=<materialized path>` reference. The engine
     // resolves it to a provider form (upload / inline / `<video path>` tag) at
     // request time, so the edge never uploads and never blocks on the provider.
     const cachePath = await materializeVideoToCache(file, cacheDir);
     content.push({
       type: 'video',
-      source: { kind: 'url', url: buildKimiFileUrl(file.meta.id, cachePath) },
+      source: { kind: 'url', url: buildMultiAIFileUrl(file.meta.id, cachePath) },
     });
     changed = true;
   }
@@ -773,7 +773,7 @@ function imageExtensionForMime(mediaType: string): string {
   return ext.length > 0 ? ext : 'img';
 }
 
-// This notice's exact shape is a client contract: kimi-web's messagesToTurns
+// This notice's exact shape is a client contract: multiai-web's messagesToTurns
 // parses it (ATTACHED_FILE_NOTICE_RE) to rebuild the attachment chip after a
 // resync — change the wording there too.
 function buildAttachedFileNotice(name: string, mediaType: string, size: number, path: string): string {

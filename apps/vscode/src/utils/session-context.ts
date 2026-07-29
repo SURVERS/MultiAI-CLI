@@ -3,7 +3,7 @@ import type {
   ContextMessage,
   PromptOrigin,
   ToolCall,
-} from "@moonshot-ai/kimi-code-sdk";
+} from "@multiai/sdk";
 
 const INTERNAL_ORIGINS = new Set<PromptOrigin["kind"]>([
   "injection",
@@ -38,7 +38,7 @@ export function buildExportMarkdown(input: {
     `token_count: ${String(input.tokenCount)}`,
     "---",
     "",
-    "# Kimi Session Export",
+    "# MultiAI Session Export",
     "",
     "## Overview",
     "",

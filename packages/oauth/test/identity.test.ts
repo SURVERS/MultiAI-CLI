@@ -5,18 +5,18 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  createKimiDefaultHeaders,
-  createKimiDeviceHeaders,
-  createKimiDeviceId,
-  createKimiUserAgent,
-  KIMI_CODE_PLATFORM,
-  readKimiDeviceId,
+  createMultiAIDefaultHeaders,
+  createMultiAIDeviceHeaders,
+  createMultiAIDeviceId,
+  createMultiAIUserAgent,
+  MULTIAI_PLATFORM,
+  readMultiAIDeviceId,
 } from '../src/identity';
 
 const tmpRoots: string[] = [];
 
 function tempHome(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'kimi-oauth-identity-'));
+  const dir = mkdtempSync(join(tmpdir(), 'multiai-oauth-identity-'));
   tmpRoots.push(dir);
   return dir;
 }
@@ -27,19 +27,19 @@ afterEach(() => {
   }
 });
 
-describe('Kimi identity factories', () => {
+describe('MultiAI identity factories', () => {
   it('creates and reuses a device id in the explicit homeDir', () => {
     const homeDir = tempHome();
-    const first = createKimiDeviceId(homeDir);
-    const second = createKimiDeviceId(homeDir);
+    const first = createMultiAIDeviceId(homeDir);
+    const second = createMultiAIDeviceId(homeDir);
 
     expect(first).toMatch(/^[0-9a-f-]+$/);
     expect(second).toBe(first);
   });
 
   it('creates different device ids for different homeDir values', () => {
-    const first = createKimiDeviceId(tempHome());
-    const second = createKimiDeviceId(tempHome());
+    const first = createMultiAIDeviceId(tempHome());
+    const second = createMultiAIDeviceId(tempHome());
 
     expect(second).not.toBe(first);
   });
@@ -47,74 +47,74 @@ describe('Kimi identity factories', () => {
   it('reads an existing device id without creating one when missing', () => {
     const homeDir = tempHome();
 
-    expect(readKimiDeviceId(homeDir)).toBeNull();
-    expect(readKimiDeviceId(homeDir)).toBeNull();
+    expect(readMultiAIDeviceId(homeDir)).toBeNull();
+    expect(readMultiAIDeviceId(homeDir)).toBeNull();
 
-    const first = createKimiDeviceId(homeDir);
-    expect(readKimiDeviceId(homeDir)).toBe(first);
+    const first = createMultiAIDeviceId(homeDir);
+    expect(readMultiAIDeviceId(homeDir)).toBe(first);
   });
 
   it('treats an empty device id file as missing', () => {
     const homeDir = tempHome();
     writeFileSync(join(homeDir, 'device_id'), '  \n', 'utf-8');
 
-    expect(readKimiDeviceId(homeDir)).toBeNull();
+    expect(readMultiAIDeviceId(homeDir)).toBeNull();
   });
 
-  it('creates complete X-Msh device headers from host version', () => {
-    const headers = createKimiDeviceHeaders({
+  it('creates complete X-MultiAI device headers from host version', () => {
+    const headers = createMultiAIDeviceHeaders({
       homeDir: tempHome(),
       version: '1.2.3-test',
     });
 
-    expect(headers['X-Msh-Platform']).toBe(KIMI_CODE_PLATFORM);
-    expect(headers['X-Msh-Version']).toBe('1.2.3-test');
-    expect(headers['X-Msh-Device-Name']).toBeTruthy();
-    expect(headers['X-Msh-Device-Model']).toBeTruthy();
-    expect(headers['X-Msh-Os-Version']).toBeTruthy();
-    expect(headers['X-Msh-Device-Id']).toMatch(/^[0-9a-f-]+$/);
+    expect(headers['X-MultiAI-Platform']).toBe(MULTIAI_PLATFORM);
+    expect(headers['X-MultiAI-Version']).toBe('1.2.3-test');
+    expect(headers['X-MultiAI-Device-Name']).toBeTruthy();
+    expect(headers['X-MultiAI-Device-Model']).toBeTruthy();
+    expect(headers['X-MultiAI-Os-Version']).toBeTruthy();
+    expect(headers['X-MultiAI-Device-Id']).toMatch(/^[0-9a-f-]+$/);
   });
 
-  it('creates kimi-code-cli User-Agent and appends suffix only to UA', () => {
+  it('creates multiai-cli User-Agent and appends suffix only to UA', () => {
     expect(
-      createKimiUserAgent({
-        userAgentProduct: 'kimi-code-cli',
+      createMultiAIUserAgent({
+        userAgentProduct: 'multiai-cli',
         version: '1.2.3',
       }),
-    ).toBe('kimi-code-cli/1.2.3');
+    ).toBe('multiai-cli/1.2.3');
     expect(
-      createKimiUserAgent({
-        userAgentProduct: 'kimi-code-cli',
+      createMultiAIUserAgent({
+        userAgentProduct: 'multiai-cli',
         version: '1.2.3',
         userAgentSuffix: 'wire 4.5.6',
       }),
-    ).toBe('kimi-code-cli/1.2.3 (wire 4.5.6)');
+    ).toBe('multiai-cli/1.2.3 (wire 4.5.6)');
   });
 
   it('merges User-Agent and device headers into default headers', () => {
-    const headers = createKimiDefaultHeaders({
+    const headers = createMultiAIDefaultHeaders({
       homeDir: tempHome(),
-      userAgentProduct: 'kimi-code-cli',
+      userAgentProduct: 'multiai-cli',
       version: '1.2.3',
     });
 
-    expect(headers['User-Agent']).toBe('kimi-code-cli/1.2.3');
-    expect(headers['X-Msh-Version']).toBe('1.2.3');
-    expect(headers['X-Msh-Device-Id']).toMatch(/^[0-9a-f-]+$/);
+    expect(headers['User-Agent']).toBe('multiai-cli/1.2.3');
+    expect(headers['X-MultiAI-Version']).toBe('1.2.3');
+    expect(headers['X-MultiAI-Device-Id']).toMatch(/^[0-9a-f-]+$/);
   });
 });
 
 // HTTP header values must be plain ASCII without leading/trailing whitespace.
-// The public factories surface the sanitizer used for User-Agent and X-Msh-*.
+// The public factories surface the sanitizer used for User-Agent and X-MultiAI-*.
 describe('ascii header value sanitization', () => {
   it('strips a trailing newline from a header value', () => {
-    const ua = createKimiUserAgent({ userAgentProduct: 'kimi-code-cli', version: '6.8.0-101\n' });
-    expect(ua).toBe('kimi-code-cli/6.8.0-101');
+    const ua = createMultiAIUserAgent({ userAgentProduct: 'multiai-cli', version: '6.8.0-101\n' });
+    expect(ua).toBe('multiai-cli/6.8.0-101');
   });
 
   it('drops non-ASCII codepoints while keeping the ASCII remainder', () => {
-    const ua = createKimiUserAgent({ userAgentProduct: 'kimi-code-cli', version: 'héllo' });
-    expect(ua).toBe('kimi-code-cli/hllo');
+    const ua = createMultiAIUserAgent({ userAgentProduct: 'multiai-cli', version: 'héllo' });
+    expect(ua).toBe('multiai-cli/hllo');
   });
 
   it('uses the unknown fallback when every hostname codepoint is non-ASCII', async () => {
@@ -131,9 +131,9 @@ describe('ascii header value sanitization', () => {
     });
 
     try {
-      const { createKimiDeviceHeaders: createHeaders } = await import('../src/identity');
+      const { createMultiAIDeviceHeaders: createHeaders } = await import('../src/identity');
       const headers = createHeaders({ homeDir: tempHome(), version: '1.0.0' });
-      expect(headers['X-Msh-Device-Name']).toBe('unknown');
+      expect(headers['X-MultiAI-Device-Name']).toBe('unknown');
     } finally {
       vi.doUnmock('node:os');
       vi.resetModules();
@@ -154,7 +154,7 @@ describe('ascii header value sanitization', () => {
     });
 
     try {
-      const { createKimiDeviceHeaders: createHeaders } = await import('../src/identity');
+      const { createMultiAIDeviceHeaders: createHeaders } = await import('../src/identity');
       const headers = createHeaders({ homeDir: tempHome(), version: '1.0.0' });
       for (const [key, value] of Object.entries(headers)) {
         expect(value, `header ${key} has untrimmed whitespace: ${JSON.stringify(value)}`).toBe(
@@ -186,9 +186,9 @@ describe('ascii header value sanitization', () => {
     }));
 
     try {
-      const { createKimiDeviceHeaders } = await import('../src/identity');
-      const headers = createKimiDeviceHeaders({ homeDir: tempHome(), version: '1.0.0' });
-      expect(headers['X-Msh-Device-Model']).toBe('macOS 25.5.0 arm64');
+      const { createMultiAIDeviceHeaders } = await import('../src/identity');
+      const headers = createMultiAIDeviceHeaders({ homeDir: tempHome(), version: '1.0.0' });
+      expect(headers['X-MultiAI-Device-Model']).toBe('macOS 25.5.0 arm64');
     } finally {
       vi.doUnmock('node:os');
       vi.doUnmock('node:child_process');

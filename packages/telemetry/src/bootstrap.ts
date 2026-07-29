@@ -3,7 +3,7 @@ import { EventSink } from './sink';
 import { SystemMetricsCollector } from './systemMetrics';
 import { AsyncTransport } from './transport';
 
-export const TELEMETRY_DISABLE_ENV = 'KIMI_DISABLE_TELEMETRY';
+export const TELEMETRY_DISABLE_ENV = 'MULTIAI_DISABLE_TELEMETRY';
 
 const TRUE_ENV_VALUES = new Set(['1', 'true', 't', 'yes', 'y']);
 

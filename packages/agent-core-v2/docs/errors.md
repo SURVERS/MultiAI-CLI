@@ -12,8 +12,8 @@ unified `ErrorCodes` const.
 ## Where things live
 
 - `src/_base/errors/errors.ts`: base classes — `Error2`, `ExpectedError`, `ErrorNoTelemetry`, `BugIndicatingError`, `NotImplementedError`, plus the `isError2` guard and `unwrapErrorCause`.
-- `src/_base/errors/codes.ts`: the `ErrorDomain` contract, the `ErrorCode` type (aliased to the protocol's `KimiErrorCode`), the runtime registry (`registerErrorDomain` / `errorInfo` / `isErrorCode`), and the domain-independent `CoreErrors` (`internal`, `not_implemented`).
-- `src/_base/errors/serialize.ts`: `ErrorPayload`, `isCodedError`, `toErrorPayload`, `fromErrorPayload`, `makeErrorPayload`. Reads retryability from the registry via `errorInfo`. The wire-facing names (`KimiErrorPayload`, `toKimiErrorPayload`) mirror the protocol contract and keep their names even though the in-process class is `Error2`.
+- `src/_base/errors/codes.ts`: the `ErrorDomain` contract, the `ErrorCode` type (aliased to the protocol's `MultiAIErrorCode`), the runtime registry (`registerErrorDomain` / `errorInfo` / `isErrorCode`), and the domain-independent `CoreErrors` (`internal`, `not_implemented`).
+- `src/_base/errors/serialize.ts`: `ErrorPayload`, `isCodedError`, `toErrorPayload`, `fromErrorPayload`, `makeErrorPayload`. Reads retryability from the registry via `errorInfo`. The wire-facing names (`MultiAIErrorPayload`, `toMultiAIErrorPayload`) mirror the protocol contract and keep their names even though the in-process class is `Error2`.
 - `src/_base/errors/errorMessage.ts`: `toErrorMessage(error, verbose?)` for logs/CLI.
 - `src/_base/errors/unexpectedError.ts`: `onUnexpectedError` / `setUnexpectedErrorHandler` / `safelyCallListener`.
 - `src/<domain>/errors.ts`: each domain's `XxxErrors` descriptor (codes + retryable list + per-code info overrides), self-registered on import.
@@ -23,7 +23,7 @@ unified `ErrorCodes` const.
 
 - **Throw a coded error, not a bare string.** `throw new Error2(ErrorCodes.X, …)`. `throw new Error('x')` only for unreachable guards; `BugIndicatingError` when the throw site indicates a caller bug (e.g. reading a service before its `ready`); `NotImplementedError('feature')` for stubs.
 - **Define codes in the owning domain.** A domain's codes live in `<domain>/errors.ts` next to its interfaces, exported as an `XxxErrors` descriptor — never in `_base/errors`.
-- **One `code` per failure mode.** Codes read `domain.reason` (e.g. `tool.unknown_tool`). The set of valid code strings is fixed by the protocol (`KimiErrorCode`); adding a brand-new code means updating the protocol first. Renaming/removing a code is a major (breaks SDK clients).
+- **One `code` per failure mode.** Codes read `domain.reason` (e.g. `tool.unknown_tool`). The set of valid code strings is fixed by the protocol (`MultiAIErrorCode`); adding a brand-new code means updating the protocol first. Renaming/removing a code is a major (breaks SDK clients).
 - **Import from the facade.** Throw sites and cross-domain consumers do `import { ErrorCodes, Error2 } from '#/errors'`. A domain's own `errors.ts` references its own descriptor (`LoopErrors.codes.X`) and imports only from `#/_base/errors` (never from `#/errors`, to avoid cycles).
 - **Translate foreign errors at the boundary.** Provider/HTTP, fs, MCP errors are caught at the domain boundary and re-thrown as the domain's coded error. `_base/errors` never imports a business domain.
 - **Translation is idempotent.** A translator (`toHostFsError`, `toStorageIoError`, …) returns its input unchanged when it is already the domain's error type, so layered boundaries never double-wrap. The original error always goes to `cause`.
@@ -84,4 +84,4 @@ The os / persistence / wire domains show the standard shapes:
 
 - `packages/agent-core-v2/src/_base/errors/` — contract, registry, base classes, serialization.
 - `packages/agent-core-v2/src/errors.ts` — the aggregating facade.
-- `packages/protocol/src/events.ts` — the canonical `KimiErrorCode` wire union.
+- `packages/protocol/src/events.ts` — the canonical `MultiAIErrorCode` wire union.

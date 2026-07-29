@@ -5,8 +5,8 @@
  */
 import { z } from 'zod';
 
-import { isoDateTimeSchema } from '@moonshot-ai/agent-core-v2/_base/utils/isoDateTime';
-import { transcriptGradeSpecSchema, transcriptSeqSchema } from '@moonshot-ai/transcript';
+import { isoDateTimeSchema } from '@multiai/agent-core-v2/_base/utils/isoDateTime';
+import { transcriptGradeSpecSchema, transcriptSeqSchema } from '@multiai/transcript';
 
 import { eventSchema } from './events-zod';
 
@@ -169,7 +169,7 @@ export type SubscribeMessage = z.infer<typeof subscribeMessageSchema>;
  * `subscribe_v2` — the transcript subscription channel. Owns ONLY the
  * per-agent transcript grades (and the optional op-batch seq cursor) for one
  * session; legacy event subscription stays on `client_hello` / `subscribe`.
- * The grade/seq schemas are owned by `@moonshot-ai/transcript`.
+ * The grade/seq schemas are owned by `@multiai/transcript`.
  */
 export const subscribeV2PayloadSchema = z.object({
   session_id: z.string().min(1),

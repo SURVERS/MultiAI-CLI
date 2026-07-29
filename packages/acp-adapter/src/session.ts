@@ -17,7 +17,7 @@ import {
   type BackgroundTaskInfo,
   type ContextMessage,
   type Event,
-  type KimiHarness,
+  type MultiAIHarness,
   type McpServerInfo,
   type PromptPart,
   type QuestionAnswers,
@@ -25,7 +25,7 @@ import {
   type Session,
   type SessionStatus,
   type SessionUsage,
-} from '@moonshot-ai/kimi-code-sdk';
+} from '@multiai/sdk';
 
 import {
   approvalRequestToPermissionOptions,
@@ -72,7 +72,7 @@ export type TelemetryTrackFn = (
 ) => void;
 
 /**
- * Adapter-side wrapper around a {@link Session} from the Kimi node SDK.
+ * Adapter-side wrapper around a {@link Session} from the MultiAI Node SDK.
  *
  * Stored in `AcpServer.sessions` so subsequent `session/prompt` and
  * `session/cancel` calls can locate the underlying SDK session by its
@@ -143,7 +143,7 @@ export class AcpSession {
    * route them to {@link Session.activateSkill} instead of forwarding
    * the raw slash text to {@link Session.prompt} — which is what made
    * Zed fall back to model-driven Bash exploration of
-   * `~/.kimi-code/skills/` and incurred permission prompts. Defaults
+   * `~/.multiai/skills/` and incurred permission prompts. Defaults
    * to an empty map so adapter-level unit tests (which never call
    * `setSkillCommandMap`) behave as a no-op passthrough.
    */
@@ -203,7 +203,7 @@ export class AcpSession {
      * introduces this so the model + mode picker funnel can refresh
      * the full SessionConfigOption[] snapshot on every change.
      */
-    private readonly harness?: KimiHarness,
+    private readonly harness?: MultiAIHarness,
     /**
      * Initial value of the adapter-side thinking effort, supplied
      * by the server when creating / loading the session from the
@@ -979,7 +979,7 @@ export class AcpSession {
    * either `Session.prompt(parts)` or `Session.activateSkill(name, args)`.
    * Both entry points trigger the same downstream turn (skill
    * activation internally calls `agent.turn.prompt(...)` after
-   * injecting the `<kimi-skill-loaded>` block — see
+   * injecting the `<multiai-skill-loaded>` block — see
    * `packages/agent-core/src/agent/skill/index.ts`), so the event
    * subscription's `turn.started` / `turn.ended` semantics apply
    * uniformly.
@@ -1451,7 +1451,7 @@ export class AcpSession {
 }
 
 /**
- * Map a Kimi SDK error (raw `Error`, `KimiError`, or `KimiErrorPayload`)
+ * Map a MultiAI SDK error (raw `Error`, `MultiAIError`, or `MultiAIErrorPayload`)
  * into the ACP {@link RequestError} shape used by the JSON-RPC layer.
  *
  * Auth-coded inputs (`auth.login_required`, `provider.auth_error`)
@@ -1579,7 +1579,7 @@ function formatContextUsage(contextUsage: number): string {
  *
  * The parsing/resolution itself is delegated to `./slash` —
  * deliberately duplicated from the TUI's
- * `apps/kimi-code/src/tui/commands/parse.ts` and `resolve.ts` to
+ * `apps/multiai-cli/src/tui/commands/parse.ts` and `resolve.ts` to
  * avoid an app→package import inversion. See `./slash`'s top-of-file
  * comment for the sync target.
  */
@@ -1609,7 +1609,7 @@ function mapPromptError(err: unknown, sessionId: string): RequestError {
 }
 
 /**
- * Inspect a {@link KimiErrorPayload} (as carried on `turn.ended`
+ * Inspect a {@link MultiAIErrorPayload} (as carried on `turn.ended`
  * failed events) and return a `RequestError.authRequired()` if its
  * `code` is one of the auth-required codes; otherwise `undefined`.
  *
@@ -1630,10 +1630,10 @@ function authRequiredFromPayload(
 /**
  * Type-narrowing predicate for the codes the adapter treats as
  * "the client must re-authenticate before retrying". Currently:
- *  - `auth.login_required` — Kimi Platform / OAuth login flow needed.
+ *  - `auth.login_required` — MultiAI OAuth login flow needed.
  *  - `provider.auth_error` — the downstream provider rejected the
- *    request with a 401 (the node SDK lifts these into `KimiError`
- *    at `kimi-code-model-provider.ts:99-103`).
+ *    request with a 401 (the node SDK lifts these into `MultiAIError`
+ *    in the SDK model provider).
  */
 function isAuthErrorCode(code: unknown): boolean {
   return code === ErrorCodes.AUTH_LOGIN_REQUIRED || code === ErrorCodes.PROVIDER_AUTH_ERROR;
@@ -1642,7 +1642,7 @@ function isAuthErrorCode(code: unknown): boolean {
 /**
  * Best-effort detection of "auth required" for the `session.prompt(...)`
  * rejection path. The thrown value MAY be:
- *  - A `KimiError` instance with a recognized `code` field.
+ *  - A `MultiAIError` instance with a recognized `code` field.
  *  - A plain object that happens to expose a `code` (covers RPC-layer
  *    deserialized payloads that lost class identity).
  *  - Anything else — returns `undefined`.

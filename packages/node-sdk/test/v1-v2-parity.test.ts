@@ -1,12 +1,12 @@
 /**
  * Scenario: v1↔v2 parity gate — for every SDK method migrated to
- * agent-core-v2, the v1 harness (`createKimiHarness`) and the v2 harness
- * (`createKimiHarnessV2`) must return identical values on the same fixture
+ * agent-core-v2, the v1 harness (`createMultiAIHarness`) and the v2 harness
+ * (`createMultiAIHarnessV2`) must return identical values on the same fixture
  * home. A method only counts as migrated while its comparison here passes;
  * temporary, understood gaps are pinned explicitly in `KNOWN_DIFFS` so the
  * list can only shrink deliberately, never grow silently.
  * Wiring: real v1 core and real v2 engine, both in-process on a temp
- * KIMI_CODE_HOME; no provider calls.
+ * MULTIAI_HOME; no provider calls.
  * Run: pnpm exec vitest run test/v1-v2-parity.test.ts
  */
 import { appendFile, mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -19,11 +19,11 @@ import {
   ISessionApprovalService,
   ISessionLifecycleService,
   ISessionQuestionService,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 
 import {
-  createKimiHarness,
-  createKimiHarnessV2,
+  createMultiAIHarness,
+  createMultiAIHarnessV2,
   ErrorCodes,
   SDKRpcClient,
   SDKRpcClientV2,
@@ -36,8 +36,8 @@ import {
   type GoalSnapshot,
   type GoalToolResult,
   type JsonObject,
-  type KimiConfig,
-  type KimiHarness,
+  type MultiAIConfig,
+  type MultiAIHarness,
   type McpServerConfig,
   type McpStartupMetrics,
   type PluginCommandDef,
@@ -125,10 +125,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Projection for every method returning a `KimiConfig`: drop the fields whose
+ * Projection for every method returning a `MultiAIConfig`: drop the fields whose
  * presence semantics genuinely differ between the engines (see KNOWN_DIFFS).
  */
-function projectConfig(config: KimiConfig): unknown {
+function projectConfig(config: MultiAIConfig): unknown {
   const projected: Record<string, unknown> = { ...config };
   delete projected['raw'];
   for (const [field, defaultValue] of Object.entries(V2_INJECTED_SECTION_DEFAULTS)) {
@@ -183,9 +183,9 @@ const KNOWN_DIFFS = {
   // TOML document inside the returned config; the v2 engine keeps the same
   // document internally (rawSnake) but never exposes it through the config
   // service. v2-injected section defaults: see V2_INJECTED_SECTION_DEFAULTS.
-  getConfig: (config: KimiConfig): unknown => projectConfig(config),
-  setConfig: (config: KimiConfig): unknown => projectConfig(config),
-  removeProvider: (config: KimiConfig): unknown => projectConfig(config),
+  getConfig: (config: MultiAIConfig): unknown => projectConfig(config),
+  setConfig: (config: MultiAIConfig): unknown => projectConfig(config),
+  removeProvider: (config: MultiAIConfig): unknown => projectConfig(config),
   // Both engines report a dropped invalid section, but the warning wording
   // differs by design (v1: one salvage summary naming the dropped sections;
   // v2: one structured diagnostic per dropped domain). Parity is enforced on
@@ -462,32 +462,32 @@ function normalize(value: unknown, key: string): unknown {
 }
 
 interface ParityFixture {
-  readonly v1: KimiHarness;
-  readonly v2: KimiHarness;
+  readonly v1: MultiAIHarness;
+  readonly v2: MultiAIHarness;
   readonly homeDir: string;
 }
 
 async function makeParityPair(): Promise<ParityFixture> {
   const homeDir = await makeTempDir('kimi-sdk-parity-home-');
-  const v1 = createKimiHarness({ homeDir, identity: TEST_IDENTITY });
-  const v2 = createKimiHarnessV2({ homeDir, identity: TEST_IDENTITY });
+  const v1 = createMultiAIHarness({ homeDir, identity: TEST_IDENTITY });
+  const v2 = createMultiAIHarnessV2({ homeDir, identity: TEST_IDENTITY });
   return { v1, v2, homeDir };
 }
 
-async function closeAll(...harnesses: readonly KimiHarness[]): Promise<void> {
+async function closeAll(...harnesses: readonly MultiAIHarness[]): Promise<void> {
   for (const harness of harnesses) {
     await harness.close();
   }
 }
 
 /**
- * Config-reading env vars both engines honor (`KIMI_MODEL_*`, the per-section
+ * Config-reading env vars both engines honor (`MULTIAI_MODEL_*`, the per-section
  * bindings, ...). Config parity cases scrub them so a developer machine's own
  * environment cannot inject extra providers/models/overrides into one engine
  * and skew the comparison; the original values are restored on cleanup.
  */
 const CONFIG_ENV_PATTERN =
-  /^(KIMI_MODEL_|KIMI_LOOP_|KIMI_MCP_|KIMI_WEB_|KIMI_SECONDARY_|KIMI_IMAGE_|KIMI_CODE_BACKGROUND_|KIMI_CODE_MODEL_CATALOG_)/;
+  /^(MULTIAI_MODEL_|MULTIAI_LOOP_|MULTIAI_MCP_|MULTIAI_WEB_|MULTIAI_SECONDARY_|MULTIAI_IMAGE_|MULTIAI_BACKGROUND_|MULTIAI_MODEL_CATALOG_)/;
 
 function scrubConfigEnv(): () => void {
   const saved: Record<string, string> = {};
@@ -509,7 +509,7 @@ function scrubConfigEnv(): () => void {
  */
 async function makeIsolatedParityPair(
   configToml?: string,
-): Promise<{ v1: KimiHarness; v2: KimiHarness }> {
+): Promise<{ v1: MultiAIHarness; v2: MultiAIHarness }> {
   const v1Home = await makeTempDir('kimi-sdk-parity-v1-home-');
   const v2Home = await makeTempDir('kimi-sdk-parity-v2-home-');
   if (configToml !== undefined) {
@@ -517,8 +517,8 @@ async function makeIsolatedParityPair(
     await writeFile(join(v2Home, 'config.toml'), configToml, 'utf-8');
   }
   return {
-    v1: createKimiHarness({ homeDir: v1Home, identity: TEST_IDENTITY }),
-    v2: createKimiHarnessV2({ homeDir: v2Home, identity: TEST_IDENTITY }),
+    v1: createMultiAIHarness({ homeDir: v1Home, identity: TEST_IDENTITY }),
+    v2: createMultiAIHarnessV2({ homeDir: v2Home, identity: TEST_IDENTITY }),
   };
 }
 
@@ -605,7 +605,7 @@ api_key = "fixture-api-key"
 enabled = "not-a-boolean"
 `;
 
-function expectConfigParity(v1Config: KimiConfig, v2Config: KimiConfig): void {
+function expectConfigParity(v1Config: MultiAIConfig, v2Config: MultiAIConfig): void {
   const project = KNOWN_DIFFS.getConfig;
   expect(normalize(project(v2Config), '')).toEqual(normalize(project(v1Config), ''));
 }
@@ -632,7 +632,7 @@ describe('v1↔v2 return-value parity', () => {
     const workDir = await makeTempDir('kimi-sdk-parity-work-');
     await writeSkill(join(homeDir, 'skills', 'parity-user-skill'), 'parity-user-skill');
     await writeSkill(
-      join(workDir, '.kimi-code', 'skills', 'parity-project-skill'),
+      join(workDir, '.multiai', 'skills', 'parity-project-skill'),
       'parity-project-skill',
     );
     try {
@@ -776,7 +776,7 @@ async function writeSkill(dir: string, name: string): Promise<void> {
 // ---------------------------------------------------------------------------
 // Plugin parity
 //
-// The plugin methods live on the rpc client itself (KimiHarness has no
+// The plugin methods live on the rpc client itself (MultiAIHarness has no
 // plugin surface), so plugin parity drives `SDKRpcClient` / `SDKRpcClientV2`
 // directly. Homes stay isolated (same rule as config parity), and both
 // engines install from ONE shared local source directory — zip-url / github
@@ -1502,7 +1502,7 @@ describe('v1↔v2 session lifecycle parity', () => {
       expect(v1Persisted).toMatchObject({
         additionalDirs: [persistedDir],
         projectRoot: pair.workDir,
-        configPath: join(pair.workDir, '.kimi-code', 'local.toml'),
+        configPath: join(pair.workDir, '.multiai', 'local.toml'),
         persisted: true,
       });
       const v1SessionOnly = await pair.v1.addAdditionalDir({
@@ -2414,7 +2414,7 @@ describe('v1↔v2 agent interaction parity', () => {
     const pair = await makeSessionParityPair();
     // The skill must exist before either session is created (both engines
     // load their skill catalog at session start).
-    await writeSkill(join(pair.workDir, '.kimi-code', 'skills', 'parity-skill'), 'parity-skill');
+    await writeSkill(join(pair.workDir, '.multiai', 'skills', 'parity-skill'), 'parity-skill');
     try {
       await createOnBoth(pair, { id: 'session_parity_agent_skill' });
       const input = { sessionId: 'session_parity_agent_skill' } as const;
@@ -4179,7 +4179,7 @@ describe('v1↔v2 residual surface parity', () => {
       await expect(
         pair.v1.exportSession({ ...input, outputPath: join(outDir, 'blank-version.zip') }),
       ).resolves.toMatchObject({
-        manifest: { kimiCodeVersion: '   ' },
+        manifest: { multiAIVersion: '   ' },
       });
       await expect(pair.v2.exportSession(input)).rejects.toMatchObject({
         code: 'session.export_missing_version',
@@ -4345,7 +4345,7 @@ describe('v1↔v2 residual surface parity', () => {
       await writeSkill(join(pair.v1Home.raw, 'skills', 'parity-user-skill'), 'parity-user-skill');
       await writeSkill(join(pair.v2Home.raw, 'skills', 'parity-user-skill'), 'parity-user-skill');
       await writeSkill(
-        join(pair.workDir, '.kimi-code', 'skills', 'parity-project-skill'),
+        join(pair.workDir, '.multiai', 'skills', 'parity-project-skill'),
         'parity-project-skill',
       );
       await createOnBoth(pair, { id: 'session_parity_skills' });

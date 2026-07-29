@@ -2,7 +2,7 @@
  * Probe the ModelRequester problem boundary, in two parts.
  *
  * Part 1 — real config: bootstraps the agent-core-v2 App scope on the REAL
- * Kimi home (`KIMI_CODE_HOME` or `~/.kimi-code`), resolves `IModelCatalog`
+ * Kimi home (`MULTIAI_HOME` or `~/.multiai`), resolves `IModelCatalog`
  * with the providers/auth from `config.toml`, lists every provider/model, and
  * pings every configured model through its `ModelRequester` (one tiny live
  * request per model, real credentials). This is the "does the assembled
@@ -33,36 +33,36 @@
  *   pnpm -C packages/klient smoke:boundary
  *
  * Env:
- *   KIMI_CODE_HOME        — default `~/.kimi-code`
- *   KIMI_BOUNDARY_MODELS  — comma-separated model ids to ping (default: all)
- *   KIMI_BOUNDARY_SKIP_LIVE — set to `1` to skip part 1 (no real API calls)
+ *   MULTIAI_HOME        — default `~/.multiai`
+ *   MULTIAI_BOUNDARY_MODELS  — comma-separated model ids to ping (default: all)
+ *   MULTIAI_BOUNDARY_SKIP_LIVE — set to `1` to skip part 1 (no real API calls)
  */
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 
-import { bootstrap, logSeed, resolveLoggingConfig } from '@moonshot-ai/agent-core-v2';
-import { isError2 } from '@moonshot-ai/agent-core-v2/_base/errors/errors';
-import { IConfigService } from '@moonshot-ai/agent-core-v2/app/config/config';
-import { UNKNOWN_CAPABILITY } from '@moonshot-ai/agent-core-v2/kosong/contract/capability';
+import { bootstrap, logSeed, resolveLoggingConfig } from '@multiai/agent-core-v2';
+import { isError2 } from '@multiai/agent-core-v2/_base/errors/errors';
+import { IConfigService } from '@multiai/agent-core-v2/app/config/config';
+import { UNKNOWN_CAPABILITY } from '@multiai/agent-core-v2/kosong/contract/capability';
 import {
   APIContextOverflowError,
   APIStatusError,
   ChatProviderError,
   isAbortError,
   isToolExchangeAdjacencyError,
-} from '@moonshot-ai/agent-core-v2/kosong/contract/errors';
-import type { ToolCall } from '@moonshot-ai/agent-core-v2/kosong/contract/message';
-import type { Tool } from '@moonshot-ai/agent-core-v2/kosong/contract/tool';
-import type { AuthProvider, Model } from '@moonshot-ai/agent-core-v2/kosong/model/catalog';
-import { IModelCatalog } from '@moonshot-ai/agent-core-v2/kosong/model/catalog';
+} from '@multiai/agent-core-v2/kosong/contract/errors';
+import type { ToolCall } from '@multiai/agent-core-v2/kosong/contract/message';
+import type { Tool } from '@multiai/agent-core-v2/kosong/contract/tool';
+import type { AuthProvider, Model } from '@multiai/agent-core-v2/kosong/model/catalog';
+import { IModelCatalog } from '@multiai/agent-core-v2/kosong/model/catalog';
 import type {
   ModelRequestInput,
   ModelRequester,
-} from '@moonshot-ai/agent-core-v2/kosong/model/modelRequester';
-import { ModelRequesterImpl } from '@moonshot-ai/agent-core-v2/kosong/model/modelRequesterImpl';
-import { ProtocolAdapterRegistry } from '@moonshot-ai/agent-core-v2/kosong/provider/protocolAdapterRegistry';
+} from '@multiai/agent-core-v2/kosong/model/modelRequester';
+import { ModelRequesterImpl } from '@multiai/agent-core-v2/kosong/model/modelRequesterImpl';
+import { ProtocolAdapterRegistry } from '@multiai/agent-core-v2/kosong/provider/protocolAdapterRegistry';
 
 function assert(cond: boolean, message: string): asserts cond {
   if (!cond) throw new Error(`assertion failed: ${message}`);
@@ -78,7 +78,7 @@ const tick = (ms: number): Promise<void> =>
 // ---------------------------------------------------------------------------
 
 async function probeRealConfig(): Promise<void> {
-  const homeDir = process.env['KIMI_CODE_HOME'] ?? join(homedir(), '.kimi-code');
+  const homeDir = process.env['MULTIAI_HOME'] ?? join(homedir(), '.multiai');
   console.log(`\n=== part 1: real config (${homeDir}/config.toml) ===`);
   const { app } = bootstrap({ homeDir }, [
     ...logSeed(resolveLoggingConfig({ homeDir, env: process.env })),
@@ -97,7 +97,7 @@ async function probeRealConfig(): Promise<void> {
     }
 
     const models = await catalog.listModels();
-    const filter = process.env['KIMI_BOUNDARY_MODELS']?.split(',').map((s) => s.trim());
+    const filter = process.env['MULTIAI_BOUNDARY_MODELS']?.split(',').map((s) => s.trim());
     const targets = models.filter((m) => filter === undefined || filter.includes(m.model));
     assert(targets.length > 0, 'at least one configured model to ping');
 
@@ -751,7 +751,7 @@ async function probeBoundaries(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  if (process.env['KIMI_BOUNDARY_SKIP_LIVE'] !== '1') {
+  if (process.env['MULTIAI_BOUNDARY_SKIP_LIVE'] !== '1') {
     await probeRealConfig();
   }
   await probeBoundaries();

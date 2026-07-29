@@ -4,12 +4,12 @@ import { SRC_ROOT, checkSource } from '../../scripts/check-domain-layers.mjs';
 
 const at = (domain: string, file: string): string => `${SRC_ROOT}/${domain}/${file}`;
 
-const V1 = ['@moonshot-ai', 'agent-core'].join('/');
+const V1 = ['@multiai', 'agent-core'].join('/');
 
 describe('check-domain-layers', () => {
-  it('flags a direct import of v1 (@moonshot-ai/agent-core)', () => {
+  it('flags a direct import of v1 (@multiai/agent-core)', () => {
     const violations = checkSource(
-      `import { KimiCore } from '${V1}';`,
+      `import { MultiAICore } from '${V1}';`,
       at('loop', 'loop.ts'),
     );
     expect(violations).toHaveLength(1);
@@ -53,7 +53,7 @@ describe('check-domain-layers', () => {
 
   it('allows sibling-package imports (out of scope for layering)', () => {
     const violations = checkSource(
-      `import { something } from '@moonshot-ai/kaos';`,
+      `import { something } from '@multiai/kaos';`,
       at('log', 'log.ts'),
     );
     expect(violations).toHaveLength(0);

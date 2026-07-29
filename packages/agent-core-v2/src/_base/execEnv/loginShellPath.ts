@@ -2,7 +2,7 @@
  * `_base/execEnv` (L0) — login-shell PATH probe.
  *
  * Enriches `process.env.PATH` with entries from the user's login shell. When
- * kimi-code is launched from a context that skipped the user's shell profile
+ * MultiAI CLI is launched from a context that skipped the user's shell profile
  * (GUI launchers, non-login parent shells), `process.env.PATH` misses entries
  * like `/opt/homebrew/bin`, so commands spawned by the Bash tool can't find
  * tools the user has in their interactive shell (e.g. `gh`). We run the user's
@@ -18,7 +18,7 @@
  * the suite runs identically on any host. Windows is skipped: the problem is
  * specific to POSIX login-shell profiles.
  *
- * Vendored from `@moonshot-ai/kaos` `login-shell-path.ts` — kept as a pure
+ * Vendored from `@multiai/kaos` `login-shell-path.ts` — kept as a pure
  * helper with no DI dependencies.
  */
 

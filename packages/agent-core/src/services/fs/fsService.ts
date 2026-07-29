@@ -16,7 +16,7 @@ import type {
   FsStatManyRequest,
   FsStatManyResponse,
   FsStatRequest,
-} from '@moonshot-ai/protocol';
+} from '@multiai/protocol';
 import ignore, { type Ignore } from 'ignore';
 
 import { ISessionService, SessionNotFoundError } from '../session/session';

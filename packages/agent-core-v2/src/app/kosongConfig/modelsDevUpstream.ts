@@ -100,7 +100,7 @@ async function fetchAndCache(): Promise<ModelsDevCatalog> {
   const now = nowImpl();
   try {
     const res = await fetchImpl(MODELS_DEV_URL, {
-      headers: { Accept: 'application/json', 'User-Agent': 'kimi-code-kap-server' },
+      headers: { Accept: 'application/json', 'User-Agent': 'multiai-cli-server' },
       signal: AbortSignal.timeout(UPSTREAM_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

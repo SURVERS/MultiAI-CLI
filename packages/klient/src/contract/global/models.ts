@@ -21,9 +21,9 @@ const protocolSchema = z.enum([
 ]);
 
 const oAuthRefSchema = z.object({
-  storage: z.enum(['file', 'keyring']),
+  storage: z.literal('keyring'),
   key: z.string().min(1),
-  oauthHost: z.string().min(1).optional(),
+  issuer: z.string().url().optional(),
 });
 
 const modelBaseSchema = z.object({

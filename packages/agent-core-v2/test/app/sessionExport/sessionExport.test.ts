@@ -94,7 +94,7 @@ describe('sessionExport', () => {
     await mkdir(join(sessionDir, 'agents', 'main'), { recursive: true });
     await mkdir(join(sessionDir, 'logs'), { recursive: true });
     await writeFile(join(sessionDir, 'state.json'), '{}\n', 'utf-8');
-    await writeFile(join(sessionDir, 'logs', 'kimi-code.log'), '{"msg":"session"}\n', 'utf-8');
+    await writeFile(join(sessionDir, 'logs', 'multiai.log'), '{"msg":"session"}\n', 'utf-8');
     await writeFile(
       join(sessionDir, 'agents', 'main', 'wire.jsonl'),
       [
@@ -103,7 +103,7 @@ describe('sessionExport', () => {
       ].join('\n'),
       'utf-8',
     );
-    const globalLogPath = join(tmp, 'logs', 'kimi-code.log');
+    const globalLogPath = join(tmp, 'logs', 'multiai.log');
     await mkdir(join(tmp, 'logs'), { recursive: true });
     await writeFile(globalLogPath, '{"msg":"global"}\n', 'utf-8');
 
@@ -128,19 +128,19 @@ describe('sessionExport', () => {
     expect(result.entries).toEqual([
       'manifest.json',
       'agents/main/wire.jsonl',
-      'logs/kimi-code.log',
+      'logs/multiai.log',
       'state.json',
-      'logs/global/kimi-code.log',
+      'logs/global/multiai.log',
     ]);
     expect(result.manifest).toMatchObject({
       sessionId: 'ses_demo',
-      kimiCodeVersion: '1.0.0-test',
+      multiAIVersion: '1.0.0-test',
       title: 'Demo',
       workspaceDir: '/workspace/demo',
       sessionFirstActivity: '2023-11-14T22:13:20.000Z',
       sessionLastActivity: '2023-11-14T22:13:25.000Z',
-      sessionLogPath: 'logs/kimi-code.log',
-      globalLogPath: 'logs/global/kimi-code.log',
+      sessionLogPath: 'logs/multiai.log',
+      globalLogPath: 'logs/global/multiai.log',
     });
   });
 
@@ -157,7 +157,7 @@ describe('sessionExport', () => {
 
     try {
       expect(dirname(result.zipPath)).toBe(resolve('.'));
-      expect(basename(result.zipPath)).toMatch(/^kimi-debug-ses_defa-\d{8}-\d{6}\.zip$/);
+      expect(basename(result.zipPath)).toMatch(/^multiai-debug-ses_defa-\d{8}-\d{6}\.zip$/);
       await expect(stat(result.zipPath)).resolves.toMatchObject({ size: expect.any(Number) });
     } finally {
       await rm(result.zipPath, { force: true });
@@ -195,7 +195,7 @@ describe('sessionExport', () => {
   it('keeps the session log bound when it rotates as wire scanning starts', async () => {
     const tmp = await mkdtemp(join(tmpdir(), 'session-export-test-'));
     const sessionDir = join(tmp, 'sessions', 'ws_demo', 'ses_rotating_log');
-    const logPath = join(sessionDir, 'logs', 'kimi-code.log');
+    const logPath = join(sessionDir, 'logs', 'multiai.log');
     const rotatedPath = `${logPath}.1`;
     const wirePath = join(sessionDir, 'agents', 'main', 'wire.jsonl');
     const outputPath = join(tmp, 'rotating-log.zip');
@@ -227,9 +227,9 @@ describe('sessionExport', () => {
       });
 
       expect(rotated).toBe(true);
-      expect(result.manifest.sessionLogPath).toBe('logs/kimi-code.log');
-      expect(result.entries).toContain('logs/kimi-code.log');
-      await expect(readZipEntry(outputPath, 'logs/kimi-code.log')).resolves.toEqual(log);
+      expect(result.manifest.sessionLogPath).toBe('logs/multiai.log');
+      expect(result.entries).toContain('logs/multiai.log');
+      await expect(readZipEntry(outputPath, 'logs/multiai.log')).resolves.toEqual(log);
     } finally {
       fsOpenHook.afterOpen = undefined;
     }
@@ -239,7 +239,7 @@ describe('sessionExport', () => {
     const tmp = await mkdtemp(join(tmpdir(), 'session-export-test-'));
     const sessionDir = join(tmp, 'sessions', 'ws_demo', 'ses_rotating_global');
     const wirePath = join(sessionDir, 'agents', 'main', 'wire.jsonl');
-    const globalLogPath = join(tmp, 'logs', 'kimi-code.log');
+    const globalLogPath = join(tmp, 'logs', 'multiai.log');
     const rotatedPath = `${globalLogPath}.1`;
     const outputPath = join(tmp, 'rotating-global.zip');
     const log = Buffer.from('global log before rotation\n', 'utf8');
@@ -272,9 +272,9 @@ describe('sessionExport', () => {
       });
 
       expect(rotated).toBe(true);
-      expect(result.manifest.globalLogPath).toBe('logs/global/kimi-code.log');
-      expect(result.entries).toContain('logs/global/kimi-code.log');
-      await expect(readZipEntry(outputPath, 'logs/global/kimi-code.log')).resolves.toEqual(log);
+      expect(result.manifest.globalLogPath).toBe('logs/global/multiai.log');
+      expect(result.entries).toContain('logs/global/multiai.log');
+      await expect(readZipEntry(outputPath, 'logs/global/multiai.log')).resolves.toEqual(log);
     } finally {
       fsOpenHook.afterOpen = undefined;
     }
@@ -283,8 +283,8 @@ describe('sessionExport', () => {
   it('closes pre-opened logs when manifest creation fails before writer ownership', async () => {
     const tmp = await mkdtemp(join(tmpdir(), 'session-export-test-'));
     const sessionDir = join(tmp, 'sessions', 'ws_demo', 'ses_invalid_manifest');
-    const sessionLogPath = join(sessionDir, 'logs', 'kimi-code.log');
-    const globalLogPath = join(tmp, 'logs', 'kimi-code.log');
+    const sessionLogPath = join(sessionDir, 'logs', 'multiai.log');
+    const globalLogPath = join(tmp, 'logs', 'multiai.log');
     const wirePath = join(sessionDir, 'agents', 'main', 'wire.jsonl');
     const outputPath = join(tmp, 'invalid-manifest.zip');
     await mkdir(join(sessionDir, 'logs'), { recursive: true });
@@ -327,7 +327,7 @@ describe('sessionExport', () => {
       await expect(handle.stat()).rejects.toMatchObject({ code: 'EBADF' });
     }
     await expect(stat(outputPath)).rejects.toMatchObject({ code: 'ENOENT' });
-    expect((await readdir(tmp)).filter((entry) => entry.startsWith('.kimi-session-export-'))).toEqual(
+    expect((await readdir(tmp)).filter((entry) => entry.startsWith('.multiai-session-export-'))).toEqual(
       [],
     );
   });
@@ -337,7 +337,7 @@ describe('sessionExport', () => {
     const sessionDir = join(tmp, 'sessions', 'ws_demo', 'ses_unreadable_global');
     await mkdir(sessionDir, { recursive: true });
     await writeFile(join(sessionDir, 'state.json'), '{}\n', 'utf-8');
-    const globalLogPath = join(tmp, 'logs', 'kimi-code.log');
+    const globalLogPath = join(tmp, 'logs', 'multiai.log');
 
     const outputPath = join(tmp, 'unreadable-global.zip');
     const result = await exportSessionDirectory({
@@ -357,7 +357,7 @@ describe('sessionExport', () => {
 
     await expect(stat(outputPath)).resolves.toMatchObject({ size: expect.any(Number) });
     expect(result.manifest.globalLogPath).toBeUndefined();
-    expect(result.entries).not.toContain('logs/global/kimi-code.log');
+    expect(result.entries).not.toContain('logs/global/multiai.log');
   });
 
   it('archives more than 300 session files without exhausting file handles', async () => {
@@ -448,7 +448,7 @@ describe('sessionExport', () => {
         manifest: testManifest('ses_extra_conflict'),
         sessionDir: tmp,
         sessionFiles: [],
-        extraEntries: [{ source, target: 'logs/global/kimi-code.log' }],
+        extraEntries: [{ source, target: 'logs/global/multiai.log' }],
       }),
     ).rejects.toMatchObject({ code: 'session.export_output_conflict' });
     expect(closeCalls).toBe(1);
@@ -457,7 +457,7 @@ describe('sessionExport', () => {
 
   it('archives a bound session log after its path is rotated', async () => {
     const tmp = await mkdtemp(join(tmpdir(), 'session-export-test-'));
-    const logPath = join(tmp, 'logs', 'kimi-code.log');
+    const logPath = join(tmp, 'logs', 'multiai.log');
     const rotatedPath = `${logPath}.1`;
     const outputPath = join(tmp, 'rotated-log.zip');
     const original = Buffer.from('before rotation\n', 'utf8');
@@ -481,8 +481,8 @@ describe('sessionExport', () => {
         sessionDir: tmp,
         sessionFiles: [{ path: logPath, source }],
       }),
-    ).resolves.toContain('logs/kimi-code.log');
-    await expect(readZipEntry(outputPath, 'logs/kimi-code.log')).resolves.toEqual(original);
+    ).resolves.toContain('logs/multiai.log');
+    await expect(readZipEntry(outputPath, 'logs/multiai.log')).resolves.toEqual(original);
     expect(closeCalls).toBe(1);
   });
 
@@ -510,9 +510,9 @@ describe('sessionExport', () => {
       webLog,
     });
 
-    expect(result.entries).toContain('logs/kimi-web.jsonl');
-    expect(result.manifest.webLogPath).toBe('logs/kimi-web.jsonl');
-    await expect(readZipEntry(outputPath, 'logs/kimi-web.jsonl')).resolves.toEqual(
+    expect(result.entries).toContain('logs/multiai-web.jsonl');
+    expect(result.manifest.webLogPath).toBe('logs/multiai-web.jsonl');
+    await expect(readZipEntry(outputPath, 'logs/multiai-web.jsonl')).resolves.toEqual(
       Buffer.from(webLog, 'utf8'),
     );
   });
@@ -522,7 +522,7 @@ describe('sessionExport', () => {
     const sessionDir = join(tmp, 'sessions', 'ws_demo', 'ses_desktop_log');
     await mkdir(sessionDir, { recursive: true });
     await writeFile(join(sessionDir, 'state.json'), '{}\n', 'utf-8');
-    const desktopLogPath = join(tmp, 'logs', 'kimi-code-desktop.log');
+    const desktopLogPath = join(tmp, 'logs', 'multiai-desktop.log');
     await mkdir(join(tmp, 'logs'), { recursive: true });
     const desktopLog = '2026-07-27T00:00:00.000Z INFO  [renderer] hello\n';
     await writeFile(desktopLogPath, desktopLog, 'utf-8');
@@ -541,9 +541,9 @@ describe('sessionExport', () => {
       desktopLogPath,
     });
 
-    expect(result.entries).toContain('logs/kimi-desktop.log');
-    expect(result.manifest.desktopLogPath).toBe('logs/kimi-desktop.log');
-    await expect(readZipEntry(outputPath, 'logs/kimi-desktop.log')).resolves.toEqual(
+    expect(result.entries).toContain('logs/multiai-desktop.log');
+    expect(result.manifest.desktopLogPath).toBe('logs/multiai-desktop.log');
+    await expect(readZipEntry(outputPath, 'logs/multiai-desktop.log')).resolves.toEqual(
       Buffer.from(desktopLog, 'utf8'),
     );
   });
@@ -567,7 +567,7 @@ describe('sessionExport', () => {
       desktopLogPath: join(tmp, 'logs', 'does-not-exist.log'),
     });
 
-    expect(result.entries).not.toContain('logs/kimi-desktop.log');
+    expect(result.entries).not.toContain('logs/multiai-desktop.log');
     expect(result.manifest.desktopLogPath).toBeUndefined();
   });
 
@@ -1021,7 +1021,7 @@ function testManifest(sessionId: string): ExportSessionManifest {
   return {
     sessionId,
     exportedAt: '2026-01-01T00:00:00.000Z',
-    kimiCodeVersion: '1.0.0-test',
+    multiAIVersion: '1.0.0-test',
     wireProtocolVersion: '1',
     os: 'test',
     nodejsVersion: 'test',

@@ -318,8 +318,7 @@ registerProviderDefinition({
   baseProtocol: 'openai',
   traits: [kimiOpenAITrait],
   endpoint: kimiEndpoint,
-  hostHeaders: 'full',
-  modelSource: 'oauth-catalog',
+  hostHeaders: 'user-agent',
 });
 
 registerProviderDefinition({
@@ -327,6 +326,5 @@ registerProviderDefinition({
   baseProtocol: 'anthropic',
   traits: [kimiAnthropicTrait],
   endpoint: kimiEndpoint,
-  hostHeaders: 'full',
-  modelSource: 'oauth-catalog',
+  hostHeaders: 'user-agent',
 });

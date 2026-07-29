@@ -1,7 +1,7 @@
-import { createToolMessage, type ContentPart, type Message } from '@moonshot-ai/kosong';
+import { createToolMessage, type ContentPart, type Message } from '@multiai/kosong';
 
 import type { Agent } from '..';
-import { ErrorCodes, KimiError } from '../../errors';
+import { ErrorCodes, MultiAIError } from '../../errors';
 import type { LoopRecordedEvent } from '../../loop';
 import { extractImageCompressionCaptions } from '../../tools/support/image-compress';
 import { estimateTokens, estimateTokensForMessages } from '../../utils/tokens';
@@ -186,13 +186,13 @@ export class ContextMemory {
 
   importContext(content: string, source: string): void {
     if (content.trim().length === 0) {
-      throw new KimiError(ErrorCodes.REQUEST_INVALID, 'Imported context cannot be empty', {
+      throw new MultiAIError(ErrorCodes.REQUEST_INVALID, 'Imported context cannot be empty', {
         details: { reason: 'import_content_empty' },
       });
     }
     const normalizedSource = source.trim();
     if (normalizedSource.length === 0) {
-      throw new KimiError(ErrorCodes.REQUEST_INVALID, 'Imported context source cannot be empty', {
+      throw new MultiAIError(ErrorCodes.REQUEST_INVALID, 'Imported context source cannot be empty', {
         details: { reason: 'import_source_empty' },
       });
     }
@@ -222,7 +222,7 @@ export class ContextMemory {
     const capability = this.agent.config.modelCapabilities;
     const maxContextTokens = capability.max_input_tokens ?? capability.max_context_tokens;
     if (maxContextTokens > 0 && totalTokenCount > maxContextTokens) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.CONTEXT_OVERFLOW,
         'Imported content is too large for the current model context ' +
           `(~${String(importTokenCount)} import tokens + ${String(currentTokenCount)} existing ` +
@@ -296,7 +296,7 @@ export class ContextMemory {
       !this.agent.records.restoring &&
       (stoppedAtBoundary || removedUserCount < count)
     ) {
-      throw new KimiError(
+      throw new MultiAIError(
         ErrorCodes.REQUEST_INVALID,
         formatUndoUnavailableMessage(count, removedUserCount, stoppedAtBoundary),
         {

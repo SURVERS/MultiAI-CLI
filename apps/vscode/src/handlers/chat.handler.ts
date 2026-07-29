@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
-import { isKimiError } from "@moonshot-ai/kimi-code-sdk";
+import { isMultiAIError } from "@multiai/sdk";
 
 import { Events, Methods } from "../../shared/bridge";
 import type { ApprovalResponse, ContentPart } from "../../shared/legacy-sdk";
 import { getUserMessage } from "../../shared/errors";
 import type { ErrorPhase } from "../../shared/types";
 import { VSCodeSettings } from "../config/vscode-settings";
-import { normalizeEffort } from "../runtime/kimi-runtime";
+import { normalizeEffort } from "../runtime/multiai-runtime";
 import type { SessionRuntime } from "../runtime/session-runtime";
 import { isWorkspacePathContained, relativeWorkspacePath } from "../utils/workspace-path";
 import { parseHostSlashCommand, runHostSlashCommand } from "./slash-command";
@@ -74,7 +74,7 @@ function prependSystemContext(content: string | ContentPart[], context: string):
 const streamChat: Handler<StreamChatParams, { done: boolean }> = async (params, ctx) => {
   if (!ctx.workDir) {
     emitPreflightError(ctx, "NO_WORKSPACE", "Please open a folder to start.");
-    void vscode.window.showWarningMessage("Kimi: Please open a folder first.", "Open Folder").then((action) => {
+    void vscode.window.showWarningMessage("MultiAI: Please open a folder first.", "Open Folder").then((action) => {
       if (action) void vscode.commands.executeCommand("vscode.openFolder");
     });
     return { done: false };
@@ -200,7 +200,7 @@ function emitCaughtError(
   phase: ErrorPhase,
   sessionId?: string,
 ): void {
-  const code = isKimiError(error) ? error.code : "internal";
+  const code = isMultiAIError(error) ? error.code : "internal";
   const detail = error instanceof Error ? error.message : String(error);
   ctx.logError(`Chat ${phase} request failed`, error);
   ctx.broadcast(

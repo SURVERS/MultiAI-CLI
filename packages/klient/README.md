@@ -1,12 +1,12 @@
-# @moonshot-ai/klient
+# @multiai/klient
 
 Contract-driven client SDK for the agent-core-v2 engine. One facade, two
 transports — you pick the transport **once** at creation; everything after
 that is byte-identical:
 
 ```ts
-import { bootstrap, logSeed, resolveLoggingConfig } from '@moonshot-ai/agent-core-v2';
-import { createKlient } from '@moonshot-ai/klient/memory';   // or '/ipc'
+import { bootstrap, logSeed, resolveLoggingConfig } from '@multiai/agent-core-v2';
+import { createKlient } from '@multiai/klient/memory';   // or '/ipc'
 
 const { app } = bootstrap({ homeDir }, [
   ...logSeed(resolveLoggingConfig({ homeDir, env: process.env })),
@@ -65,8 +65,8 @@ ipc │ memory
 
 | entry | options | events |
 |---|---|---|
-| `@moonshot-ai/klient/ipc` | `{ socketPath, token? }` | same socket |
-| `@moonshot-ai/klient/memory` | `{ scope }` (a bootstrapped engine app scope) | direct emitter/bus subscription |
+| `@multiai/klient/ipc` | `{ socketPath, token? }` | same socket |
+| `@multiai/klient/memory` | `{ scope }` (a bootstrapped engine app scope) | direct emitter/bus subscription |
 
 `ipc` and `memory` share one in-process dispatcher, so they behave identically
 by construction; `memory` additionally JSON round-trips every value so results
@@ -80,7 +80,7 @@ This package also hosts the e2e suites (the retired `server-e2e` package was
 folded in here):
 
 - `test/e2e/legacy/` + `test/e2e/harness/` — the legacy `/api/v1` live suites
-  and their client harness (skip unless `KIMI_SERVER_URL` is set; the v1
+  and their client harness (skip unless `MULTIAI_SERVER_URL` is set; the v1
   surface has no in-memory equivalent, so these stay live-server-only).
 
 The docker e2e runner (`pnpm docker:e2e`) runs this whole vitest suite inside
@@ -104,5 +104,5 @@ pnpm -C packages/klient smoke
 `examples/smoke.ts` boots an in-process engine (memory transport) and asserts
 the `global` facade end-to-end — no server needed. `examples/basic.ts` is a
 shorter narrated tour; `examples/context-usage.ts` traces context-size
-readings through a real prompt (requires `KIMI_EXAMPLE_MODEL` +
-`KIMI_EXAMPLE_API_KEY`).
+readings through a real prompt (requires `MULTIAI_EXAMPLE_MODEL` +
+`MULTIAI_EXAMPLE_API_KEY`).

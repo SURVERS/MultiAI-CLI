@@ -6,7 +6,7 @@
  * authorization + completion promise so tests can drive each transition
  * independently:
  *
- *   facadeMock.deviceCodeReady(deviceAuth)  → fires onDeviceCode → REST returns
+ *   facadeMock.deviceCodeReady(deviceAuth)  → fires onAuthorization → REST returns
  *   facadeMock.resolveLogin(result)         → flow → 'authenticated'
  *   facadeMock.rejectLogin(err)             → flow → 'denied' / 'expired' / 'cancelled'
  *
@@ -14,9 +14,9 @@
  *   - startLogin returns flow_id + verification URLs + status='pending'
  *   - getFlow returns the in-memory snapshot
  *   - resolveLogin → status='authenticated'
- *   - rejectLogin(DeviceCodeTimeoutError) → status='expired'
- *   - rejectLogin(OAuthError 'aborted') → status='cancelled'
- *   - rejectLogin(OAuthError 'denied') → status='denied'
+ *   - rejectLogin(MultiAIOAuthError 'expired_token') → status='expired'
+ *   - rejectLogin(MultiAIOAuthError 'cancelled') → status='cancelled'
+ *   - rejectLogin(MultiAIOAuthError 'access_denied') → status='denied'
  *   - rejectLogin(generic) → status='denied' with error_message preserved
  *   - cancelLogin on pending → status='cancelled', AbortController fired
  *   - cancelLogin on terminal → cancelled=false, status unchanged
@@ -28,10 +28,9 @@
 import { assert, describe, expect, it, vi } from 'vitest';
 
 import {
-  DeviceCodeTimeoutError,
-  OAuthError,
-  type DeviceAuthorization,
-} from '@moonshot-ai/kimi-code-oauth';
+  MultiAIOAuthError,
+  type MultiAIDeviceAuthorization,
+} from '@multiai/oauth';
 
 import type { ServicesAuthFacade } from '../../src/services/auth/managedAuth';
 import { IEnvironmentService } from '../../src/services/environment/environment';
@@ -39,7 +38,9 @@ import { OAuthService } from '../../src/services/oauth/oauthService';
 
 interface LoginCall {
   providerName: string | undefined;
-  onDeviceCode: ((auth: DeviceAuthorization) => void | Promise<void>) | undefined;
+  onAuthorization:
+    | ((auth: MultiAIDeviceAuthorization) => void | Promise<void>)
+    | undefined;
   signal: AbortSignal | undefined;
   resolve: (value: { providerName: string; ok: true }) => void;
   reject: (reason: unknown) => void;
@@ -58,7 +59,7 @@ function makeMockFacade(): MockFacade {
 
   const facade = {
     login: vi.fn((providerName: string | undefined, options: {
-      onDeviceCode?: (auth: DeviceAuthorization) => void | Promise<void>;
+      onAuthorization?: (auth: MultiAIDeviceAuthorization) => void | Promise<void>;
       signal?: AbortSignal;
     }) => {
       let resolveFn!: (v: { providerName: string; ok: true }) => void;
@@ -69,7 +70,7 @@ function makeMockFacade(): MockFacade {
       });
       loginCalls.push({
         providerName,
-        onDeviceCode: options.onDeviceCode,
+        onAuthorization: options.onAuthorization,
         signal: options.signal,
         resolve: resolveFn,
         reject: rejectFn,
@@ -79,19 +80,22 @@ function makeMockFacade(): MockFacade {
     }),
     logout: vi.fn(async (providerName: string | undefined) => {
       logoutCalls.push({ providerName });
-      return { providerName: providerName ?? 'managed:kimi-code', ok: true as const };
+      return { providerName: providerName ?? 'managed:multiai', ok: true as const };
     }),
   } as unknown as ServicesAuthFacade;
 
   return { facade, loginCalls, logoutCalls };
 }
 
-function fakeDeviceAuth(overrides: Partial<DeviceAuthorization> = {}): DeviceAuthorization {
+function fakeDeviceAuth(
+  overrides: Partial<MultiAIDeviceAuthorization> = {},
+): MultiAIDeviceAuthorization {
   return {
+    method: 'device',
     deviceCode: 'dev-code-secret',
-    userCode: 'KIMI-1234',
+    userCode: 'MA-1234',
     verificationUri: 'https://example.com/device',
-    verificationUriComplete: 'https://example.com/device?user_code=KIMI-1234',
+    verificationUriComplete: 'https://example.com/device?user_code=MA-1234',
     expiresIn: 900,
     interval: 5,
     ...overrides,
@@ -117,7 +121,7 @@ function makeImpl(): { impl: OAuthService; mock: MockFacade } {
 }
 
 describe('OAuthService.startLogin', () => {
-  it('returns flow_id + verification URLs once the facade fires onDeviceCode', async () => {
+  it('returns flow_id + verification URLs once the facade reports device authorization', async () => {
     const { impl, mock } = makeImpl();
 
     const startPromise = impl.startLogin();
@@ -126,7 +130,7 @@ describe('OAuthService.startLogin', () => {
 
     // Fire the device-code callback from the facade side.
     const auth = fakeDeviceAuth();
-    await mock.loginCalls[0]!.onDeviceCode?.(auth);
+    await mock.loginCalls[0]!.onAuthorization?.(auth);
 
     const start = await startPromise;
     assert(start.status === 'pending');
@@ -136,20 +140,9 @@ describe('OAuthService.startLogin', () => {
     expect(start.user_code).toBe(auth.userCode);
     expect(start.expires_in).toBe(900);
     expect(start.interval).toBe(5);
-    expect(start.provider).toBe('managed:kimi-code');
+    expect(start.provider).toBe('managed:multiai');
   });
 
-  it('falls back to 15-min expires_in when the OAuth host omits the field', async () => {
-    const { impl, mock } = makeImpl();
-    const startPromise = impl.startLogin();
-    await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(
-      fakeDeviceAuth({ expiresIn: null }),
-    );
-    const start = await startPromise;
-    assert(start.status === 'pending');
-    expect(start.expires_in).toBe(15 * 60);
-  });
 });
 
 describe('OAuthService.getFlow', () => {
@@ -162,7 +155,7 @@ describe('OAuthService.getFlow', () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     const start = await startPromise;
 
     const snap = impl.getFlow();
@@ -177,7 +170,7 @@ describe('OAuthService.getFlow', () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await startPromise;
     const snap = impl.getFlow();
     expect(JSON.stringify(snap)).not.toContain('dev-code-secret');
@@ -189,51 +182,51 @@ describe('OAuthService — terminal transitions', () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await startPromise;
 
-    mock.loginCalls[0]!.resolve({ providerName: 'managed:kimi-code', ok: true });
+    mock.loginCalls[0]!.resolve({ providerName: 'managed:multiai', ok: true });
     await flushMicrotasks();
 
     expect(impl.getFlow()!.status).toBe('authenticated');
     expect(impl.getFlow()!.resolved_at).toBeDefined();
   });
 
-  it("'expired' on DeviceCodeTimeoutError", async () => {
+  it("'expired' on an expired-token OAuth error", async () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await startPromise;
 
-    mock.loginCalls[0]!.reject(new DeviceCodeTimeoutError('timed out'));
+    mock.loginCalls[0]!.reject(new MultiAIOAuthError('expired_token', 'timed out'));
     await flushMicrotasks();
 
     expect(impl.getFlow()!.status).toBe('expired');
     expect(impl.getFlow()!.error_message).toBe('timed out');
   });
 
-  it("'denied' on OAuthError carrying 'denied'", async () => {
+  it("'denied' on an access-denied OAuth error", async () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await startPromise;
 
-    mock.loginCalls[0]!.reject(new OAuthError('Authorization denied'));
+    mock.loginCalls[0]!.reject(new MultiAIOAuthError('access_denied', 'Authorization denied'));
     await flushMicrotasks();
 
     expect(impl.getFlow()!.status).toBe('denied');
   });
 
-  it("'cancelled' on OAuthError carrying 'aborted'", async () => {
+  it("'cancelled' on a cancelled OAuth error", async () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await startPromise;
 
-    mock.loginCalls[0]!.reject(new OAuthError('Login aborted by caller'));
+    mock.loginCalls[0]!.reject(new MultiAIOAuthError('cancelled', 'Login aborted by caller'));
     await flushMicrotasks();
 
     expect(impl.getFlow()!.status).toBe('cancelled');
@@ -243,7 +236,7 @@ describe('OAuthService — terminal transitions', () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await startPromise;
 
     mock.loginCalls[0]!.reject(new Error('ECONNREFUSED'));
@@ -260,7 +253,7 @@ describe('OAuthService.cancelLogin', () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await startPromise;
 
     const aborted = new Promise<boolean>((resolve) => {
@@ -277,9 +270,9 @@ describe('OAuthService.cancelLogin', () => {
     const { impl, mock } = makeImpl();
     const startPromise = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await startPromise;
-    mock.loginCalls[0]!.resolve({ providerName: 'managed:kimi-code', ok: true });
+    mock.loginCalls[0]!.resolve({ providerName: 'managed:multiai', ok: true });
     await flushMicrotasks();
 
     const result = await impl.cancelLogin();
@@ -299,13 +292,13 @@ describe('OAuthService — supersede (PLAN D6.4)', () => {
 
     const first = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     const firstStart = await first;
 
     const second = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[1]!.onDeviceCode?.(
-      fakeDeviceAuth({ deviceCode: 'second-secret', userCode: 'KIMI-9999' }),
+    await mock.loginCalls[1]!.onAuthorization?.(
+      fakeDeviceAuth({ deviceCode: 'second-secret', userCode: 'MA-9999' }),
     );
     const secondStart = await second;
 
@@ -320,7 +313,7 @@ describe('OAuthService.logout', () => {
   it('delegates to facade.logout and returns logged_out=true', async () => {
     const { impl, mock } = makeImpl();
     const result = await impl.logout();
-    expect(result).toEqual({ logged_out: true, provider: 'managed:kimi-code' });
+    expect(result).toEqual({ logged_out: true, provider: 'managed:multiai' });
     expect(mock.logoutCalls).toHaveLength(1);
   });
 
@@ -328,7 +321,7 @@ describe('OAuthService.logout', () => {
     const { impl, mock } = makeImpl();
     const start = impl.startLogin();
     await flushMicrotasks();
-    await mock.loginCalls[0]!.onDeviceCode?.(fakeDeviceAuth());
+    await mock.loginCalls[0]!.onAuthorization?.(fakeDeviceAuth());
     await start;
 
     await impl.logout();

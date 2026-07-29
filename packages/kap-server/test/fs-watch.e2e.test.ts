@@ -218,8 +218,8 @@ describe('WS fs watch (kap-server)', () => {
       // Shrink the window capacity instead: 600 files over 500ms windows
       // guarantees a >100-event window even at ~240 events/s delivery, while
       // the truncation path under test is identical.
-      vi.stubEnv('KIMI_CODE_FS_WATCH_DEBOUNCE_MS', '500');
-      vi.stubEnv('KIMI_CODE_FS_WATCH_MAX_CHANGES_PER_WINDOW', '100');
+      vi.stubEnv('MULTIAI_FS_WATCH_DEBOUNCE_MS', '500');
+      vi.stubEnv('MULTIAI_FS_WATCH_MAX_CHANGES_PER_WINDOW', '100');
       const r = await boot();
       const sid = await createSession(r);
       const conn = await openConn(wsUrl(r));

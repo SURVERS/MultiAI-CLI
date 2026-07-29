@@ -71,7 +71,7 @@ describe('server-v2 GET /api/v1/connections', () => {
   function connect(): Promise<WebSocket> {
     return new Promise((resolve, reject) => {
       const token = (server as RunningServer).authTokenService.getToken();
-      const ws = new WebSocket(wsUrl, [`kimi-code.bearer.${token}`]);
+      const ws = new WebSocket(wsUrl, [`multiai.bearer.${token}`]);
       // Resolve on the server's first (`server_hello`) frame.
       ws.once('message', () => resolve(ws));
       ws.once('error', reject);

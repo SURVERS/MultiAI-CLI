@@ -2,18 +2,18 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 
 import { describe, expect, it } from 'vitest';
-import type { KimiHarness } from '@moonshot-ai/kimi-code-sdk';
+import type { MultiAIHarness } from '@multiai/sdk';
 
 import { runAcpServer } from '../src/server';
 
 interface CloseCounterHarness {
-  harness: KimiHarness;
+  harness: MultiAIHarness;
   closeCalls: () => number;
 }
 
 /**
  * Minimal harness stub. Phase 11's shutdown wiring only touches
- * {@link KimiHarness.close}; the other harness surface is exercised in
+ * {@link MultiAIHarness.close}; the other harness surface is exercised in
  * sibling tests (`session-new`, `session-load`, etc.) and is irrelevant
  * here. Each close call increments a counter so we can assert
  * idempotency on signal+natural-close interleavings.
@@ -27,7 +27,7 @@ function makeCloseCounterHarness(opts: { throwOnClose?: boolean } = {}): CloseCo
         throw new Error('intentional close failure for test');
       }
     },
-  } as unknown as KimiHarness;
+  } as unknown as MultiAIHarness;
   return { harness, closeCalls: () => calls };
 }
 

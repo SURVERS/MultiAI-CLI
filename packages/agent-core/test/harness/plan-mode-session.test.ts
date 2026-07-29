@@ -4,18 +4,18 @@ import { join } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createRPC, KimiCore, type CoreAPI, type SDKAPI } from '../../src';
+import { createRPC, MultiAICore, type CoreAPI, type SDKAPI } from '../../src';
 
 const BASE_CONFIG = `
 default_model = "kimi-code/kimi-for-coding"
 
-[providers."managed:kimi-code"]
+[providers."managed:multiai"]
 type = "kimi"
 api_key = "test-key"
 base_url = "https://api.example/v1"
 
 [models."kimi-code/kimi-for-coding"]
-provider = "managed:kimi-code"
+provider = "managed:multiai"
 model = "kimi-for-coding"
 max_context_size = 1000000
 `;
@@ -88,7 +88,7 @@ describe('plan-mode bootstrap from config.defaultPlanMode', () => {
 
   async function createTestRpc() {
     const [coreRpc, sdkRpc] = createRPC<CoreAPI, SDKAPI>();
-    void new KimiCore(coreRpc, { homeDir, configPath });
+    void new MultiAICore(coreRpc, { homeDir, configPath });
     return sdkRpc({
       emitEvent: vi.fn(),
       requestApproval: vi.fn(async () => ({ decision: 'rejected' as const })),

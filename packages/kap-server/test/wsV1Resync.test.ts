@@ -13,7 +13,7 @@ import {
   IEventBus,
   IAgentLifecycleService,
   ISessionLifecycleService,
-} from '@moonshot-ai/agent-core-v2';
+} from '@multiai/agent-core-v2';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 
@@ -41,7 +41,7 @@ interface Conn {
 
 function openConn(url: string, token: string): Promise<Conn> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(url, [`kimi-code.bearer.${token}`]);
+    const ws = new WebSocket(url, [`multiai.bearer.${token}`]);
     const frames: Frame[] = [];
     const waiters: Array<(f: Frame) => void> = [];
     const closed = new Promise<void>((res) => ws.on('close', () => res()));

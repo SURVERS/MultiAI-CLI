@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { KimiConfig } from '@moonshot-ai/agent-core';
-import { createKimiDefaultHeaders, KIMI_CODE_PLATFORM } from '@moonshot-ai/kimi-code-oauth';
+import type { MultiAIConfig } from '@multiai/agent-core';
+import { createMultiAIDefaultHeaders, MULTIAI_PLATFORM } from '@multiai/oauth';
 
 import { ProviderManager } from '../../agent-core/src/session/provider-manager';
 import { SDKRpcClient } from '#/index';
@@ -14,13 +14,13 @@ import { TEST_IDENTITY } from './test-identity';
 const tempDirs: string[] = [];
 
 function resolveRuntimeProvider(options: {
-  readonly config: KimiConfig;
+  readonly config: MultiAIConfig;
   readonly model?: string;
-  readonly kimiRequestHeaders?: Record<string, string>;
+  readonly multiAIRequestHeaders?: Record<string, string>;
 }) {
   const manager = new ProviderManager({
     config: options.config,
-    kimiRequestHeaders: options.kimiRequestHeaders,
+    multiAIRequestHeaders: options.multiAIRequestHeaders,
   });
   const model = options.model ?? options.config.defaultModel;
   if (model === undefined) {
@@ -52,100 +52,130 @@ describe('runtime provider identity headers', () => {
       },
     });
     const core = client.core as unknown as {
-      readonly kimiRequestHeaders?: Record<string, string>;
+      readonly multiAIRequestHeaders?: Record<string, string>;
     };
 
     try {
-      expect(core.kimiRequestHeaders).toMatchObject({
-        'User-Agent': 'kimi-code-cli/0.0.0-test (web-runtime)',
-        'X-Msh-Version': '0.0.0-test',
+      expect(core.multiAIRequestHeaders).toMatchObject({
+        'User-Agent': 'multiai-cli/0.0.0-test (web-runtime)',
+        'X-MultiAI-Version': '0.0.0-test',
       });
     } finally {
       await client.close();
     }
   });
 
-  it('adds kimi-code-cli User-Agent and complete X-Msh headers to the default Kimi provider', async () => {
+  it('adds the full MultiAI identity only to the managed MultiAI provider', async () => {
     const homeDir = await makeTempDir();
-    const kimiRequestHeaders = createKimiDefaultHeaders({ homeDir, ...TEST_IDENTITY });
+    const multiAIRequestHeaders = createMultiAIDefaultHeaders({ homeDir, ...TEST_IDENTITY });
     const resolved = resolveRuntimeProvider({
       config: {
-        defaultModel: 'kimi-model',
+        defaultModel: 'multiai/model-a',
         providers: {
-          kimi: {
-            type: 'kimi',
-            apiKey: 'test-key',
+          'managed:multiai': {
+            type: 'openai_responses',
+            apiKey: '',
+            baseUrl: 'https://multiai.example.test/v1',
           },
         },
         models: {
-          'kimi-model': {
-            provider: 'kimi',
-            model: 'kimi-model',
-            maxContextSize: 1000,
+          'multiai/model-a': {
+            provider: 'managed:multiai',
+            model: 'model-a',
           },
         },
       },
-      kimiRequestHeaders,
+      multiAIRequestHeaders,
     });
 
     expect(resolved.provider).toMatchObject({
-      type: 'kimi',
+      type: 'openai_responses',
       defaultHeaders: expect.objectContaining({
-        'User-Agent': 'kimi-code-cli/0.0.0-test',
-        'X-Msh-Platform': KIMI_CODE_PLATFORM,
-        'X-Msh-Version': '0.0.0-test',
-        'X-Msh-Device-Name': expect.any(String),
-        'X-Msh-Device-Model': expect.any(String),
-        'X-Msh-Os-Version': expect.any(String),
-        'X-Msh-Device-Id': expect.stringMatching(/^[0-9a-f-]+$/),
+        'User-Agent': 'multiai-cli/0.0.0-test',
+        'X-MultiAI-Platform': MULTIAI_PLATFORM,
+        'X-MultiAI-Version': '0.0.0-test',
+        'X-MultiAI-Device-Name': expect.any(String),
+        'X-MultiAI-Device-Model': expect.any(String),
+        'X-MultiAI-Os-Version': expect.any(String),
+        'X-MultiAI-Device-Id': expect.stringMatching(/^[0-9a-f-]+$/),
       }),
     });
   });
 
-  it('lets Kimi provider customHeaders override default identity headers', async () => {
+  it('lets managed MultiAI customHeaders override default identity headers', async () => {
     const homeDir = await makeTempDir();
-    const kimiRequestHeaders = createKimiDefaultHeaders({ homeDir, ...TEST_IDENTITY });
-    const config: KimiConfig = {
+    const multiAIRequestHeaders = createMultiAIDefaultHeaders({ homeDir, ...TEST_IDENTITY });
+    const config: MultiAIConfig = {
       providers: {
-        kimi: {
-          type: 'kimi',
-          apiKey: 'test-key',
+        'managed:multiai': {
+          type: 'openai_responses',
+          apiKey: '',
+          baseUrl: 'https://multiai.example.test/v1',
           customHeaders: {
             'User-Agent': 'Custom/1',
-            'X-Msh-Version': 'override-version',
+            'X-MultiAI-Version': 'override-version',
           },
         },
       },
-      defaultProvider: 'kimi',
-      defaultModel: 'kimi-model',
+      defaultProvider: 'managed:multiai',
+      defaultModel: 'multiai/model-a',
       models: {
-        'kimi-model': {
-          provider: 'kimi',
-          model: 'kimi-model',
-          maxContextSize: 1000,
+        'multiai/model-a': {
+          provider: 'managed:multiai',
+          model: 'model-a',
         },
       },
     };
 
     const resolved = resolveRuntimeProvider({
       config,
-      kimiRequestHeaders,
+      multiAIRequestHeaders,
     });
 
     expect(resolved.provider).toMatchObject({
-      type: 'kimi',
+      type: 'openai_responses',
       defaultHeaders: expect.objectContaining({
         'User-Agent': 'Custom/1',
-        'X-Msh-Version': 'override-version',
-        'X-Msh-Platform': KIMI_CODE_PLATFORM,
+        'X-MultiAI-Version': 'override-version',
+        'X-MultiAI-Platform': MULTIAI_PLATFORM,
       }),
     });
   });
 
-  it('applies only the User-Agent (no device identity headers) to non-Kimi providers', async () => {
+  it('applies only the User-Agent to external Kimi providers', async () => {
     const homeDir = await makeTempDir();
-    const kimiRequestHeaders = createKimiDefaultHeaders({ homeDir, ...TEST_IDENTITY });
-    const config: KimiConfig = {
+    const multiAIRequestHeaders = createMultiAIDefaultHeaders({ homeDir, ...TEST_IDENTITY });
+    const resolved = resolveRuntimeProvider({
+      config: {
+        providers: {
+          kimi: {
+            type: 'kimi',
+            apiKey: 'test-key',
+          },
+        },
+        defaultModel: 'kimi-model',
+        models: {
+          'kimi-model': {
+            provider: 'kimi',
+            model: 'kimi-model',
+          },
+        },
+      },
+      multiAIRequestHeaders,
+    });
+
+    expect(resolved.provider).toMatchObject({
+      type: 'kimi',
+      defaultHeaders: {
+        'User-Agent': `multiai-cli/${TEST_IDENTITY.version}`,
+      },
+    });
+  });
+
+  it('applies only the User-Agent to other external providers', async () => {
+    const homeDir = await makeTempDir();
+    const multiAIRequestHeaders = createMultiAIDefaultHeaders({ homeDir, ...TEST_IDENTITY });
+    const config: MultiAIConfig = {
       providers: {
         openai: {
           type: 'openai',
@@ -166,21 +196,20 @@ describe('runtime provider identity headers', () => {
 
     const resolved = resolveRuntimeProvider({
       config,
-      kimiRequestHeaders,
+      multiAIRequestHeaders,
     });
 
     expect(resolved.provider).toMatchObject({
       type: 'openai',
       model: 'gpt-test',
       defaultHeaders: {
-        'User-Agent': `kimi-code-cli/${TEST_IDENTITY.version}`,
+        'User-Agent': `multiai-cli/${TEST_IDENTITY.version}`,
       },
     });
-    // Device identity headers (`X-Msh-*`) stay Kimi-only — must not leak to
-    // third-party providers.
+    // Device identity headers stay first-party-only.
     const headers = (resolved.provider as { defaultHeaders?: Record<string, string> })
       .defaultHeaders;
     expect(headers).toBeDefined();
-    expect(headers).not.toHaveProperty('X-Msh-Platform');
+    expect(headers).not.toHaveProperty('X-MultiAI-Platform');
   });
 });

@@ -32,7 +32,7 @@
  *    so its raw `<system>` markup never renders in the UI.
  */
 
-import type { ContentPart } from '@moonshot-ai/kosong';
+import type { ContentPart } from '@multiai/kosong';
 
 import type { TelemetryClient } from '#/telemetry';
 
@@ -62,7 +62,7 @@ export const MAX_IMAGE_EDGE_PX = 2000;
  * resolution so it applies in any process without wiring; a value that is
  * not a positive integer is ignored.
  */
-export const MAX_IMAGE_EDGE_ENV = 'KIMI_IMAGE_MAX_EDGE_PX';
+export const MAX_IMAGE_EDGE_ENV = 'MULTIAI_IMAGE_MAX_EDGE_PX';
 
 /** The env override for the longest-edge ceiling, or undefined when unset/invalid. */
 export function maxImageEdgeFromEnv(
@@ -118,7 +118,7 @@ export const READ_IMAGE_BYTE_BUDGET = 256 * 1024;
  * Env var overriding the read-image byte budget. Read live on every
  * resolution; a value that is not a positive integer is ignored.
  */
-export const READ_IMAGE_BYTE_BUDGET_ENV = 'KIMI_IMAGE_READ_BYTE_BUDGET';
+export const READ_IMAGE_BYTE_BUDGET_ENV = 'MULTIAI_IMAGE_READ_BYTE_BUDGET';
 
 /** The env override for the read-image byte budget, or undefined when unset/invalid. */
 export function readImageByteBudgetFromEnv(

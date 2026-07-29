@@ -1,4 +1,4 @@
-import type { KimiConfig } from '@moonshot-ai/agent-core';
+import type { MultiAIConfig } from '@multiai/agent-core';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -62,12 +62,12 @@ describe('fetchCatalog', () => {
       'https://x/api.json',
       {
         fetchImpl: fetchMock as unknown as typeof fetch,
-        userAgent: 'kimi-code-cli/1.2.3',
+        userAgent: 'multiai-cli/1.2.3',
       },
     );
     const withUa = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     const withUaHeaders = withUa[1].headers as Record<string, string>;
-    expect(withUaHeaders['User-Agent']).toBe('kimi-code-cli/1.2.3');
+    expect(withUaHeaders['User-Agent']).toBe('multiai-cli/1.2.3');
     expect(withUaHeaders['Accept']).toBe('application/json');
 
     fetchMock.mockClear();
@@ -94,7 +94,7 @@ describe('catalogModelToAlias', () => {
 
 describe('applyCatalogProvider', () => {
   it('writes provider, model aliases, and defaults', () => {
-    const config = { providers: {} } as KimiConfig;
+    const config = { providers: {} } as MultiAIConfig;
     const result = applyCatalogProvider(config, {
       providerId: 'anthropic',
       wire: 'anthropic',
@@ -131,7 +131,7 @@ describe('applyCatalogProvider', () => {
         },
       },
     });
-    const config = { providers: {} } as KimiConfig;
+    const config = { providers: {} } as MultiAIConfig;
 
     applyCatalogProvider(config, {
       providerId: 'deepseek',
@@ -169,7 +169,7 @@ describe('applyCatalogProvider', () => {
         },
       },
     });
-    const config = { providers: {} } as KimiConfig;
+    const config = { providers: {} } as MultiAIConfig;
 
     applyCatalogProvider(config, {
       providerId: 'kimi-for-coding',
@@ -213,7 +213,7 @@ describe('applyCatalogProvider', () => {
         },
       },
     });
-    const config = { providers: {} } as KimiConfig;
+    const config = { providers: {} } as MultiAIConfig;
 
     applyCatalogProvider(config, {
       providerId: 'gateway',
@@ -255,7 +255,7 @@ describe('applyCatalogProvider', () => {
         },
       },
     });
-    const config = { providers: {} } as KimiConfig;
+    const config = { providers: {} } as MultiAIConfig;
 
     applyCatalogProvider(config, {
       providerId: 'gateway',
@@ -290,7 +290,7 @@ describe('applyCatalogProvider', () => {
         'anthropic/stale': { provider: 'anthropic', model: 'stale', maxContextSize: 1 },
         'other/keep': { provider: 'other', model: 'keep', maxContextSize: 1 },
       },
-    } as unknown as KimiConfig;
+    } as unknown as MultiAIConfig;
 
     applyCatalogProvider(config, {
       providerId: 'anthropic',

@@ -23,14 +23,14 @@ export type {
   ProcessBackgroundTaskInfo,
   AgentBackgroundTaskInfo,
   QuestionBackgroundTaskInfo,
-} from '@moonshot-ai/agent-core';
-export { AGENT_WIRE_PROTOCOL_VERSION } from '@moonshot-ai/agent-core';
-export type { Message, ContentPart, ToolCall, TokenUsage } from '@moonshot-ai/kosong';
+} from '@multiai/agent-core';
+export { AGENT_WIRE_PROTOCOL_VERSION } from '@multiai/agent-core';
+export type { Message, ContentPart, ToolCall, TokenUsage } from '@multiai/kosong';
 
 // Local bindings for the upstream types referenced by the vis-only DTOs
 // below. The `export type { … }` re-export above forwards the names to
 // consumers but does NOT bring them into this module's scope.
-import type { AgentRecord, BackgroundTaskInfo } from '@moonshot-ai/agent-core';
+import type { AgentRecord, BackgroundTaskInfo } from '@multiai/agent-core';
 
 /**
  * Persistent representation of a cron task.
@@ -53,12 +53,12 @@ export interface CronTask {
  * `manifest.json` shape inside a `/export-debug-zip` bundle. Structural
  * mirror of agent-core's `ExportSessionManifest` (`rpc/core-api.ts`), which
  * is not re-exported from the package entry. All fields optional-tolerant
- * because the manifest comes from another machine / kimi-code version.
+ * because the manifest comes from another machine / MultiAI CLI version.
  */
 export interface ImportManifest {
   sessionId?: string;
   exportedAt?: string;
-  kimiCodeVersion?: string;
+  multiAIVersion?: string;
   wireProtocolVersion?: string;
   os?: string;
   nodejsVersion?: string;
