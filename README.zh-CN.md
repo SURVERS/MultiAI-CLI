@@ -28,11 +28,9 @@ Windows 还需安装 [Git for Windows](https://gitforwindows.org/)。如果 Git 
 
 ## 登录
 
-先按[账号与 OAuth](https://survers.github.io/MultiAI-CLI/zh/guides/account-and-oauth)
-中的配置创建 MultiAI OAuth 应用，再设置公开的 client ID：
+生产构建已包含公开的原生 OAuth client ID，可直接登录：
 
-```powershell
-$env:MULTIAI_OAUTH_CLIENT_ID="YOUR_CLIENT_ID"
+```sh
 multiai login
 ```
 
@@ -40,7 +38,9 @@ multiai login
 无法使用浏览器时运行 `multiai login --device`。系统 keyring 不可用且明确只想
 在当前进程保留凭据时，添加 `--session-only`。
 
-CLI 构建中不应包含 client secret。
+`MULTIAI_OAUTH_CLIENT_ID` 仅用于开发或 staging 覆盖。CLI 构建中不应包含
+client secret。完整的安全与账号生命周期行为见
+[账号与 OAuth](https://survers.github.io/MultiAI-CLI/zh/guides/account-and-oauth)。
 
 ## 快速开始
 

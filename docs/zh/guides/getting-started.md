@@ -91,8 +91,8 @@ multiai -c
 只在临时 `127.0.0.1` 端口监听回调。无法使用浏览器时选择设备码后备流程，或运行
 `multiai login --device`。
 
-MultiAI OAuth 需要原生应用签发的公开 client ID。开发和 staging 构建可设置
-`MULTIAI_OAUTH_CLIENT_ID`。CLI 中绝不能配置 client secret。
+Release 构建已包含原生应用签发的公开 client ID。开发和 staging 构建可通过
+`MULTIAI_OAUTH_CLIENT_ID` 覆盖该值。CLI 中绝不能配置 client secret。
 
 用 `/account` 查看账号、`/logout` 退出；也可运行 `multiai account` 和
 `multiai logout`。

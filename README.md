@@ -30,12 +30,9 @@ Native builds are published on the
 
 ## Sign in
 
-Create the MultiAI OAuth application described in
-[Account and OAuth](https://survers.github.io/MultiAI-CLI/en/guides/account-and-oauth),
-then configure its public client ID:
+Production builds include the public native OAuth client ID. Sign in directly:
 
 ```sh
-set MULTIAI_OAUTH_CLIENT_ID=YOUR_CLIENT_ID
 multiai login
 ```
 
@@ -44,7 +41,10 @@ listener. For a terminal without a usable browser, run `multiai login --device`.
 Use `--session-only` when a system keyring is unavailable and you intentionally
 want credentials to last only for the current process.
 
-No client secret belongs in a CLI build.
+`MULTIAI_OAUTH_CLIENT_ID` is only a development or staging override. No client
+secret belongs in a CLI build. See
+[Account and OAuth](https://survers.github.io/MultiAI-CLI/en/guides/account-and-oauth)
+for the complete security and account lifecycle behavior.
 
 ## Quick start
 

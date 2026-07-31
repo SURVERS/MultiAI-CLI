@@ -91,9 +91,9 @@ On first launch you need to configure an API source. In the interactive UI, ente
 PKCE. The CLI listens only on a temporary `127.0.0.1` port. If a browser cannot
 be used, choose the device-code fallback or run `multiai login --device`.
 
-MultiAI OAuth needs the public client ID issued for the native application. Set
-`MULTIAI_OAUTH_CLIENT_ID` for development and staging builds. Never configure a
-client secret in the CLI.
+Release builds include the public client ID issued for the native application.
+Development and staging builds can override it with `MULTIAI_OAUTH_CLIENT_ID`.
+Never configure a client secret in the CLI.
 
 To inspect or clear the account, use `/account` and `/logout`, or run
 `multiai account` and `multiai logout`.

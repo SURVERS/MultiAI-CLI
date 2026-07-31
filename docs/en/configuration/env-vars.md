@@ -76,7 +76,7 @@ clients and must not use a client secret.
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `MULTIAI_OAUTH_CLIENT_ID` | Public native-application client ID; development/staging override until the production ID is embedded | Built-in release value |
+| `MULTIAI_OAUTH_CLIENT_ID` | Public native-application client ID override for development or staging | Built-in release value |
 | `MULTIAI_OAUTH_ISSUER` | OAuth issuer override for development or staging | `https://multiai.store` |
 
 `MULTIAI_BASE_URL` remains the base-URL override for a manually configured

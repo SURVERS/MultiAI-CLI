@@ -1,6 +1,14 @@
+/**
+ * MultiAI OAuth client contract: validates configuration defaults and the
+ * remote OAuth/OIDC boundary through fetch stubs. Run with the package tests.
+ */
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  BUILTIN_MULTIAI_OAUTH_CLIENT_ID,
+  resolveMultiAIOAuthConfig,
+} from '../src/multiai-constants';
 import {
   fetchAccountSnapshot,
   fetchAuthorizationServerMetadata,
@@ -39,6 +47,21 @@ function metadata(): OAuthAuthorizationServerMetadata {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('MultiAI OAuth configuration', () => {
+  it('returns the production client ID when no override is provided', () => {
+    expect(resolveMultiAIOAuthConfig({}).clientId).toBe('ma-client-zhbk1ikvlissdtjp');
+    expect(BUILTIN_MULTIAI_OAUTH_CLIENT_ID).toBe('ma-client-zhbk1ikvlissdtjp');
+  });
+
+  it('returns the override client ID when development configuration provides one', () => {
+    expect(
+      resolveMultiAIOAuthConfig({
+        MULTIAI_OAUTH_CLIENT_ID: 'staging-client-id',
+      }).clientId,
+    ).toBe('staging-client-id');
+  });
 });
 
 describe('MultiAI OAuth metadata', () => {

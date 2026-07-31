@@ -27,8 +27,9 @@ The browser flow uses Authorization Code + PKCE. Device authorization is the
 fallback. Refresh tokens are stored in the operating-system keyring; use
 `--session-only` explicitly when no keyring is available.
 
-The OAuth client is public and must not use a client secret. Until the
-production client ID is embedded, set `MULTIAI_OAUTH_CLIENT_ID`.
+Production builds include the public OAuth client ID and must not use a client
+secret. Set `MULTIAI_OAUTH_CLIENT_ID` only to override the release value for
+development or staging.
 
 ## Run
 

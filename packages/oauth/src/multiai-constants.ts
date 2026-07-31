@@ -8,9 +8,9 @@ export const MULTIAI_API_BASE_URL = 'https://multiai.store/v1';
 export const MULTIAI_CALLBACK_PATH = '/oauth/callback';
 export const MULTIAI_REGISTERED_REDIRECT_URI = 'http://127.0.0.1:1/oauth/callback';
 
-// OAuth native client IDs are public. The production value is intentionally
-// left empty until the owner creates the application in multiai.store.
-export const BUILTIN_MULTIAI_OAUTH_CLIENT_ID = '';
+// OAuth native client IDs are public and safe to embed in distributed clients.
+// MULTIAI_OAUTH_CLIENT_ID remains available as a development/staging override.
+export const BUILTIN_MULTIAI_OAUTH_CLIENT_ID = 'ma-client-zhbk1ikvlissdtjp';
 
 export function resolveMultiAIOAuthConfig(
   env: Readonly<Record<string, string | undefined>> = process.env,

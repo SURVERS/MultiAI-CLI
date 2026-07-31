@@ -76,7 +76,7 @@ Production issuer 为 `https://multiai.store`。原生客户端属于 public cli
 
 | 环境变量 | 用途 | 默认值 |
 | --- | --- | --- |
-| `MULTIAI_OAUTH_CLIENT_ID` | 原生应用公开 client ID；production ID 内置前可用于开发/staging 覆盖 | release 内置值 |
+| `MULTIAI_OAUTH_CLIENT_ID` | 开发或 staging 的原生应用公开 client ID 覆盖 | release 内置值 |
 | `MULTIAI_OAUTH_ISSUER` | 开发或 staging OAuth issuer 覆盖 | `https://multiai.store` |
 
 `MULTIAI_BASE_URL` 仍是手动配置的 Kimi 兼容协议供应商 base URL 覆盖，不是
