@@ -27,6 +27,8 @@ export interface IModelOAuthTokens {
     oauthRef: OAuthRef,
     options?: { readonly force?: boolean },
   ): Promise<string>;
+  /** Invalidates a rejected OAuth session and removes its managed configuration. */
+  invalidate?: (provider: string, oauthRef: OAuthRef) => Promise<void>;
 }
 
 export const IModelOAuthTokens: ServiceIdentifier<IModelOAuthTokens> =

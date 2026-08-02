@@ -564,6 +564,10 @@ export class ModelCatalog extends Disposable implements IModelCatalog {
           });
           return { apiKey };
         },
+        invalidate:
+          tokens.invalidate === undefined
+            ? undefined
+            : () => tokens.invalidate?.(providerKey, oauthRef) ?? Promise.resolve(),
       };
     }
     return new StaticAuthProvider(undefined);

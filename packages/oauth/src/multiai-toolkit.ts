@@ -19,6 +19,7 @@ import type {
 
 export interface BearerTokenProvider {
   getAccessToken(options?: { readonly force?: boolean }): Promise<string>;
+  invalidate?: () => Promise<void>;
 }
 
 export interface MultiAIOAuthToolkitOptions {
@@ -78,7 +79,10 @@ export class MultiAIOAuthToolkit {
   }
 
   tokenProvider(_tokenRef?: MultiAIOAuthTokenRef): BearerTokenProvider {
-    return { getAccessToken: (options) => this.manager.getAccessToken(options) };
+    return {
+      getAccessToken: (options) => this.manager.getAccessToken(options),
+      invalidate: () => this.manager.invalidate(),
+    };
   }
 
   getAccountSnapshot(): Promise<MultiAIAccountSnapshot> {

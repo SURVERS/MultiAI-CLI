@@ -2066,12 +2066,14 @@ describe('Agent turn flow', () => {
     const records: TelemetryRecord[] = [];
     const tokenCalls: Array<boolean | undefined> = [];
     const authKeys: string[] = [];
+    const invalidate = vi.fn(() => Promise.resolve());
     const oauthOptions = oauthAgentOptions(
       async (options) => {
         tokenCalls.push(options?.force);
         return options?.force === true ? 'forced-refresh-token' : 'fresh-token';
       },
       ['image_in', 'video_in', 'tool_use'],
+      invalidate,
     );
     const generate: GenerateFn = async (
       _provider,
@@ -2100,6 +2102,7 @@ describe('Agent turn flow', () => {
 
     expect(authKeys).toEqual(['fresh-token', 'forced-refresh-token']);
     expect(tokenCalls).toEqual([undefined, true]);
+    expect(invalidate).toHaveBeenCalledOnce();
     expect(events).not.toContainEqual(expect.objectContaining({ event: 'assistant.delta' }));
     expect(events).toContainEqual(
       expect.objectContaining({
@@ -2959,6 +2962,7 @@ function mediaCapabilities(): ModelCapability {
 function oauthAgentOptions(
   getAccessToken: (options?: { readonly force?: boolean }) => Promise<string>,
   capabilities?: readonly string[] | undefined,
+  invalidate?: () => Promise<void>,
 ): Pick<TestAgentOptions, 'initialConfig' | 'providerManagerOverrides'> {
   return {
     initialConfig: {
@@ -2980,7 +2984,7 @@ function oauthAgentOptions(
       },
     },
     providerManagerOverrides: {
-      resolveOAuthTokenProvider: vi.fn(() => ({ getAccessToken })),
+      resolveOAuthTokenProvider: vi.fn(() => ({ getAccessToken, invalidate })),
     },
   };
 }

@@ -42,6 +42,10 @@ export class ModelOAuthTokenAdapter implements IModelOAuthTokens {
     if (token.trim().length === 0) throw loginRequired(provider);
     return token;
   }
+
+  invalidate(provider: string, _oauthRef: OAuthRef): Promise<void> {
+    return this.oauth.invalidate(provider);
+  }
 }
 
 function loginRequired(providerKey: string): Error2 {

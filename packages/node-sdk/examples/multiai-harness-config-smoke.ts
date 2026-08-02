@@ -22,8 +22,8 @@ async function main(): Promise<void> {
     defaultPlanMode: false,
     providers: {
       'managed:multiai': {
-        type: 'kimi',
-        baseUrl: 'https://api.kimi.com/coding/v1',
+        type: 'openai_responses',
+        baseUrl: 'https://multiai.store/v1',
         apiKey: '',
         oauth: { storage: 'keyring', key: 'oauth/multiai' },
       },
@@ -32,9 +32,6 @@ async function main(): Promise<void> {
       'multiai/kimi-for-coding': {
         provider: 'managed:multiai',
         model: 'kimi-for-coding',
-        maxContextSize: 262144,
-        capabilities: ['image_in', 'thinking', 'video_in'],
-        displayName: 'Kimi for Coding',
       },
     },
     loopControl: {
@@ -42,18 +39,6 @@ async function main(): Promise<void> {
       maxRalphIterations: 0,
       reservedContextSize: 50000,
       compactionTriggerRatio: 0.85,
-    },
-    services: {
-      moonshotSearch: {
-        baseUrl: 'https://api.kimi.com/coding/v1/search',
-        apiKey: '',
-        oauth: { storage: 'keyring', key: 'oauth/multiai' },
-      },
-      moonshotFetch: {
-        baseUrl: 'https://api.kimi.com/coding/v1/fetch',
-        apiKey: '',
-        oauth: { storage: 'keyring', key: 'oauth/multiai' },
-      },
     },
   });
 
@@ -65,7 +50,6 @@ async function main(): Promise<void> {
     '[providers."managed:multiai"]',
     '[providers."managed:multiai".oauth]',
     '[models."multiai/kimi-for-coding"]',
-    '[services.moonshot_search]',
   ]) {
     if (!text.includes(expected)) {
       throw new Error(`missing ${expected} in written config`);

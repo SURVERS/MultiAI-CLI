@@ -8,14 +8,14 @@
  *    threaded per attempt;
  *  - the event stream carries parts, usage, finish, and timing;
  *  - a 401 against a refreshable auth provider forces one token refresh and
- *    exactly one replay; a 401 that survives the replay surfaces as
- *    `provider.auth_error`; other failures go through
+ *    exactly one replay; a 401 that survives the replay invalidates the OAuth
+ *    session and surfaces as `provider.auth_error`; other failures go through
  *    `translateProviderError`; an abort is rethrown untouched;
  *  - `uploadVideo` presence is the capability declaration;
  *  - `buildStreamTiming` splits TTFT at the request-sent boundary.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { isError2 } from '#/_base/errors/errors';
 import { APIStatusError, createAbortError } from '#/kosong/contract/errors';
@@ -247,10 +247,12 @@ describe('ModelRequesterImpl request execution', () => {
   it('surfaces a replay-surviving 401 as provider.auth_error', async () => {
     const provider = new FakeChatProvider();
     provider.handler = () => Promise.reject(new APIStatusError(401, 'account rejected'));
+    const invalidate = vi.fn(() => Promise.resolve());
     const requester = new ModelRequesterImpl(
       modelWith({
         canRefresh: true,
         getAuth: () => Promise.resolve({ apiKey: 'tok' }),
+        invalidate,
       }),
       registryReturning(provider),
     );
@@ -260,6 +262,7 @@ describe('ModelRequesterImpl request execution', () => {
     expect((failure as { code: string }).code).toBe(ProtocolErrors.codes.PROVIDER_AUTH_ERROR);
     expect((failure as Error).message).toContain('account rejected');
     expect(provider.calls).toHaveLength(2);
+    expect(invalidate).toHaveBeenCalledOnce();
   });
 
   it('does not replay 401s against a non-refreshable auth provider', async () => {

@@ -13,9 +13,9 @@
  * stream timing (`buildStreamTiming`), and owns the auth-refresh replay: a
  * 401 against a refreshable (OAuth) auth provider triggers one forced token
  * refresh and exactly one replay; a 401 that survives the replay means the
- * provider rejected the account itself, so it is surfaced through
- * `translateProviderError` as `provider.auth_error` carrying the provider's
- * message instead of a misleading re-login prompt.
+ * provider rejected the account itself, so the OAuth session is invalidated
+ * and the failure is surfaced through `translateProviderError` as
+ * `provider.auth_error` carrying the provider's message.
  *
  * Constructed by `ModelCatalog` (`catalogService.ts`) — plain constructor
  * args, no DI.
@@ -209,8 +209,11 @@ export class ModelRequesterImpl implements ModelRequester {
     } catch (error) {
       // A 401 that survives a forced token refresh means the provider rejected
       // the account itself: surface it as `provider.auth_error` (carrying the
-      // provider's message) instead of a misleading re-login prompt.
-      if (isUnauthorizedStatusError(error)) throw translateProviderError(error);
+      // provider's message) and invalidate the rejected OAuth session.
+      if (isUnauthorizedStatusError(error)) {
+        await this.authProvider.invalidate?.();
+        throw translateProviderError(error);
+      }
       throw this.withManagedAccountHint(error);
     }
   }

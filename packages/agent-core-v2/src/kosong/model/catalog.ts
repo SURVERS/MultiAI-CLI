@@ -56,6 +56,7 @@ export interface AuthProvider {
   readonly canRefresh?: boolean;
 
   getAuth(options?: { readonly force?: boolean }): Promise<ProviderRequestAuth | undefined>;
+  invalidate?: () => Promise<void>;
 }
 
 /** Static api-key credentials; never refreshes. */

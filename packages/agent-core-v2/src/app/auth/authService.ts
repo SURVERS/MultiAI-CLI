@@ -232,6 +232,13 @@ export class OAuthService extends Disposable implements IOAuthService {
     }
   }
 
+  async invalidate(provider = MULTIAI_PROVIDER_NAME): Promise<void> {
+    if (provider !== MULTIAI_PROVIDER_NAME) return;
+    await this.toolkit.invalidate();
+    this.abortExisting(provider);
+    await this.deprovision();
+  }
+
   async getAccount(provider = MULTIAI_PROVIDER_NAME) {
     if (provider !== MULTIAI_PROVIDER_NAME) {
       throw new MultiAIOAuthLoginRequiredError();

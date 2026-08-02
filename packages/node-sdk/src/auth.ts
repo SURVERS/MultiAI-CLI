@@ -198,6 +198,10 @@ export class MultiAIAuthFacade {
           throw mapOAuthTokenError(error, providerName) ?? error;
         }
       },
+      invalidate: async () => {
+        await this.toolkit.invalidate();
+        await this.deprovision();
+      },
     };
   };
 

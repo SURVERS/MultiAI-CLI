@@ -121,6 +121,10 @@ class ServicesManagedAuthFacade implements ServicesAuthFacade {
           throw error;
         }
       },
+      invalidate: async () => {
+        await this.toolkit.invalidate();
+        await this.deprovision();
+      },
     };
   };
 

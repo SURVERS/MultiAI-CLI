@@ -20,6 +20,7 @@ import { ErrorCodes, isMultiAIError, MultiAIError } from '../errors';
 
 export interface BearerTokenProvider {
   getAccessToken(options?: { readonly force?: boolean }): Promise<string>;
+  invalidate?: () => Promise<void>;
 }
 
 export type OAuthTokenProviderResolver = (
@@ -212,6 +213,7 @@ export class ProviderManager implements ModelProvider {
             throw withManagedAccountHint(providerName, error);
           }
           if (refreshed) {
+            await tokenProvider.invalidate?.();
             const reason = error.message.replaceAll('\r', '');
             throw new MultiAIError(
               ErrorCodes.PROVIDER_AUTH_ERROR,

@@ -64,6 +64,7 @@ export interface IOAuthService {
     oauthRef?: OAuthRef,
   ): MultiAIBearerTokenProvider | undefined;
   getCachedAccessToken(provider: string, oauthRef?: OAuthRef): Promise<string | undefined>;
+  invalidate(provider?: string): Promise<void>;
 }
 
 export const IOAuthService: ServiceIdentifier<IOAuthService> =
