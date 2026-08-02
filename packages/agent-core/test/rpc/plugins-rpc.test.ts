@@ -1,3 +1,9 @@
+/**
+ * Scenario: managing local plugins through the public core RPC surface.
+ * Responsibilities: preserve plugin behavior without leaking managed account endpoints or tokens.
+ * Wiring: MultiAICore installs real temporary plugin manifests and MCP definitions.
+ * Run: pnpm exec vitest run packages/agent-core/test/rpc/plugins-rpc.test.ts
+ */
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -83,12 +89,10 @@ describe('MultiAICore plugin RPCs', () => {
     );
   });
 
-  it('injects persisted managed MultiAI CLI environment into the datasource plugin MCP server', async () => {
+  it('does not inject managed account endpoints into plugin MCP servers', async () => {
     const previousBaseUrl = process.env['MULTIAI_BASE_URL'];
-    const previousCodeOAuthHost = process.env['MULTIAI_OAUTH_HOST'];
     const previousOAuthHost = process.env['MULTIAI_OAUTH_HOST'];
     delete process.env['MULTIAI_BASE_URL'];
-    delete process.env['MULTIAI_OAUTH_HOST'];
     delete process.env['MULTIAI_OAUTH_HOST'];
 
     const home = await mkdtemp(path.join(tmpdir(), 'kimi-home-'));
@@ -128,15 +132,17 @@ oauth = { storage = "keyring", key = "oauth/multiai-env-1234", oauth_host = "htt
         }
       ).mergePluginMcpConfig(undefined);
 
-      expect(mcpConfig.servers['plugin-kimi-datasource:data']?.env).toEqual(
+      const env = mcpConfig.servers['plugin-kimi-datasource:data']?.env;
+      expect(env).toEqual(
         expect.objectContaining({
-          MULTIAI_BASE_URL: 'https://api.dev.example.test/coding/v1',
-          MULTIAI_OAUTH_HOST: 'https://auth.dev.example.test',
+          MULTIAI_HOME: home,
+          MULTIAI_PLUGIN_ROOT: expect.any(String),
         }),
       );
+      expect(env).not.toHaveProperty('MULTIAI_BASE_URL');
+      expect(env).not.toHaveProperty('MULTIAI_OAUTH_HOST');
     } finally {
       restoreEnv('MULTIAI_BASE_URL', previousBaseUrl);
-      restoreEnv('MULTIAI_OAUTH_HOST', previousCodeOAuthHost);
       restoreEnv('MULTIAI_OAUTH_HOST', previousOAuthHost);
     }
   });

@@ -4,7 +4,7 @@
   "private": true,
   "description": "Execution environment abstraction for AI agent applications",
   "license": "MIT",
-  "author": "Moonshot AI",
+  "author": "MultiAI",
   "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/kaos#readme",
   "repository": {
     "type": "git",

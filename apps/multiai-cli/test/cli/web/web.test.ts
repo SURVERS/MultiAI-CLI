@@ -78,7 +78,7 @@ function makeIo(): {
   };
 }
 
-describe('kimi web', () => {
+describe('multiai web', () => {
   it('registers the `web` command with only the rotate-token subcommand', () => {
     const program = makeProgram();
     const web = program.commands.find((c) => c.name() === 'web');
@@ -118,7 +118,7 @@ describe('kimi web', () => {
   });
 });
 
-describe('`kimi web` ready banner', () => {
+describe('`multiai web` ready banner', () => {
   it('prints the TUI-style ready panel once listening', async () => {
     const { handleWebCommand } = await import('#/cli/sub/web/run');
     // The runner reports the actual bound origin — the banner must take the
@@ -309,7 +309,7 @@ describe('ready banner reflects the bind class', () => {
   });
 });
 
-describe('`kimi web` opens the browser', () => {
+describe('`multiai web` opens the browser', () => {
   it('opens the Web UI URL with the #token= fragment by default', async () => {
     const { handleWebCommand } = await import('#/cli/sub/web/run');
     const { runner } = makeRunner();
@@ -365,7 +365,7 @@ describe('`kimi web` opens the browser', () => {
   });
 });
 
-describe('`kimi web` option threading', () => {
+describe('`multiai web` option threading', () => {
   it('threads the CLI flags into the foreground runner options', async () => {
     const { handleWebCommand } = await import('#/cli/sub/web/run');
     const { runner, calls } = makeRunner();
@@ -604,7 +604,7 @@ describe('accessUrlLines', () => {
   });
 });
 
-describe('`kimi web rotate-token`', () => {
+describe('`multiai web rotate-token`', () => {
   let dir: string;
   let prevHome: string | undefined;
 

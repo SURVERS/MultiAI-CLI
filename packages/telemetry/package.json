@@ -4,7 +4,7 @@
   "private": true,
   "description": "Shared telemetry infrastructure for MultiAI CLI",
   "license": "MIT",
-  "author": "Moonshot AI",
+  "author": "MultiAI",
   "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/telemetry#readme",
   "repository": {
     "type": "git",

@@ -454,14 +454,14 @@ describe('ensureRgPath Windows download branch', () => {
     expect(readFileSync(installed)).toEqual(payload);
   });
 
-  it('throws with "CDN content may have changed" when the zip omits rg.exe', async () => {
+  it('throws with "archive content may have changed" when the zip omits rg.exe', async () => {
     const zipBuf = await buildFixtureZip([{ name: 'README.md', content: Buffer.from('readme') }]);
     const archivePath = join(fakeShare, 'fixture.zip');
     const installed = join(fakeShare, 'bin', 'rg.exe');
     writeFileSync(archivePath, zipBuf);
 
     await expect(extractRgFromZip(archivePath, installed)).rejects.toThrow(
-      /CDN content may have changed/,
+      /archive content may have changed/,
     );
   });
 

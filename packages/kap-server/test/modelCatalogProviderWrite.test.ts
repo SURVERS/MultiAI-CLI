@@ -1,3 +1,9 @@
+/**
+ * Scenario: creating, replacing, and deleting providers through REST.
+ * Responsibilities: persist user providers while protecting OAuth-managed MultiAI providers.
+ * Wiring: a real server reads and writes isolated temporary configuration files.
+ * Run: pnpm exec vitest run packages/kap-server/test/modelCatalogProviderWrite.test.ts
+ */
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -473,7 +479,7 @@ describe('server-v2 /api/v1 provider write endpoints', () => {
 
   it('rejects deleting an OAuth-managed provider with 40003', async () => {
     await boot(MANAGED_TOML);
-    const { body } = await deleteJson<unknown>('/api/v1/providers/managed%3Akimi-code');
+    const { body } = await deleteJson<unknown>('/api/v1/providers/managed%3Amultiai');
     expect(body?.code).toBe(40003);
     expect(body?.msg).toContain('/oauth/logout');
 
@@ -756,7 +762,7 @@ describe('server-v2 /api/v1 provider write endpoints', () => {
   it('rejects replacing an OAuth-managed provider with 40003', async () => {
     await boot(MANAGED_TOML);
     const { body } = await putJson<unknown>(
-      '/api/v1/providers/managed%3Akimi-code',
+      '/api/v1/providers/managed%3Amultiai',
       REPLACE_BODY,
     );
     expect(body.code).toBe(40003);

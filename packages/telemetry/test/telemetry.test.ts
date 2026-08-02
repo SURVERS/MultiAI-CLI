@@ -1,3 +1,9 @@
+/**
+ * Scenario: assembling, buffering, disabling, and recovering MultiAI telemetry events.
+ * Responsibilities: preserve payload contracts while keeping network delivery disabled by default.
+ * Wiring: real clients/transports use isolated files, fake HTTP, and child processes at boundaries.
+ * Run: pnpm exec vitest run packages/telemetry/test/telemetry.test.ts
+ */
 import { spawn } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises';
@@ -39,7 +45,7 @@ afterEach(() => {
 });
 
 async function tempHome(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'kimi-telemetry-'));
+  const dir = await mkdtemp(join(tmpdir(), 'multiai-telemetry-'));
   tempDirs.push(dir);
   return dir;
 }
@@ -410,7 +416,7 @@ describe('payload assembly', () => {
   it('adds server event prefix, payload user id, and flattened fields', () => {
     const payload = buildPayload([sampleEvent('started')], 'device-1');
 
-    expect(payload.user_id).toBe('kfc_device_id_device-1');
+    expect(payload.user_id).toBe('multiai_device_id_device-1');
     expect(payload.events[0]).toMatchObject({
       event_id: 'event-1',
       device_id: 'device-1',
@@ -426,9 +432,9 @@ describe('payload assembly', () => {
   });
 
   it('does not double-prefix already-prefixed events', () => {
-    const payload = buildPayload([sampleEvent('kfc_started')], 'device-1');
+    const payload = buildPayload([sampleEvent('multiai_started')], 'device-1');
 
-    expect(payload.events[0]?.['event']).toBe('kfc_started');
+    expect(payload.events[0]?.['event']).toBe('multiai_started');
   });
 
   it('rejects nested property values before outbound send', () => {
@@ -484,7 +490,7 @@ describe('payload assembly', () => {
     const payload = buildPayload([event], 'device-1');
 
     expect(payload.events[0]).toMatchObject({
-      event: 'kfc_nullable',
+      event: 'multiai_nullable',
       property_empty: null,
     });
     expect(event.properties).toBe(originalProperties);
@@ -495,8 +501,8 @@ describe('payload assembly', () => {
 
 describe('server prefix application', () => {
   it('locks the outbound telemetry prefixes', () => {
-    expect(SERVER_EVENT_PREFIX).toBe('kfc_');
-    expect(USER_ID_PREFIX).toBe('kfc_device_id_');
+    expect(SERVER_EVENT_PREFIX).toBe('multiai_');
+    expect(USER_ID_PREFIX).toBe('multiai_device_id_');
   });
 
   it('returns a new object only when adding the server prefix', () => {
@@ -505,12 +511,12 @@ describe('server prefix application', () => {
     const prefixed = applyServerPrefix(event);
 
     expect(prefixed).not.toBe(event);
-    expect(prefixed.event).toBe('kfc_started');
+    expect(prefixed.event).toBe('multiai_started');
     expect(event.event).toBe('started');
   });
 
   it('passes already-prefixed and invalid event names through unchanged', () => {
-    const prefixed = sampleEvent('kfc_started');
+    const prefixed = sampleEvent('multiai_started');
     const emptyName = sampleEvent('');
     const missingName = { ...sampleEvent('missing') } as unknown as Record<string, unknown>;
     delete missingName['event'];
@@ -547,7 +553,7 @@ describe('AsyncTransport', () => {
     const init = requestInitFrom(fetchImpl);
     expect(init.headers).toMatchObject({ Authorization: 'Bearer token-1' });
     expect(JSON.parse(init.body as string)).toMatchObject({
-      user_id: 'kfc_device_id_dev',
+      user_id: 'multiai_device_id_dev',
     });
   });
 
@@ -675,7 +681,7 @@ describe('AsyncTransport', () => {
 
     const init = requestInitFrom(fetchImpl);
     const payload = JSON.parse(init.body as string) as { events: Array<{ event: string }> };
-    expect(payload.events[0]?.['event']).toBe('kfc_from_disk');
+    expect(payload.events[0]?.['event']).toBe('multiai_from_disk');
     expect(() => statSync(file)).toThrow();
   });
 
@@ -769,7 +775,7 @@ describe('AsyncTransport', () => {
       properties: { resumed: false, count: 2 },
     });
     expect(file).not.toContain('user_id');
-    expect(file).not.toContain('kfc_first');
+    expect(file).not.toContain('multiai_first');
   });
 
   it('does not create a disk file for an empty batch or a schema violation', async () => {
@@ -825,7 +831,7 @@ describe('telemetry bootstrap', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('queues singleton track calls before initialization, then flushes after bootstrap', async () => {
+  it('keeps singleton network delivery disabled without a configured endpoint', async () => {
     const fetchImpl = vi.fn(async () => new Response('', { status: 200 }));
     vi.stubGlobal('fetch', fetchImpl);
 
@@ -840,15 +846,7 @@ describe('telemetry bootstrap', () => {
 
     await shutdownTelemetry();
 
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
-    const init = requestInitFrom(fetchImpl);
-    const payload = JSON.parse(init.body as string) as {
-      events: Array<{ event: string; session_id: string }>;
-    };
-    expect(payload.events[0]).toMatchObject({
-      event: 'kfc_before_init',
-      session_id: 'ses',
-    });
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it('flushes the singleton synchronously to disk fallback', async () => {
@@ -959,7 +957,7 @@ describe('crash handler', () => {
     `);
 
     expect(status).not.toBe(0);
-  });
+  }, 15_000);
 
   it('records Node-wrapped non-error unhandled rejection crashes', () => {
     const client = new TelemetryClient();

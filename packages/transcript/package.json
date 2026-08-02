@@ -4,7 +4,7 @@
   "private": true,
   "description": "Isomorphic transcript rendering data layer: agent-granular L1 store, idempotent L2 operations, granularity-gated L3 subscriptions, framework-free L4 view registry.",
   "license": "MIT",
-  "author": "Moonshot AI",
+  "author": "MultiAI",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",

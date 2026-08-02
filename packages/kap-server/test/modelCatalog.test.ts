@@ -1,3 +1,9 @@
+/**
+ * Scenario: serving and refreshing the model/provider catalog over REST.
+ * Responsibilities: preserve provider IDs and route refresh requests to the catalog services.
+ * Wiring: a real test server uses scoped service stubs at external discovery boundaries.
+ * Run: pnpm exec vitest run packages/kap-server/test/modelCatalog.test.ts
+ */
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -382,7 +388,7 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
     const seeds = [[IProviderDiscoveryService, discoveryStub(refreshProviderModels)]] as unknown as ScopeSeed;
     await boot(CATALOG_TOML, seeds);
 
-    const { status, body } = await postJson('/api/v1/providers/managed%3Akimi-code:refresh', {});
+    const { status, body } = await postJson('/api/v1/providers/managed%3Amultiai:refresh', {});
     expect(status).toBe(200);
     expect(body.code).toBe(0);
     expect(refreshProviderModels).toHaveBeenCalledWith({ providerId: 'managed:multiai' });

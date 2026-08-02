@@ -71,7 +71,7 @@ describe('multiaiModelEnvOverlay.apply', () => {
     const effective: Record<string, unknown> = {};
     apply(effective, {
       MULTIAI_MODEL_NAME: 'kimi-k2-custom',
-      MULTIAI_BASE_URL: 'https://kimi-proxy.example.test/v1',
+      KIMI_BASE_URL: 'https://kimi-proxy.example.test/v1',
     });
     expect((effective['providers'] as Record<string, unknown>)[ENV_MODEL_PROVIDER_KEY]).toEqual({
       type: 'kimi',

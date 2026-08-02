@@ -1,3 +1,9 @@
+/**
+ * Scenario: reading and writing runtime configuration through the public core RPC surface.
+ * Responsibilities: persist valid updates and keep degraded configuration errors actionable.
+ * Wiring: MultiAICore runs against isolated temporary configuration files.
+ * Run: pnpm exec vitest run packages/agent-core/test/rpc/config-rpc.test.ts
+ */
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -83,7 +89,7 @@ max_steps_per_turn = "nope"
     // and must leave the file untouched.
     const write = core.setMultiAIConfig({ thinking: { enabled: true } });
     await expect(write).rejects.toThrow(/fix it first/i);
-    await expect(write).rejects.toThrow(/kimi doctor/);
+    await expect(write).rejects.toThrow(/multiai doctor/);
     await expect(write).rejects.not.toThrow(/invalid_type/);
 
     const after = await readFile(path.join(home, 'config.toml'), 'utf-8');

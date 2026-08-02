@@ -8,7 +8,7 @@
  * type exactly. Agent-scoped entries compose their payload with the centrally
  * declared Agent telemetry context, keeping ambient identity out of business
  * payloads while preserving the effective wire schema. Registered names are
- * the raw event names, before the transport's `kfc_` server prefix. Naming
+ * the raw event names, before the transport's `multiai_` server prefix. Naming
  * conventions: events and properties are snake_case; durations/counts/sizes
  * carry a unit suffix (`_ms` / `_count` / `_bytes`); never register user
  * content or file paths as properties. App-scoped, self-contained — property

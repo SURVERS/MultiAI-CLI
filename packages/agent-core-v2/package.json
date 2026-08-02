@@ -4,7 +4,7 @@
   "private": true,
   "description": "The unified agent engine for MultiAI (v2 — DI Scope architecture)",
   "license": "MIT",
-  "author": "Moonshot AI",
+  "author": "MultiAI",
   "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/agent-core-v2#readme",
   "repository": {
     "type": "git",

@@ -1,5 +1,10 @@
+/**
+ * Scenario: deciding and launching CLI update preflight actions.
+ * Responsibilities: respect rollout/opt-out policy and reject unsupported native self-installation.
+ * Wiring: real preflight logic uses deterministic cache, prompt, spawn, and clock boundaries.
+ * Run: pnpm exec vitest run apps/multiai-cli/test/cli/update/preflight.test.ts
+ */
 import type * as ChildProcess from 'node:child_process';
-import { spawnSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -1100,21 +1105,9 @@ describe('runUpdatePreflight', () => {
 });
 
 describe('spawnForSource native', () => {
-  // No spawn mock here — we run real bash to prove the failure contract
-  // end-to-end. `curl … | bash` reports only the trailing bash's exit status,
-  // so a curl that never connects (exit 7, empty stdin → bash exits 0) is
-  // masked and the update is wrongly reported as successful. `set -o pipefail`
-  // makes the pipeline surface curl's failure. Shadowing `curl` with a shell
-  // function keeps this offline and deterministic; skipped on Windows (no bash,
-  // and native auto-install is unsupported there anyway).
-  it.skipIf(process.platform === 'win32')(
-    'surfaces a failed curl download as a non-zero exit',
-    () => {
-      const { cmd, args } = spawnForSource('native', '0.5.0', 'darwin');
-      const script = `curl() { return 7; }\n${args[1] ?? ''}`;
-      const result = spawnSync(cmd, [args[0] ?? '-c', script], { encoding: 'utf8' });
-      expect(result.error).toBeUndefined();
-      expect(result.status).toBeGreaterThan(0);
-    },
-  );
+  it('rejects native installs because release binaries cannot replace themselves safely', () => {
+    expect(() => spawnForSource('native', '0.5.0', process.platform)).toThrow(
+      'native install source cannot be auto-installed',
+    );
+  });
 });

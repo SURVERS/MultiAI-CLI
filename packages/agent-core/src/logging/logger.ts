@@ -411,7 +411,7 @@ function mergeCtx(
  * Root logger. Import and use directly for events that don't belong to any
  * session (CLI startup, harness construction, etc.):
  *
- *   import { log } from '@multiai/sdk';
+ *   import { log } from '@multiai/agent-core';
  *   log.info('MultiAI CLI starting', { version });
  *
  * For events scoped to a session or agent, use the parent's `log` field:

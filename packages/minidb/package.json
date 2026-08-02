@@ -4,7 +4,7 @@
   "private": true,
   "description": "A pure-Node.js embedded key-value database mixing Redis-style in-memory KV with SQLite-style durable persistence (WAL + snapshot).",
   "license": "MIT",
-  "author": "Moonshot AI",
+  "author": "MultiAI",
   "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/minidb#readme",
   "repository": {
     "type": "git",

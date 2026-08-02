@@ -1,3 +1,9 @@
+/**
+ * Scenario: constructing and reloading MultiAICore sessions from runtime configuration.
+ * Responsibilities: resolve active models and keep retired managed Kimi web services disabled.
+ * Wiring: public RPC calls drive real core sessions with isolated files and external-boundary fakes.
+ * Run: pnpm exec vitest run packages/agent-core/test/harness/runtime.test.ts
+ */
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, normalize } from 'pathe';
@@ -22,7 +28,6 @@ import {
   resolveGlobalLogPath,
 } from '../../src/logging/logger';
 import { resolveLoggingConfig } from '../../src/logging/resolve-config';
-import type { OAuthTokenProviderResolver } from '../../src/session/provider-manager';
 import { testKaos } from '../fixtures/test-kaos';
 
 function requiredFlagEnv(id: string): string {
@@ -267,7 +272,7 @@ micro_compaction = false
     expect(session?.getAdditionalDirs()).toContain(normalize(sharedDir));
   });
 
-  it('uses the shared OAuth resolver for Moonshot service tokens', async () => {
+  it('does not recreate retired Moonshot web services from legacy configuration', async () => {
     tmp = await mkdtemp(join(tmpdir(), 'kimi-core-runtime-'));
     const homeDir = join(tmp, 'home');
     const workDir = join(tmp, 'work');
@@ -280,27 +285,24 @@ micro_compaction = false
 base_url = "https://search.example/v1"
 oauth = { storage = "keyring", key = "oauth/custom-kimi-code" }
 custom_headers = { "X-Test" = "1" }
+
+[services.moonshot_fetch]
+base_url = "https://fetch.example/v1"
+api_key = "legacy-key"
 `,
     );
+    vi.stubEnv('MULTIAI_WEB_SEARCH_BASE_URL', 'https://search-env.example/v1');
+    vi.stubEnv('MULTIAI_WEB_SEARCH_API_KEY', 'env-search-key');
+    vi.stubEnv('MULTIAI_WEB_FETCH_BASE_URL', 'https://fetch-env.example/v1');
+    vi.stubEnv('MULTIAI_WEB_FETCH_API_KEY', 'env-fetch-key');
 
-    const getAccessToken = vi.fn().mockResolvedValue('service-token');
-    const resolveOAuthTokenProvider = vi.fn<OAuthTokenProviderResolver>(() => ({
-      getAccessToken,
+    const resolveOAuthTokenProvider = vi.fn(() => ({
+      getAccessToken: vi.fn().mockResolvedValue('service-token'),
     }));
-    const fetchImpl = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ search_results: [] }), {
-        status: 200,
-      }),
-    );
-    vi.stubGlobal('fetch', fetchImpl);
 
     const [coreRpc, sdkRpc] = createRPC<CoreAPI, SDKAPI>();
     const core = new MultiAICore(coreRpc, {
       homeDir,
-      multiAIRequestHeaders: {
-        'User-Agent': 'multiai-cli/0.0.0-test',
-        'X-Msh-Version': '0.0.0-test',
-      },
       resolveOAuthTokenProvider,
     });
     const rpc = await sdkRpc({
@@ -313,123 +315,9 @@ custom_headers = { "X-Test" = "1" }
     const created = await rpc.createSession({ id: 'ses_runtime_service_oauth', workDir });
     const session = core.sessions.get(created.id);
 
-    expect(resolveOAuthTokenProvider).toHaveBeenCalledWith('managed:multiai', {
-      storage: 'keyring',
-      key: 'oauth/custom-kimi-code',
-    });
-    expect(session?.options.toolServices?.webSearcher).toBeDefined();
-
-    await session!.options.toolServices?.webSearcher!.search('kimi');
-
-    expect(getAccessToken).toHaveBeenCalledWith();
-    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit;
-    expect(init.headers).toMatchObject({
-      Authorization: 'Bearer service-token',
-      'User-Agent': 'multiai-cli/0.0.0-test',
-      'X-Msh-Version': '0.0.0-test',
-      'X-Test': '1',
-    });
-  });
-
-  it('enables Moonshot web services from MULTIAI_WEB_* env vars without a services config section', async () => {
-    tmp = await mkdtemp(join(tmpdir(), 'kimi-core-runtime-'));
-    const homeDir = join(tmp, 'home');
-    const workDir = join(tmp, 'work');
-    await mkdir(homeDir, { recursive: true });
-    await mkdir(workDir, { recursive: true });
-    await writeFile(join(homeDir, 'config.toml'), '');
-    vi.stubEnv('MULTIAI_WEB_SEARCH_BASE_URL', 'https://search-env.example/v1');
-    vi.stubEnv('MULTIAI_WEB_SEARCH_API_KEY', 'env-search-key');
-    vi.stubEnv('MULTIAI_WEB_FETCH_BASE_URL', 'https://fetch-env.example/v1');
-    vi.stubEnv('MULTIAI_WEB_FETCH_API_KEY', 'env-fetch-key');
-
-    const fetchImpl = vi.fn().mockImplementation(async (url: string | URL) =>
-      String(url).includes('search')
-        ? new Response(JSON.stringify({ search_results: [] }), { status: 200 })
-        : new Response('page body', { status: 200 }),
-    );
-    vi.stubGlobal('fetch', fetchImpl);
-
-    const [coreRpc, sdkRpc] = createRPC<CoreAPI, SDKAPI>();
-    const core = new MultiAICore(coreRpc, { homeDir });
-    const rpc = await sdkRpc({
-      emitEvent: vi.fn(),
-      requestApproval: vi.fn(async (): Promise<ApprovalResponse> => ({ decision: 'rejected' })),
-      requestQuestion: vi.fn(async () => null),
-      toolCall: vi.fn(async () => ({ output: '' })),
-    });
-
-    const created = await rpc.createSession({ id: 'ses_runtime_service_env', workDir });
-    const session = core.sessions.get(created.id);
-
-    const webSearcher = session?.options.toolServices?.webSearcher;
-    const urlFetcher = session?.options.toolServices?.urlFetcher;
-    expect(webSearcher).toBeDefined();
-    expect(urlFetcher).toBeDefined();
-
-    await webSearcher!.search('kimi');
-    const [searchUrl, searchInit] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    expect(searchUrl).toBe('https://search-env.example/v1');
-    expect((searchInit.headers as Record<string, string>)['Authorization']).toBe(
-      'Bearer env-search-key',
-    );
-
-    await urlFetcher!.fetch('https://example.com/page', {});
-    const [fetchUrl, fetchInit] = fetchImpl.mock.calls[1] as [string, RequestInit];
-    expect(fetchUrl).toBe('https://fetch-env.example/v1');
-    expect((fetchInit.headers as Record<string, string>)['Authorization']).toBe(
-      'Bearer env-fetch-key',
-    );
-  });
-
-  it('keeps persisted credentials off an env-selected Moonshot search endpoint', async () => {
-    tmp = await mkdtemp(join(tmpdir(), 'kimi-core-runtime-'));
-    const homeDir = join(tmp, 'home');
-    const workDir = join(tmp, 'work');
-    await mkdir(homeDir, { recursive: true });
-    await mkdir(workDir, { recursive: true });
-    await writeFile(
-      join(homeDir, 'config.toml'),
-      `
-[services.moonshot_search]
-base_url = "https://search-file.example/v1"
-api_key = "file-search-key"
-oauth = { storage = "keyring", key = "oauth/custom-kimi-code" }
-custom_headers = { "X-Config-Secret" = "secret-value" }
-`,
-    );
-    vi.stubEnv('MULTIAI_WEB_SEARCH_BASE_URL', 'https://search-env.example/v1');
-    vi.stubEnv('MULTIAI_WEB_SEARCH_API_KEY', 'env-search-key');
-
-    const getAccessToken = vi.fn().mockResolvedValue('oauth-token');
-    const resolveOAuthTokenProvider = vi.fn<OAuthTokenProviderResolver>(() => ({
-      getAccessToken,
-    }));
-    const fetchImpl = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ search_results: [] }), { status: 200 }),
-    );
-    vi.stubGlobal('fetch', fetchImpl);
-
-    const [coreRpc, sdkRpc] = createRPC<CoreAPI, SDKAPI>();
-    const core = new MultiAICore(coreRpc, { homeDir, resolveOAuthTokenProvider });
-    const rpc = await sdkRpc({
-      emitEvent: vi.fn(),
-      requestApproval: vi.fn(async (): Promise<ApprovalResponse> => ({ decision: 'rejected' })),
-      requestQuestion: vi.fn(async () => null),
-      toolCall: vi.fn(async () => ({ output: '' })),
-    });
-
-    const created = await rpc.createSession({ id: 'ses_runtime_service_env_precedence', workDir });
-    const session = core.sessions.get(created.id);
-
-    await session?.options.toolServices?.webSearcher?.search('kimi');
-
-    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('https://search-env.example/v1');
-    expect(init.headers).toMatchObject({ Authorization: 'Bearer env-search-key' });
-    expect(init.headers).not.toHaveProperty('X-Config-Secret');
+    expect(session?.options.toolServices?.webSearcher).toBeUndefined();
+    expect(session?.options.toolServices?.urlFetcher?.constructor.name).toBe('LocalFetchURLProvider');
     expect(resolveOAuthTokenProvider).not.toHaveBeenCalled();
-    expect(getAccessToken).not.toHaveBeenCalled();
   });
 
   it('falls back to defaultModel when createSession receives no model option', async () => {
@@ -956,7 +844,7 @@ max_context_size = 100000
     expect(core.sessions.has(created.id)).toBe(false);
   });
 
-  it('reloads an active session with fresh runtime services from config.toml', async () => {
+  it('keeps retired Moonshot web services disabled after session reload', async () => {
     tmp = await mkdtemp(join(tmpdir(), 'kimi-core-runtime-'));
     const homeDir = join(tmp, 'home');
     const workDir = join(tmp, 'work');
@@ -995,7 +883,7 @@ base_url = "https://search.example.test/v1"
 
     expect(after).toBeDefined();
     expect(after).not.toBe(before);
-    expect(after?.options.toolServices?.webSearcher).toBeDefined();
+    expect(after?.options.toolServices?.webSearcher).toBeUndefined();
     expect(reloaded.agents['main']).toBeDefined();
   });
 

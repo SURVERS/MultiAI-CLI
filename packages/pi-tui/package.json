@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "Terminal User Interface library with differential rendering for efficient text-based applications",
 	"license": "MIT",
-	"author": "Moonshot AI",
+	"author": "MultiAI",
 	"homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/pi-tui#readme",
 	"repository": {
 		"type": "git",

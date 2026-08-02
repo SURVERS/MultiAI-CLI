@@ -1,3 +1,9 @@
+/**
+ * Scenario: applying origin and CORS policy to kap-server requests.
+ * Responsibilities: validate origins and expose the supported MultiAI client headers.
+ * Wiring: real Fastify hooks run against explicit request headers.
+ * Run: pnpm exec vitest run packages/kap-server/test/origin.test.ts
+ */
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -179,7 +185,7 @@ describe('createOriginHook (onRequest hook)', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.headers['access-control-allow-headers']).toBe(
-      'Content-Type, Authorization, X-Kimi-Client-Id, X-Kimi-Client-Name, X-Kimi-Client-Version, X-Kimi-Client-Ui-Mode',
+      'Content-Type, Authorization, X-MultiAI-Client-Id, X-MultiAI-Client-Name, X-MultiAI-Client-Version, X-MultiAI-Client-Ui-Mode',
     );
   });
 });

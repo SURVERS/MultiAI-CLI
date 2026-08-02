@@ -453,7 +453,7 @@ describe('ensureRgPath Windows download branch', () => {
     expect(readFileSync(installed)).toEqual(payload);
   });
 
-  it('throws with "CDN content may have changed" when the zip omits rg.exe', async () => {
+  it('throws with "archive content may have changed" when the zip omits rg.exe', async () => {
     // Archive is well-formed but holds the wrong entry — mirrors the
     // Counterpart to the Linux third-download test's sentinel.
     const zipBuf = await buildFixtureZip([{ name: 'README.md', content: Buffer.from('readme') }]);
@@ -462,7 +462,7 @@ describe('ensureRgPath Windows download branch', () => {
     writeFileSync(archivePath, zipBuf);
 
     await expect(extractRgFromZip(archivePath, installed)).rejects.toThrow(
-      /CDN content may have changed/,
+      /archive content may have changed/,
     );
   });
 

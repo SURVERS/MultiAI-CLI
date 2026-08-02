@@ -1,3 +1,9 @@
+/**
+ * Scenario: exposing agent-core service interfaces without SDK-layer dependencies.
+ * Responsibilities: keep DI service contracts callable, exported, and dependency-direction safe.
+ * Wiring: real service identifiers use small in-memory boundary fakes.
+ * Run: pnpm exec vitest run packages/agent-core/test/services/interfaces.test.ts
+ */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
