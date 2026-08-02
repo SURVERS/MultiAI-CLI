@@ -5,7 +5,7 @@ export function openUrl(url: string): void {
     process.platform === 'darwin'
       ? ['open', [url]]
       : process.platform === 'win32'
-        ? ['cmd', ['/c', 'start', '', url]]
+        ? ['rundll32.exe', ['url.dll,FileProtocolHandler', url]]
         : ['xdg-open', [url]];
   execFile(command[0], command[1], () => {});
 }
