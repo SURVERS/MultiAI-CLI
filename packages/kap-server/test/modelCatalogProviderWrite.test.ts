@@ -768,11 +768,25 @@ describe('server-v2 /api/v1 provider write endpoints', () => {
     expect(body.code).toBe(40003);
     expect(body.msg).toContain('/oauth/logout');
 
-    // The managed provider and its alias are left untouched.
-    const providers = await getJson<{ items: Array<{ id: string }> }>('/api/v1/providers');
-    expect(providers.body.data.items.map((p) => p.id)).toEqual(['managed:multiai']);
-    const models = await getJson<{ items: Array<{ model: string }> }>('/api/v1/models');
-    expect(models.body.data.items.map((m) => m.model)).toEqual(['managed:multiai/kimi-k2']);
+    // The managed provider and its alias stay on disk. Runtime model visibility
+    // intentionally depends on whether this machine has a valid OAuth session,
+    // so the write-path contract must not depend on the process keyring.
+    const onDisk = await readConfigToml();
+    expect(onDisk['providers']).toEqual({
+      'managed:multiai': {
+        type: 'kimi',
+        api_key: '',
+        base_url: 'https://api.example.test/v1',
+        oauth: { storage: 'keyring', key: 'oauth/multiai' },
+      },
+    });
+    expect(onDisk['models']).toEqual({
+      'managed:multiai/kimi-k2': {
+        provider: 'managed:multiai',
+        model: 'kimi-k2',
+        max_context_size: 131072,
+      },
+    });
   });
 
   it('maps an unknown provider id to 40412 on replace', async () => {
