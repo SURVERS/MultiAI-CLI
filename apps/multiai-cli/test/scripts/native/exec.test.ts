@@ -1,0 +1,52 @@
+/**
+ * Scenario: building cross-platform native helper commands.
+ * Responsibilities: preserve arguments and quote Windows cmd wrappers safely.
+ * Wiring: command construction is exercised as a pure function.
+ * Run: pnpm --filter @multiai/cli exec vitest run test/scripts/native/exec.test.ts
+ */
+import { describe, expect, it } from 'vitest';
+
+import { commandForExecFile } from '../../../scripts/native/exec.mjs';
+
+describe('commandForExecFile', () => {
+  it('returns command as-is on non-Windows', () => {
+    const result = commandForExecFile('postject', ['multiai', 'NODE_SEA_BLOB', './blob'], 'darwin');
+    expect(result).toEqual({ command: 'postject', args: ['multiai', 'NODE_SEA_BLOB', './blob'] });
+  });
+
+  it('returns command as-is on Windows for non-batch files', () => {
+    const result = commandForExecFile('postject.exe', ['multiai.exe'], 'win32');
+    expect(result).toEqual({ command: 'postject.exe', args: ['multiai.exe'] });
+  });
+
+  it('wraps .cmd files through cmd.exe on Windows', () => {
+    const result = commandForExecFile('postject.cmd', ['multiai.exe', 'NODE_SEA_BLOB'], 'win32', {
+      ComSpec: 'C:\\Windows\\System32\\cmd.exe',
+    });
+    expect(result.command).toBe('C:\\Windows\\System32\\cmd.exe');
+    expect(result.args).toEqual([
+      '/d',
+      '/s',
+      '/c',
+      '""postject.cmd" "multiai.exe" "NODE_SEA_BLOB""',
+    ]);
+    expect(result.options?.windowsVerbatimArguments).toBe(true);
+  });
+
+  it('wraps .bat files through cmd.exe on Windows', () => {
+    const result = commandForExecFile('foo.bat', [], 'win32', { ComSpec: 'cmd.exe' });
+    expect(result.command).toBe('cmd.exe');
+  });
+
+  it('escapes embedded double quotes in args', () => {
+    const result = commandForExecFile('foo.cmd', ['hello "world"'], 'win32', {
+      ComSpec: 'cmd.exe',
+    });
+    expect(result.args[3]).toBe('""foo.cmd" "hello ""world""""');
+  });
+
+  it('falls back to cmd.exe when ComSpec missing', () => {
+    const result = commandForExecFile('foo.cmd', [], 'win32', {});
+    expect(result.command).toBe('cmd.exe');
+  });
+});
