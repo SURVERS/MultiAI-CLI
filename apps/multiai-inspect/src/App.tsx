@@ -71,7 +71,7 @@ export function App() {
   return (
     <div className="flex h-screen flex-col">
       <header className="flex items-center gap-3 border-b border-neutral-800 px-4 py-1.5">
-        <span className="text-[12px] font-bold tracking-widest text-neutral-200">KIMI INSPECT</span>
+        <span className="text-[12px] font-bold tracking-widest text-neutral-200">MULTIAI INSPECT</span>
         <ServerSwitcher />
         <div className="flex-1" />
         <button

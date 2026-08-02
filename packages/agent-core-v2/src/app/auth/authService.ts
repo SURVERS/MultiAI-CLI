@@ -1,5 +1,9 @@
 /**
- * `auth` domain — MultiAI OAuth and auth-readiness implementation.
+ * `auth` domain (L2) — MultiAI OAuth and auth-readiness implementation.
+ *
+ * Coordinates protocol work through `@multiai/oauth`, owns browser/device flow
+ * state, persists managed providers and models through `config`, and publishes
+ * catalog changes through `event`. Bound at App scope.
  */
 
 import { randomUUID } from 'node:crypto';

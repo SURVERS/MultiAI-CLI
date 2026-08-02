@@ -1,3 +1,8 @@
+/**
+ * WebSocket protocol contracts: control/system frame schemas, operation
+ * routing, and the generated MultiAI AsyncAPI channel references.
+ */
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -113,7 +118,7 @@ describe('ws-control — AsyncAPI document', () => {
     });
 
     const channels = doc['channels'] as Record<string, unknown>;
-    const wsChannel = channels['kimiCodeWebSocket'] as {
+    const wsChannel = channels['multiAIWebSocket'] as {
       address: string;
       messages: Record<string, { $ref: string }>;
     };
@@ -131,11 +136,11 @@ describe('ws-control — AsyncAPI document', () => {
     const operations = doc['operations'] as Record<string, unknown>;
     expect(operations['receiveClientMessages']).toMatchObject({
       action: 'receive',
-      channel: { $ref: '#/channels/kimiCodeWebSocket' },
+      channel: { $ref: '#/channels/multiAIWebSocket' },
     });
     expect(operations['sendServerMessages']).toMatchObject({
       action: 'send',
-      channel: { $ref: '#/channels/kimiCodeWebSocket' },
+      channel: { $ref: '#/channels/multiAIWebSocket' },
     });
 
     const components = doc['components'] as { messages: Record<string, unknown> };

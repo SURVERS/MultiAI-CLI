@@ -1,3 +1,8 @@
+/**
+ * Interactive CLI contracts: engine selection, harness/TUI construction,
+ * startup input, lifecycle cleanup, and managed MultiAI OAuth callbacks.
+ */
+
 import { execSync } from 'node:child_process';
 
 import type { createMultiAIDeviceId as createMultiAIDeviceIdFn } from '@multiai/oauth';
@@ -7,7 +12,7 @@ import { runShell } from '#/cli/run-shell';
 
 import { captureProcessWrite, ExitCalled, mockProcessExit } from '../helpers/process';
 
-type CreateKimiDeviceId = typeof createMultiAIDeviceIdFn;
+type CreateMultiAIDeviceId = typeof createMultiAIDeviceIdFn;
 
 const mocks = vi.hoisted(() => {
   type TuiConfigFallback = {
@@ -30,8 +35,8 @@ const mocks = vi.hoisted(() => {
   return {
     loadTuiConfig: vi.fn(),
     detectTerminalTheme: vi.fn(),
-    kimiHarnessConstructor: vi.fn(),
-    kimiHarnessV2Constructor: vi.fn(),
+    multiAIHarnessConstructor: vi.fn(),
+    multiAIHarnessV2Constructor: vi.fn(),
     harnessEnsureConfigFile: vi.fn(),
     harnessGetConfig: vi.fn(async () => ({
       providers: {},
@@ -42,12 +47,12 @@ const mocks = vi.hoisted(() => {
     harnessGetCachedAccessToken: vi.fn(),
     harnessClose: vi.fn(),
     harnessTrack: vi.fn(),
-    kimiTuiConstructor: vi.fn(),
+    multiAITuiConstructor: vi.fn(),
     tuiStart: vi.fn(),
     tuiGetStartupMcpMs: vi.fn(async () => 0),
     tuiGetCurrentSessionId: vi.fn(() => ''),
     tuiHasSessionContent: vi.fn(() => false),
-    createMultiAIDeviceId: vi.fn<CreateKimiDeviceId>(() => 'device-1'),
+    createMultiAIDeviceId: vi.fn<CreateMultiAIDeviceId>(() => 'device-1'),
     initializeTelemetry: vi.fn(),
     setCrashPhase: vi.fn(),
     shutdownTelemetry: vi.fn(),
@@ -57,7 +62,7 @@ const mocks = vi.hoisted(() => {
     withTelemetryContext: vi.fn(() => ({
       track: lifecycleTrack,
     })),
-    resolveMultiAIHome: vi.fn((homeDir?: string) => homeDir ?? '/tmp/kimi-code-test-home'),
+    resolveMultiAIHome: vi.fn((homeDir?: string) => homeDir ?? '/tmp/multiai-test-home'),
     flushDiagnosticLogsSync: vi.fn(),
     harnessCreatesDeviceIdOnConstruction: false,
     execSync: vi.fn(),
@@ -69,7 +74,7 @@ vi.mock('@multiai/sdk', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@multiai/sdk')>();
   const makeHarnessStub = (args: unknown[]) => {
     const options = args[0] as { readonly homeDir?: string } | undefined;
-    const homeDir = options?.homeDir ?? '/tmp/kimi-code-test-home';
+    const homeDir = options?.homeDir ?? '/tmp/multiai-test-home';
     return {
       homeDir,
       auth: {
@@ -88,15 +93,15 @@ vi.mock('@multiai/sdk', async (importOriginal) => {
     flushDiagnosticLogsSync: mocks.flushDiagnosticLogsSync,
     createMultiAIHarness: (...args: unknown[]) => {
       const options = args[0] as { readonly homeDir?: string } | undefined;
-      const homeDir = options?.homeDir ?? '/tmp/kimi-code-test-home';
+      const homeDir = options?.homeDir ?? '/tmp/multiai-test-home';
       if (mocks.harnessCreatesDeviceIdOnConstruction) {
         mocks.createMultiAIDeviceId(homeDir);
       }
-      mocks.kimiHarnessConstructor(...args);
+      mocks.multiAIHarnessConstructor(...args);
       return makeHarnessStub(args);
     },
     createMultiAIHarnessV2: (...args: unknown[]) => {
-      mocks.kimiHarnessV2Constructor(...args);
+      mocks.multiAIHarnessV2Constructor(...args);
       return makeHarnessStub(args);
     },
   };
@@ -133,7 +138,7 @@ vi.mock('../../src/tui/index', () => ({
     onExit?: () => Promise<void>;
 
     constructor(...args: unknown[]) {
-      mocks.kimiTuiConstructor(this, ...args);
+      mocks.multiAITuiConstructor(this, ...args);
     }
 
     start = mocks.tuiStart;
@@ -165,7 +170,7 @@ describe('runShell', () => {
     mocks.tuiHasSessionContent.mockReturnValue(false);
     mocks.createMultiAIDeviceId.mockImplementation(() => 'device-1');
     mocks.resolveMultiAIHome.mockImplementation(
-      (homeDir?: string) => homeDir ?? '/tmp/kimi-code-test-home',
+      (homeDir?: string) => homeDir ?? '/tmp/multiai-test-home',
     );
     mocks.harnessCreatesDeviceIdOnConstruction = false;
   });
@@ -221,8 +226,8 @@ describe('runShell', () => {
     await withEnv({ MULTIAI_EXPERIMENTAL_FLAG: '1' }, async () => {
       await runShell(minimalCliOptions, '1.2.3-test');
     });
-    expect(mocks.kimiHarnessV2Constructor).toHaveBeenCalledTimes(1);
-    expect(mocks.kimiHarnessConstructor).not.toHaveBeenCalled();
+    expect(mocks.multiAIHarnessV2Constructor).toHaveBeenCalledTimes(1);
+    expect(mocks.multiAIHarnessConstructor).not.toHaveBeenCalled();
   });
 
   it('keeps the v1 harness when the master experimental flag is unset', async () => {
@@ -230,8 +235,8 @@ describe('runShell', () => {
     await withEnv({ MULTIAI_EXPERIMENTAL_FLAG: undefined }, async () => {
       await runShell(minimalCliOptions, '1.2.3-test');
     });
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalledTimes(1);
-    expect(mocks.kimiHarnessV2Constructor).not.toHaveBeenCalled();
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalledTimes(1);
+    expect(mocks.multiAIHarnessV2Constructor).not.toHaveBeenCalled();
   });
 
   it('constructs MultiAIHarness and MultiAITUI with startup input', async () => {
@@ -261,7 +266,7 @@ describe('runShell', () => {
 
     await runShell(cliOptions, '1.2.3-test');
 
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalledWith(
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalledWith(
       expect.objectContaining({
         identity: expect.objectContaining({
           userAgentProduct: 'multiai-cli',
@@ -275,12 +280,12 @@ describe('runShell', () => {
       mocks.harnessGetConfig.mock.invocationCallOrder[0]!,
     );
     expect(execSync).toHaveBeenCalledWith('stty -ixon', { stdio: ['inherit', 'ignore', 'ignore'] });
-    expect(mocks.kimiTuiConstructor).toHaveBeenCalledTimes(1);
+    expect(mocks.multiAITuiConstructor).toHaveBeenCalledTimes(1);
     expect(mocks.createMultiAIDeviceId).not.toHaveBeenCalled();
     expect(mocks.initializeTelemetry).not.toHaveBeenCalled();
     expect(mocks.setCrashPhase).toHaveBeenCalledWith('runtime');
 
-    const [, harness, startupInput] = mocks.kimiTuiConstructor.mock.calls[0]!;
+    const [, harness, startupInput] = mocks.multiAITuiConstructor.mock.calls[0]!;
     expect(harness).toBeTypeOf('object');
     expect(startupInput).toMatchObject({
       cliOptions,
@@ -328,7 +333,7 @@ describe('runShell', () => {
       '1.2.3-test',
     );
 
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalledWith(
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalledWith(
       expect.objectContaining({ skillDirs: ['/skills'] }),
     );
   });
@@ -404,13 +409,13 @@ describe('runShell', () => {
 
     expect(mocks.createMultiAIDeviceId).toHaveBeenNthCalledWith(
       1,
-      '/tmp/kimi-code-test-home',
+      '/tmp/multiai-test-home',
     );
     expect(mocks.createMultiAIDeviceId.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.kimiHarnessConstructor.mock.invocationCallOrder[0]!,
+      mocks.multiAIHarnessConstructor.mock.invocationCallOrder[0]!,
     );
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalledWith(
-      expect.objectContaining({ homeDir: '/tmp/kimi-code-test-home' }),
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalledWith(
+      expect.objectContaining({ homeDir: '/tmp/multiai-test-home' }),
     );
     expect(mocks.harnessTrack).not.toHaveBeenCalledWith('first_launch');
   });
@@ -481,7 +486,7 @@ describe('runShell', () => {
       '1.2.3-test',
     );
 
-    const [harnessOptions] = mocks.kimiHarnessConstructor.mock.calls[0] as [
+    const [harnessOptions] = mocks.multiAIHarnessConstructor.mock.calls[0] as [
       { readonly onOAuthRefresh?: unknown },
     ];
     expect(harnessOptions.onOAuthRefresh).toBeUndefined();
@@ -517,7 +522,7 @@ describe('runShell', () => {
     );
 
     expect(mocks.detectTerminalTheme).toHaveBeenCalledOnce();
-    const [, , startupInput] = mocks.kimiTuiConstructor.mock.calls[0]!;
+    const [, , startupInput] = mocks.multiAITuiConstructor.mock.calls[0]!;
     expect(startupInput).toMatchObject({
       startupNotice: 'Invalid TUI config in ~/.multiai/tui.toml; using defaults.',
       tuiConfig: {
@@ -556,7 +561,7 @@ describe('runShell', () => {
       '1.2.3-test',
     );
 
-    const [, , startupInput] = mocks.kimiTuiConstructor.mock.calls[0]!;
+    const [, , startupInput] = mocks.multiAITuiConstructor.mock.calls[0]!;
     expect(startupInput).toMatchObject({
       startupNotice: 'Ignored invalid config in config.toml: loop_control.',
     });
@@ -725,7 +730,7 @@ describe('runShell', () => {
         },
         '1.2.3-test',
       );
-      const [tui] = mocks.kimiTuiConstructor.mock.calls[0]!;
+      const [tui] = mocks.multiAITuiConstructor.mock.calls[0]!;
       mocks.harnessTrack.mockClear();
       mocks.lifecycleTrack.mockClear();
       mocks.withTelemetryContext.mockClear();
@@ -781,7 +786,7 @@ describe('runShell', () => {
         },
         '1.2.3-test',
       );
-      const [tui] = mocks.kimiTuiConstructor.mock.calls[0]!;
+      const [tui] = mocks.multiAITuiConstructor.mock.calls[0]!;
       const openedUrl = 'http://127.0.0.1:58627/sessions/ses-1#token=tok-1';
       (tui as { exitOpenUrl?: string }).exitOpenUrl = openedUrl;
 

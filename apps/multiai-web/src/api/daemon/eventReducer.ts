@@ -26,7 +26,7 @@ import type {
 import { COMPACTION_MARKER_METADATA_KEY } from '../types';
 import { i18n } from '../../i18n';
 
-const OPTIMISTIC_USER_MESSAGE_METADATA_KEY = 'kimiWeb.optimisticUserMessage';
+const OPTIMISTIC_USER_MESSAGE_METADATA_KEY = 'multiaiWeb.optimisticUserMessage';
 
 /** Tail cap for accumulated output of non-subagent (bash / background tool)
  *  tasks, whose stdout can be noisy and unbounded. Subagent progress is kept

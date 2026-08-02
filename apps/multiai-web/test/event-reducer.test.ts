@@ -1,3 +1,8 @@
+/**
+ * MultiAI Web event-reducer contracts: daemon events update only their owned
+ * state slices while optimistic client messages retain their metadata marker.
+ */
+
 import { describe, expect, it } from 'vitest';
 import { createInitialState, reduceAppEvent } from '../src/api/daemon/eventReducer';
 import type { AppMessage, AppSession, AppTask } from '../src/api/types';
@@ -271,7 +276,7 @@ describe('reduceAppEvent messageCreated', () => {
         { type: 'video', source: { kind: 'file', fileId: 'f_abc' } },
       ],
       createdAt: '2026-06-01T12:00:00.000Z',
-      metadata: { 'kimiWeb.optimisticUserMessage': true },
+      metadata: { 'multiaiWeb.optimisticUserMessage': true },
     };
     const echo: AppMessage = {
       id: 'msg_real',
@@ -316,7 +321,7 @@ describe('reduceAppEvent messageCreated', () => {
         { type: 'video', source: { kind: 'file', fileId: 'f_abc' } },
       ],
       createdAt: '2026-06-01T12:00:00.000Z',
-      metadata: { 'kimiWeb.optimisticUserMessage': true },
+      metadata: { 'multiaiWeb.optimisticUserMessage': true },
     };
     const echo: AppMessage = {
       id: 'msg_real',
@@ -567,7 +572,7 @@ describe('reduceAppEvent messageCreated cron origin', () => {
       content: [{ type: 'text', text: 'check the BTC price' }],
       createdAt: '2026-01-01T00:00:00.000Z',
       promptId: 'pr_user',
-      metadata: { 'kimiWeb.optimisticUserMessage': true },
+      metadata: { 'multiaiWeb.optimisticUserMessage': true },
     };
     const state = {
       ...createInitialState(),

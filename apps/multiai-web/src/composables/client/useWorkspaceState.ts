@@ -1495,7 +1495,7 @@ export function useWorkspaceState(rawState: ExtendedState, deps: UseWorkspaceSta
         role: 'user',
         content,
         createdAt: new Date().toISOString(),
-        metadata: { 'kimiWeb.optimisticUserMessage': true },
+        metadata: { 'multiaiWeb.optimisticUserMessage': true },
       };
       updateSessionMessages(sid, (msgs) => [...msgs, optimisticMsg]);
 
@@ -1696,7 +1696,7 @@ export function useWorkspaceState(rawState: ExtendedState, deps: UseWorkspaceSta
       role: 'user',
       content,
       createdAt: new Date().toISOString(),
-      metadata: { 'kimiWeb.optimisticUserMessage': true },
+      metadata: { 'multiaiWeb.optimisticUserMessage': true },
     };
     updateSessionMessages(sid, (msgs) => [...msgs, optimisticMsg]);
 

@@ -16,7 +16,7 @@
         "${workspaceFolder}/../../.tmp/vscode-extension-dev/workspace"
       ],
       "env": {
-        "MULTIAI_HOME": "${workspaceFolder}/../../.tmp/vscode-extension-dev/kimi-home"
+        "MULTIAI_HOME": "${workspaceFolder}/../../.tmp/vscode-extension-dev/multiai-home"
       },
       "outFiles": ["${workspaceFolder}/dist/**/*.js", "${workspaceFolder}/dist/**/*.mjs"],
       "sourceMaps": true,

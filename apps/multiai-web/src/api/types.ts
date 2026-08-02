@@ -180,7 +180,7 @@ export interface AppMessage {
  * summary messages (origin kind 'compaction_summary') render the same way
  * but carry no token stats.
  */
-export const COMPACTION_MARKER_METADATA_KEY = 'kimiWeb.compaction';
+export const COMPACTION_MARKER_METADATA_KEY = 'multiaiWeb.compaction';
 
 export interface CompactionMarkerMetadata {
   trigger: 'manual' | 'auto';

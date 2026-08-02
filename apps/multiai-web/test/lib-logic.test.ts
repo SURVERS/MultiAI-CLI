@@ -1,3 +1,8 @@
+/**
+ * Pure MultiAI Web helper contracts for paths, diffs, snapshots, tasks, tool
+ * labels, cron copy, workspace inputs, and optimistic-message reconciliation.
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   collectFilePathAliases,
@@ -670,7 +675,7 @@ describe('mergeSnapshotMessages', () => {
       content: [{ type: 'text', text }],
       createdAt,
       promptId,
-      metadata: { 'kimiWeb.optimisticUserMessage': true },
+      metadata: { 'multiaiWeb.optimisticUserMessage': true },
     };
   }
 

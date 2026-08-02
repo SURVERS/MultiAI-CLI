@@ -1,10 +1,15 @@
+/**
+ * CLI print-mode contracts: harness selection, prompt execution, output
+ * formats, resume behavior, and managed MultiAI OAuth integration.
+ */
+
 import type { createMultiAIDeviceId as createMultiAIDeviceIdFn } from '@multiai/oauth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runPrompt } from '#/cli/run-prompt';
 import { PROMPT_CLEANUP_TIMEOUT_MS } from '#/constant/app';
 
-type CreateKimiDeviceId = typeof createMultiAIDeviceIdFn;
+type CreateMultiAIDeviceId = typeof createMultiAIDeviceIdFn;
 
 const mocks = vi.hoisted(() => {
   const eventHandlers = new Set<(event: any) => void>();
@@ -50,7 +55,7 @@ const mocks = vi.hoisted(() => {
     eventHandlers,
     agentEvent,
     mainEvent,
-    kimiHarnessConstructor: vi.fn(),
+    multiAIHarnessConstructor: vi.fn(),
     harnessEnsureConfigFile: vi.fn(),
     harnessGetConfig: vi.fn(
       async (): Promise<{ providers: {}; defaultModel?: string; telemetry: boolean }> => ({
@@ -110,8 +115,8 @@ const mocks = vi.hoisted(() => {
     setTelemetryContext: vi.fn(),
     lifecycleTrack: vi.fn(),
     withTelemetryContext: vi.fn(() => ({ track: vi.fn() })),
-    createMultiAIDeviceId: vi.fn<CreateKimiDeviceId>(() => 'device-1'),
-    resolveMultiAIHome: vi.fn((homeDir?: string) => homeDir ?? '/tmp/kimi-code-test-home'),
+    createMultiAIDeviceId: vi.fn<CreateMultiAIDeviceId>(() => 'device-1'),
+    resolveMultiAIHome: vi.fn((homeDir?: string) => homeDir ?? '/tmp/multiai-test-home'),
     harnessCreatesDeviceIdOnConstruction: false,
   };
 });
@@ -123,11 +128,11 @@ vi.mock('@multiai/sdk', async (importOriginal) => {
     resolveMultiAIHome: mocks.resolveMultiAIHome,
     createMultiAIHarness: (...args: unknown[]) => {
       const options = args[0] as { readonly homeDir?: string } | undefined;
-      const homeDir = options?.homeDir ?? '/tmp/kimi-code-test-home';
+      const homeDir = options?.homeDir ?? '/tmp/multiai-test-home';
       if (mocks.harnessCreatesDeviceIdOnConstruction) {
         mocks.createMultiAIDeviceId(homeDir);
       }
-      mocks.kimiHarnessConstructor(...args);
+      mocks.multiAIHarnessConstructor(...args);
       return {
         homeDir,
         auth: { getCachedAccessToken: mocks.harnessGetCachedAccessToken },
@@ -249,7 +254,7 @@ describe('runPrompt', () => {
     mocks.eventHandlers.clear();
     mocks.createMultiAIDeviceId.mockImplementation(() => 'device-1');
     mocks.resolveMultiAIHome.mockImplementation(
-      (homeDir?: string) => homeDir ?? '/tmp/kimi-code-test-home',
+      (homeDir?: string) => homeDir ?? '/tmp/multiai-test-home',
     );
     mocks.harnessCreatesDeviceIdOnConstruction = false;
   });
@@ -260,7 +265,7 @@ describe('runPrompt', () => {
 
     await runPrompt(opts({ skillsDirs: ['/skills'] }), '1.2.3-test', { stdout, stderr });
 
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalledWith(
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalledWith(
       expect.objectContaining({ skillDirs: ['/skills'], uiMode: 'print' }),
     );
     expect(mocks.harnessCreateSession).toHaveBeenCalledWith({
@@ -434,13 +439,13 @@ describe('runPrompt', () => {
 
     expect(mocks.createMultiAIDeviceId).toHaveBeenNthCalledWith(
       1,
-      '/tmp/kimi-code-test-home',
+      '/tmp/multiai-test-home',
     );
     expect(mocks.createMultiAIDeviceId.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.kimiHarnessConstructor.mock.invocationCallOrder[0]!,
+      mocks.multiAIHarnessConstructor.mock.invocationCallOrder[0]!,
     );
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalledWith(
-      expect.objectContaining({ homeDir: '/tmp/kimi-code-test-home' }),
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalledWith(
+      expect.objectContaining({ homeDir: '/tmp/multiai-test-home' }),
     );
     expect(mocks.harnessTrack).not.toHaveBeenCalledWith('first_launch');
   });
@@ -1192,7 +1197,7 @@ describe('runPrompt', () => {
     // The experimental engine is selected and the version banner is the very
     // first write, ahead of any assistant output or the resume hint.
     expect(mocks.runV2Print).toHaveBeenCalled();
-    expect(mocks.kimiHarnessConstructor).not.toHaveBeenCalled();
+    expect(mocks.multiAIHarnessConstructor).not.toHaveBeenCalled();
     expect(stderr.write).toHaveBeenNthCalledWith(1, 'multiai version 1.2.3-test\n');
     expect(stderr.text().startsWith('multiai version 1.2.3-test\n')).toBe(true);
     expect(stdout.text()).toBe('• hello world\n\n');
@@ -1209,7 +1214,7 @@ describe('runPrompt', () => {
     });
 
     expect(mocks.runV2Print).toHaveBeenCalled();
-    expect(mocks.kimiHarnessConstructor).not.toHaveBeenCalled();
+    expect(mocks.multiAIHarnessConstructor).not.toHaveBeenCalled();
     const lines = stdout.text().split('\n');
     expect(lines[0]).toBe(
       '{"role":"meta","type":"system.version","version":"1.2.3-test"}',
@@ -1225,7 +1230,7 @@ describe('runPrompt', () => {
     await runPrompt(opts(), '1.2.3-test', { stdout, stderr });
 
     expect(mocks.runV2Print).not.toHaveBeenCalled();
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalled();
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalled();
     expect(stderr.text()).not.toContain('multiai version');
   });
 

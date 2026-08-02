@@ -34,7 +34,7 @@ The browser web UI for MultiAI CLI — a peer to the TUI in `apps/multiai-cli`. 
 
 ## i18n (normative — keeping locales in sync is manual)
 
-- Setup: `src/i18n/index.ts`, vue-i18n in Composition mode (`legacy: false`), fallback `en`. The active locale is persisted in `localStorage` under `kimi-locale`.
+- Setup: `src/i18n/index.ts`, vue-i18n in Composition mode (`legacy: false`), fallback `en`. The active locale is persisted in `localStorage` under `multiai-locale`.
 - Locale files: `src/i18n/locales/{en,zh}/<namespace>.ts`, each `export default { ... } as const`. New namespaces are registered in `src/i18n/locales/index.ts`.
 - Reference with `const { t } = useI18n()` and `t('namespace.key')` (same form in templates).
 - **Adding a key:** add it to **both** `en/<ns>.ts` and `zh/<ns>.ts`. **Adding a namespace:** create the file in both locales **and** register it in `locales/index.ts`.

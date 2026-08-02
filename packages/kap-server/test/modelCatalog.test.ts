@@ -330,6 +330,7 @@ describe('server-v2 /api/v1 model/provider catalog', () => {
       },
       resolveTokenProvider: () => undefined,
       getCachedAccessToken: async () => undefined,
+      invalidate: async () => undefined,
     };
   }
 

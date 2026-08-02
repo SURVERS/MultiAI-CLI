@@ -17,7 +17,7 @@ function isOutputFormat(value: string): value is PromptOutputFormat {
  *
  * Precedence: explicit `--output-format` flag → `MULTIAI_MODEL_OUTPUT_FORMAT` env
  * (prompt mode only) → `text`. The env var is ignored outside prompt mode so an
- * ambient value never affects interactive `kimi`. An invalid env value fails
+ * ambient value never affects interactive `multiai`. An invalid env value fails
  * fast via `OptionConflictError`.
  */
 export function resolveOutputFormat(

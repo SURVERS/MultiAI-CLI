@@ -118,6 +118,7 @@ export function stubOAuthService(tokenProvider?: StubTokenProvider): IOAuthServi
     getFlow: () => undefined,
     cancelLogin: () => Promise.reject(new Error('not implemented')),
     logout: () => Promise.reject(new Error('not implemented')),
+    invalidate: () => Promise.resolve(),
     status: () => Promise.resolve({ loggedIn: false }),
     refreshOAuthProviderModels: () => Promise.reject(new Error('not implemented')),
     resolveTokenProvider: () => tokenProvider,

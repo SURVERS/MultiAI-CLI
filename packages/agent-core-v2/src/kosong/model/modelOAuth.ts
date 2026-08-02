@@ -2,10 +2,10 @@
  * `kosong/model` domain (L2) — the OAuth token port.
  *
  * Kosong needs OAuth tokens at model-assembly time: probing the cached
- * credential state (catalog listings) and building the refreshable request
- * auth closure. The port is owned here so kosong stays free of the
- * `app/auth` service; the implementation lives in the upper layer
- * (`app/kosongConfig/oauthTokenAdapter.ts`), which delegates to
+ * credential state (catalog listings), building the refreshable request auth
+ * closure, and invalidating credentials rejected after a replay. The port is
+ * owned here so kosong stays free of the `app/auth` service; the implementation
+ * lives in the upper layer (`app/kosongConfig/oauthTokenAdapter.ts`), which delegates to
  * `IOAuthService` and owns the `auth.login_required` error contract.
  */
 
@@ -27,7 +27,6 @@ export interface IModelOAuthTokens {
     oauthRef: OAuthRef,
     options?: { readonly force?: boolean },
   ): Promise<string>;
-  /** Invalidates a rejected OAuth session and removes its managed configuration. */
   invalidate?: (provider: string, oauthRef: OAuthRef) => Promise<void>;
 }
 

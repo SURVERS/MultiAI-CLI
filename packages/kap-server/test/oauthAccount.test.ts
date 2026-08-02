@@ -1,3 +1,8 @@
+/**
+ * Scenario: serving the managed MultiAI account snapshot over REST.
+ * Wiring: a real loopback server resolves an App-scoped OAuth service stub.
+ */
+
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -57,6 +62,7 @@ describe('server-v2 GET /api/v1/oauth/account', () => {
       getAccount,
       resolveTokenProvider: () => undefined,
       getCachedAccessToken: async () => undefined,
+      invalidate: async () => undefined,
     };
   }
 

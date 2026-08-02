@@ -427,7 +427,7 @@ export function useModelProviderState(
         content: [{ type: 'text', text: `/${skillName}${args ? ` ${args}` : ''}` }],
         createdAt: new Date().toISOString(),
         metadata: {
-          'kimiWeb.optimisticUserMessage': true,
+          'multiaiWeb.optimisticUserMessage': true,
           origin: {
             kind: 'skill_activation',
             trigger: 'user-slash',

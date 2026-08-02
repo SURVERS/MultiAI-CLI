@@ -207,7 +207,7 @@ export function useSideChat(rawState: ExtendedState, deps: UseSideChatDeps) {
       role: 'user',
       content: [{ type: 'text', text: trimmed }],
       createdAt: new Date().toISOString(),
-      metadata: { 'kimiWeb.optimisticUserMessage': true },
+      metadata: { 'multiaiWeb.optimisticUserMessage': true },
     };
     appendSideChatMessage(agentId, userMsg);
     try {

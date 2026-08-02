@@ -53,7 +53,7 @@ function backendSwitcherPlugin(): Plugin {
     if (backendProxyOpts) backendProxyOpts.target = currentBackendTarget;
   };
   return {
-    name: 'kimi-backend-switcher',
+    name: 'multiai-backend-switcher',
     configureServer(server) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
         if (req.url !== '/__multiai-dev/backend') return next();

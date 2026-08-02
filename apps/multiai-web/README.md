@@ -58,7 +58,7 @@ server (REST + WS)
   agent-core events** (no `event.` prefix). `classifyFrame` routes raw vs
   protocol (`event.*`) frames; the projector converts them to `AppEvent`s.
 - **i18n** (`src/i18n/`): vue-i18n, en/zh, per-namespace flat camelCase keys.
-  Detect order: `localStorage('kimi-locale')` → `navigator.language` → `en`.
+  Detect order: `localStorage('multiai-locale')` → `navigator.language` → `en`.
 ---
 
 ## Server contract — non-obvious notes
@@ -84,7 +84,7 @@ The server's wire protocol has a few things that will bite you if forgotten:
 ## Release & deployment
 
 MultiAI Web is **not published as a standalone package**. It ships as the built-in
-web UI of the `kimi` CLI (`apps/multiai-cli`).
+web UI of the `multiai` CLI (`apps/multiai-cli`).
 
 ### Current release flow
 

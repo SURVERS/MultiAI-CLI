@@ -24,10 +24,10 @@ import type {
 
 let tmp: string;
 
-type CreateKimiDeviceId = typeof createMultiAIDeviceIdFn;
+type CreateMultiAIDeviceId = typeof createMultiAIDeviceIdFn;
 
 const mocks = vi.hoisted(() => ({
-  kimiHarnessConstructor: vi.fn(),
+  multiAIHarnessConstructor: vi.fn(),
   harnessEnsureConfigFile: vi.fn(),
   harnessGetConfig: vi.fn(async () => ({
     providers: {},
@@ -37,13 +37,13 @@ const mocks = vi.hoisted(() => ({
   harnessGetCachedAccessToken: vi.fn(),
   harnessExportSession: vi.fn(),
   harnessTrack: vi.fn(),
-  createMultiAIDeviceId: vi.fn<CreateKimiDeviceId>(() => 'device-1'),
+  createMultiAIDeviceId: vi.fn<CreateMultiAIDeviceId>(() => 'device-1'),
   initializeTelemetry: vi.fn(),
   shutdownTelemetry: vi.fn(),
   telemetryTrack: vi.fn(),
   setTelemetryContext: vi.fn(),
   withTelemetryContext: vi.fn(),
-  resolveMultiAIHome: vi.fn((homeDir?: string) => homeDir ?? '/tmp/kimi-export-home'),
+  resolveMultiAIHome: vi.fn((homeDir?: string) => homeDir ?? '/tmp/multiai-export-home'),
   harnessCreatesDeviceIdOnConstruction: false,
 }));
 
@@ -54,11 +54,11 @@ vi.mock('@multiai/sdk', async (importOriginal) => {
     resolveMultiAIHome: mocks.resolveMultiAIHome,
     createMultiAIHarness: (...args: unknown[]) => {
       const options = args[0] as { readonly homeDir?: string } | undefined;
-      const homeDir = options?.homeDir ?? '/tmp/kimi-export-home';
+      const homeDir = options?.homeDir ?? '/tmp/multiai-export-home';
       if (mocks.harnessCreatesDeviceIdOnConstruction) {
         mocks.createMultiAIDeviceId(homeDir);
       }
-      mocks.kimiHarnessConstructor(...args);
+      mocks.multiAIHarnessConstructor(...args);
       return {
         homeDir,
         auth: {
@@ -94,7 +94,7 @@ vi.mock('@multiai/telemetry', () => ({
 }));
 
 beforeEach(() => {
-  tmp = mkdtempSync(join(tmpdir(), 'kimi-export-'));
+  tmp = mkdtempSync(join(tmpdir(), 'multiai-export-'));
 });
 
 afterEach(() => {
@@ -107,7 +107,7 @@ afterEach(() => {
   });
   mocks.createMultiAIDeviceId.mockImplementation(() => 'device-1');
   mocks.resolveMultiAIHome.mockImplementation(
-    (homeDir?: string) => homeDir ?? '/tmp/kimi-export-home',
+    (homeDir?: string) => homeDir ?? '/tmp/multiai-export-home',
   );
   mocks.harnessCreatesDeviceIdOnConstruction = false;
 });
@@ -318,7 +318,7 @@ describe('multiai export', () => {
   });
 
   it('describes the user-facing command without implementation details', () => {
-    const program = new Command('kimi');
+    const program = new Command('multiai');
     const { deps } = makeDeps();
 
     registerExportCommand(program, deps);
@@ -334,10 +334,10 @@ describe('multiai export', () => {
       listSessions: async () => [previous],
       confirmPreviousSession: async () => true,
     });
-    const program = new Command('kimi');
+    const program = new Command('multiai');
     registerExportCommand(program, deps);
 
-    await program.parseAsync(['node', 'kimi', 'export', '--no-include-global-log', '-y']);
+    await program.parseAsync(['node', 'multiai', 'export', '--no-include-global-log', '-y']);
 
     expect(exitCodes).toEqual([]);
     expect(exportInputs).toEqual([{ id: 'ses_global_log', version: '1.0.0-test', installSource: 'npm-global', shellEnv: { term: 'xterm-256color', shell: '/bin/zsh' } }]);
@@ -347,12 +347,12 @@ describe('multiai export', () => {
   it('parses options after an explicit session id', async () => {
     const output = join(tmp, 'after-id.zip');
     const { deps, exitCodes, exportInputs } = makeDeps();
-    const program = new Command('kimi');
+    const program = new Command('multiai');
     registerExportCommand(program, deps);
 
     await program.parseAsync([
       'node',
-      'kimi',
+      'multiai',
       'export',
       'ses_after_id',
       '-o',
@@ -390,7 +390,7 @@ describe('multiai export', () => {
       from: 'node',
     });
 
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalledWith(
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalledWith(
       expect.objectContaining({
         telemetry: {
           track: mocks.telemetryTrack,
@@ -476,9 +476,9 @@ describe('multiai export', () => {
       from: 'node',
     });
 
-    expect(mocks.createMultiAIDeviceId).toHaveBeenCalledWith('/tmp/kimi-export-home');
-    expect(mocks.kimiHarnessConstructor).toHaveBeenCalledWith(
-      expect.objectContaining({ homeDir: '/tmp/kimi-export-home' }),
+    expect(mocks.createMultiAIDeviceId).toHaveBeenCalledWith('/tmp/multiai-export-home');
+    expect(mocks.multiAIHarnessConstructor).toHaveBeenCalledWith(
+      expect.objectContaining({ homeDir: '/tmp/multiai-export-home' }),
     );
     expect(mocks.harnessTrack).not.toHaveBeenCalledWith('first_launch');
     expect(mocks.initializeTelemetry).not.toHaveBeenCalled();

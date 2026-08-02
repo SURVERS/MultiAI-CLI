@@ -282,7 +282,7 @@ export const goalChangeSchema = z.object({
   actor: goalActorSchema.optional(),
 }) satisfies z.ZodType<GoalChange>;
 
-export const kimiErrorCodeSchema = z.enum([
+export const multiAIErrorCodeSchema = z.enum([
   'config.invalid',
   'session.not_found',
   'session.already_exists',
@@ -381,17 +381,17 @@ export const kimiErrorCodeSchema = z.enum([
   'internal',
 ]);
 
-export const kimiErrorPayloadSchema: z.ZodType<unknown> = z.lazy(
-  () => kimiErrorPayloadObjectSchema,
+export const multiAIErrorPayloadSchema: z.ZodType<unknown> = z.lazy(
+  () => multiAIErrorPayloadObjectSchema,
 );
 
-const kimiErrorPayloadObjectSchema = z.object({
-  code: kimiErrorCodeSchema,
+const multiAIErrorPayloadObjectSchema = z.object({
+  code: multiAIErrorCodeSchema,
   message: z.string(),
   name: z.string().optional(),
   details: z.record(z.string(), z.unknown()).optional(),
   retryable: z.boolean(),
-  cause: kimiErrorPayloadSchema.optional(),
+  cause: multiAIErrorPayloadSchema.optional(),
 });
 
 export const taskInfoBaseSchema = z.object({
@@ -623,7 +623,7 @@ export const pluginCommandActivatedEventSchema = z.object({
   trigger: z.literal('user-slash'),
 }) satisfies z.ZodType<PluginCommandActivatedEvent>;
 
-export const errorEventSchema = kimiErrorPayloadObjectSchema.extend({
+export const errorEventSchema = multiAIErrorPayloadObjectSchema.extend({
   type: z.literal('error'),
 });
 
@@ -644,7 +644,7 @@ export const turnEndedEventSchema = z.object({
   type: z.literal('turn.ended'),
   turnId: z.number(),
   reason: turnEndReasonSchema,
-  error: kimiErrorPayloadSchema.optional(),
+  error: multiAIErrorPayloadSchema.optional(),
   durationMs: z.number().optional(),
 });
 
