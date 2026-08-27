@@ -561,6 +561,62 @@ describe('OpenAILegacyChatProvider', () => {
       ]);
       expect(body['tools']).toHaveLength(2);
     });
+
+    it('adds the Gemini 3 thought-signature fallback when the gateway omitted it', async () => {
+      const provider = createProvider({ model: 'gemini-3.6-flash' });
+      const history: Message[] = [
+        {
+          role: 'assistant',
+          content: [],
+          toolCalls: [
+            { type: 'function', id: 'call_lookup', name: 'lookup', arguments: '{"q":"hi"}' },
+          ],
+        },
+        {
+          role: 'tool',
+          content: [{ type: 'text', text: 'result' }],
+          toolCallId: 'call_lookup',
+          toolCalls: [],
+        },
+      ];
+
+      const body = await captureRequestBody(provider, '', [], history);
+      const messages = body['messages'] as Array<Record<string, unknown>>;
+      const toolCalls = messages[0]?.['tool_calls'] as Array<Record<string, unknown>>;
+
+      expect(toolCalls[0]?.['extra_content']).toEqual({
+        google: { thought_signature: 'skip_thought_signature_validator' },
+      });
+    });
+
+    it('replays a real Gemini thought signature instead of the fallback', async () => {
+      const provider = createProvider({ model: 'gemini-3.6-flash' });
+      const history: Message[] = [
+        {
+          role: 'assistant',
+          content: [],
+          toolCalls: [
+            {
+              type: 'function',
+              id: 'call_lookup',
+              name: 'lookup',
+              arguments: '{}',
+              extras: {
+                openai_extra_content: { google: { thought_signature: 'real-signature' } },
+              },
+            },
+          ],
+        },
+      ];
+
+      const body = await captureRequestBody(provider, '', [], history);
+      const messages = body['messages'] as Array<Record<string, unknown>>;
+      const toolCalls = messages[0]?.['tool_calls'] as Array<Record<string, unknown>>;
+
+      expect(toolCalls[0]?.['extra_content']).toEqual({
+        google: { thought_signature: 'real-signature' },
+      });
+    });
   });
 
   describe('reasoning content', () => {
@@ -1552,6 +1608,7 @@ describe('OpenAILegacyChatProvider', () => {
     index: number;
     id?: string;
     function?: { name?: string; arguments?: string };
+    extra_content?: unknown;
   }
 
   function makeChunk(
@@ -1637,6 +1694,38 @@ describe('OpenAILegacyChatProvider', () => {
     for (const tc of result.message.toolCalls) {
       expect(tc).not.toHaveProperty('_streamIndex');
     }
+  });
+
+  it('preserves streamed tool-call extra_content for history replay', async () => {
+    const provider = new OpenAILegacyChatProvider({
+      model: 'gemini-3.6-flash',
+      apiKey: 'test-key',
+      stream: true,
+    });
+    const signature = { google: { thought_signature: 'real-signature' } };
+    const chunks = [
+      makeChunk([
+        {
+          index: 0,
+          id: 'call_x',
+          function: { name: 'lookup', arguments: '{}' },
+          extra_content: signature,
+        },
+      ]),
+      makeChunk([], { finishReason: 'tool_calls', usage: true }),
+    ];
+
+    (
+      provider as unknown as { _client: { chat: { completions: { create: unknown } } } }
+    )._client.chat.completions.create = vi.fn().mockResolvedValue(mockStream(chunks));
+
+    const result = await generate(provider, '', [], [
+      { role: 'user', content: [{ type: 'text', text: 'look it up' }], toolCalls: [] },
+    ]);
+
+    expect(result.message.toolCalls[0]).toMatchObject({
+      extras: { openai_extra_content: signature },
+    });
   });
 
   it('does not early-ready indexed OpenAI tool calls at merge boundaries', async () => {
@@ -1886,6 +1975,35 @@ describe('OpenAILegacyChatProvider — non-stream response parsing', () => {
       id: 'call_x',
       name: 'lookup',
       arguments: '{"q":"hi"}',
+    });
+  });
+
+  it('preserves non-stream tool-call extra_content for the next request', async () => {
+    const provider = new OpenAILegacyChatProvider({
+      model: 'gemini-3.6-flash',
+      apiKey: 'test-key',
+      stream: false,
+    });
+    const signature = { google: { thought_signature: 'real-signature' } };
+
+    const parts = await collectFromMockedResponse(
+      provider,
+      makeNonStreamResponse({
+        role: 'assistant',
+        content: null,
+        tool_calls: [
+          {
+            id: 'call_x',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{}' },
+            extra_content: signature,
+          },
+        ],
+      }),
+    );
+
+    expect(parts.find((part) => part.type === 'function')).toMatchObject({
+      extras: { openai_extra_content: signature },
     });
   });
 

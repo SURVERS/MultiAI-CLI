@@ -774,6 +774,27 @@ max_context_size = 128000
     expect(result.config).toEqual(loadRuntimeConfig(configPath, {}));
   });
 
+  it('enriches managed Gemini models for runtime without rewriting the config file', async () => {
+    const configPath = await writeTempConfig(`
+[providers."managed:multiai"]
+type = "openai_responses"
+base_url = "https://multiai.store/v1"
+
+[models."multiai/gemini-3.6-flash"]
+provider = "managed:multiai"
+model = "gemini-3.6-flash"
+`);
+    const original = await readFile(configPath, 'utf-8');
+
+    const result = loadRuntimeConfigSafe(configPath, {});
+
+    expect(result.config.models?.['multiai/gemini-3.6-flash']).toMatchObject({
+      capabilities: ['always_thinking'],
+      protocol: 'openai',
+    });
+    expect(await readFile(configPath, 'utf-8')).toBe(original);
+  });
+
   it('returns defaults with no warnings when the file is missing', () => {
     const configPath = join(makeTempDir(), 'config.toml');
     const result = loadRuntimeConfigSafe(configPath, {});

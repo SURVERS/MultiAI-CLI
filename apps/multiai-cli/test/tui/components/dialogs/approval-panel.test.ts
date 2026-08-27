@@ -26,6 +26,7 @@ function makePending(): PendingApproval {
       choices: [
         { label: 'Approve once', response: 'approved' },
         { label: 'Approve for this session', response: 'approved_for_session' },
+        { label: 'Approve all', response: 'approved_all', selected_label: 'Approve all' },
         { label: 'Reject', response: 'rejected' },
         { label: 'Reject with feedback', response: 'rejected', requires_feedback: true },
       ],
@@ -57,7 +58,7 @@ describe('ApprovalPanelComponent', () => {
   it('renders only numeric approval shortcuts in the hint', () => {
     const { dialog } = makeDialog();
     const out = strip(dialog.render(80).join('\n'));
-    expect(out).toContain('1/2/3/4 choose');
+    expect(out).toContain('1/2/3/4/5 choose');
     expect(out).not.toContain('y/a/n/f');
   });
 
@@ -153,9 +154,17 @@ describe('ApprovalPanelComponent', () => {
     expect(responses).toEqual([{ response: 'approved_for_session', feedback: undefined }]);
   });
 
-  it('shortcut 4 enters feedback mode and submits the typed feedback', () => {
+  it('shortcut 3 chooses approve all', () => {
     const { dialog, responses } = makeDialog();
-    dialog.handleInput('4');
+    dialog.handleInput('3');
+    expect(responses).toEqual([
+      { response: 'approved_all', feedback: undefined, selected_label: 'Approve all' },
+    ]);
+  });
+
+  it('shortcut 5 enters feedback mode and submits the typed feedback', () => {
+    const { dialog, responses } = makeDialog();
+    dialog.handleInput('5');
     dialog.handleInput('n');
     dialog.handleInput('o');
     dialog.handleInput('\r');
@@ -164,10 +173,10 @@ describe('ApprovalPanelComponent', () => {
 
   it('renders feedback input inline with the selected choice', () => {
     const { dialog } = makeDialog();
-    dialog.handleInput('4');
+    dialog.handleInput('5');
 
     const out = strip(dialog.render(80).join('\n'));
-    expect(out).toContain('▶ 4. Reject with feedback');
+    expect(out).toContain('▶ 5. Reject with feedback');
     expect(out).not.toContain('\n  > ');
   });
 
@@ -181,7 +190,7 @@ describe('ApprovalPanelComponent', () => {
 
   it('feedback input supports left/right cursor editing', () => {
     const { dialog, responses } = makeDialog();
-    dialog.handleInput('4');
+    dialog.handleInput('5');
     dialog.handleInput('n');
     dialog.handleInput('o');
     dialog.handleInput('\u001B[D');
@@ -192,7 +201,7 @@ describe('ApprovalPanelComponent', () => {
 
   it('feedback input keeps editor shortcuts like ctrl+b / ctrl+f', () => {
     const { dialog, responses } = makeDialog();
-    dialog.handleInput('4');
+    dialog.handleInput('5');
     dialog.handleInput('a');
     dialog.handleInput('b');
     dialog.handleInput('c');
@@ -208,7 +217,7 @@ describe('ApprovalPanelComponent', () => {
   it('renders an IME cursor marker while editing feedback', () => {
     const { dialog } = makeDialog();
     dialog.focused = true;
-    dialog.handleInput('4');
+    dialog.handleInput('5');
 
     const out = dialog.render(80).join('\n');
     expect(out).toContain(CURSOR_MARKER);

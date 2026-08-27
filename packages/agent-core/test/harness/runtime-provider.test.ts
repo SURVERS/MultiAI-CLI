@@ -505,6 +505,37 @@ describe('resolveRuntimeProvider maxOutputSize forwarding', () => {
     });
   });
 
+  it('routes a managed Gemini alias through OpenAI Chat Completions', () => {
+    const resolved = resolveRuntimeProvider({
+      config: {
+        ...BASE_CONFIG,
+        providers: {
+          ...BASE_CONFIG.providers,
+          'managed:multiai': {
+            type: 'openai_responses',
+            apiKey: 'managed-token',
+            baseUrl: 'https://gateway.example.test/v1',
+          },
+        },
+        models: {
+          ...BASE_CONFIG.models!,
+          'multiai/gemini-3.6-flash': {
+            provider: 'managed:multiai',
+            model: 'gemini-3.6-flash',
+            protocol: 'openai',
+            supportEfforts: ['minimal', 'low', 'medium', 'high'],
+          },
+        },
+      },
+      model: 'multiai/gemini-3.6-flash',
+    });
+
+    expect(resolved.provider).toMatchObject({
+      type: 'openai',
+      baseUrl: 'https://gateway.example.test/v1',
+    });
+  });
+
   it('omits defaultMaxTokens when alias.maxOutputSize is unset', () => {
     const resolved = resolveRuntimeProvider({
       config: {

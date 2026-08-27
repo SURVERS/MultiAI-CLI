@@ -10,7 +10,6 @@
  */
 
 import chalk from 'chalk';
-import { truncateToWidth, visibleWidth } from '@multiai/pi-tui';
 
 import type { SlashCommandHost } from '../commands/dispatch';
 import type { ParsedSlashInput } from '../commands/types';
@@ -109,25 +108,10 @@ export function isRainbowDancing(): boolean {
   return currentDanceView?.colored === true;
 }
 
-export function renderDanceWelcomeHeader(
-  logo: readonly [string, string],
-  textWidth: number,
-  rightRow1: string,
-): string[] {
+export function renderDanceWelcomeLogo(logo: readonly string[]): string[] {
   const phase = currentDanceView?.phase ?? 0;
   const palette = getDanceRainbowPalette();
-  const logoWidth = Math.max(...logo.map((row) => visibleWidth(row)));
-  const gap = '  ';
-  const rightRow0 = truncateToWidth(
-    rainbowText('Welcome to MultiAI CLI!', palette, phase + 2, true),
-    textWidth,
-    '…',
-  );
-
-  return [
-    rainbowText(logo[0].padEnd(logoWidth), palette, phase) + gap + rightRow0,
-    rainbowText(logo[1].padEnd(logoWidth), palette, phase + 3) + gap + rightRow1,
-  ];
+  return logo.map((line, index) => rainbowText(line, palette, phase + index * 3, true));
 }
 
 export function renderDanceFooterModel(modelLabel: string): string {

@@ -288,7 +288,7 @@ function toKosongProviderConfig(
   adaptiveThinking: boolean | undefined,
   betaApi: boolean | undefined,
 ): KosongProviderConfig {
-  const effectiveType = modelProtocol === 'anthropic' ? 'anthropic' : provider.type;
+  const effectiveType = modelProtocol ?? provider.type;
   const envCustomHeaders = parseMultiAICustomHeaders();
   switch (effectiveType) {
     case 'anthropic': {

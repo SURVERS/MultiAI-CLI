@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from 'node:util';
+
 import {
   readConfigFile,
   readConfigFileForUpdate,
@@ -38,6 +40,17 @@ export interface MultiAIAuthLoginResult {
 export interface MultiAIAuthLogoutResult {
   readonly providerName: typeof MULTIAI_PROVIDER_NAME;
   readonly ok: true;
+}
+
+export interface MultiAIAuthModelRefreshResult {
+  readonly changed: ReadonlyArray<{
+    readonly providerId: string;
+    readonly providerName: string;
+    readonly added: number;
+    readonly removed: number;
+  }>;
+  readonly unchanged: readonly string[];
+  readonly failed: ReadonlyArray<{ readonly provider: string; readonly reason: string }>;
 }
 
 /** @deprecated MultiAI CLI does not expose the legacy feedback backend. */
@@ -94,6 +107,7 @@ type SDKManagedConfig = MultiAIConfig & ManagedMultiAIConfigShape;
 
 export class MultiAIAuthFacade {
   private readonly toolkit: MultiAIOAuthToolkit;
+  private refreshModelsChain: Promise<void> = Promise.resolve();
 
   constructor(private readonly options: MultiAIAuthFacadeOptions) {
     this.toolkit = new MultiAIOAuthToolkit({ homeDir: options.homeDir });
@@ -131,6 +145,15 @@ export class MultiAIAuthFacade {
     await writeConfigFile(this.options.configPath, config);
     this.options.onConfigUpdated?.(readConfigFile(this.options.configPath));
     return { providerName: MULTIAI_PROVIDER_NAME, ok: true };
+  }
+
+  refreshModels(): Promise<MultiAIAuthModelRefreshResult> {
+    const run = this.refreshModelsChain.then(() => this.doRefreshModels());
+    this.refreshModelsChain = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
   }
 
   getAccount(): Promise<MultiAIAccountSnapshot> {
@@ -205,6 +228,61 @@ export class MultiAIAuthFacade {
     };
   };
 
+  private async doRefreshModels(): Promise<MultiAIAuthModelRefreshResult> {
+    const current = readConfigFileForUpdate(this.options.configPath) as SDKManagedConfig;
+    if (current.providers[MULTIAI_PROVIDER_NAME] === undefined) {
+      return { changed: [], unchanged: [], failed: [] };
+    }
+
+    try {
+      const models = await this.toolkit.getModels();
+      const config = readConfigFileForUpdate(this.options.configPath) as SDKManagedConfig;
+      if (config.providers[MULTIAI_PROVIDER_NAME] === undefined) {
+        return { changed: [], unchanged: [], failed: [] };
+      }
+
+      const beforeAliases = managedModelAliases(config);
+      const before = managedConfigSnapshot(config);
+      applyManagedMultiAIConfig(config, models, {
+        baseUrl: MULTIAI_API_BASE_URL,
+        issuer: MULTIAI_OAUTH_ISSUER,
+        preserveDefaultModel: true,
+        providerType: 'openai_responses',
+      });
+      const afterAliases = managedModelAliases(config);
+      if (isDeepStrictEqual(before, managedConfigSnapshot(config))) {
+        return { changed: [], unchanged: [MULTIAI_PROVIDER_NAME], failed: [] };
+      }
+
+      await writeConfigFile(this.options.configPath, config);
+      this.options.onConfigUpdated?.(readConfigFile(this.options.configPath));
+      return {
+        changed: [
+          {
+            providerId: MULTIAI_PROVIDER_NAME,
+            providerName: 'MultiAI',
+            added: [...afterAliases].filter((alias) => !beforeAliases.has(alias)).length,
+            removed: [...beforeAliases].filter((alias) => !afterAliases.has(alias)).length,
+          },
+        ],
+        unchanged: [],
+        failed: [],
+      };
+    } catch (error) {
+      if (isSignedOutError(error)) await this.deprovision();
+      return {
+        changed: [],
+        unchanged: [],
+        failed: [
+          {
+            provider: MULTIAI_PROVIDER_NAME,
+            reason: error instanceof Error ? error.message : String(error),
+          },
+        ],
+      };
+    }
+  }
+
   private async deprovision(): Promise<void> {
     const config = readConfigFileForUpdate(this.options.configPath) as SDKManagedConfig;
     const cleanup = clearManagedMultiAIConfig(config);
@@ -222,6 +300,27 @@ export class MultiAIAuthFacade {
   private tokenRef(): MultiAIOAuthTokenRef {
     return { key: MULTIAI_OAUTH_KEY, issuer: MULTIAI_OAUTH_ISSUER };
   }
+}
+
+function managedModelAliases(config: SDKManagedConfig): Set<string> {
+  return new Set(
+    Object.entries(config.models ?? {})
+      .filter(([, model]) => model.provider === MULTIAI_PROVIDER_NAME)
+      .map(([alias]) => alias),
+  );
+}
+
+function managedConfigSnapshot(config: SDKManagedConfig): unknown {
+  return {
+    provider: config.providers[MULTIAI_PROVIDER_NAME],
+    models: Object.fromEntries(
+      Object.entries(config.models ?? {}).filter(
+        ([, model]) => model.provider === MULTIAI_PROVIDER_NAME,
+      ),
+    ),
+    defaultModel: config.defaultModel,
+    thinking: config.thinking,
+  };
 }
 
 function isSignedOutError(error: unknown): boolean {

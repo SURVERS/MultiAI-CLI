@@ -105,7 +105,9 @@ export type {
 } from './multiai-toolkit';
 export {
   applyManagedMultiAIConfig,
+  applyManagedMultiAIModelProfiles,
   clearManagedMultiAIConfig,
+  managedMultiAIModelProfile,
   multiAIModelAlias,
 } from './managed-multiai';
 export type {
@@ -113,6 +115,7 @@ export type {
   ManagedMultiAICleanupResult,
   ManagedMultiAIConfigShape,
   ManagedMultiAIModelAlias,
+  ManagedMultiAIModelProfile,
   ManagedMultiAIOAuthRef,
   ManagedMultiAIProviderConfig,
 } from './managed-multiai';

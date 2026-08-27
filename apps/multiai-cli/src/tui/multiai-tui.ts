@@ -634,8 +634,12 @@ export class MultiAITUI {
     try {
       const result = await this.authFlow.refreshProviderModels();
       for (const c of result.changed) {
-        if (c.added <= 0) continue;
-        this.showStatus(`${c.providerName} · +${String(c.added)} model${c.added > 1 ? 's' : ''}.`);
+        const deltas = [
+          c.added > 0 ? `+${String(c.added)}` : undefined,
+          c.removed > 0 ? `-${String(c.removed)}` : undefined,
+        ].filter((value): value is string => value !== undefined);
+        if (deltas.length === 0) continue;
+        this.showStatus(`${c.providerName} · ${deltas.join('/')} models.`);
       }
       for (const f of result.failed) {
         this.showStatus(`Skipped refreshing ${f.provider}: ${f.reason}`, 'warning');
@@ -2935,9 +2939,18 @@ export class MultiAITUI {
       title: 'MultiAI CLI approval required',
       body: payload.tool_name,
     });
+    let responsePending = false;
     const panel = new ApprovalPanelComponent(
       { data: payload },
       (response: ApprovalPanelResponse) => {
+        if (responsePending) return;
+        if (response.response === 'approved_all') {
+          responsePending = true;
+          void this.enableApproveAll(response).finally(() => {
+            responsePending = false;
+          });
+          return;
+        }
         this.approvalController.respond(adaptPanelResponse(response));
       },
       () => {
@@ -2949,6 +2962,20 @@ export class MultiAITUI {
     );
     this.activeApprovalPanel = panel;
     this.mountEditorReplacement(panel);
+  }
+
+  private async enableApproveAll(response: ApprovalPanelResponse): Promise<void> {
+    try {
+      await this.requireSession().setPermission('yolo');
+      this.setAppState({ permissionMode: 'yolo' });
+      this.showNotice(
+        'YOLO mode: ON',
+        'Tool actions auto-approved; the agent may still ask you questions.',
+      );
+      this.approvalController.respond(adaptPanelResponse(response));
+    } catch (error) {
+      this.showError(`Failed to enable Approve all: ${formatErrorMessage(error)}`);
+    }
   }
 
   private hideApprovalPanel(): void {

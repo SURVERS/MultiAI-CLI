@@ -37,6 +37,7 @@ describe('approval adapter', () => {
     expect(adapted.choices.map((choice) => choice.label)).toEqual([
       'Approve once',
       'Approve for this session',
+      'Approve all',
       'Reject',
       'Reject with feedback',
     ]);
@@ -314,6 +315,19 @@ describe('approval adapter', () => {
       scope: 'session',
       feedback: 'looks good',
       selectedLabel: 'Approve for this session',
+    });
+  });
+
+  it('marks approve-all responses so the controller can drain every queued approval', () => {
+    expect(
+      adaptPanelResponse({
+        response: 'approved_all',
+        selected_label: 'Approve all',
+      }),
+    ).toEqual({
+      decision: 'approved',
+      feedback: undefined,
+      selectedLabel: 'Approve all',
     });
   });
 });

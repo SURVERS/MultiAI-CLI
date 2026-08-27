@@ -547,6 +547,18 @@ export async function fetchMultiAIModels(options: {
     if (item === null || typeof item !== 'object') return [];
     const record = item as Record<string, unknown>;
     if (typeof record['id'] !== 'string' || record['id'].length === 0) return [];
+    const capabilities = Array.isArray(record['capabilities'])
+      ? record['capabilities'].filter(
+          (candidate): candidate is string =>
+            typeof candidate === 'string' && candidate.length > 0,
+        )
+      : undefined;
+    const supportEfforts = Array.isArray(record['support_efforts'])
+      ? record['support_efforts'].filter(
+          (candidate): candidate is string =>
+            typeof candidate === 'string' && candidate.length > 0,
+        )
+      : undefined;
     return [{
       id: record['id'],
       inputMultiplier:
@@ -557,6 +569,14 @@ export async function fetchMultiAIModels(options: {
           : undefined,
       outputMultiplier:
         typeof record['output_multiplier'] === 'number' ? record['output_multiplier'] : undefined,
+      capabilities:
+        capabilities !== undefined && capabilities.length > 0 ? capabilities : undefined,
+      supportEfforts:
+        supportEfforts !== undefined && supportEfforts.length > 0 ? supportEfforts : undefined,
+      defaultEffort:
+        typeof record['default_effort'] === 'string' && record['default_effort'].length > 0
+          ? record['default_effort']
+          : undefined,
     }];
   });
 }

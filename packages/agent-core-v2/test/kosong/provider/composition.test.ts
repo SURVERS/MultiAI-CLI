@@ -646,6 +646,39 @@ async function captureAnthropicBody(
   return { params: capturedParams, requestOptions: capturedRequestOptions, via };
 }
 
+describe('Gemini Chat Completions tool history', () => {
+  it('adds the thought-signature fallback when the gateway omitted it', async () => {
+    const provider = new OpenAILegacyChatProvider({
+      model: 'gemini-3.6-flash',
+      apiKey: 'sk-probe',
+      stream: false,
+    });
+    const history: Message[] = [
+      {
+        role: 'assistant',
+        content: [],
+        toolCalls: [
+          { type: 'function', id: 'call_lookup', name: 'lookup', arguments: '{"q":"hi"}' },
+        ],
+      },
+      {
+        role: 'tool',
+        content: [{ type: 'text', text: 'result' }],
+        toolCallId: 'call_lookup',
+        toolCalls: [],
+      },
+    ];
+
+    const body = await captureOpenAIBody(provider, undefined, history);
+    const messages = body['messages'] as Array<Record<string, unknown>>;
+    const toolCalls = messages[0]?.['tool_calls'] as Array<Record<string, unknown>>;
+
+    expect(toolCalls[0]?.['extra_content']).toEqual({
+      google: { thought_signature: 'skip_thought_signature_validator' },
+    });
+  });
+});
+
 async function captureGoogleBody(
   provider: ChatProvider,
   options?: GenerateOptions,

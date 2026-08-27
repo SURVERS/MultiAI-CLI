@@ -1,4 +1,8 @@
-import type { CreateSessionOptions, MultiAIHarness, Session } from '@multiai/sdk';
+import {
+  MULTIAI_PROVIDER_NAME,
+  applyManagedMultiAIModelProfiles,
+} from '@multiai/oauth';
+import type { CreateSessionOptions, MultiAIConfig, MultiAIHarness, Session } from '@multiai/sdk';
 
 import { createMultiAICliUserAgent } from '#/cli/version';
 
@@ -7,7 +11,6 @@ import type { SkillListSession } from '../commands';
 import { OAUTH_LOGIN_REQUIRED_STARTUP_NOTICE } from '../constant/multiai-tui';
 import {
   refreshAllProviderModels,
-  type RefreshProviderScope,
   type RefreshResult,
 } from '../utils/refresh-providers';
 import { thinkingEffortFromConfig } from '../utils/thinking-config';
@@ -37,17 +40,19 @@ export interface AuthFlowHost {
   updateTerminalTitle(): void;
   refreshSkillCommands(session?: SkillListSession): Promise<void>;
   refreshPluginCommands(session?: Session): Promise<void>;
+  showStatus(message: string, color?: string): void;
 }
 
 export class AuthFlowController {
   constructor(private readonly host: AuthFlowHost) {}
 
-  async refreshAvailableModels(): Promise<void> {
-    const config = await this.host.harness.getConfig({ reload: true });
+  async refreshAvailableModels(): Promise<MultiAIConfig> {
+    const config = await this.loadConfigWithManagedProfiles();
     this.host.setAppState({
       availableModels: config.models ?? {},
       availableProviders: config.providers ?? {},
     });
+    return config;
   }
 
   enterLoginRequiredStartupState(): void {
@@ -117,7 +122,7 @@ export class AuthFlowController {
 
   async refreshConfigAfterLogin(): Promise<void> {
     const { host } = this;
-    const config = await host.harness.getConfig({ reload: true });
+    const config = await this.loadConfigWithManagedProfiles();
     const availableModels = config.models ?? {};
     const availableProviders = config.providers ?? {};
     const defaultModel = host.options.startup.model ?? config.defaultModel;
@@ -151,6 +156,14 @@ export class AuthFlowController {
     });
   }
 
+  private async loadConfigWithManagedProfiles(): Promise<MultiAIConfig> {
+    const { host } = this;
+    const config = await host.harness.getConfig({ reload: true });
+    const next = structuredClone(config);
+    if (!applyManagedMultiAIModelProfiles(next)) return config;
+    return host.harness.setConfig({ models: next.models });
+  }
+
   /**
    * Re-fetch model lists from every provider whose upstream supports it
    * (managed OAuth, open platforms, custom registries) and update local
@@ -158,14 +171,29 @@ export class AuthFlowController {
    * and returned instead of thrown.
    */
   async refreshProviderModels(): Promise<RefreshResult> {
-    return this.refreshProviderModelsWithScope('all');
+    const oauth = await this.refreshOAuthProviderModels();
+    const discovered = await this.refreshDiscoverableProviderModels();
+    return {
+      changed: [...oauth.changed, ...discovered.changed],
+      unchanged: [...oauth.unchanged, ...discovered.unchanged],
+      failed: [...oauth.failed, ...discovered.failed],
+    };
   }
 
   async refreshOAuthProviderModels(): Promise<RefreshResult> {
-    return this.refreshProviderModelsWithScope('oauth');
+    const { host } = this;
+    const previousManagedAliases = new Set(
+      Object.entries(host.state.appState.availableModels)
+        .filter(([, model]) => model.provider === MULTIAI_PROVIDER_NAME)
+        .map(([alias]) => alias),
+    );
+    const result = await host.harness.auth.refreshModels();
+    const config = await this.refreshAvailableModels();
+    await this.reconcileDisabledActiveModel(previousManagedAliases, config);
+    return result;
   }
 
-  private async refreshProviderModelsWithScope(scope: RefreshProviderScope): Promise<RefreshResult> {
+  private async refreshDiscoverableProviderModels(): Promise<RefreshResult> {
     const { host } = this;
     const result = await refreshAllProviderModels(
       {
@@ -178,11 +206,59 @@ export class AuthFlowController {
         },
         userAgent: createMultiAICliUserAgent(),
       },
-      { scope },
+      { scope: 'all' },
     );
     if (result.changed.length > 0) {
       await this.refreshAvailableModels();
     }
     return result;
+  }
+
+  private async reconcileDisabledActiveModel(
+    previousManagedAliases: ReadonlySet<string>,
+    config: MultiAIConfig,
+  ): Promise<void> {
+    const { host } = this;
+    const activeModel = host.state.appState.model;
+    const availableModels = config.models ?? {};
+    if (!previousManagedAliases.has(activeModel) || availableModels[activeModel] !== undefined) {
+      return;
+    }
+
+    const fallback =
+      config.defaultModel !== undefined && availableModels[config.defaultModel] !== undefined
+        ? config.defaultModel
+        : Object.keys(availableModels)[0];
+    if (fallback === undefined) {
+      host.setAppState({ model: '', thinkingEffort: 'off', maxContextTokens: 0 });
+      host.showStatus(
+        `${activeModel} is no longer available. Select another provider after one is configured.`,
+        'warning',
+      );
+      return;
+    }
+
+    if (host.session === undefined) {
+      host.setAppState({ model: fallback });
+      return;
+    }
+    if (host.state.appState.streamingPhase !== 'idle') {
+      host.showStatus(
+        `${activeModel} is no longer available. Switch to ${fallback} after the current response finishes.`,
+        'warning',
+      );
+      return;
+    }
+
+    try {
+      await host.session.setModel(fallback);
+      await host.syncRuntimeState(host.session);
+      host.showStatus(`${activeModel} is no longer available. Switched to ${fallback}.`, 'warning');
+    } catch (error) {
+      host.showStatus(
+        `Could not switch from disabled model ${activeModel}: ${error instanceof Error ? error.message : String(error)}`,
+        'warning',
+      );
+    }
   }
 }

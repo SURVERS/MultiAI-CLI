@@ -29,7 +29,9 @@ import {
 } from './openai-common';
 import {
   convertChatCompletionStreamToolCall,
+  extraContentToolCallExtras,
   type BufferedChatCompletionToolCall,
+  toolCallExtraContent,
 } from './chat-completions-stream';
 import { ReasoningKeyDialect } from './reasoning-key';
 import {
@@ -58,6 +60,7 @@ const OPENAI_CHAT_TOOL_CALL_ID_POLICY: ToolCallIdPolicy = {
   normalize: (id) => sanitizeToolCallId(id, 64),
   maxLength: 64,
 };
+const GEMINI_SKIP_THOUGHT_SIGNATURE = 'skip_thought_signature_validator';
 
 function responseFormatToOpenAI(format: ResponseFormat): Record<string, unknown> {
   if (format.type === 'json_object') {
@@ -125,6 +128,19 @@ interface OpenAIToolCallOut {
   type: string;
   id: string;
   function: { name: string; arguments: string | null };
+  extra_content?: unknown;
+}
+
+function isGemini3Model(model: string): boolean {
+  return /(?:^|\/)gemini-3(?:[.-]|$)/i.test(model);
+}
+
+function outboundToolCallExtraContent(toolCall: ToolCall, model: string): unknown {
+  const preserved = toolCallExtraContent(toolCall.extras);
+  if (preserved !== undefined) return preserved;
+  return isGemini3Model(model)
+    ? { google: { thought_signature: GEMINI_SKIP_THOUGHT_SIGNATURE } }
+    : undefined;
 }
 
 function usesMaxCompletionTokens(model: string): boolean {
@@ -157,6 +173,7 @@ function normalizeGenerationKwargs(
 
 function convertMessage(
   message: Message,
+  model: string,
   reasoningKey: string,
   toolMessageConversion: ToolMessageConversion,
 ): OpenAIMessage {
@@ -224,6 +241,7 @@ function convertMessage(
       type: tc.type,
       id: tc.id,
       function: { name: tc.name, arguments: tc.arguments },
+      extra_content: outboundToolCallExtraContent(tc, model),
     }));
   }
 
@@ -297,6 +315,7 @@ function appendToolResultMediaMessage(
 
 function convertHistoryMessages(
   history: readonly Message[],
+  model: string,
   reasoningKey: string,
   toolMessageConversion: ToolMessageConversion,
 ): OpenAIMessage[] {
@@ -311,7 +330,7 @@ function convertHistoryMessages(
     if (msg.role !== 'tool') {
       appendToolResultMediaMessage(messages, pendingToolResultMedia);
     }
-    messages.push(convertMessage(msg, reasoningKey, toolMessageConversion));
+    messages.push(convertMessage(msg, model, reasoningKey, toolMessageConversion));
     if (msg.role === 'tool') {
       pendingToolResultMedia.push(...toolResultImageParts(msg));
     }
@@ -403,6 +422,9 @@ export class OpenAILegacyStreamedMessage implements StreamedMessage {
           id: toolCall.id || crypto.randomUUID(),
           name: toolCall.function.name,
           arguments: toolCall.function.arguments,
+          extras: extraContentToolCallExtras(
+            (toolCall as unknown as { extra_content?: unknown }).extra_content,
+          ),
         } satisfies ToolCall;
       }
     }
@@ -556,6 +578,7 @@ export class OpenAILegacyChatProvider implements ChatProvider {
     messages.push(
       ...convertHistoryMessages(
         normalizedHistory,
+        this._model,
         this._reasoningKeyDialect.outboundKey(),
         this._toolMessageConversion,
       ),

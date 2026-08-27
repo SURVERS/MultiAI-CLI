@@ -13,6 +13,8 @@ import type {
   ApprovalResponse,
   Event,
   GoalSnapshot,
+  MultiAIAuthModelRefreshResult,
+  MultiAIConfig,
 } from '@multiai/sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -284,6 +286,11 @@ function makeHarness(session = makeSession(), overrides: Record<string, unknown>
       status: vi.fn(),
       login: vi.fn(),
       logout: vi.fn(),
+      refreshModels: vi.fn(async () => ({
+        changed: [],
+        unchanged: [],
+        failed: [],
+      })),
       getManagedUsage: vi.fn(),
       submitFeedback: vi.fn(
         async (): Promise<
@@ -1411,6 +1418,38 @@ command = "vim"
     const transcript = stripSgr(renderTranscript(driver));
     expect(transcript).not.toContain('hello');
     expect(transcript).not.toContain('Approved: Run shell command');
+  });
+
+  it('enables yolo and resolves the current approval when Approve all is chosen', async () => {
+    const { driver, session } = await makeDriver();
+    const approvalHandler = vi.mocked(session.setApprovalHandler).mock.calls[0]?.[0] as
+      | ((request: ApprovalRequest) => Promise<ApprovalResponse>)
+      | undefined;
+    if (approvalHandler === undefined) throw new Error('expected approval handler');
+
+    const response = approvalHandler({
+      toolCallId: 'call_write',
+      toolName: 'Write',
+      action: 'Write a file',
+      display: {
+        kind: 'generic',
+        summary: 'Write a file',
+        detail: { file_path: 'src/example.ts', content: 'export {}' },
+      },
+    });
+
+    await vi.waitFor(() => {
+      expect(driver.state.editorContainer.children[0]).toBeInstanceOf(ApprovalPanelComponent);
+    });
+    (driver.state.editorContainer.children[0] as ApprovalPanelComponent).handleInput('3');
+
+    await expect(response).resolves.toEqual({
+      decision: 'approved',
+      feedback: undefined,
+      selectedLabel: 'Approve all',
+    });
+    expect(session.setPermission).toHaveBeenCalledWith('yolo');
+    expect(driver.state.appState.permissionMode).toBe('yolo');
   });
 
   it('removes debug timing status from undone turns', async () => {
@@ -5068,55 +5107,90 @@ command = "vim"
     });
   });
 
-  it('refreshes only OAuth provider models before opening /model picker', async () => {
-    const { driver } = await makeDriver(makeSession(), {
-      getConfig: vi.fn(async () => ({
+  it('switches away from a disabled current model before showing refreshed /model choices', async () => {
+    let config: MultiAIConfig = {
+      providers: {
+        'managed:multiai': {
+          type: 'openai_responses',
+          baseUrl: 'https://multiai.example.test/v1',
+          apiKey: '',
+        },
+      },
+      defaultModel: 'k2',
+      models: {
+        k2: {
+          provider: 'managed:multiai',
+          model: 'old-model',
+          maxContextSize: 100,
+          displayName: 'Old model',
+        },
+        fresh: {
+          provider: 'managed:multiai',
+          model: 'fresh-model',
+          maxContextSize: 100,
+          displayName: 'Fresh model',
+        },
+      },
+    };
+    const refreshModels = vi.fn(async (): Promise<MultiAIAuthModelRefreshResult> => ({
+      changed: [],
+      unchanged: ['managed:multiai'],
+      failed: [],
+    }));
+    const session = makeSession();
+    const { driver } = await makeDriver(session, {
+      getConfig: vi.fn(async () => config),
+      auth: {
+        refreshModels,
+      },
+    });
+    await vi.waitFor(() => {
+      expect(refreshModels).toHaveBeenCalled();
+    });
+    refreshModels.mockClear();
+    refreshModels.mockImplementation(async () => {
+      config = {
+        ...config,
+        defaultModel: 'fresh',
         models: {
-          k2: {
+          fresh: {
             provider: 'managed:multiai',
-            model: 'kimi-k2',
+            model: 'fresh-model',
             maxContextSize: 100,
-            displayName: 'Old Kimi K2',
-            capabilities: ['thinking'],
+            displayName: 'Fresh model',
           },
         },
-      })),
+      };
+      return {
+        changed: [
+          {
+            providerId: 'managed:multiai',
+            providerName: 'MultiAI',
+            added: 0,
+            removed: 1,
+          },
+        ],
+        unchanged: [],
+        failed: [],
+      };
     });
     const tui = driver as unknown as MultiAITUI;
     const refreshProviderModels = vi
       .spyOn(tui.authFlow, 'refreshProviderModels')
       .mockRejectedValue(new Error('full provider refresh should not run'));
-    const refreshOAuthProviderModels = vi.fn(async () => {
-      await Promise.resolve();
-      tui.setAppState({
-        availableModels: {
-          k2: {
-            provider: 'managed:multiai',
-            model: 'kimi-k2',
-            maxContextSize: 100,
-            displayName: 'Fresh Kimi K2',
-            capabilities: ['thinking'],
-          },
-        },
-      });
-      return { changed: [], unchanged: ['managed:multiai'], failed: [] };
-    });
-    (
-      tui.authFlow as unknown as {
-        refreshOAuthProviderModels: typeof refreshOAuthProviderModels;
-      }
-    ).refreshOAuthProviderModels = refreshOAuthProviderModels;
 
     driver.handleUserInput('/model');
 
     await vi.waitFor(() => {
+      expect(session.setModel).toHaveBeenCalledWith('fresh');
       const picker = driver.state.editorContainer.children[0];
       expect(picker).toBeInstanceOf(TabbedModelSelectorComponent);
       const output = stripSgr((picker as TabbedModelSelectorComponent).render(120).join('\n'));
-      expect(output).toContain('Fresh Kimi K2');
-      expect(output).not.toContain('Old Kimi K2');
+      expect(output).toContain('Fresh model');
+      expect(output).not.toContain('Old model');
     });
-    expect(refreshOAuthProviderModels).toHaveBeenCalledOnce();
+    expect(driver.state.appState.model).toBe('fresh');
+    expect(refreshModels).toHaveBeenCalledOnce();
     expect(refreshProviderModels).not.toHaveBeenCalled();
   });
 
@@ -5577,6 +5651,71 @@ describe('/model status displayName override', () => {
 });
 
 describe('/effort support_efforts override', () => {
+  it('offers and applies managed GPT effort levels after upgrading a sparse OAuth model entry', async () => {
+    let config = {
+      providers: {
+        'managed:multiai': {
+          type: 'openai_responses' as const,
+          baseUrl: 'https://multiai.example.test/v1',
+          oauth: { storage: 'keyring' as const, key: 'oauth/multiai' },
+        },
+      },
+      models: {
+        'multiai/gpt-5.6-sol': {
+          provider: 'managed:multiai',
+          model: 'gpt-5.6-sol',
+        },
+      },
+      defaultModel: 'multiai/gpt-5.6-sol',
+      thinking: { enabled: false },
+    };
+    let thinkingEffort = 'off';
+    const session = makeSession({
+      getStatus: vi.fn(async () => ({
+        model: 'multiai/gpt-5.6-sol',
+        thinkingEffort,
+        permission: 'manual',
+        planMode: false,
+        contextTokens: 0,
+        maxContextTokens: 100,
+        contextUsage: 0,
+      })),
+      setThinking: vi.fn(async (effort: string) => {
+        thinkingEffort = effort;
+      }),
+    });
+    const setConfig = vi.fn(async (patch: Record<string, unknown>) => {
+      config = { ...config, ...patch } as typeof config;
+      return config;
+    });
+    const { driver } = await makeDriver(session, {
+      getConfig: vi.fn(async () => structuredClone(config)),
+      setConfig,
+    });
+
+    driver.handleUserInput('/effort');
+
+    await vi.waitFor(() => {
+      expect(driver.state.editorContainer.children[0]).toBeInstanceOf(EffortSelectorComponent);
+    });
+    const picker = driver.state.editorContainer.children[0] as EffortSelectorComponent;
+    const rendered = picker.render(120).join('\n');
+    expect(rendered).toContain('Low');
+    expect(rendered).toContain('Xhigh');
+    expect(rendered).toContain('Max');
+    expect(rendered).not.toContain('Ultra');
+
+    picker.handleInput(`${String.fromCodePoint(27)}[C`);
+    picker.handleInput('\r');
+
+    await vi.waitFor(() => {
+      expect(session.setThinking).toHaveBeenCalledWith('low');
+    });
+    await vi.waitFor(() => {
+      expect(setConfig).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('warns and applies efforts hidden by an Anthropic support_efforts override', async () => {
     const session = makeSession();
     const { driver } = await makeDriver(session, {

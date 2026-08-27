@@ -1087,7 +1087,7 @@ describe('MultiAITUI startup', () => {
     expect(write).toHaveBeenCalledWith(DISABLE_TERMINAL_THEME_REPORTING);
   });
 
-  it("only shows provider refresh status for added models", async () => {
+  it("reports every nonzero provider model delta after refresh", async () => {
     const harness = makeHarness();
     const driver = makeDriver(harness, makeStartupInput());
     const showStatus = vi.spyOn(driver as any, "showStatus").mockImplementation(() => {});
@@ -1103,8 +1103,9 @@ describe('MultiAITUI startup', () => {
 
     await (driver as any).refreshProviderModelsInBackground();
 
-    expect(showStatus).toHaveBeenCalledTimes(1);
+    expect(showStatus).toHaveBeenCalledTimes(2);
     expect(showStatus).toHaveBeenCalledWith("New Models · +2 models.");
+    expect(showStatus).toHaveBeenCalledWith("Removed Models · -3 models.");
   });
 
   it("starts TUI without a session when fresh startup needs OAuth login", async () => {

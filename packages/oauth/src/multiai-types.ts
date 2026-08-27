@@ -111,6 +111,9 @@ export interface MultiAIModelInfo {
   readonly inputMultiplier?: number;
   readonly cachedInputMultiplier?: number;
   readonly outputMultiplier?: number;
+  readonly capabilities?: readonly string[];
+  readonly supportEfforts?: readonly string[];
+  readonly defaultEffort?: string;
 }
 
 export interface MultiAIBrowserAuthorization {

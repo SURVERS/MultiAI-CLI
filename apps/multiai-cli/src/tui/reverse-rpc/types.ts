@@ -100,7 +100,7 @@ export type DisplayBlock =
 
 export interface ApprovalPanelChoice {
   label: string;
-  response: 'approved' | 'approved_for_session' | 'rejected' | 'cancelled';
+  response: 'approved' | 'approved_for_session' | 'approved_all' | 'rejected' | 'cancelled';
   selected_label?: string | undefined;
   requires_feedback?: boolean | undefined;
   // Optional helper text shown dim beneath the label. Omitted/empty renders

@@ -120,6 +120,7 @@ export type {
   MultiAIAuthLoginOptions,
   MultiAIAuthLoginResult,
   MultiAIAuthLogoutResult,
+  MultiAIAuthModelRefreshResult,
 } from '#/auth';
 
 export * from '#/events';

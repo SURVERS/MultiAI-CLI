@@ -27,7 +27,7 @@ import type {
 } from '#/tui/reverse-rpc/types';
 
 export interface ApprovalPanelResponse {
-  readonly response: 'approved' | 'approved_for_session' | 'rejected' | 'cancelled';
+  readonly response: 'approved' | 'approved_for_session' | 'approved_all' | 'rejected' | 'cancelled';
   readonly feedback?: string | undefined;
   readonly selected_label?: string | undefined;
 }

@@ -45,9 +45,13 @@ function truecolorCodes(text: string): Set<string> {
   return codes;
 }
 
-/** The two header rows (logo + title) of the rendered welcome box. */
-function headerOf(lines: string[]): string {
-  return [lines[3], lines[4]].join('\n');
+function stripAnsi(text: string): string {
+  return text.replaceAll(/\u001B\[[0-9;]*m/g, '');
+}
+
+/** The six rows of the full-size MULTIAI wordmark. */
+function logoOf(lines: string[]): string {
+  return lines.slice(1, 7).join('\n');
 }
 
 function setDanceView(colored: boolean, phase: number): void {
@@ -74,25 +78,53 @@ describe('WelcomeComponent', () => {
   });
 
   it('renders the banner in a single brand color by default', () => {
-    const codes = truecolorCodes(headerOf(new WelcomeComponent(appState).render(80)));
+    const codes = truecolorCodes(logoOf(new WelcomeComponent(appState).render(80)));
 
-    // No rainbow by default — just the brand primary (plus the dim tagline).
+    // No rainbow by default — just the primary-to-accent brand treatment.
     expect(codes.size).toBeLessThanOrEqual(2);
   });
 
   it('paints the banner in rainbow while colored', () => {
     setDanceView(true, 0);
-    const codes = truecolorCodes(headerOf(new WelcomeComponent(appState).render(80)));
+    const codes = truecolorCodes(logoOf(new WelcomeComponent(appState).render(80)));
 
     expect(codes.size).toBeGreaterThanOrEqual(5);
   });
 
   it('renders exactly the default banner when not colored', () => {
-    const base = headerOf(new WelcomeComponent(appState).render(80));
+    const base = logoOf(new WelcomeComponent(appState).render(80));
     setDanceView(false, 5);
-    const off = headerOf(new WelcomeComponent(appState).render(80));
+    const off = logoOf(new WelcomeComponent(appState).render(80));
 
     expect(off).toBe(base);
+  });
+
+  it('renders a large wordmark without the old welcome box', () => {
+    const lines = new WelcomeComponent(appState).render(80).map(stripAnsi);
+
+    expect(lines.slice(1, 7)).toEqual([
+      '  ███╗   ███╗██╗   ██╗██╗  ████████╗██╗ █████╗ ██╗',
+      '  ████╗ ████║██║   ██║██║  ╚══██╔══╝██║██╔══██╗██║',
+      '  ██╔████╔██║██║   ██║██║     ██║   ██║███████║██║',
+      '  ██║╚██╔╝██║██║   ██║██║     ██║   ██║██╔══██║██║',
+      '  ██║ ╚═╝ ██║╚██████╔╝███████╗██║   ██║██║  ██║██║',
+      '  ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝╚═╝  ╚═╝╚═╝',
+    ]);
+    expect(lines.slice(8, 12)).toEqual([
+      '  Directory: /tmp/project',
+      '  Session:   ses-1',
+      '  Model:     kimi-k2',
+      '  Version:   1.2.3',
+    ]);
+    expect(lines.join('\n')).not.toMatch(/Welcome to|[╭╰│]/);
+  });
+
+  it('uses a compact MULTIAI title when the full wordmark does not fit', () => {
+    const lines = new WelcomeComponent(appState).render(40).map(stripAnsi);
+
+    expect(lines[1]).toBe('  MULTIAI');
+    expect(lines).toContain('  Directory: /tmp/project');
+    expect(lines).toContain('  Model:     kimi-k2');
   });
 
   it('keeps every line within the requested width on narrow terminals', () => {

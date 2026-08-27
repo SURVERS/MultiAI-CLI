@@ -12,9 +12,15 @@ import {
 import {
   fetchAccountSnapshot,
   fetchAuthorizationServerMetadata,
+  fetchMultiAIModels,
   requestDeviceAuthorization,
   verifyIdToken,
 } from '../src/multiai-client';
+import {
+  applyManagedMultiAIConfig,
+  applyManagedMultiAIModelProfiles,
+  type ManagedMultiAIConfigShape,
+} from '../src/managed-multiai';
 import type {
   MultiAIOAuthConfig,
   OAuthAuthorizationServerMetadata,
@@ -61,6 +67,156 @@ describe('MultiAI OAuth configuration', () => {
         MULTIAI_OAUTH_CLIENT_ID: 'staging-client-id',
       }).clientId,
     ).toBe('staging-client-id');
+  });
+});
+
+describe('MultiAI managed model reasoning metadata', () => {
+  it('assigns the model-specific reasoning controls to a sparse managed catalog', () => {
+    const managedConfig: ManagedMultiAIConfigShape = { providers: {}, models: {} };
+
+    applyManagedMultiAIConfig(managedConfig, [
+      { id: 'gpt-5.6-sol' },
+      { id: 'gemini-3.6-flash' },
+      { id: 'deepseek-v4-pro' },
+      { id: 'mimo-v2.5' },
+      { id: 'gpt-image-2' },
+    ]);
+
+    expect(managedConfig.models).toMatchObject({
+      'multiai/gpt-5.6-sol': {
+        capabilities: ['thinking'],
+        supportEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
+        defaultEffort: 'high',
+      },
+      'multiai/gemini-3.6-flash': {
+        capabilities: ['always_thinking'],
+        supportEfforts: ['minimal', 'low', 'medium', 'high'],
+        protocol: 'openai',
+      },
+      'multiai/deepseek-v4-pro': {
+        capabilities: ['thinking'],
+        supportEfforts: ['high', 'max'],
+      },
+      'multiai/mimo-v2.5': {
+        capabilities: ['thinking'],
+      },
+      'multiai/gpt-image-2': {
+        provider: 'managed:multiai',
+        model: 'gpt-image-2',
+      },
+    });
+    expect(managedConfig.models?.['multiai/gpt-image-2']?.capabilities).toBeUndefined();
+  });
+
+  it('uses the same reasoning profile for the ma-prefixed route alias', () => {
+    const managedConfig: ManagedMultiAIConfigShape = { providers: {}, models: {} };
+
+    applyManagedMultiAIConfig(managedConfig, [{ id: 'ma-gpt-5.6-sol' }]);
+
+    expect(managedConfig.models?.['multiai/ma-gpt-5.6-sol']).toMatchObject({
+      capabilities: ['thinking'],
+      supportEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
+      defaultEffort: 'high',
+    });
+  });
+
+  it('routes ma-prefixed Gemini aliases through OpenAI Chat Completions', () => {
+    const managedConfig: ManagedMultiAIConfigShape = { providers: {}, models: {} };
+
+    applyManagedMultiAIConfig(managedConfig, [{ id: 'ma-gemini-3.6-flash' }]);
+
+    expect(managedConfig.models?.['multiai/ma-gemini-3.6-flash']).toMatchObject({
+      capabilities: ['always_thinking'],
+      protocol: 'openai',
+    });
+  });
+
+  it('upgrades an existing Gemini alias to the Chat Completions transport', () => {
+    const managedConfig: ManagedMultiAIConfigShape = {
+      providers: {},
+      models: {
+        'multiai/gemini-3.6-flash': {
+          provider: 'managed:multiai',
+          model: 'gemini-3.6-flash',
+          capabilities: ['thinking'],
+          protocol: 'anthropic',
+          betaApi: true,
+          adaptiveThinking: true,
+        },
+      },
+    };
+
+    expect(applyManagedMultiAIModelProfiles(managedConfig)).toBe(true);
+    expect(managedConfig.models?.['multiai/gemini-3.6-flash']).toMatchObject({
+      capabilities: ['always_thinking'],
+      protocol: 'openai',
+    });
+    expect(managedConfig.models?.['multiai/gemini-3.6-flash']?.betaApi).toBeUndefined();
+    expect(managedConfig.models?.['multiai/gemini-3.6-flash']?.adaptiveThinking).toBeUndefined();
+  });
+
+  it('keeps explicit reasoning metadata returned by the server authoritative', async () => {
+    const models = await fetchMultiAIModels({
+      metadata: metadata(),
+      accessToken: 'access-token',
+      fetchImpl: vi.fn(async () =>
+        Response.json({
+          data: [
+            {
+              id: 'gpt-5.6-sol',
+              capabilities: ['thinking'],
+              support_efforts: ['minimal', 'high'],
+              default_effort: 'minimal',
+            },
+          ],
+        }),
+      ),
+    });
+    const managedConfig: ManagedMultiAIConfigShape = { providers: {}, models: {} };
+
+    applyManagedMultiAIConfig(managedConfig, models);
+
+    expect(managedConfig.models?.['multiai/gpt-5.6-sol']).toMatchObject({
+      supportEfforts: ['minimal', 'high'],
+      defaultEffort: 'minimal',
+    });
+  });
+
+  it('removes disabled models and resets thinking when the managed default changes', () => {
+    const managedConfig: ManagedMultiAIConfigShape = { providers: {}, models: {} };
+    applyManagedMultiAIConfig(managedConfig, [{ id: 'old-model' }, { id: 'kept-model' }]);
+    managedConfig.defaultModel = 'multiai/old-model';
+    managedConfig.thinking = { enabled: true, effort: 'max' };
+
+    applyManagedMultiAIConfig(managedConfig, [{ id: 'kept-model' }, { id: 'new-model' }], {
+      preserveDefaultModel: true,
+    });
+
+    expect(managedConfig.models?.['multiai/old-model']).toBeUndefined();
+    expect(managedConfig.models?.['multiai/new-model']).toMatchObject({
+      provider: 'managed:multiai',
+      model: 'new-model',
+    });
+    expect(managedConfig.defaultModel).toBe('multiai/kept-model');
+    expect(managedConfig.thinking).toBeUndefined();
+  });
+
+  it('falls back to a configured external model when every managed model is disabled', () => {
+    const managedConfig: ManagedMultiAIConfigShape = {
+      providers: {
+        external: { type: 'openai_legacy', baseUrl: 'https://api.example.test/v1', apiKey: 'key' },
+      },
+      models: {
+        'external/model': { provider: 'external', model: 'model' },
+      },
+    };
+    applyManagedMultiAIConfig(managedConfig, [{ id: 'old-model' }]);
+    managedConfig.defaultModel = 'multiai/old-model';
+
+    applyManagedMultiAIConfig(managedConfig, [], { preserveDefaultModel: true });
+
+    expect(managedConfig.models?.['multiai/old-model']).toBeUndefined();
+    expect(managedConfig.defaultModel).toBe('external/model');
   });
 });
 

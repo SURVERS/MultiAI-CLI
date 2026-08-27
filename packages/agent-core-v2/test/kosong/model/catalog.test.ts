@@ -441,6 +441,35 @@ describe('Model assembly (pure data)', () => {
       host.dispose();
     }
   });
+
+  it('assembles a managed Gemini alias on the OpenAI Chat Completions transport', () => {
+    const { host, catalog } = createHost({
+      providers: {
+        'managed:multiai': {
+          type: 'multiai',
+          apiKey: 'managed-token',
+          baseUrl: 'https://gateway.example.test/v1',
+        },
+      },
+      models: {
+        'multiai/gemini-3.6-flash': {
+          provider: 'managed:multiai',
+          model: 'gemini-3.6-flash',
+          protocol: 'openai',
+          supportEfforts: ['minimal', 'low', 'medium', 'high'],
+        },
+      },
+    });
+    try {
+      const model = catalog.get('multiai/gemini-3.6-flash');
+      expect(model.protocol).toBe('openai');
+      expect(model.baseUrl).toBe('https://gateway.example.test/v1');
+      expect(model.supportEfforts).toEqual(['minimal', 'low', 'medium', 'high']);
+      expect(model.providerOptions).toBeUndefined();
+    } finally {
+      host.dispose();
+    }
+  });
 });
 
 describe('ModelCatalog caching and config-event invalidation', () => {

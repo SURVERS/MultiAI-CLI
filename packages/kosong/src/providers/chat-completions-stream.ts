@@ -1,5 +1,7 @@
 import type { StreamedMessagePart, ToolCall } from '#/message';
 
+export const OPENAI_TOOL_CALL_EXTRA_CONTENT = 'openai_extra_content';
+
 export interface ChatCompletionStreamToolFunctionDelta {
   readonly name?: string;
   readonly arguments?: string;
@@ -9,12 +11,26 @@ export interface ChatCompletionStreamToolCallDelta {
   readonly index?: number | string;
   readonly id?: string;
   readonly function?: ChatCompletionStreamToolFunctionDelta | null;
+  readonly extra_content?: unknown;
 }
 
 export interface BufferedChatCompletionToolCall {
   id?: string;
   arguments: string;
   emitted: boolean;
+  extraContent?: unknown;
+}
+
+export function toolCallExtraContent(extras: Record<string, unknown> | undefined): unknown {
+  return extras?.[OPENAI_TOOL_CALL_EXTRA_CONTENT];
+}
+
+export function extraContentToolCallExtras(
+  extraContent: unknown,
+): Record<string, unknown> | undefined {
+  return extraContent === undefined
+    ? undefined
+    : { [OPENAI_TOOL_CALL_EXTRA_CONTENT]: extraContent };
 }
 
 /**
@@ -48,6 +64,7 @@ export function convertChatCompletionStreamToolCall(
           id: toolCall.id ?? crypto.randomUUID(),
           name: functionName,
           arguments: functionArguments ?? null,
+          extras: extraContentToolCallExtras(toolCall.extra_content),
         } satisfies ToolCall,
       ];
     }
@@ -64,6 +81,9 @@ export function convertChatCompletionStreamToolCall(
   const buffered = bufferedByIndex.get(streamIndex) ?? { arguments: '', emitted: false };
   if (toolCall.id !== undefined) {
     buffered.id = toolCall.id;
+  }
+  if (toolCall.extra_content !== undefined) {
+    buffered.extraContent = toolCall.extra_content;
   }
 
   if (!buffered.emitted) {
@@ -88,6 +108,7 @@ export function convertChatCompletionStreamToolCall(
       id: buffered.id ?? toolCall.id ?? crypto.randomUUID(),
       name: functionName,
       arguments: initialArguments,
+      extras: extraContentToolCallExtras(buffered.extraContent),
       _streamIndex: streamIndex,
     };
     return [toolCallHeader];

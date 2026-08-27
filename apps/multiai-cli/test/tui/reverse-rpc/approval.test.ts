@@ -83,6 +83,33 @@ describe('approval reverse-rpc', () => {
     await expect(second).resolves.toEqual({ decision: 'approved' });
   });
 
+  it('auto-approves every queued request after approve all regardless of action', async () => {
+    const controller = new ApprovalController();
+    const panel = (id: string, action: string) => ({
+      id,
+      tool_call_id: id,
+      tool_name: 'Bash',
+      action,
+      description: '',
+      display: [],
+      choices: [],
+    });
+
+    const first = controller.show(panel('tc-1', 'run command: ls'));
+    const second = controller.show(panel('tc-2', 'edit src/x.ts'));
+    const third = controller.show(panel('tc-3', 'fetch https://example.test'));
+
+    controller.respond({ decision: 'approved', selectedLabel: 'Approve all' });
+
+    await expect(first).resolves.toEqual({
+      decision: 'approved',
+      selectedLabel: 'Approve all',
+    });
+    await expect(second).resolves.toEqual({ decision: 'approved' });
+    await expect(third).resolves.toEqual({ decision: 'approved' });
+    expect(controller.hasPending()).toBe(false);
+  });
+
   it('ApprovalController cancels pending requests with a cancelled response', async () => {
     const controller = new ApprovalController();
     const pending = controller.show({

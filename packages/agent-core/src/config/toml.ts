@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, open } from 'node:fs/promises';
 import { dirname } from 'pathe';
 
+import { applyManagedMultiAIModelProfiles } from '@multiai/oauth';
+
 import { ErrorCodes, MultiAIError } from '#/errors';
 import { applyEnvModelConfig, stripEnvModelConfig } from './env-model';
 import {
@@ -104,7 +106,7 @@ export function loadRuntimeConfig(
   filePath: string,
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): MultiAIConfig {
-  return applyEnvModelConfig(readConfigFile(filePath), env);
+  return applyManagedModelProfiles(applyEnvModelConfig(readConfigFile(filePath), env));
 }
 
 export interface RuntimeConfigLoadResult {
@@ -200,7 +202,14 @@ export function loadRuntimeConfigSafe(
     );
   }
 
+  config = applyManagedModelProfiles(config);
+
   return { config, fileWarnings, envWarnings, fileError };
+}
+
+function applyManagedModelProfiles(config: MultiAIConfig): MultiAIConfig {
+  applyManagedMultiAIModelProfiles(config);
+  return config;
 }
 
 /** Sections keyed by user-chosen names where single entries can be dropped. */

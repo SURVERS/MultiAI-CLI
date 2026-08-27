@@ -7,6 +7,7 @@ import type { ApprovalPanelChoice, ApprovalPanelData, DisplayBlock } from '#/tui
 const DEFAULT_APPROVAL_CHOICES: ApprovalPanelChoice[] = [
   { label: 'Approve once', response: 'approved' },
   { label: 'Approve for this session', response: 'approved_for_session' },
+  { label: 'Approve all', response: 'approved_all', selected_label: 'Approve all' },
   { label: 'Reject', response: 'rejected' },
   { label: 'Reject with feedback', response: 'rejected', requires_feedback: true },
 ];
@@ -159,6 +160,13 @@ export function adaptPanelResponse(response: ApprovalPanelResponse): ApprovalRes
       scope: 'session',
       feedback: response.feedback,
       selectedLabel: response.selected_label,
+    };
+  }
+  if (response.response === 'approved_all') {
+    return {
+      decision: 'approved',
+      feedback: response.feedback,
+      selectedLabel: response.selected_label ?? 'Approve all',
     };
   }
   return {
