@@ -1,0 +1,134 @@
+/**
+ * Scenario: loading native SEA assets from the cache.
+ * Responsibilities: resolve, extract, validate, and repair packaged native assets.
+ * Wiring: a fake SEA source drives the real cache implementation on a temporary filesystem.
+ * Run: pnpm --filter multiai-cli exec vitest run test/native/native-assets.test.ts
+ */
+import { createHash } from 'node:crypto';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
+import {
+  getNativeCacheBase,
+  getNativePackageRoot,
+  NATIVE_ASSET_MANIFEST_VERSION,
+  type NativeAssetManifest,
+  type NativeAssetSource,
+} from '#/native/native-assets';
+import { loadNativePackage } from '#/native/native-require';
+
+function sha256(bytes: Buffer | string): string {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+function fakeManifest(files: Record<string, string>): {
+  manifest: NativeAssetManifest;
+  source: NativeAssetSource;
+} {
+  const assetEntries = Object.entries(files).map(([relativePath, content]) => {
+    const assetKey = `native/test-target/${relativePath}`;
+    return {
+      assetKey,
+      relativePath,
+      sha256: sha256(content),
+    };
+  });
+  const manifest: NativeAssetManifest = {
+    version: NATIVE_ASSET_MANIFEST_VERSION,
+    target: 'test-target',
+    packages: [
+      {
+        name: 'fake-native',
+        root: 'node_modules/fake-native',
+        files: assetEntries,
+      },
+    ],
+  };
+  const manifestKey = 'native/test-target/manifest.json';
+  const assets = new Map<string, Buffer>([
+    [manifestKey, Buffer.from(JSON.stringify(manifest))],
+    ...Object.entries(files).map(([relativePath, content]) => [
+      `native/test-target/${relativePath}`,
+      Buffer.from(content),
+    ] as const),
+  ]);
+  return {
+    manifest,
+    source: {
+      getAssetKeys: () => [...assets.keys()],
+      getRawAsset: (assetKey) => {
+        const asset = assets.get(assetKey);
+        if (asset === undefined) throw new Error(`missing test asset: ${assetKey}`);
+        return asset;
+      },
+    },
+  };
+}
+
+describe('native assets', () => {
+  it('uses MULTIAI_CACHE_DIR as the native cache base when present', () => {
+    expect(
+      getNativeCacheBase({
+        env: { MULTIAI_CACHE_DIR: '/tmp/multiai-cache' },
+        homeDir: '/home/example',
+        platform: 'linux',
+      }),
+    ).toBe('/tmp/multiai-cache');
+  });
+
+  it('extracts package assets and repairs corrupted cache files', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'multiai-native-assets-'));
+    try {
+      const { manifest, source } = fakeManifest({
+        'node_modules/fake-native/package.json': '{"main":"index.js"}',
+        'node_modules/fake-native/index.js': "module.exports = { value: 'ok' };\n",
+      });
+
+      const packageRoot = getNativePackageRoot('fake-native', {
+        cacheBase: dir,
+        manifest,
+        source,
+        version: 'test',
+      });
+      expect(packageRoot).toBe(join(dir, 'native', 'test', 'test-target', sha256(JSON.stringify(manifest)), 'node_modules', 'fake-native'));
+      expect(readFileSync(join(packageRoot ?? '', 'index.js'), 'utf-8')).toContain("value: 'ok'");
+
+      writeFileSync(join(packageRoot ?? '', 'index.js'), 'broken');
+      const repairedRoot = getNativePackageRoot('fake-native', {
+        cacheBase: dir,
+        manifest,
+        source,
+        version: 'test',
+      });
+      expect(repairedRoot).toBe(packageRoot);
+      expect(readFileSync(join(repairedRoot ?? '', 'index.js'), 'utf-8')).toContain("value: 'ok'");
+      expect(existsSync(join(dir, 'native', 'test', 'test-target'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('loads a package from extracted native assets', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'multiai-native-require-'));
+    try {
+      const { manifest, source } = fakeManifest({
+        'node_modules/fake-native/package.json': '{"main":"index.js"}',
+        'node_modules/fake-native/index.js': "module.exports = { value: 'ok' };\n",
+      });
+
+      const pkg = loadNativePackage<{ value: string }>('fake-native', {
+        cacheBase: dir,
+        manifest,
+        source,
+        version: 'test',
+      });
+
+      expect(pkg).toEqual({ value: 'ok' });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

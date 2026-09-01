@@ -1,0 +1,61 @@
+import type { MultiAIConfig } from '@multiai/sdk';
+
+import { currentTheme, lightColors } from '#/tui/theme';
+import { loadTuiConfig, type TuiConfig } from '../config';
+import { t } from '../i18n';
+import type { SlashCommandHost } from './dispatch';
+import { setExperimentalFeatures } from './experimental-flags';
+
+export async function handleReloadTuiCommand(host: SlashCommandHost): Promise<void> {
+  const tuiConfig = await loadTuiConfig();
+  await applyReloadedTuiConfig(host, tuiConfig);
+  host.showStatus(t('TUI config reloaded.', 'Конфигурация TUI перезагружена.'), 'success');
+}
+
+export async function handleReloadCommand(host: SlashCommandHost): Promise<void> {
+  const tuiConfig = await loadTuiConfig();
+  const session = host.session;
+
+  if (session !== undefined) {
+    await session.reloadSession({ forcePluginSessionStartReminder: true });
+    await host.reloadCurrentSessionView(session, t('Session reloaded.', 'Сессия перезагружена.'));
+  }
+
+  const config = await host.harness.getConfig({ reload: true });
+  setExperimentalFeatures(await host.harness.getExperimentalFeatures());
+  host.refreshSlashCommandAutocomplete();
+  applyRuntimeConfig(host, config);
+  await applyReloadedTuiConfig(host, tuiConfig);
+
+  if (session === undefined) {
+    host.showStatus(
+      t('Runtime and TUI config reloaded; no active session.', 'Конфигурация среды и TUI перезагружена; активной сессии нет.'),
+      'success',
+    );
+  }
+}
+
+export async function applyReloadedTuiConfig(
+  host: SlashCommandHost,
+  config: TuiConfig,
+): Promise<void> {
+  const resolved = config.theme === 'auto'
+    ? (currentTheme.palette === lightColors ? 'light' : 'dark')
+    : undefined;
+  await host.applyTheme(config.theme, resolved);
+  host.refreshTerminalThemeTracking();
+  host.setAppState({
+    editorCommand: config.editorCommand,
+    disablePasteBurst: config.disablePasteBurst,
+    notifications: config.notifications,
+    upgrade: config.upgrade,
+  });
+  host.state.editor.setDisablePasteBurst(config.disablePasteBurst);
+}
+
+function applyRuntimeConfig(host: SlashCommandHost, config: MultiAIConfig): void {
+  host.setAppState({
+    availableModels: config.models ?? {},
+    availableProviders: config.providers ?? {},
+  });
+}

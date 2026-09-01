@@ -1,0 +1,19 @@
+{
+  "changelog": ["@changesets/changelog-github", { "repo": "SURVERS/MultiAI-CLI" }],
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@multiai/vis",
+    "@multiai/vis-server",
+    "@multiai/vis-web",
+    "@multiai/inspect"
+  ],
+  "snapshot": {
+    "useCalculatedVersion": true,
+    "prereleaseTemplate": "{tag}-{commit}"
+  }
+}

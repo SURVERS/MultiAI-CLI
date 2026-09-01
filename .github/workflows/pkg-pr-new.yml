@@ -1,0 +1,53 @@
+name: pkg.pr.new
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish MultiAI CLI preview
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'SURVERS' && github.event.pull_request.draft == false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package dependencies
+        run: pnpm run build:packages
+
+      - name: Build MultiAI web assets
+        run: pnpm --filter @multiai/web run build
+
+      - name: Generate MultiAI CLI built-in catalog
+        shell: bash
+        run: |
+          CATALOG_FILE="$RUNNER_TEMP/multiai-cli-built-in-catalog.json"
+          node apps/multiai-cli/scripts/update-catalog.mjs --out "$CATALOG_FILE"
+          echo "MULTIAI_BUILT_IN_CATALOG_FILE=$CATALOG_FILE" >> "$GITHUB_ENV"
+
+      - name: Build MultiAI CLI package
+        run: pnpm --filter multiai-cli run build
+
+      - name: Publish pkg.pr.new preview
+        run: pnpm exec pkg-pr-new publish --bin --commentWithSha --packageManager=pnpm,npm --no-template './apps/multiai-cli'

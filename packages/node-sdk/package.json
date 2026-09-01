@@ -1,0 +1,71 @@
+{
+  "name": "@multiai/sdk",
+  "version": "0.14.1",
+  "private": true,
+  "description": "TypeScript SDK for the MultiAI coding agent",
+  "license": "MIT",
+  "author": "MultiAI",
+  "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/node-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",
+    "directory": "packages/node-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/SURVERS/MultiAI-CLI/issues"
+  },
+  "keywords": [
+    "multiai",
+    "sdk",
+    "typescript",
+    "agent",
+    "api"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs",
+        "default": "./dist/index.mjs"
+      }
+    },
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown && pnpm run build:dts",
+    "build:dts": "node scripts/build-dts.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist .tmp-api-extractor"
+  },
+  "dependencies": {
+    "@antfu/utils": "^9.3.0",
+    "smol-toml": "^1.6.1",
+    "yazl": "^3.3.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@multiai/agent-core": "workspace:^",
+    "@multiai/agent-core-v2": "workspace:^",
+    "@multiai/kaos": "workspace:^",
+    "@multiai/klient": "workspace:^",
+    "@multiai/kosong": "workspace:^",
+    "@multiai/oauth": "workspace:^",
+    "@types/yazl": "^2.4.6",
+    "jimp": "^1.6.1"
+  }
+}

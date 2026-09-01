@@ -1,0 +1,50 @@
+{
+  "name": "@multiai/oauth",
+  "version": "0.2.2",
+  "private": true,
+  "description": "OAuth 2.0 and OpenID Connect toolkit for MultiAI native clients",
+  "license": "MIT",
+  "author": "MultiAI",
+  "homepage": "https://github.com/SURVERS/MultiAI-CLI/tree/main/packages/oauth#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SURVERS/MultiAI-CLI.git",
+    "directory": "packages/oauth"
+  },
+  "bugs": {
+    "url": "https://github.com/SURVERS/MultiAI-CLI/issues"
+  },
+  "keywords": [
+    "multiai",
+    "oauth",
+    "authentication",
+    "auth",
+    "cli"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@napi-rs/keyring": "^1.3.0",
+    "jose": "^6.2.2",
+    "proper-lockfile": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/proper-lockfile": "^4.1.4"
+  }
+}

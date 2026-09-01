@@ -1,0 +1,16 @@
+export default {
+  dialogLabel: 'Смена модели',
+  title: 'Смена модели',
+  close: 'Закрыть (Esc)',
+  allTab: 'Все',
+  providerTabs: 'Поставщики моделей',
+  searchPlaceholder: 'Поиск моделей или поставщиков…',
+  loading: 'Загрузка моделей…',
+  unavailable: 'Демон пока не поддерживает список моделей',
+  contextSuffix: 'контекст {size}',
+  emptyNoModels: 'Демон не предоставил доступных моделей',
+  emptyNoMatch: 'Подходящих моделей нет',
+  starTitle: 'Добавить в избранное',
+  unstarTitle: 'Удалить из избранного',
+  footerHint: '↑↓ — выбор · Enter — применить · Esc — закрыть',
+} as const;
