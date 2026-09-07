@@ -57,8 +57,15 @@ function toStringArray(value: unknown): string[] | undefined {
 	return out.length > 0 ? out : undefined;
 }
 
+/** Строковое поле из index-signature объекта: только настоящие строки, без String(obj). */
+function stringField(value: unknown): string | undefined {
+	return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+}
+
 function prettyModelName(id: string): string {
-	return id.replace(/[_-]+/g, ' ').replace(/(^|\s)([a-z])/g, (_, s: string, c: string) => s + c.toUpperCase());
+	return id
+		.replaceAll(/[_-]+/g, ' ')
+		.replaceAll(/(^|\s)([a-z])/g, (_, s: string, c: string) => s + c.toUpperCase());
 }
 
 /** models.dev lookup: modelId (lowercase) → meta. Первый встреченный выигрывает. */
@@ -73,7 +80,7 @@ export async function fetchModelsDevLookup(): Promise<Map<string, CustomProvider
 		const payload = (await resp.json()) as Record<string, { models?: Record<string, Record<string, unknown>> }>;
 		for (const provider of Object.values(payload)) {
 		for (const [key, model] of Object.entries(provider.models ?? {})) {
-			const id = String(model['id'] ?? key).trim().toLowerCase();
+			const id = (stringField(model['id']) ?? key).trim().toLowerCase();
 			if (!id || lookup.has(id)) continue;
 			const limit = (model['limit'] ?? {}) as Record<string, unknown>;
 			const modalities = (model['modalities'] ?? {}) as Record<string, unknown>;
@@ -116,7 +123,7 @@ export async function fetchProviderOwnMeta(
 		for (const row of rows) {
 			if (!row || typeof row !== 'object') continue;
 			const ext = row as Record<string, unknown>;
-			const id = String(ext['id'] ?? ext['name'] ?? '').trim();
+			const id = (stringField(ext['id']) ?? stringField(ext['name']) ?? '').trim();
 			if (!id || lookup.has(id.toLowerCase())) continue;
 			const contextWindow =
 				toFiniteInt(ext['context_length']) ??
@@ -227,7 +234,7 @@ export async function planCustomProvider(options: {
 
 	const aliases: Record<string, CustomAliasFields> = {};
 	let enrichedCount = 0;
-	for (const id of [...ids].sort()) {
+	for (const id of Array.from(ids).sort((a, b) => a.localeCompare(b))) {
 		const fields = mergeMeta(ownMeta.get(id.toLowerCase()), devMeta.get(id.toLowerCase()));
 		if (Object.keys(fields).length > 0) enrichedCount += 1;
 		aliases[`${options.providerId}/${id}`] = {
