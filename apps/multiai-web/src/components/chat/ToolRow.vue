@@ -4,12 +4,13 @@ import { inject, nextTick, ref } from 'vue';
 import Icon from '../ui/Icon.vue';
 import Tooltip from '../ui/Tooltip.vue';
 import StatusDot from '../ui/StatusDot.vue';
+import type { IconName } from '../../lib/icons';
 
 withDefaults(
   defineProps<{
     status: 'running' | 'ok' | 'error' | 'suspended';
-    /** Inline-SVG glyph string (toolGlyph), or empty for none. */
-    icon?: string;
+    /** Icon-catalog name (toolGlyph) — rendered via <Icon>, never v-html. */
+    icon?: IconName;
     name: string;
     arg?: string;
     time?: string;
@@ -19,7 +20,7 @@ withDefaults(
     stackPosition?: 'single' | 'first' | 'middle' | 'last';
   }>(),
   {
-    icon: '',
+    icon: undefined,
     arg: '',
     time: '',
     open: false,
@@ -54,7 +55,7 @@ function onHeadClick(): void {
     }"
   >
     <div class="bh" ref="bhEl" @click="onHeadClick">
-      <span v-if="icon" class="gl" v-html="icon" aria-hidden="true" />
+      <Icon v-if="icon" :name="icon" size="sm" class="gl" aria-hidden="true" />
       <span class="bh-text">
         <span class="a">{{ name }}</span>
         <Tooltip :text="arg">

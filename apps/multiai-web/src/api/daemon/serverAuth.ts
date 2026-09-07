@@ -9,19 +9,23 @@
 //      does not linger in history or screenshots.
 //   2. From a token the user types into the ServerAuthDialog modal.
 //
-// The credential is held in memory and mirrored to localStorage for up to 7
-// days so it survives tab close and browser restarts without becoming a
-// permanent browser-profile secret. The token is already persisted server-side
-// at <MULTIAI_HOME>/server.token and handed to the browser in the launch URL.
-// `multiai web rotate-token` invalidates a stale copy, and the next 401 clears
-// it here.
+// The credential is held in memory and mirrored to **sessionStorage** — a
+// tab-scoped store that never lands in the browser profile on disk and is
+// cleared when the tab closes. This deliberately downgrades the earlier
+// localStorage mirror (7-day TTL): a security review flagged the persistent
+// profile-stored bearer credential as the main exposure. Re-entry after a
+// browser restart is the accepted tradeoff; `multiai web` re-launch appends
+// a fresh fragment token, so the normal flow does not require typing.
+// `multiai web rotate-token` invalidates a stale copy, and the next 401
+// clears it here.
 
 const STORAGE_KEY = 'multiai-web.server-credential';
 const FRAGMENT_PARAM = 'token';
-const CREDENTIAL_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** Session-scoped mirror TTL: bounded, well under a browser-session length. */
+const CREDENTIAL_TTL_MS = 12 * 60 * 60 * 1000;
 
 interface StoredCredential {
-  version: 1;
+  version: 2;
   credential: string;
   expiresAt: number;
 }
@@ -52,7 +56,7 @@ function readFragmentToken(): string | undefined {
 
 function createStoredCredential(credential: string): StoredCredential {
   return {
-    version: 1,
+    version: 2,
     credential,
     expiresAt: Date.now() + CREDENTIAL_TTL_MS,
   };
@@ -68,7 +72,7 @@ function decodeStoredCredential(raw: string): StoredCredential | undefined {
     if (typeof parsed !== 'object' || parsed === null) return undefined;
     const record = parsed as Record<string, unknown>;
     if (
-      record['version'] !== 1 ||
+      record['version'] !== 2 ||
       typeof record['credential'] !== 'string' ||
       record['credential'].length === 0 ||
       typeof record['expiresAt'] !== 'number' ||
@@ -77,7 +81,7 @@ function decodeStoredCredential(raw: string): StoredCredential | undefined {
       return undefined;
     }
     return {
-      version: 1,
+      version: 2,
       credential: record['credential'],
       expiresAt: record['expiresAt'],
     };
@@ -87,7 +91,8 @@ function decodeStoredCredential(raw: string): StoredCredential | undefined {
 }
 
 function persistCredential(stored: StoredCredential): void {
-  globalThis.localStorage?.setItem(
+  // sessionStorage only: tab-scoped, never persisted to the browser profile.
+  globalThis.sessionStorage?.setItem(
     STORAGE_KEY,
     encodeStoredCredential(stored),
   );
@@ -95,71 +100,17 @@ function persistCredential(stored: StoredCredential): void {
 
 function loadStored(): StoredCredential | undefined {
   try {
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-    if (raw) {
-      const stored = decodeStoredCredential(raw);
-      if (stored === undefined) {
-        // Upgrade values written by the initial localStorage implementation,
-        // before persisted credentials carried an expiry timestamp.
-        const migrated = createStoredCredential(raw);
-        let migrationRecorded = false;
-        try {
-          persistCredential(migrated);
-          migrationRecorded = true;
-        } catch {
-          // If the expiring record cannot be written, remove the undated value
-          // so a reload cannot grant it a fresh 7-day window again.
-        }
-        if (!migrationRecorded) {
-          try {
-            if (globalThis.localStorage?.getItem(STORAGE_KEY) === raw) {
-              globalThis.localStorage?.removeItem(STORAGE_KEY);
-            }
-            migrationRecorded = true;
-          } catch {
-            // Neither persisting nor removing succeeded; do not use a value
-            // whose lifetime cannot be bounded.
-          }
-        }
-        try {
-          globalThis.sessionStorage?.removeItem(STORAGE_KEY);
-        } catch {
-          // The local migration result above still determines whether it is safe.
-        }
-        return migrationRecorded ? migrated : undefined;
-      }
-      if (stored.expiresAt > Date.now()) return stored;
-      // Do not revive an expired local credential from a leftover legacy
-      // sessionStorage copy. Clear that tab-local copy first; if it cannot be
-      // removed, keep the expired local record as a tombstone that prevents
-      // the legacy value from receiving a new 7-day window on reload.
+    const raw = globalThis.sessionStorage?.getItem(STORAGE_KEY);
+    if (!raw) return undefined;
+    const stored = decodeStoredCredential(raw);
+    if (stored === undefined) {
+      // Unparseable or legacy (v1) value — drop it rather than adopt it, so
+      // nothing written by the old localStorage-era code survives.
       globalThis.sessionStorage?.removeItem(STORAGE_KEY);
-      if (globalThis.localStorage?.getItem(STORAGE_KEY) === raw) {
-        globalThis.localStorage?.removeItem(STORAGE_KEY);
-      }
       return undefined;
     }
-    // One-time upgrade: older builds kept the credential in sessionStorage
-    // (tab-scoped). Adopt it into localStorage so the update itself does not
-    // force the re-entry this change is meant to eliminate.
-    const legacy = globalThis.sessionStorage?.getItem(STORAGE_KEY);
-    if (legacy) {
-      const migrated = createStoredCredential(legacy);
-      let migrationRecorded = false;
-      try {
-        persistCredential(migrated);
-        migrationRecorded = true;
-      } catch {
-        // Fall through and try to discard the undated session copy instead.
-      }
-      try {
-        globalThis.sessionStorage?.removeItem(STORAGE_KEY);
-        migrationRecorded = true;
-      } catch {
-        // If both operations fail, its lifetime cannot be bounded.
-      }
-      return migrationRecorded ? migrated : undefined;
-    }
+    if (stored.expiresAt > Date.now()) return stored;
+    globalThis.sessionStorage?.removeItem(STORAGE_KEY);
     return undefined;
   } catch {
     return undefined;
@@ -194,26 +145,22 @@ export function getCredential(): string | undefined {
 function clearExpiredCredential(expired: StoredCredential): void {
   memory = undefined;
   try {
-    // Keep the expired local record as a tombstone if the legacy session copy
-    // cannot be cleared; otherwise a reload could migrate it into a fresh TTL.
-    globalThis.sessionStorage?.removeItem(STORAGE_KEY);
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
+    const raw = globalThis.sessionStorage?.getItem(STORAGE_KEY);
     const stored = raw === null || raw === undefined
       ? undefined
       : decodeStoredCredential(raw);
-    const matchesExpired = stored === undefined
-      ? raw === expired.credential
-      : stored.credential === expired.credential &&
-        stored.expiresAt === expired.expiresAt;
-    if (matchesExpired) {
-      globalThis.localStorage?.removeItem(STORAGE_KEY);
+    const matchesExpired = stored !== undefined &&
+      stored.credential === expired.credential &&
+      stored.expiresAt === expired.expiresAt;
+    if (matchesExpired || raw === expired.credential) {
+      globalThis.sessionStorage?.removeItem(STORAGE_KEY);
     }
   } catch {
     // ignore
   }
 }
 
-/** Store a credential in memory and in localStorage for up to 7 days. */
+/** Store a credential in memory and in the tab-scoped sessionStorage mirror. */
 export function setCredential(value: string): void {
   const stored = createStoredCredential(value);
   memory = stored;
@@ -222,38 +169,14 @@ export function setCredential(value: string): void {
   } catch {
     // Storage may be unavailable (private mode) — memory still works.
   }
-  try {
-    // Drop any legacy sessionStorage copy so the two stores cannot diverge.
-    // Best-effort even when localStorage is blocked — otherwise a stale
-    // session-scoped value left behind gets re-migrated (and 401s) on the
-    // next reload.
-    globalThis.sessionStorage?.removeItem(STORAGE_KEY);
-  } catch {
-    // ignore
-  }
 }
 
-/** Drop the credential (memory + localStorage). */
+/** Drop the credential (memory + sessionStorage). */
 export function clearCredential(): void {
-  const rejected = memory;
   memory = undefined;
   try {
-    // Only clear the persisted copy when it still holds the credential this
-    // tab was using. localStorage is shared across tabs, so an unconditional
-    // removal would let a stale tab erase a newer token another tab stored
-    // (e.g. right after `multiai web rotate-token`).
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
-    const stored = raw === null || raw === undefined
-      ? undefined
-      : decodeStoredCredential(raw);
-    const persistedCredential = stored?.credential ?? raw;
-    const matchesRejected = rejected !== undefined &&
-      persistedCredential === rejected.credential;
-    if (matchesRejected) {
-      globalThis.localStorage?.removeItem(STORAGE_KEY);
-    }
-    // sessionStorage is tab-scoped (legacy store) — clearing it cannot
-    // affect other tabs.
+    // sessionStorage is tab-scoped: this tab's mirror cannot hold another
+    // tab's rotated token, so an unconditional removal is always safe.
     globalThis.sessionStorage?.removeItem(STORAGE_KEY);
   } catch {
     // ignore

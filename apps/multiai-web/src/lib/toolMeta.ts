@@ -81,9 +81,9 @@ export function toolLabel(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// toolGlyph: a small inline SVG string for a tool name, rendered from the
-// shared icon registry (lib/icons.ts) at sm (14px). Returns '' for unknown
-// tools (no glyph). Suitable for v-html in a 14×14 container.
+// toolGlyph: the icon-catalog name for a tool name, rendered via the <Icon>
+// component (never v-html). Derived from the shared icon registry
+// (lib/icons.ts) at sm (14px). Falls back to 'tool' for unknown tools.
 // ---------------------------------------------------------------------------
 
 const TOOL_GLYPH: Record<string, IconName> = {
@@ -111,12 +111,12 @@ const TOOL_GLYPH: Record<string, IconName> = {
   crondelete: 'calendar-close',
 };
 
-export function toolGlyph(name: string): string {
+export function toolGlyph(name: string): IconName {
   const key = normalizeToolName(name);
   let icon = TOOL_GLYPH[key];
   if (!icon && (name ?? '').trim().toLowerCase().includes('skill')) icon = 'bolt';
   if (!icon) icon = 'tool';
-  return iconSvg(icon, 'sm');
+  return icon;
 }
 
 // ---------------------------------------------------------------------------
