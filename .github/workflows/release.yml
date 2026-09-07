@@ -56,7 +56,11 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm changeset publish
+          # changeset publish alone can fail after a successful npm publish:
+          # the GitHub Release body it generates (full CHANGELOG entry) may
+          # exceed the 125k body limit (the 1.0.0 entry is ~250 KB). The
+          # wrapper trims oversized release bodies after publishing.
+          publish: node scripts/publish-with-trim.mjs
           version: pnpm run version:release
           commit: "ci: release packages"
           title: "ci: release packages"
