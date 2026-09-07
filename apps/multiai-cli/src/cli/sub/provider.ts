@@ -34,6 +34,12 @@ import {
 } from '@multiai/sdk';
 import type { Command } from 'commander';
 
+import {
+  adaptCustomBaseUrl,
+  applyCustomDirectProvider,
+  planCustomProvider,
+  type CustomWire,
+} from '#/cli/sub/custom-provider';
 import { createMultiAIHostIdentity, createMultiAICliUserAgent } from '#/cli/version';
 import { t } from '#/tui/i18n';
 
@@ -68,6 +74,15 @@ interface CatalogAddOptions {
   readonly defaultModel?: string;
   readonly url?: string;
   readonly baseUrl?: string;
+}
+
+interface SetOptions {
+  readonly apiKey?: string;
+  readonly wire?: string;
+  readonly baseUrl: string;
+  readonly model?: string[];
+  readonly defaultModel?: string;
+  readonly noEnrich?: boolean;
 }
 
 export async function handleProviderAdd(
@@ -148,6 +163,86 @@ export async function handleProviderAdd(
   for (const id of addedProviderIds) {
     deps.stdout.write(`  - ${id}\n`);
   }
+}
+
+/**
+ * `provider set` — direct custom-provider registration: the user supplies an
+ * endpoint + key for any OpenAI-compatible or Anthropic wire. Model metadata
+ * is enriched from the provider's own /v1/models (context, output, modalities,
+ * reasoning) and models.dev, mirroring the Desktop IDE behavior.
+ */
+export async function handleProviderSet(
+  deps: ProviderDeps,
+  providerId: string,
+  opts: SetOptions,
+): Promise<void> {
+  const apiKey = resolveApiKey(opts.apiKey, deps.env);
+  if (apiKey === undefined) {
+    deps.stderr.write(
+      `${t('API key is required: pass --api-key or set MULTIAI_REGISTRY_API_KEY.', 'Нужен API-ключ: передайте --api-key или задайте MULTIAI_REGISTRY_API_KEY.')}\n`,
+    );
+    deps.exit(1);
+  }
+  const wire: CustomWire = opts.wire === 'anthropic' ? 'anthropic' : 'openai';
+  const baseUrl = adaptCustomBaseUrl(opts.baseUrl, wire);
+  if (baseUrl.length === 0) {
+    deps.stderr.write(`${t('Base URL is required.', 'Необходимо указать Base URL.')}\n`);
+    deps.exit(1);
+  }
+  try {
+    void new URL(baseUrl);
+  } catch {
+    deps.stderr.write(`${t(`Invalid base URL: ${baseUrl}`, `Некорректный Base URL: ${baseUrl}`)}\n`);
+    deps.exit(1);
+  }
+
+  const modelIds = (opts.model ?? []).map((m) => m.trim()).filter((m) => m.length > 0);
+  const defaultModelId = opts.defaultModel?.trim();
+
+  const plan = await planCustomProvider({
+    providerId,
+    wire,
+    baseUrl,
+    apiKey,
+    modelIds,
+    skipEnrichment: opts.noEnrich === true,
+  });
+
+  const harness = deps.getHarness();
+  await harness.ensureConfigFile();
+  let config = await harness.getConfig();
+  // setConfig — deep-merge: старые алиасы этого провайдера не удалить патчем,
+  // поэтому при перезаписи сначала снимаем провайдера целиком.
+  if (config.providers[providerId] !== undefined) {
+    config = await harness.removeProvider(providerId);
+  }
+  const chosenDefault =
+    defaultModelId !== undefined && defaultModelId.length > 0
+      ? `${providerId}/${defaultModelId}`
+      : undefined;
+  const firstAlias = applyCustomDirectProvider(config, plan, chosenDefault);
+  await harness.setConfig({
+    providers: config.providers,
+    models: config.models,
+    ...(chosenDefault !== undefined || firstAlias !== ''
+      ? { defaultModel: config.defaultModel }
+      : {}),
+  });
+
+  const modelCount = Object.keys(plan.aliases).length;
+  deps.stdout.write(
+    `${t(
+      `Provider "${providerId}" saved (wire: ${wire}, base: ${baseUrl}).`,
+      `Провайдер «${providerId}» сохранён (протокол: ${wire}, база: ${baseUrl}).`,
+    )}\n`,
+  );
+  deps.stdout.write(
+    `${t(
+      `Models: ${String(modelCount)} (enriched metadata for ${String(plan.enrichedCount)}).`,
+      `Моделей: ${String(modelCount)} (с метаданными: ${String(plan.enrichedCount)}).`,
+    )}\n`,
+  );
+  deps.stdout.write(`${t('Default model:', 'Модель по умолчанию:')} ${config.defaultModel ?? firstAlias}\n`);
 }
 
 export async function handleProviderRemove(
@@ -481,6 +576,25 @@ export function registerProviderCommand(parent: Command, deps?: Partial<Provider
     });
 
   provider
+    .command('set <providerId>')
+    .description(
+      t(
+        'Register a custom provider directly: any OpenAI-compatible or Anthropic endpoint. Model metadata (context, output limit, modalities, reasoning) is enriched from the provider and models.dev automatically.',
+        'Прямая регистрация кастомного провайдера: любой OpenAI-совместимый или Anthropic-эндпоинт. Метаданные моделей (контекст, лимит вывода, модальности, размышление) добираются автоматически из провайдера и models.dev.',
+      ),
+    )
+    .option('--base-url <url>', t('Provider API base URL (e.g. https://api.example.com/v1).', 'Базовый URL API провайдера (например, https://api.example.com/v1).'))
+    .option('--api-key <key>', t('Provider API key. Falls back to MULTIAI_REGISTRY_API_KEY.', 'API-ключ провайдера. Если не указан, используется MULTIAI_REGISTRY_API_KEY.'))
+    .option('--wire <protocol>', t('Wire protocol: openai (default) or anthropic.', 'Протокол: openai (по умолчанию) или anthropic.'))
+    .option('--model <id>', t('Model id to register; repeatable. Omits when the provider lists its models itself.', 'ID модели; можно повторять. Не обязательно, если провайдер сам отдаёт список моделей.'), collectModel)
+    .option('--default-model <modelId>', t('Set this model as default_model after saving.', 'Назначить модель моделью по умолчанию после сохранения.'))
+    .option('--no-enrich', t('Skip metadata enrichment (offline mode).', 'Пропустить обогащение метаданных (офлайн-режим).'), false)
+    .action(async (providerId: string, options: SetOptions) => {
+      const resolved = resolveDeps(deps);
+      await runAction(resolved, () => handleProviderSet(resolved, providerId, options));
+    });
+
+  provider
     .command('list')
     .description(t('Show configured providers and their model counts.', 'Показать настроенных провайдеров и количество их моделей.'))
     .option('--json', t('Emit the raw providers/models config as JSON.', 'Вывести исходную конфигурацию провайдеров и моделей в формате JSON.'), false)
@@ -565,6 +679,13 @@ function resolveApiKey(flag: string | undefined, env: NodeJS.ProcessEnv): string
   const fromEnv = env['MULTIAI_REGISTRY_API_KEY'];
   if (typeof fromEnv === 'string' && fromEnv.length > 0) return fromEnv;
   return undefined;
+}
+
+/** Commander collector for repeatable `--model <id>` options. */
+function collectModel(value: string, previous: string[] | undefined): string[] {
+  const acc = previous ?? [];
+  acc.push(value);
+  return acc;
 }
 
 function asManaged(config: MultiAIConfig): ProviderDiscoveryConfigShape {
