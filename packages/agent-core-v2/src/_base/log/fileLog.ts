@@ -279,7 +279,7 @@ export class MemoryLogWriter implements ILogWriter {
 
 export class ConsoleLogWriter implements ILogWriter {
   write(entry: LogEntry): void {
-    const { text } = formatEntry(entry, { ansi: process.stderr.isTTY === true });
+    const { text } = formatEntry(entry, { ansi:  process.stderr.isTTY });
     switch (entry.level) {
       case 'error':
         // eslint-disable-next-line no-console

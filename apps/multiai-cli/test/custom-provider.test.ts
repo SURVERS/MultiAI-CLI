@@ -44,6 +44,19 @@ describe('mergeMeta', () => {
 });
 
 describe('planCustomProvider', () => {
+	it('preserves provider model ID casing and namespaces', async () => {
+		vi.stubGlobal('fetch', vi.fn(async (url: string | URL) => new Response(
+			JSON.stringify(String(url).includes('models.dev') ? {} : { data: [{ id: 'Example/Chat-Large' }] }),
+			{ status: 200 },
+		)));
+		try {
+			const plan = await planCustomProvider({ providerId: 'custom', wire: 'openai',
+				baseUrl: 'https://example.test/v1', apiKey: 'YOUR_API_KEY', modelIds: [] });
+			expect(Object.keys(plan.aliases)).toEqual(['custom/Example/Chat-Large']);
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
 	it('merges provider /v1/models metadata with models.dev fallback', async () => {
 		vi.stubGlobal('fetch', vi.fn(async (url: string | URL) => {
 			const u = String(url);
@@ -56,7 +69,7 @@ describe('planCustomProvider', () => {
 			}
 			return new Response(JSON.stringify({
 				data: [
-					{ id: 'glm-5.2', name: 'GLM 5.2', context_length: 2_000_000, max_output_tokens: 65_536,
+						{ id: 'glm-5.2', name: 'GLM 5.2', context_length: 2_000_000, max_output_tokens: 65_536,
 						input_modalities: ['text'], supported_parameters: ['reasoning_effort'] },
 					{ id: 'mini-inhouse', context_window: 32_768 },
 				],

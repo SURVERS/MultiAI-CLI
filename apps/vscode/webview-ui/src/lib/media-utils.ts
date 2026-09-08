@@ -106,7 +106,7 @@ export function validateTotalSize(existingDataUris: string[], newDataUri: string
 function blobToDataUri(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () =>{  resolve(reader.result as string); };
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
@@ -115,7 +115,7 @@ function blobToDataUri(blob: Blob): Promise<string> {
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
+    img.onload = () =>{  resolve(img); };
     img.onerror = reject;
     img.src = src;
   });

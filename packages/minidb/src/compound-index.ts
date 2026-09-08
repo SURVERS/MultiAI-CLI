@@ -31,12 +31,12 @@ export interface CompoundIndexInfo {
 interface CompoundEntry {
   def: Required<CompoundIndexDef>;
   cmp: Comparator<unknown>;
-  groups: Map<unknown, SkipList<unknown, string>>; // groupValue -> ordered pks
+  groups: Map<unknown, SkipList<unknown>>; // groupValue -> ordered pks
   byPk: Map<string, { group: unknown; order: unknown }>; // pk -> current placement
 }
 
 function getPath(doc: unknown, path: string): unknown {
-  return path.split('.').reduce<unknown>((o, k) => (o === null || o === undefined ? undefined : (o as Record<string, unknown>)[k]), doc);
+  return path.split('.').reduce((o, k) => (o === null || o === undefined ? undefined : (o as Record<string, unknown>)[k]), doc);
 }
 
 export class CompoundIndexManager {
@@ -63,10 +63,10 @@ export class CompoundIndexManager {
     }));
   }
 
-  private groupOf(entry: CompoundEntry, group: unknown): SkipList<unknown, string> {
+  private groupOf(entry: CompoundEntry, group: unknown): SkipList<unknown> {
     let list = entry.groups.get(group);
     if (!list) {
-      list = new SkipList<unknown, string>({ compareKey: entry.cmp, compareVal: cmpString });
+      list = new SkipList<unknown>({ compareKey: entry.cmp, compareVal: cmpString });
       entry.groups.set(group, list);
     }
     return list;

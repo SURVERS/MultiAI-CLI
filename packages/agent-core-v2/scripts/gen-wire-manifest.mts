@@ -253,7 +253,7 @@ function emitTsDict(lines: string[], dict: SketchDict, indent: string): void {
     lines.push(`${indent}${fieldKey}${optional ? '?' : ''}: ${typeLines[0]}${typeLines.length === 1 ? ';' : ''}`);
     if (typeLines.length > 1) {
       lines.push(...typeLines.slice(1, -1));
-      lines.push(`${typeLines[typeLines.length - 1]};`);
+      lines.push(`${typeLines.at(-1)};`);
     }
   }
 }
@@ -296,7 +296,7 @@ function renderPayloadDecl(
       ...header,
       `type ${name} = { ${nameField} } & (${lines[0]}`,
       ...lines.slice(1, -1),
-      `${lines[lines.length - 1]});`,
+      `${lines.at(-1)});`,
       '',
     ];
   }
@@ -382,7 +382,7 @@ function splitObjectFields(body: string): Map<string, string> {
   for (const part of splitTopLevel(body)) {
     const keyMatch = /^([$\w]+|'[^']+'|"[^"]+")\s*:/.exec(part);
     if (keyMatch?.[1] !== undefined) {
-      const key = keyMatch[1].replace(/^['"]|['"]$/g, '');
+      const key = keyMatch[1].replaceAll(/^['"]|['"]$/g, '');
       fields.set(key, part.slice(keyMatch[0].length).trim());
     } else if (part.startsWith('...')) {
       fields.set(part, '');
@@ -495,7 +495,7 @@ function splitTsTypeFields(body: string): Map<string, TsField> {
   for (const part of splitTopLevel(body, [';', ','])) {
     const m = /^(?:readonly\s+)?([$\w]+|'[^']+'|"[^"]+")\s*(\?)?\s*:\s*(.+)$/.exec(part);
     if (m?.[1] !== undefined && m[3] !== undefined) {
-      fields.set(m[1].replace(/^['"]|['"]$/g, ''), {
+      fields.set(m[1].replaceAll(/^['"]|['"]$/g, ''), {
         type: m[3].trim(),
         optional: m[2] !== undefined,
       });
@@ -552,10 +552,11 @@ function findImportSource(file: string, name: string): string | undefined {
   const source = readCached(file);
   const re = /(?:import|export)\s+(?:type\s+)?\{([^}]+)\}\s*from\s*'([^']+)'/g;
   for (const m of source.matchAll(re)) {
-    for (const part of m[1]!.split(',')) {
+    for (const part of (m[1] ?? '').split(',')) {
       const named = /^(?:type\s+)?([\w$]+)(?:\s+as\s+([\w$]+))?$/.exec(part.trim());
       if (named === null) continue;
-      if ((named[2] ?? named[1]) === name) return m[2];
+      const source = m[2];
+      if (source !== undefined && (named[2] ?? named[1]) === name) return source;
     }
   }
   return undefined;
@@ -591,14 +592,15 @@ function summarizeTsUnion(
   });
   const bodies = resolved.map((m) => (m.trim().startsWith('{') ? objectBody(m.trim(), 0) : undefined));
   if (bodies.length > 0 && bodies.every((b) => b !== undefined)) {
-    const fieldMaps = bodies.map((b) => splitTsTypeFields(b!));
+    const fieldMaps = bodies.map((b) => splitTsTypeFields(b));
     // Discriminated union: one field is a string literal in every member.
-    for (const [name, info] of fieldMaps[0]!) {
+    const firstFields = fieldMaps[0] ?? new Map<string, { type: string }>();
+    for (const [name, info] of firstFields) {
       if (
         /^'[^']*'$/.test(info.type) &&
         fieldMaps.every((fm) => /^'[^']*'$/.test(fm.get(name)?.type ?? ''))
       ) {
-        const values = fieldMaps.map((fm) => tsQuote(fm.get(name)!.type.slice(1, -1)));
+        const values = fieldMaps.map((fm) => tsQuote((fm.get(name)?.type ?? '').slice(1, -1)));
         return truncate(`union on ${name}: ${values.join(' | ')}`, charBudget);
       }
     }
@@ -744,7 +746,10 @@ function friendlyZodExpr(expr: string, ownerFile: string, depth = 0): Sketch {
   if (record?.[1] !== undefined) {
     const parts = splitTopLevel(record[1]);
     if (parts.length === 2) {
-      return `record<string, ${stringifySketch(friendlyZodExpr(parts[1]!, ownerFile, depth + 1))}>`;
+      const valuePart = parts[1];
+      if (valuePart !== undefined) {
+        return `record<string, ${stringifySketch(friendlyZodExpr(valuePart, ownerFile, depth + 1))}>`;
+      }
     }
   }
   if (/^z\.\w*[oO]bject\(/.test(text)) {
@@ -790,7 +795,7 @@ function friendlyZodUnion(body: string, ownerFile: string, depth: number): strin
   const source = readCached(ownerFile);
   const bodies = members.map((m) => resolveSchemaLiteral(m, source));
   if (members.length > 0 && bodies.every((b) => b !== undefined)) {
-    const fieldMaps = bodies.map((b) => splitObjectFields(b!));
+    const fieldMaps = bodies.map((b) => splitObjectFields(b));
     // Hoist spreads shared by every member (`...base & { … } | { … }`).
     const spreadSets = fieldMaps.map((fm) => [...fm.keys()].filter((k) => fm.get(k) === ''));
     const commonSpreads = (spreadSets[0] ?? []).filter((s) =>

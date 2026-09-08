@@ -602,7 +602,7 @@ describe('Agent turn flow', () => {
     });
 
     // Let the first model step finish and the drain hold engage.
-    for (let i = 0; i < 100 && ctx.llmCalls.length < 1; i++) await delay(5);
+    for (let i = 0; i < 100 && ctx.llmCalls.length === 0; i++) await delay(5);
     await delay(20);
     expect(turnEnded).toBe(false);
 

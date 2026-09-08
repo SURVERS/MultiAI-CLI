@@ -28,7 +28,7 @@ import { mkdir, open, readFile, readdir, unlink } from 'node:fs/promises';
 import { FSWatcher } from 'chokidar';
 import { dirname, join, normalize } from 'pathe';
 
-import { DisposableStore, combinedDisposable, toDisposable, type IDisposable } from '#/_base/di/lifecycle';
+import { DisposableStore, combinedDisposable, toDisposable } from '#/_base/di/lifecycle';
 import { Emitter, type Event } from '#/_base/event';
 import { onUnexpectedError } from '#/_base/errors/unexpectedError';
 import { atomicWrite, atomicWriteStream, syncDir } from '#/_base/utils/fs';
@@ -181,7 +181,7 @@ export class FileStorageService implements IFileSystemStorageService {
 
     const schedule = (): void => {
       if (timer !== undefined) clearTimeout(timer);
-      timer = setTimeout(() => emitter.fire(), WATCH_DEBOUNCE_MS);
+      timer = setTimeout(() =>{  emitter.fire(); }, WATCH_DEBOUNCE_MS);
     };
 
     const arm = (): void => {
@@ -195,7 +195,7 @@ export class FileStorageService implements IFileSystemStorageService {
         watcher.on('all', (_event, changedPath) => {
           if (normalize(changedPath) === normalizedTarget) schedule();
         });
-        watcher.on('error', (error: unknown) => onUnexpectedError(error));
+        watcher.on('error', (error: unknown) =>{  onUnexpectedError(error); });
         watcher.add(dir);
       } catch (error) {
         onUnexpectedError(error);
@@ -227,7 +227,7 @@ export class FileStorageService implements IFileSystemStorageService {
       if (disposables instanceof DisposableStore) {
         disposables.add(combined);
       } else if (disposables !== undefined) {
-        (disposables as IDisposable[]).push(combined);
+        (disposables).push(combined);
       }
       return combined;
     };

@@ -29,7 +29,7 @@ export function globPatternToRegex(pattern: string, caseSensitive: boolean): Reg
           regex += '\\[';
         } else {
           let charClass = pattern.slice(i + 1, end);
-          charClass = charClass.replace(/\\/g, '\\\\');
+          charClass = charClass.replaceAll(/\\/g, '\\\\');
           if (charClass.startsWith('!')) {
             charClass = '^' + charClass.slice(1);
           } else if (charClass.startsWith('^')) {

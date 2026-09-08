@@ -1,3 +1,3 @@
 export function cleanSystemTags(text: string): string {
-  return text.replace(/<system>.*?<\/system>\s*/gs, "").trim();
+  return text.replaceAll(/<system>.*?<\/system>\s*/gs, "").trim();
 }

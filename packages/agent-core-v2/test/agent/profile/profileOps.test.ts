@@ -248,7 +248,7 @@ beforeEach(() => {
   log = host.log;
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(key = KEY): Promise<WireRecord[]> {
   await wire.flush();
@@ -288,7 +288,7 @@ describe('AgentProfileService (wire-backed config.update)', () => {
       },
       { type: 'config.update', thinkingEffort: 'on', time: expect.any(Number) },
     ]);
-    expect(records.every((record) => 'payload' in record === false)).toBe(true);
+    expect(records.every((record) => !( 'payload' in record))).toBe(true);
   });
 
   it('re-dispatching an equal config is a no-op on the model (same reference)', () => {

@@ -146,12 +146,12 @@ async function assertSameAsFreshOpen(db: ClusterDb<Doc>, dir: string, hot: numbe
   const ref = await MiniDb.open<Doc>({ dir: path.join(dir, shardDirName(hot, db.shardCount)), readOnly: true, valueCodec: 'json' });
   try {
     assert.deepEqual(await db.scan(), ref.scan(), 'scan equality with a fresh full open');
-    assert.deepEqual((await db.findEq('c', 'c3')).sort(sortByKey), ref.findEq('c', 'c3').sort(sortByKey), 'findEq equality');
+    assert.deepEqual((await db.findEq('c', 'c3')).toSorted(sortByKey), ref.findEq('c', 'c3').toSorted(sortByKey), 'findEq equality');
     const [crange, rrange] = [await db.findRange('n', { min: 100, max: 900 }), ref.findRange('n', { min: 100, max: 900 })];
-    assert.deepEqual(crange.sort(sortByKey), rrange.sort(sortByKey), 'findRange equality');
+    assert.deepEqual(crange.toSorted(sortByKey), rrange.toSorted(sortByKey), 'findRange equality');
     assert.deepEqual(await db.findEq('u', 'pre-u42'), ref.findEq('u', 'pre-u42'), 'unique-index equality');
     const [cs, rs] = [await db.search('t', 'alpha'), ref.search('t', 'alpha')];
-    assert.deepEqual(cs.sort(sortByKey), rs.sort(sortByKey), 'text search equality');
+    assert.deepEqual(cs.toSorted(sortByKey), rs.toSorted(sortByKey), 'text search equality');
   } finally {
     await ref.close();
   }
@@ -175,7 +175,7 @@ test(
         if (shardFor(key, shards) === hot) pre.push(key);
       }
       for (let j = 0; j < pre.length; j++) {
-        await setup.set(pre[j]!, { n: j, c: `c${j % 11}`, u: `pre-u${j}`, t: `alpha beta pre w${j % 17}` }, { dt: { created: 1700000100000 + j } });
+        await setup.set(pre[j], { n: j, c: `c${j % 11}`, u: `pre-u${j}`, t: `alpha beta pre w${j % 17}` }, { dt: { created: 1700000100000 + j } });
       }
       await setup.createIndex('c', { field: 'c' });
       await setup.createIndex('n', { field: 'n', type: 'range' });
@@ -186,7 +186,7 @@ test(
       // The parent's read-only cluster: first read opens and warms the cached
       // reader of the hot shard (records the WAL watermark).
       const db = await ClusterDb.open<Doc>({ dir, readOnly: true });
-      assert.equal((await db.get(pre[0]!))?.n, 0);
+      assert.equal((await db.get(pre[0]))?.n, 0);
       const stats0 = db.stats();
       assert.equal(stats0.readerReopens, 0);
       assert.equal(stats0.incrementalCatchups, 0);
@@ -200,7 +200,7 @@ test(
       // The first read after the storm catches the cached reader up by
       // applying ONLY the appended frames (exactly the storm's frame count);
       // no full reader reopen is allowed on this pure-append path.
-      await db.get(pre[1]!);
+      await db.get(pre[1]);
       const stats1 = db.stats();
       assert.ok(stats1.incrementalCatchups > 0, 'incremental catch-up happened');
       assert.equal(stats1.readerReopens - stats0.readerReopens, 0, 'no full reopen on the pure-append path');
@@ -239,7 +239,7 @@ test(
         if (shardFor(key, shards) === hot) pre.push(key);
       }
       for (let j = 0; j < pre.length; j++) {
-        await setup.set(pre[j]!, { n: j, c: `c${j % 11}`, u: `pre-u${j}`, t: `alpha beta pre w${j % 17}` }, { dt: { created: 1700000100000 + j } });
+        await setup.set(pre[j], { n: j, c: `c${j % 11}`, u: `pre-u${j}`, t: `alpha beta pre w${j % 17}` }, { dt: { created: 1700000100000 + j } });
       }
       await setup.createIndex('c', { field: 'c' });
       await setup.createIndex('n', { field: 'n', type: 'range' });
@@ -248,7 +248,7 @@ test(
       await setup.close();
 
       const db = await ClusterDb.open<Doc>({ dir, readOnly: true });
-      await db.get(pre[0]!); // warm the cached reader
+      await db.get(pre[0]); // warm the cached reader
       const stats0 = db.stats();
 
       // Storm with a tiny compaction threshold: the WAL/snapshot are rotated
@@ -256,7 +256,7 @@ test(
       await runWorkerOk(['storm', dir, String(shards), String(hot), 'rot', '1500', '60000', '1'], { timeoutMs: 120_000 });
       await sleep(150);
 
-      await db.get(pre[1]!);
+      await db.get(pre[1]);
       const stats1 = db.stats();
       assert.ok(stats1.readerReopens - stats0.readerReopens >= 1, 'rotation forced a full reopen');
       assert.equal(stats1.incrementalCatchups - stats0.incrementalCatchups, 0, 'no incremental progress across a rotation');
@@ -265,7 +265,7 @@ test(
       // A follow-up append-only storm is caught incrementally again.
       const report2 = await runWorkerOk(['storm', dir, String(shards), String(hot), 'rot2', '800', '0', '0'], { timeoutMs: 120_000 });
       await sleep(150);
-      await db.get(pre[2]!);
+      await db.get(pre[2]);
       const stats2 = db.stats();
       assert.ok(stats2.incrementalCatchups - stats1.incrementalCatchups > 0, 'incremental catch-up resumed after the reopen');
       assert.equal(stats2.readerReopens - stats1.readerReopens, 0, 'no further reopen');

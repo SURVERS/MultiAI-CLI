@@ -41,8 +41,8 @@ test('index-consistency: indexes stay consistent with the store under random ops
         try {
           await db.set(key, doc, { dt: { created: randInt(rng, 1_000_000) } });
           live.set(key, doc);
-        } catch (e) {
-          if (!(e instanceof UniqueViolationError)) throw e;
+        } catch (error) {
+          if (!(error instanceof UniqueViolationError)) throw error;
           // unique-email collision: write rejected, live unchanged
         }
       } else {
@@ -51,38 +51,38 @@ test('index-consistency: indexes stay consistent with the store under random ops
       }
     }
 
-    const expectedKeys = [...live.keys()].sort();
+    const expectedKeys = [...live.keys()].toSorted();
 
     // 1) key order index
     assert.deepEqual(db.scan().map((r) => r.key), expectedKeys, 'key order scan');
 
     // 2) equality index
     for (const city of CITIES) {
-      const fromIdx = db.findEq('byCity', city).map((r) => r.key).sort();
-      const expected = [...live.entries()].filter(([, d]) => d.city === city).map(([k]) => k).sort();
+      const fromIdx = db.findEq('byCity', city).map((r) => r.key).toSorted();
+      const expected = [...live.entries()].filter(([, d]) => d.city === city).map(([k]) => k).toSorted();
       assert.deepEqual(fromIdx, expected, `byCity ${city}`);
     }
 
     // 3) range index
     const [min, max] = [20, 40];
-    const fromRange = db.findRange('byAge', { min, max }).map((r) => r.key).sort();
-    const expectedRange = [...live.entries()].filter(([, d]) => d.age >= min && d.age <= max).map(([k]) => k).sort();
+    const fromRange = db.findRange('byAge', { min, max }).map((r) => r.key).toSorted();
+    const expectedRange = [...live.entries()].filter(([, d]) => d.age >= min && d.age <= max).map(([k]) => k).toSorted();
     assert.deepEqual(fromRange, expectedRange, 'byAge range');
 
     // 4) dt index
-    assert.deepEqual(db.dtRange('created', { gte: 0 }).map((r) => r.key).sort(), expectedKeys, 'dt created all');
+    assert.deepEqual(db.dtRange('created', { gte: 0 }).map((r) => r.key).toSorted(), expectedKeys, 'dt created all');
 
     // 5) text index: search results == docs whose bio contains the term
     const term = '北京';
-    const hits = db.search('body', term, { limit: 1000 }).map((r) => r.key).sort();
-    const expectedHits = [...live.entries()].filter(([, d]) => d.bio.includes(term)).map(([k]) => k).sort();
+    const hits = db.search('body', term, { limit: 1000 }).map((r) => r.key).toSorted();
+    const expectedHits = [...live.entries()].filter(([, d]) => d.bio.includes(term)).map(([k]) => k).toSorted();
     assert.deepEqual(hits, expectedHits, 'text search 北京');
 
     // 6) after rebuild on reopen, indexes still match
     await db.close();
     db = await MiniDb.open({ dir, valueCodec: 'json', fsyncPolicy: 'no', autoCompact: false });
-    const fromIdx2 = db.findEq('byCity', 'Paris').map((r) => r.key).sort();
-    const expected2 = [...live.entries()].filter(([, d]) => d.city === 'Paris').map(([k]) => k).sort();
+    const fromIdx2 = db.findEq('byCity', 'Paris').map((r) => r.key).toSorted();
+    const expected2 = [...live.entries()].filter(([, d]) => d.city === 'Paris').map(([k]) => k).toSorted();
     assert.deepEqual(fromIdx2, expected2, 'byCity Paris after rebuild');
     assert.deepEqual(db.scan().map((r) => r.key), expectedKeys, 'key order after rebuild');
   } finally {

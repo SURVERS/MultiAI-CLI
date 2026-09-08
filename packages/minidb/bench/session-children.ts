@@ -41,10 +41,10 @@ import { MiniDb } from '../src/index.js';
 const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
 const ops = (n: number, ms: number) => `${fmt((n / ms) * 1000)} ops/s`;
 
-const TOTAL = Number(process.env.TOTAL || 1_000);
-const FANOUT = Number(process.env.FANOUT || 30);
-const MAX_DEPTH = Number(process.env.MAX_DEPTH || 3);
-const ITERS = Number(process.env.ITERS || 500);
+const TOTAL = Number(process.env.TOTAL ?? 1_000);
+const FANOUT = Number(process.env.FANOUT ?? 30);
+const MAX_DEPTH = Number(process.env.MAX_DEPTH ?? 3);
+const ITERS = Number(process.env.ITERS ?? 500);
 
 interface Node {
   id: string;
@@ -63,7 +63,7 @@ function buildTree(total: number, fanout: number, maxDepth: number): Node[] {
   const root: Node = { id: makeId(counter++), parentId: null, depth: 0, updatedAt: base + counter };
   nodes.push(root);
   const queue: Node[] = [root];
-  while (queue.length && nodes.length < total) {
+  while (queue.length > 0 && nodes.length < total) {
     const parent = queue.shift()!;
     if (parent.depth >= maxDepth) continue;
     for (let i = 0; i < fanout && nodes.length < total; i++) {
@@ -108,7 +108,7 @@ async function main() {
   }
   const maxDepth = Math.max(...byDepth.keys());
   console.log(`  tree: ${fmt(nodes.length)} sessions, max depth ${maxDepth}`);
-  for (const [d, c] of [...byDepth.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const [d, c] of [...byDepth.entries()].toSorted((a, b) => a[0] - b[0])) {
     console.log(`    depth ${d}: ${fmt(c)} sessions`);
   }
 
@@ -160,7 +160,7 @@ async function main() {
   const PAGE = 20;
   console.log(`\n  listChildren(parent)  page_size=${PAGE}, averaged over ${ITERS} iters:\n`);
 
-  for (const [depth, parent] of [...parentAtDepth.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const [depth, parent] of [...parentAtDepth.entries()].toSorted((a, b) => a[0] - b[0])) {
     const fanout = childrenOf.get(parent.id)!.length;
 
     // indexed: O(log N + fanout)
@@ -191,9 +191,9 @@ async function main() {
   }
 
   // ---- correctness spot-check ---------------------------------------------
-  const root = nodes[0]!;
+  const root = nodes[0];
   const idxChildren = db.compoundRange('byParent', root.id, { reverse: true, limit: 10_000 }).map((r) => r.key);
-  const expected = new Set(childrenOf.get(root.id)!);
+  const expected = new Set(childrenOf.get(root.id));
   const ok = idxChildren.length === expected.size && idxChildren.every((k) => expected.has(k));
   console.log(`\n  correctness: indexed children of root == expected  ${ok ? 'OK' : 'MISMATCH'} (${idxChildren.length}/${expected.size})`);
 
@@ -208,7 +208,7 @@ async function main() {
   console.log('\ndone.\n');
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

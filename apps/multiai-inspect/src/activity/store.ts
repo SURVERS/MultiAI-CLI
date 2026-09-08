@@ -96,9 +96,9 @@ export class SessionActivityHub {
       token: opts.token,
       WebSocketImpl: opts.WebSocketImpl,
       handlers: {
-        onWorkChanged: (sessionId, facts) => this.store.applyWorkChanged(sessionId, facts),
-        onSessionCreated: () => opts.onListChanged(),
-        onMetaUpdated: () => opts.onListChanged(),
+        onWorkChanged: (sessionId, facts) =>{  this.store.applyWorkChanged(sessionId, facts); },
+        onSessionCreated: () =>{  opts.onListChanged(); },
+        onMetaUpdated: () =>{  opts.onListChanged(); },
         onReconnected: () => void this.seed(),
       },
     });

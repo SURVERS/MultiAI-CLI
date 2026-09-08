@@ -3,5 +3,5 @@
 /** basename of an absolute path (last non-empty segment), defaulting to the path. */
 export function basename(path: string): string {
   const parts = path.split('/').filter(Boolean);
-  return parts.length > 0 ? parts[parts.length - 1]! : path;
+  return parts.length > 0 ? parts.at(-1)! : path;
 }

@@ -43,7 +43,7 @@ export class ShellRunComponent extends Container {
     super();
     this.textComponent = new Text(this.renderText(), 0, 0);
     this.addChild(this.textComponent);
-    this.timer = setInterval(() => this.tick(), TIMER_INTERVAL_MS);
+    this.timer = setInterval(() =>{  this.tick(); }, TIMER_INTERVAL_MS);
   }
 
   append(text: string): void {

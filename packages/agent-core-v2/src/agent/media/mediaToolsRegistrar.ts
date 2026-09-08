@@ -70,7 +70,7 @@ export class AgentMediaToolsRegistrar extends Disposable implements IAgentMediaT
     super();
     this.states.register(mediaRegisteredKeyKey);
     this.refresh();
-    this._register(eventBus.subscribe('agent.status.updated', () => this.refresh()));
+    this._register(eventBus.subscribe('agent.status.updated', () =>{  this.refresh(); }));
     this._register(toDisposable(() => this.registration?.dispose()));
   }
 

@@ -58,7 +58,7 @@ export function readStream(stream: Readable): Promise<string> {
     stream.on('data', (chunk: string) => {
       data += chunk;
     });
-    stream.once('end', () => resolve(data));
+    stream.once('end', () =>{  resolve(data); });
     stream.once('error', reject);
   });
 }

@@ -48,7 +48,7 @@ beforeEach(() => {
   svc = ix.get(IAgentPermissionRulesService);
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(): Promise<WireRecord[]> {
   await ix.get(IWireService).flush();
@@ -111,7 +111,7 @@ describe('AgentPermissionRulesService (wire-backed)', () => {
         time: expect.any(Number),
       },
     ]);
-    expect(records.every((record) => 'payload' in record === false)).toBe(true);
+    expect(records.every((record) => !( 'payload' in record))).toBe(true);
   });
 
   it('replay rebuilds session approval patterns only (rules are not persisted)', async () => {

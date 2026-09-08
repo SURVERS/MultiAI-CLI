@@ -135,11 +135,11 @@ function withCwdOf(exec: ReturnType<typeof vi.fn>): { toHaveBeenCalledWith: (dir
       .map((call) => call[2]?.cwd)
       .filter((c): c is string => typeof c === 'string');
   return {
-    toHaveBeenCalledWith: (dir: string) => expect(cwds()).toContain(dir),
-    toHaveBeenCalled: () => expect(cwds().length).toBeGreaterThan(0),
+    toHaveBeenCalledWith: (dir: string) =>{  expect(cwds()).toContain(dir); },
+    toHaveBeenCalled: () =>{  expect(cwds().length).toBeGreaterThan(0); },
     not: {
-      toHaveBeenCalled: () => expect(cwds().length).toBe(0),
-      toHaveBeenCalledWith: (dir: string) => expect(cwds()).not.toContain(dir),
+      toHaveBeenCalled: () =>{  expect(cwds().length).toBe(0); },
+      toHaveBeenCalledWith: (dir: string) =>{  expect(cwds()).not.toContain(dir); },
     },
   };
 }

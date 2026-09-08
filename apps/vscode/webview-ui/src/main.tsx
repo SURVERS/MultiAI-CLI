@@ -15,7 +15,7 @@ observer.observe(document.body, {
   attributeFilter: ["class"],
 });
 
-const container = document.getElementById("root");
+const container = document.querySelector("#root");
 
 if (container) {
   createRoot(container).render(

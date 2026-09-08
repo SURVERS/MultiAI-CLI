@@ -133,7 +133,7 @@ export function useMediaUpload(): UseMediaUploadResult {
         return;
       }
 
-      const files = Array.from(e.dataTransfer?.files || []).filter(isMediaFile);
+      const files = Array.from(e.dataTransfer?.files ?? []).filter(isMediaFile);
       if (files.length === 0) {
         return;
       }

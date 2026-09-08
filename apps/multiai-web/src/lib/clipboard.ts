@@ -55,7 +55,7 @@ function legacyCopy(text: string): boolean {
   textarea.style.top = '-9999px';
   textarea.style.left = '-9999px';
   textarea.style.opacity = '0';
-  document.body.appendChild(textarea);
+  document.body.append(textarea);
 
   let ok = false;
   try {

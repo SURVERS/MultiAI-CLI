@@ -248,12 +248,12 @@ export class ModelsDevImportService implements IModelsDevImportService {
         userAgent: 'multiai-cli-server',
         signal: AbortSignal.timeout(UPSTREAM_FETCH_TIMEOUT_MS),
       });
-    } catch (err) {
+    } catch (error) {
       throw new Error2(
         codes.REGISTRY_IMPORT_INVALID,
         // Truncate the upstream's error text: a hostile registry could echo
         // the Bearer token it received back inside its error payload.
-        `custom registry at ${url} cannot be imported: ${truncateUpstreamMessage(err)}`,
+        `custom registry at ${url} cannot be imported: ${truncateUpstreamMessage(error)}`,
       );
     }
     if (Object.keys(entries).length === 0) {

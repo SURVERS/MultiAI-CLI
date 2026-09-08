@@ -27,7 +27,6 @@ import type { FsyncPolicy } from './wal.js';
 import type { RecoveryMode, RecoveryInfo, ValueMode, RecoveredOp } from './recovery.js';
 import type { IndexDef, IndexInfo } from './index-manager.js';
 import type { CompoundIndexDef, CompoundIndexInfo } from './compound-index.js';
-import type { DtRangeEntry } from './dt-index.js';
 import type { RangeOptions } from './skiplist.js';
 
 export { UniqueViolationError } from './index-manager.js';
@@ -107,7 +106,7 @@ function normDt(dt?: Record<string, number | string> | null): Record<string, num
     const ms = typeof v === 'number' ? v : Date.parse(v);
     if (Number.isFinite(ms)) out[k] = ms;
   }
-  return Object.keys(out).length ? out : null;
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 export type ValueModeSetting = ValueMode | 'auto';
@@ -115,9 +114,9 @@ export type ValueModeSetting = ValueMode | 'auto';
 async function fileSize(file: string): Promise<number> {
   try {
     return (await fs.stat(file)).size;
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return 0;
-    throw e;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 0;
+    throw error;
   }
 }
 
@@ -323,7 +322,7 @@ export class MiniDb<V = unknown> {
 
     db.store = new Store({
       activeExpireIntervalMs: opts.activeExpireIntervalMs ?? 100,
-      onExpire: (k, rec) => db.onStoreExpire(k, rec),
+      onExpire: (k, rec) =>{  db.onStoreExpire(k, rec); },
       readValue: (loc) => {
         if (!db.valueReader) throw new Error('ValueReader is not open');
         return db.valueReader.read(loc);
@@ -367,7 +366,7 @@ export class MiniDb<V = unknown> {
       // A read-only instance never compacts: rotation would rename the live
       // writer's snapshot/WAL out from under it and lose its acknowledged data.
       if (!db.readOnly && db.autoCompact && shouldCompact(db)) await compact(db);
-    } catch (err) {
+    } catch (error) {
       // Release every resource acquired so far: an open that fails after the
       // WAL/store are set up must not leak a file handle or keep the everysec /
       // active-expire timers running.
@@ -378,7 +377,7 @@ export class MiniDb<V = unknown> {
         await db.lock.release().catch(() => {});
         db.lock = null;
       }
-      throw err;
+      throw error;
     }
     return db;
   }
@@ -394,16 +393,16 @@ export class MiniDb<V = unknown> {
   ): Promise<MiniDb<V>> {
     try {
       return await MiniDb.open<V>(opts);
-    } catch (err) {
-      if (err instanceof LockError || (err as { code?: string }).code === 'ELOCKED') throw err;
+    } catch (error) {
+      if (error instanceof LockError || (error as { code?: string }).code === 'ELOCKED') throw error;
       // Only rebuild on errors that indicate unrecoverable/corrupt state (e.g.
       // malformed index-definition JSON). Transient I/O errors (EACCES, ENOSPC,
       // EIO, EMFILE, …) are rethrown so a cache opener never destroys data
       // because of a recoverable system error.
-      const rebuildable = err instanceof SyntaxError || (err as { name?: string }).name === 'CorruptFrameError';
-      if (!rebuildable) throw err;
-      if (hooks.onRebuild) hooks.onRebuild(err);
-      if (err instanceof SyntaxError) {
+      const rebuildable = error instanceof SyntaxError || (error as { name?: string }).name === 'CorruptFrameError';
+      if (!rebuildable) throw error;
+      if (hooks.onRebuild) hooks.onRebuild(error);
+      if (error instanceof SyntaxError) {
         // A corrupted index-definition sidecar holds only derived metadata and
         // must not cost the whole database: drop the sidecars (indexes can be
         // recreated by the caller) and retry once before falling back to a
@@ -453,7 +452,7 @@ export class MiniDb<V = unknown> {
 
   /** On-disk postings file path for a text index (name sanitized for the fs). */
   private textPostingsPath(name: string): string {
-    const safe = name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const safe = name.replaceAll(/[^a-zA-Z0-9_.-]/g, '_');
     return path.join(this.dir, `db.text-${safe}.postings`);
   }
 
@@ -482,8 +481,8 @@ export class MiniDb<V = unknown> {
     try {
       const raw = await fs.readFile(this.indexPath, 'utf8');
       for (const d of JSON.parse(raw) as (IndexInfo & IndexDef)[]) this.indexes.create(d.name, d);
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
   }
   private async persistIndexDefinitions(): Promise<void> {
@@ -504,8 +503,8 @@ export class MiniDb<V = unknown> {
           }),
         );
       }
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
   }
   private async persistTextIndexDefinitions(): Promise<void> {
@@ -517,8 +516,8 @@ export class MiniDb<V = unknown> {
       for (const d of JSON.parse(raw) as (CompoundIndexInfo & { name: string })[]) {
         this.compound.create(d.name, { groupBy: d.groupBy, orderBy: d.orderBy, orderType: d.orderType });
       }
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
   }
   private async persistCompoundIndexDefinitions(): Promise<void> {
@@ -530,7 +529,7 @@ export class MiniDb<V = unknown> {
     this.access.delete(k);
     this.dt.del(k);
     this.compound.remove(k);
-    if (this.indexes.indexes.size) this.indexes.remove(k, undefined);
+    if (this.indexes.indexes.size > 0) this.indexes.remove(k, undefined);
     for (const ti of this.text.values()) ti.remove(k);
   }
 
@@ -571,11 +570,11 @@ export class MiniDb<V = unknown> {
   private async retryOnWalSeal(commit: () => Promise<void>): Promise<void> {
     try {
       await commit();
-    } catch (e) {
-      const sealed = (e as { code?: string }).code === 'WAL_SEALED';
+    } catch (error) {
+      const sealed = (error as { code?: string }).code === 'WAL_SEALED';
       const closedMidRotation =
-        this._rotateLock !== null && e instanceof Error && e.message === 'WAL is closed';
-      if (!sealed && !closedMidRotation) throw e;
+        this._rotateLock !== null && error instanceof Error && error.message === 'WAL is closed';
+      if (!sealed && !closedMidRotation) throw error;
       if (this._rotateLock) await this._rotateLock;
       await commit();
     }
@@ -638,9 +637,9 @@ export class MiniDb<V = unknown> {
       try {
         await appended;
         this.stats.evictions++;
-      } catch (e) {
+      } catch (error) {
         this.restoreKey(op.pk, prev, seq);
-        throw e;
+        throw error;
       }
     };
     await this.retryOnWalSeal(commit);
@@ -728,7 +727,7 @@ export class MiniDb<V = unknown> {
     await this.ensureMemoryFor([op]);
 
     const commit = async (): Promise<void> => {
-      if (this.indexes.indexes.size && this.indexable(value)) this.indexes.checkUnique(op.pk, value);
+      if (this.indexes.indexes.size > 0 && this.indexable(value)) this.indexes.checkUnique(op.pk, value);
       const frame = encodeFrame({ type: TYPE_SET, key: op.key, value: op.value, meta: op.meta, expireAt: op.expireAt });
       const wal = this.wal;
       const appended = wal.appendLoc(frame);
@@ -745,9 +744,9 @@ export class MiniDb<V = unknown> {
       const seq = this.store.map.get(op.pk)?.seq;
       try {
         await appended.done;
-      } catch (e) {
+      } catch (error) {
         this.restoreKey(op.pk, prev, seq);
-        throw e;
+        throw error;
       }
       if (this.valueMode === 'disk') {
         this.publishWalRef(
@@ -780,9 +779,9 @@ export class MiniDb<V = unknown> {
       const seq = this.store.map.get(op.pk)?.seq;
       try {
         await appended;
-      } catch (e) {
+      } catch (error) {
         this.restoreKey(op.pk, prev, seq);
-        throw e;
+        throw error;
       }
       this.maybeAutoCompact();
     };
@@ -800,7 +799,7 @@ export class MiniDb<V = unknown> {
     await this.ensureMemoryFor(prepared);
 
     const commit = async (): Promise<void> => {
-      if (this.indexes.indexes.size) {
+      if (this.indexes.indexes.size > 0) {
         this.indexes.checkUniqueBatch(
           prepared.map((o) => ({
             pk: o.pk,
@@ -845,9 +844,9 @@ export class MiniDb<V = unknown> {
       }
       try {
         await appended.done;
-      } catch (e) {
+      } catch (error) {
         for (const [pk, prev] of prevs) this.restoreKey(pk, prev, seqs.get(pk));
-        throw e;
+        throw error;
       }
       for (const [pk, { op, loc, seq }] of lastSet) {
         this.publishWalRef(pk, wal, seq, loc, op.expireAt, op.dtNorm);
@@ -899,7 +898,7 @@ export class MiniDb<V = unknown> {
       this.store.set(op.key, op.value!, op.expireAt, op.dtNorm);
       this.dt.set(op.pk, op.dtNorm);
       this.compound.add(op.pk, op.valueDecoded, op.dtNorm);
-      if (this.indexes.indexes.size) {
+      if (this.indexes.indexes.size > 0) {
         if (this.indexable(oldDoc)) this.indexes.remove(op.pk, oldDoc);
         if (this.indexable(op.valueDecoded)) this.indexes.add(op.pk, op.valueDecoded);
       }
@@ -913,7 +912,7 @@ export class MiniDb<V = unknown> {
         this.access.delete(op.pk);
         this.dt.del(op.pk);
         this.compound.remove(op.pk);
-        if (this.indexes.indexes.size && this.indexable(oldDoc)) this.indexes.remove(op.pk, oldDoc);
+        if (this.indexes.indexes.size > 0 && this.indexable(oldDoc)) this.indexes.remove(op.pk, oldDoc);
         for (const ti of this.text.values()) ti.remove(op.pk);
       }
     }
@@ -932,7 +931,7 @@ export class MiniDb<V = unknown> {
   private restoreKey(pk: string, prev: StoreRecord | undefined, appliedSeq: number | undefined): void {
     const cur = this.store.map.get(pk);
     if (appliedSeq === undefined ? cur !== undefined : cur?.seq !== appliedSeq) return;
-    if (this.indexes.indexes.size) this.indexes.remove(pk, undefined);
+    if (this.indexes.indexes.size > 0) this.indexes.remove(pk, undefined);
     for (const ti of this.text.values()) ti.remove(pk);
     this.dt.del(pk);
     this.compound.remove(pk);
@@ -966,13 +965,13 @@ export class MiniDb<V = unknown> {
     // Old doc for derived-index removal; decoded before the overwrite, like
     // applyOp. This get also lazy-reaps an expired old record, whose onExpire
     // hook then removes its derived entries for us.
-    const oldDoc = this.indexes.indexes.size ? this.decode(this.store.get(pk)) : undefined;
+    const oldDoc = this.indexes.indexes.size > 0 ? this.decode(this.store.get(pk)) : undefined;
     if (op.type === TYPE_DEL) {
       if (!this.store.del(pk)) return;
       this.access.delete(pk);
       this.dt.del(pk);
       this.compound.remove(pk);
-      if (this.indexes.indexes.size && this.indexable(oldDoc)) this.indexes.remove(pk, oldDoc);
+      if (this.indexes.indexes.size > 0 && this.indexable(oldDoc)) this.indexes.remove(pk, oldDoc);
       for (const ti of this.text.values()) ti.remove(pk);
       return;
     }
@@ -987,10 +986,10 @@ export class MiniDb<V = unknown> {
     this.dt.set(pk, op.dt);
     // Values are only decoded when a value-derived index exists (all of them
     // require the json codec): with none, recovery never copies them either.
-    if (this.indexes.indexes.size || this.text.size || this.compound.list().length) {
+    if (this.indexes.indexes.size > 0 || this.text.size > 0 || this.compound.list().length > 0) {
       const doc = this.decode(buf)!;
       this.compound.add(pk, doc, op.dt);
-      if (this.indexes.indexes.size) {
+      if (this.indexes.indexes.size > 0) {
         if (this.indexable(oldDoc)) this.indexes.remove(pk, oldDoc);
         if (this.indexable(doc)) this.indexes.add(pk, doc);
       }
@@ -1010,7 +1009,7 @@ export class MiniDb<V = unknown> {
     return this.store.size;
   }
   async mset(entries: readonly (readonly [string, V])[]): Promise<void> {
-    if (!entries.length) return;
+    if (entries.length === 0) return;
     await this.batch(entries.map(([key, value]) => ({ op: 'set' as const, key, value })));
   }
   mget(keys: readonly string[]): (V | undefined)[] {
@@ -1045,9 +1044,9 @@ export class MiniDb<V = unknown> {
       const seq = this.store.map.get(k)?.seq;
       try {
         await appended.done;
-      } catch (e) {
+      } catch (error) {
         this.restoreKey(k, prev, seq);
-        throw e;
+        throw error;
       }
       if (this.valueMode === 'disk') {
         this.publishWalRef(
@@ -1105,7 +1104,7 @@ export class MiniDb<V = unknown> {
     this.ensureOpen();
     const rows = this.dt.range(col, { ...opts, count: opts.limit ?? opts.count });
     const out: (ScanEntry<V> & { dtValue: number })[] = [];
-    for (const { key, value: dtValue } of rows as DtRangeEntry[]) {
+    for (const { key, value: dtValue } of rows) {
       const value = this.store.get(key);
       if (value === undefined) continue;
       const r = this.store.map.get(key);
@@ -1125,10 +1124,10 @@ export class MiniDb<V = unknown> {
     try {
       // A unique index must not be created over data that already violates it.
       this.indexes.assertUniqueValid(name);
-    } catch (e) {
+    } catch (error) {
       this.indexes.drop(name);
       this.indexes.rebuild(this._liveRecordsRaw());
-      throw e;
+      throw error;
     }
     await this.persistIndexDefinitions();
   }
@@ -1217,7 +1216,7 @@ export class MiniDb<V = unknown> {
     this.textDefs.push(def);
     try {
       await this.persistTextIndexDefinitions();
-    } catch (e) {
+    } catch (error) {
       // Unwind so the in-memory state and the definition sidecar (which does
       // not name this index) do not diverge; drop the derived postings file
       // with it, exactly like dropTextIndex would.
@@ -1225,7 +1224,7 @@ export class MiniDb<V = unknown> {
       this.textDefs = this.textDefs.filter((d) => d.name !== name);
       ti.close();
       await fs.rm(this.textPostingsPath(name), { force: true }).catch(() => {});
-      throw e;
+      throw error;
     }
   }
   async dropTextIndex(name: string): Promise<boolean> {
@@ -1272,9 +1271,9 @@ export class MiniDb<V = unknown> {
   }
 
   private candidateKeysForPredicate(field: string, cond: unknown): Set<string> | null {
-    if (this.codecName !== 'json' || !this.indexes.indexes.size) return null;
+    if (this.codecName !== 'json' || this.indexes.indexes.size === 0) return null;
     const indexes = this.indexes.list().filter((i) => i.field === field);
-    if (!indexes.length) return null;
+    if (indexes.length === 0) return null;
 
     const isOpObj = cond !== null && typeof cond === 'object' && !(cond instanceof RegExp);
     const ops = isOpObj ? (cond as Record<string, unknown>) : null;
@@ -1336,7 +1335,7 @@ export class MiniDb<V = unknown> {
   // are left to the full match() after decode.
   private cheapEqChecks(filter?: Record<string, unknown>): { name: string; value: unknown }[] {
     const out: { name: string; value: unknown }[] = [];
-    if (!filter || typeof filter !== 'object' || !this.indexes.indexes.size) return out;
+    if (!filter || typeof filter !== 'object' || this.indexes.indexes.size === 0) return out;
     for (const { field, cond } of this.indexPredicates(filter)) {
       const idx = this.indexes.list().find((i) => i.field === field && i.type === 'equality');
       if (!idx) continue;
@@ -1440,7 +1439,7 @@ export class MiniDb<V = unknown> {
     } else if (q.key && typeof q.key === 'object') {
       if ((q.key as { prefix?: string }).prefix) {
         const p = toKStr((q.key as { prefix: string }).prefix);
-        keys = this.store.rawKeys({ gte: p, lt: p + '\uffff' });
+        keys = this.store.rawKeys({ gte: p, lt: p + '\uFFFF' });
       } else {
         const opts: RangeOptions<string> = {};
         for (const b of ['gte', 'gt', 'lte', 'lt'] as const)
@@ -1472,10 +1471,10 @@ export class MiniDb<V = unknown> {
       keys = keys === null ? indexed : filterKeys(keys, (k) => set.has(k));
     }
 
-    if (keys === null) keys = this.store.rawKeys({});
+    keys ??= this.store.rawKeys({});
 
     const skip = q.skip ?? 0;
-    const limit = q.limit === undefined ? Infinity : q.limit;
+    const limit = q.limit ?? Infinity;
     // Without an explicit sort or text ranking, result order is the candidate
     // iteration order, so skip/limit can be applied while iterating: a bounded
     // query decodes only the rows it returns instead of the whole candidate
@@ -1537,9 +1536,9 @@ export class MiniDb<V = unknown> {
     try {
       await fs.copyFile(path.join(this.dir, name), path.join(destDir, name));
       return true;
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code === 'ENOENT') return false;
-      throw e;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+      throw error;
     }
   }
 
@@ -1583,9 +1582,9 @@ export class MiniDb<V = unknown> {
     } else {
       try {
         const existing = await fs.readdir(destDir);
-        if (existing.length) throw new Error(`restore destination is not empty: ${destDir}`);
-      } catch (e) {
-        if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+        if (existing.length > 0) throw new Error(`restore destination is not empty: ${destDir}`);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       }
     }
     await fs.mkdir(destDir, { recursive: true });
@@ -1634,7 +1633,7 @@ export class MiniDb<V = unknown> {
     const ri = this.recoveryInfo;
     const anchor = this.walTail ?? (ri && ri.walIno ? { dev: ri.walDev, ino: ri.walIno, size: ri.walScanEnd } : null);
     if (!anchor || offset !== anchor.size) return null;
-    const res = catchUpWal(this.walPath, offset, anchor, (f, fd) => this.applyRecoveredFrame(f, fd));
+    const res = catchUpWal(this.walPath, offset, anchor, (f, fd) =>{  this.applyRecoveredFrame(f, fd); });
     if (res) this.walTail = { dev: anchor.dev, ino: anchor.ino, size: res.offset };
     return res;
   }

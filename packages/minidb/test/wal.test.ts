@@ -98,8 +98,8 @@ test('recovery truncates a torn/corrupt tail at the error offset', async () => {
     try {
       for (const f of parser.feed(buf)) frames.push(f);
       parser.finish();
-    } catch (e) {
-      err = e;
+    } catch (error) {
+      err = error;
     }
     assert.ok(err instanceof CorruptFrameError, 'expected a corrupt-frame error');
     assert.equal(err.offset, validSize, 'error offset should equal end of valid data');

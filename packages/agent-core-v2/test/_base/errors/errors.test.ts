@@ -18,7 +18,7 @@ describe('onUnexpectedError + setUnexpectedErrorHandler', () => {
       captured.push(err);
     });
 
-    expect(() => onUnexpectedError(new Error('boom'))).not.toThrow();
+    expect(() =>{  onUnexpectedError(new Error('boom')); }).not.toThrow();
     expect(captured).toHaveLength(1);
     expect((captured[0] as Error).message).toBe('boom');
   });
@@ -40,7 +40,7 @@ describe('onUnexpectedError + setUnexpectedErrorHandler', () => {
       throw new Error('handler-boom');
     });
 
-    expect(() => onUnexpectedError(new Error('original'))).not.toThrow();
+    expect(() =>{  onUnexpectedError(new Error('original')); }).not.toThrow();
   });
 
   it('resetUnexpectedErrorHandler restores the module default', () => {
@@ -76,10 +76,10 @@ describe('safelyCallListener', () => {
     const captured: unknown[] = [];
     setUnexpectedErrorHandler((err) => captured.push(err));
 
-    expect(() =>
+    expect(() =>{ 
       safelyCallListener(() => {
         throw new Error('listener-boom');
-      }),
+      }); },
     ).not.toThrow();
 
     expect(captured).toHaveLength(1);

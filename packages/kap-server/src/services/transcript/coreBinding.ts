@@ -166,7 +166,7 @@ export function bindSessionTranscript(
     // tracked per agent and disposed with it — the listener captures the
     // projector, so a dead agent must not keep projecting into the store.
     const bus = handle.accessor.get(IEventBus);
-    const busD = bus.subscribe((event) => applyOps(handle.id, projector.map(event)));
+    const busD = bus.subscribe((event) =>{  applyOps(handle.id, projector.map(event)); });
     const list = agentDisposables.get(handle.id) ?? [];
     list.push(busD);
     agentDisposables.set(handle.id, list);

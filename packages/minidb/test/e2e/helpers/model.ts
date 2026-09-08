@@ -47,6 +47,6 @@ export class Model {
   liveKeys() {
     const out = [];
     for (const k of this.map.keys()) if (this.get(k) !== undefined) out.push(k);
-    return out.sort();
+    return out.toSorted();
   }
 }

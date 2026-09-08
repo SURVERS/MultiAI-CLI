@@ -188,7 +188,7 @@ export function isAbortError(error: unknown): boolean {
   return (
     typeof error === 'object' &&
     error !== null &&
-    (error as object).constructor?.name === 'APIUserAbortError'
+    (error).constructor?.name === 'APIUserAbortError'
   );
 }
 

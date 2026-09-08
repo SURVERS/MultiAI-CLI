@@ -14,7 +14,7 @@ function ScrollButton() {
 
   return (
     <button
-      onClick={() => scrollToBottom()}
+      onClick={() =>{  scrollToBottom(); }}
       className={cn("absolute bottom-4 right-4 p-2 rounded-full z-10", "bg-blue-400 text-white shadow-lg", "hover:bg-blue-600 transition-all")}
     >
       <IconArrowDown className="size-4" />

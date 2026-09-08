@@ -22,7 +22,7 @@ export function useInputHistory({ text, setText, onHeightChange }: UseInputHisto
     }
 
     void bridge.addInputHistory(trimmed);
-    setHistory((prev) => (prev[prev.length - 1] === trimmed ? prev : [...prev, trimmed]));
+    setHistory((prev) => (prev.at(-1) === trimmed ? prev : [...prev, trimmed]));
     setIndex(-1);
   }, []);
 
@@ -58,7 +58,7 @@ export function useInputHistory({ text, setText, onHeightChange }: UseInputHisto
     [history, index, text, setText, onHeightChange],
   );
 
-  const reset = useCallback(() => setIndex(-1), []);
+  const reset = useCallback(() =>{  setIndex(-1); }, []);
 
   return { handleKey, add, reset };
 }

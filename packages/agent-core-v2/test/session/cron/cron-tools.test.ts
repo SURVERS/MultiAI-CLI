@@ -188,8 +188,8 @@ function assertError(result: ExecutableToolResult): string {
 
 function scrubCronOutput(output: string): string {
   return output
-    .replace(/[0-9a-f]{8}/g, '<id>')
-    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}/g, '<iso>');
+    .replaceAll(/[0-9a-f]{8}/g, '<id>')
+    .replaceAll(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}/g, '<iso>');
 }
 
 function localIsoWithOffset(ms: number): string {
@@ -369,7 +369,7 @@ describe('CronCreateTool', () => {
   it('rejects prompts over the UTF-8 byte budget', async () => {
     const harness = createToolHarness();
     const tool = new CronCreateTool(harness.cron, scopeContext);
-    const prompt = '\u4f60'.repeat(3000);
+    const prompt = '\u4F60'.repeat(3000);
 
     const output = assertError(
       await runTool<CronCreateInput>(tool, {
@@ -455,7 +455,7 @@ describe('CronDeleteTool', () => {
     const task = harness.store.add({ cron: '*/5 * * * *', prompt: 'ping', recurring: true }, harness.now());
     const tool = new CronDeleteTool(harness.cron, scopeContext);
 
-    const output = assertSuccess(await runTool<CronDeleteInput>(tool, { id: task.id }));
+    const output = assertSuccess(await runTool(tool, { id: task.id }));
 
     expect(output).toBe(`Deleted cron job ${task.id}.`);
     expect(harness.store.list()).toEqual([]);
@@ -467,7 +467,7 @@ describe('CronDeleteTool', () => {
     const harness = createToolHarness();
     const tool = new CronDeleteTool(harness.cron, scopeContext);
 
-    const output = assertError(await runTool<CronDeleteInput>(tool, { id: 'deadbeef' }));
+    const output = assertError(await runTool(tool, { id: 'deadbeef' }));
 
     expect(output).toBe('No cron job with id deadbeef.');
     expect(harness.deleted).toEqual([]);
@@ -480,7 +480,7 @@ describe('CronDeleteTool', () => {
       harness.store.add({ cron: '*/5 * * * *', prompt: 'ping', recurring: true }, harness.now());
       const tool = new CronDeleteTool(harness.cron, scopeContext);
 
-      const output = assertError(await runTool<CronDeleteInput>(tool, { id }));
+      const output = assertError(await runTool(tool, { id }));
 
       expect(output).toContain('must be a ULID');
       expect(harness.store.list()).toHaveLength(1);
@@ -682,7 +682,7 @@ describe('CronListTool', () => {
   it('walks back to a UTF-8 character boundary when truncating prompts', async () => {
     const harness = createToolHarness();
     const tool = new CronListTool(harness.cron);
-    const cjkPrompt = '\u4f60'.repeat(100);
+    const cjkPrompt = '\u4F60'.repeat(100);
     harness.store.add({ cron: '*/5 * * * *', prompt: cjkPrompt, recurring: true }, harness.now());
 
     const output = assertSuccess(await runTool<CronListInput>(tool, {}));
@@ -691,8 +691,8 @@ describe('CronListTool', () => {
     const rendered = promptMatch![1]!;
 
     expect(rendered.endsWith(`${TRUNCATED}"`)).toBe(true);
-    expect(rendered).not.toContain('\ufffd');
-    const stripped = rendered.replace(/^"|\\u2026\(truncated\)"$/g, '');
+    expect(rendered).not.toContain('\uFFFD');
+    const stripped = rendered.replaceAll(/^"|\\u2026\(truncated\)"$/g, '');
     expect(stripped.length).toBeGreaterThan(0);
   });
 });

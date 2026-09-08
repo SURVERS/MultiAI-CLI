@@ -181,7 +181,7 @@ export class AgentFullCompactionService extends Disposable implements IAgentFull
       }),
     );
     this._register(
-      this.eventBus.subscribe('turn.started', () => this.resetForTurn()),
+      this.eventBus.subscribe('turn.started', () =>{  this.resetForTurn(); }),
     );
     this._register(
       this.eventBus.subscribe('turn.ended', () => {
@@ -780,11 +780,9 @@ export class AgentFullCompactionService extends Disposable implements IAgentFull
   }
 
   private get contextInjector(): IAgentContextInjectorService {
-    if (this.contextInjectorService === undefined) {
-      this.contextInjectorService = this.instantiation.invokeFunction((accessor) =>
+    this.contextInjectorService ??= this.instantiation.invokeFunction((accessor) =>
         accessor.get(IAgentContextInjectorService),
       );
-    }
     return this.contextInjectorService;
   }
 }

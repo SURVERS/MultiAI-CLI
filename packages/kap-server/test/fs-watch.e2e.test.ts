@@ -103,7 +103,7 @@ function rawToString(data: RawData): string {
   if (typeof data === 'string') return data;
   if (Buffer.isBuffer(data)) return data.toString('utf8');
   if (Array.isArray(data)) return Buffer.concat(data).toString('utf8');
-  return Buffer.from(data as ArrayBuffer).toString('utf8');
+  return Buffer.from(data).toString('utf8');
 }
 
 function openConn(url: string): Promise<Conn> {
@@ -121,8 +121,8 @@ function openConn(url: string): Promise<Conn> {
       if (waiters.length > 0) waiters.shift()?.(parsed);
       else queue.push(parsed);
     });
-    ws.once('open', () => resolve({ ws, queue, waiters }));
-    ws.once('error', (err) => reject(err));
+    ws.once('open', () =>{  resolve({ ws, queue, waiters }); });
+    ws.once('error', (err) =>{  reject(err); });
   });
 }
 

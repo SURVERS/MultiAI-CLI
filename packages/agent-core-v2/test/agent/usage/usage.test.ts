@@ -47,7 +47,7 @@ beforeEach(() => {
   svc = ix.get(IAgentUsageService);
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(): Promise<WireRecord[]> {
   await ix.get(IWireService).flush();

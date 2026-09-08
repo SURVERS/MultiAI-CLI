@@ -66,7 +66,7 @@ describe('listProtocolBases', () => {
 
 describe('registerProtocolBase', () => {
   it('throws on duplicate registration of the same id', () => {
-    expect(() => registerProtocolBase(fakeBase('openai'))).toThrow(
+    expect(() =>{  registerProtocolBase(fakeBase('openai')); }).toThrow(
       "protocol base 'openai' is already registered",
     );
     expect(getProtocolBase('openai')).toBe(listProtocolBases()[0]);

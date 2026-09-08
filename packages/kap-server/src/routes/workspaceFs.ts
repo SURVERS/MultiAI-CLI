@@ -129,8 +129,8 @@ export function registerWorkspaceFsRoutes(app: WorkspaceFsRouteHost, core: Scope
       try {
         const data = await core.accessor.get(IHostFolderBrowser).browse(req.query.path);
         reply.send(okEnvelope(data, req.id));
-      } catch (err) {
-        sendMappedError(reply, req.id, err);
+      } catch (error) {
+        sendMappedError(reply, req.id, error);
       }
     },
   );
@@ -153,8 +153,8 @@ export function registerWorkspaceFsRoutes(app: WorkspaceFsRouteHost, core: Scope
       try {
         const data = await core.accessor.get(IHostFolderBrowser).home();
         reply.send(okEnvelope(data, req.id));
-      } catch (err) {
-        sendMappedError(reply, req.id, err);
+      } catch (error) {
+        sendMappedError(reply, req.id, error);
       }
     },
   );
@@ -257,8 +257,8 @@ async function handleFsContent(
   try {
     abs = await hostFs.realpath(path);
     st = await hostFs.stat(abs);
-  } catch (err) {
-    sendOsFsError(reply, requestId, err, path);
+  } catch (error) {
+    sendOsFsError(reply, requestId, error, path);
     return;
   }
 
@@ -290,8 +290,8 @@ async function handleFsContent(
     const sample =
       sampleSize === 0 ? new Uint8Array() : await hostFs.readBytes(abs, sampleSize);
     isBinary = detectBinary(sample);
-  } catch (err) {
-    sendOsFsError(reply, requestId, err, path);
+  } catch (error) {
+    sendOsFsError(reply, requestId, error, path);
     return;
   }
 
@@ -324,13 +324,13 @@ async function handleFsContent(
       .header('content-range', `bytes ${range.start}-${range.end}/${st.size}`);
     const stream = createReadStream(abs, { start: range.start, end: range.end });
     stream.on('error', onStreamError(stream));
-    return reply.send(stream) as unknown as void;
+    return reply.send(stream) as void;
   }
 
   reply.code(200).header('content-length', String(st.size));
   const stream = createReadStream(abs);
   stream.on('error', onStreamError(stream));
-  return reply.send(stream) as unknown as void;
+  return reply.send(stream) as void;
 }
 
 // ---------------------------------------------------------------------------
@@ -368,8 +368,8 @@ async function handleFsMkdir(
   // creating a deep tree the user mistyped.
   try {
     await mkdir(path);
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException | undefined)?.code;
     switch (code) {
       case 'EEXIST':
         reply.send(
@@ -389,7 +389,7 @@ async function handleFsMkdir(
         );
         return;
     }
-    throw err;
+    throw error;
   }
 
   reply.send(okEnvelope({ path }, requestId));

@@ -25,11 +25,10 @@ export function swarmMemberActivity(member: SwarmMember): string {
   // Prefer streamed subagent text so a still-composing agent shows its latest
   // line instead of an empty / last-summary row.
   return (
-    member.suspendedReason ||
-    lastNonEmptyLine(member.text) ||
+    (member.suspendedReason ??
+    lastNonEmptyLine(member.text)) ||
     lastNonEmptyLine(member.outputLines?.join('\n')) ||
-    member.summary ||
-    ''
+    (member.summary ?? '')
   );
 }
 

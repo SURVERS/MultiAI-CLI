@@ -34,7 +34,7 @@ export interface StreamingProcedureContract {
 export function isStreamingContract(
   contract: ProcedureContract | StreamingProcedureContract,
 ): contract is StreamingProcedureContract {
-  return 'streaming' in contract && contract.streaming === true;
+  return 'streaming' in contract &&  contract.streaming;
 }
 
 /** method name → procedure */

@@ -36,7 +36,7 @@ export function recordingTelemetry(
             : { ...currentContext, ...properties },
       });
     },
-    track2: (event, properties) => service.track(event, properties as TelemetryProperties),
+    track2: (event, properties) =>{  service.track(event, properties as TelemetryProperties); },
     withContext(patch: TelemetryContextPatch) {
       return recordingTelemetry(records, { ...currentContext, ...patch });
     },

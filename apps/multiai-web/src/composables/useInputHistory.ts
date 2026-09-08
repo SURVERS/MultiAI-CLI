@@ -61,7 +61,7 @@ function loadMap(sessionId: string | undefined): Record<string, string[]> {
 export function useInputHistory(deps: InputHistoryDeps) {
   const { text, textareaRef, autosize, sessionId } = deps;
 
-  const historyMap = ref<Record<string, string[]>>(loadMap(sessionId()));
+  const historyMap = ref(loadMap(sessionId()));
   const currentList = computed(() => historyMap.value[sessionId() ?? ''] ?? []);
   // -1 = browsing nothing (live draft). Otherwise an index into currentList.
   let historyIndex = -1;

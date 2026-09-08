@@ -17,7 +17,6 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import {
   type CallExpression,
@@ -32,7 +31,7 @@ import {
 
 import type { Edge, EdgeKind, EdgeRef, Graph, ServiceNode, ServiceScope } from './types';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 
 export const PKG_ROOT = resolve(__dirname, '..', '..', '..');
 export const REPO_ROOT = resolve(PKG_ROOT, '..', '..');
@@ -198,7 +197,7 @@ function collectInterfaceMembers(iface: InterfaceDeclaration): string[] {
       names.add(name);
     }
   }
-  return [...names].sort();
+  return [...names].toSorted();
 }
 
 function readRegistration(
@@ -377,7 +376,7 @@ const FUNCTION_LIKE_KINDS = new Set<SyntaxKind>([
 
 function stripTypeWrappers(text: string): string {
   let t = text.trim();
-  t = t.replace(/\s*\|\s*(undefined|null)\s*/g, '').trim();
+  t = t.replaceAll(/\s*\|\s*(undefined|null)\s*/g, '').trim();
   const promise = /^Promise\s*<\s*(.+?)\s*>$/.exec(t);
   if (promise) t = promise[1].trim();
   t = t.replace(/\[\]\s*$/, '').trim();
@@ -793,17 +792,17 @@ export function analyze(options: { srcRoot?: string; generatedAt?: string } = {}
 
   return {
     generatedAt: options.generatedAt ?? new Date(0).toISOString(),
-    services: services.sort(
+    services: services.toSorted(
       (a, b) =>
-        a.domain.localeCompare(b.domain) ||
-        a.impl.localeCompare(b.impl) ||
+        (a.domain.localeCompare(b.domain) ??
+        a.impl.localeCompare(b.impl)) ??
         a.scope.localeCompare(b.scope),
     ),
-    edges: [...acc.edges.values()].sort(
+    edges: [...acc.edges.values()].toSorted(
       (a, b) =>
-        a.from.localeCompare(b.from) || a.kind.localeCompare(b.kind) || a.to.localeCompare(b.to),
+        (a.from.localeCompare(b.from) ?? a.kind.localeCompare(b.kind)) ?? a.to.localeCompare(b.to),
     ),
-    unknownTokens: [...acc.unknownRefs].sort(),
+    unknownTokens: [...acc.unknownRefs].toSorted(),
   };
 }
 
@@ -829,7 +828,7 @@ export function summarize(graph: Graph): string {
   const byKind = new Map<string, number>();
   for (const e of graph.edges) byKind.set(e.kind, (byKind.get(e.kind) ?? 0) + 1);
   const kindSummary = [...byKind.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
+    .toSorted((a, b) => a[0].localeCompare(b[0]))
     .map(([k, n]) => `${k}=${n}`)
     .join(' ');
   return `services=${graph.services.length} edges=${graph.edges.length} ${kindSummary}`;

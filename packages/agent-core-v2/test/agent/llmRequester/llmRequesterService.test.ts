@@ -127,7 +127,7 @@ beforeEach(() => {
   disposables = new DisposableStore();
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 function createService(
   requester: ModelRequester,
@@ -683,7 +683,7 @@ describe('AgentLLMRequesterService fault injection (experimental)', () => {
       projectStrict: (messages: readonly ContextMessage[]) => messages,
     }, { flagEnabled: false });
 
-    expect(() => faultInjection.arm('request-too-large')).toThrow(/disabled/);
+    expect(() =>{  faultInjection.arm('request-too-large'); }).toThrow(/disabled/);
     expect(faultInjection.status()).toEqual({ armed: undefined, fired: [] });
   });
 });

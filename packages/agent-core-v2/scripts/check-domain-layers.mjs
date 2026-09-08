@@ -38,9 +38,8 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const PKG_ROOT = resolve(__dirname, '..');
 export const SRC_ROOT = join(PKG_ROOT, 'src');
 const TEST_ROOT = join(PKG_ROOT, 'test');
@@ -343,7 +342,7 @@ function kosongInfoOf(absPath) {
   const segments = rel.split(/[\\/]/);
   if (segments[0] !== 'kosong') return undefined;
   const sub = segments[1];
-  const last = segments[segments.length - 1] ?? '';
+  const last = segments.at(-1) ?? '';
   return {
     // A file directly under `src/kosong/` has no subdomain.
     sub: sub === undefined || sub.endsWith('.ts') ? undefined : sub,
@@ -763,7 +762,7 @@ function main() {
   return 1;
 }
 
-const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const isMain = process.argv[1] && resolve(process.argv[1]) === import.meta.filename;
 if (isMain) {
   process.exit(main());
 }

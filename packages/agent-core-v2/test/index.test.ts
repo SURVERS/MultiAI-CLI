@@ -105,7 +105,7 @@ describe('v1 wire vocabulary', () => {
     wire = registerTestAgentWire(ix, SCOPE, { log });
   });
 
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   async function readRecords(): Promise<WireRecord[]> {
     await wire.flush();

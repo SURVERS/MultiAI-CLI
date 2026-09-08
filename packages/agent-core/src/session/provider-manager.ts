@@ -290,6 +290,16 @@ function toKosongProviderConfig(
 ): KosongProviderConfig {
   const effectiveType = modelProtocol ?? provider.type;
   const envCustomHeaders = parseMultiAICustomHeaders();
+  const routingUrl = modelBaseUrl ?? providerValue(provider.baseUrl, provider.env,
+    effectiveType === 'anthropic' ? 'ANTHROPIC_BASE_URL' : 'OPENAI_BASE_URL');
+  if (routingUrl && promptCacheKey) {
+    try {
+      const endpoint = new URL(routingUrl);
+      if (endpoint.hostname === 'opencode.ai' && endpoint.pathname.startsWith('/zen/go/')) {
+        envCustomHeaders['x-opencode-session'] = promptCacheKey;
+      }
+    } catch { /* Endpoint validation is handled by the transport. */ }
+  }
   switch (effectiveType) {
     case 'anthropic': {
       // A per-model endpoint (catalog gateway override) wins over the

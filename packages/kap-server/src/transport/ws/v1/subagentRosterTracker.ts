@@ -54,7 +54,7 @@ export class SubagentRosterTracker {
         // task id) — tracking them here too would duplicate the row (keyed by
         // agent id) and mis-target cancel/detail actions. The roster exists
         // for the foreground/live-only subagents REST cannot serve.
-        if (event.runInBackground === true) return;
+        if (event.runInBackground) return;
         let roster = this.bySession.get(sessionId);
         if (!roster) {
           roster = new Map();

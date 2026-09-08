@@ -92,7 +92,7 @@ export class AgentBlobServiceImpl implements IAgentBlobService {
       const newUrl = await transformUrl(url);
       if (newUrl === url) continue;
 
-      if (updated === undefined) updated = { ...part };
+      updated ??= { ...part };
       updated[key] = { ...(value as object), url: newUrl };
     }
     return updated === undefined ? part : (updated as unknown as ContentPart);

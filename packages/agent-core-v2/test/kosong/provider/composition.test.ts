@@ -481,11 +481,11 @@ describe('kimi provider definitions', () => {
     registerProviderDefinition({ id: 'pair-vendor', baseProtocol: 'anthropic', traits: [] });
     expect(getProviderDefinition('pair-vendor', 'openai')).toBeDefined();
     expect(getProviderDefinition('pair-vendor', 'anthropic')).toBeDefined();
-    expect(() =>
-      registerProviderDefinition({ id: 'pair-vendor', baseProtocol: 'openai', traits: [] }),
+    expect(() =>{ 
+      registerProviderDefinition({ id: 'pair-vendor', baseProtocol: 'openai', traits: [] }); },
     ).toThrow(/already registered/);
-    expect(() =>
-      registerProviderDefinition({ id: 'kimi', baseProtocol: 'openai', traits: [] }),
+    expect(() =>{ 
+      registerProviderDefinition({ id: 'kimi', baseProtocol: 'openai', traits: [] }); },
     ).toThrow(/already registered/);
   });
 });

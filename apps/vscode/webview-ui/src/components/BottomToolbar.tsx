@@ -60,7 +60,7 @@ export function BottomToolbar() {
           <div className="flex items-center gap-1 py-0.5 min-h-7">
             {hasQueue && (
               <button
-                onClick={() => toggleTab("queue")}
+                onClick={() =>{  toggleTab("queue"); }}
                 className={cn(
                   "flex items-center gap-1.5 px-2 py-0.5 rounded text-xs transition-colors",
                   activeTab === "queue" ? "bg-accent text-accent-foreground" : "hover:bg-muted/50 text-muted-foreground",
@@ -74,7 +74,7 @@ export function BottomToolbar() {
 
             {hasChanges && (
               <button
-                onClick={() => toggleTab("changes")}
+                onClick={() =>{  toggleTab("changes"); }}
                 className={cn(
                   "flex items-center gap-1.5 px-2 py-0.5 rounded text-xs transition-colors",
                   activeTab === "changes" ? "bg-accent text-accent-foreground" : "hover:bg-muted/50 text-muted-foreground",

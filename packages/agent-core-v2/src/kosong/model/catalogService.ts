@@ -140,8 +140,8 @@ export class ModelCatalog extends Disposable implements IModelCatalog {
     super();
     // Cache invalidation rides the two config-change events; any change in
     // either of them can alter an assembled Model, so the whole cache drops.
-    this._register(this.models.onDidChangeModels(() => this.notifyConfigChanged()));
-    this._register(this.providers.onDidChangeProviders(() => this.notifyConfigChanged()));
+    this._register(this.models.onDidChangeModels(() =>{  this.notifyConfigChanged(); }));
+    this._register(this.providers.onDidChangeProviders(() =>{  this.notifyConfigChanged(); }));
   }
 
   /**

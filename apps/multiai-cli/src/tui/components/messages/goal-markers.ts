@@ -72,7 +72,7 @@ export class GoalMarkerComponent implements Component {
     }
     const out = [`${this.indent}${dot} ${head}`];
     const wrapWidth = Math.max(20, width - DETAIL_INDENT.length);
-    for (const line of wrap(this.detail!, wrapWidth)) {
+    for (const line of wrap(this.detail, wrapWidth)) {
       out.push(DETAIL_INDENT + currentTheme.fg('textDim', line));
     }
     return this.clampToWidth(out, width);

@@ -66,7 +66,7 @@ describe('FlagService', () => {
     disposables = new DisposableStore();
     homeDir = `/tmp/kimi-code-flag-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   function makeFlags(env: Readonly<Record<string, string | undefined>> = {}) {
     const ix = disposables.add(new TestInstantiationService());

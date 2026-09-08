@@ -74,7 +74,7 @@ function CodeBlock({ content, maxLines = 10 }: { content: string; maxLines?: num
       </pre>
       {shouldCollapse && (
         <button
-          onClick={() => setExpanded(!expanded)}
+          onClick={() =>{  setExpanded(!expanded); }}
           className="absolute bottom-1.5 right-1.5 text-[11px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 opacity-0 group-hover/codeblock:opacity-100 transition-opacity cursor-pointer"
         >
           {expanded ? "Less" : `Expand +${lines.length - maxLines}`}
@@ -332,7 +332,10 @@ function TaskTool({ call, result, subagentSteps }: ToolRendererProps) {
     if (!hasSubagentSteps) {
       return result ? formatOutput(result.output) : "";
     }
-    const lastStep = subagentSteps[subagentSteps.length - 1];
+    const lastStep = subagentSteps.at(-1);
+    if (lastStep === undefined) {
+      return result ? formatOutput(result.output) : "";
+    }
     const textItems = lastStep.items.filter((i) => i.type === "text");
     if (textItems.length > 0) {
       return textItems.map((i) => (i as { type: "text"; content: string }).content).join("\n");
@@ -351,7 +354,7 @@ function TaskTool({ call, result, subagentSteps }: ToolRendererProps) {
       </div>
       {hasSubagentSteps && (
         <div className="py-2">
-          <button onClick={() => setShowProcess(!showProcess)} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() =>{  setShowProcess(!showProcess); }} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground hover:text-foreground transition-colors">
             {showProcess ? <IconChevronDown className="size-3" /> : <IconChevronRight className="size-3" />}
             <span>
               {subagentSteps.length} step{subagentSteps.length > 1 ? "s" : ""}
@@ -388,11 +391,11 @@ function getToolLabel(call: UIToolCall): string {
     case "Shell":
       return (args.command as string) || "command";
     case "ReadFile":
-      return (args.path as string)?.split("/").pop() || "file";
+      return (args.path as string)?.split("/").pop() ?? "file";
     case "WriteFile":
-      return (args.path as string)?.split("/").pop() || "file";
+      return (args.path as string)?.split("/").pop() ?? "file";
     case "StrReplaceFile":
-      return (args.path as string)?.split("/").pop() || "file";
+      return (args.path as string)?.split("/").pop() ?? "file";
     case "Glob":
       return (args.pattern as string) || "pattern";
     case "Task":
@@ -433,7 +436,7 @@ export function ToolCallCard({ call, result, subagentSteps }: ToolRendererProps)
 
   return (
     <div className="rounded-lg border border-border overflow-hidden">
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors">
+      <button onClick={() =>{  setExpanded(!expanded); }} className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors">
         <StatusIndicator status={status} />
         <ToolIcon name={call.name} />
         <span className="text-xs font-medium">{call.name}</span>

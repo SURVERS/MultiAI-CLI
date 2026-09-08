@@ -43,7 +43,7 @@ export class BridgeHandler {
       captureBaseline: (session, filePath, webviewIds) => {
         this.captureFileBaseline(session, filePath, webviewIds);
       },
-      log: (message, error) => this.logRuntimeError(message, error),
+      log: (message, error) =>{  this.logRuntimeError(message, error); },
     });
     this.baselineManager = new BaselineManager(globalStoragePath, this.runtime.harness.homeDir);
     this.fileManager = new FileManager(this.baselineManager, broadcast);
@@ -146,9 +146,9 @@ export class BridgeHandler {
       baselineManager: this.baselineManager,
       runtime: this.runtime,
       harness: this.runtime.harness,
-      reloadWebview: () => this.reloadWebview(webviewId),
+      reloadWebview: () =>{  this.reloadWebview(webviewId); },
       showLogs: this.showLogs,
-      logError: (message, error) => this.logRuntimeError(message, error),
+      logError: (message, error) =>{  this.logRuntimeError(message, error); },
       getSession: () => this.runtime.getSessionForView(webviewId),
       getSessionId: () => this.fileManager.getSessionId(webviewId),
       getOrCreateSession: async (model, effort, sessionId) => {

@@ -468,11 +468,9 @@ export function createCronScheduler(opts: CronSchedulerOptions): CronScheduler {
           ? task.lastFiredAt
           : undefined;
       const cursor =
-        seen !== undefined
-          ? seen
-          : persistedCursor !== undefined
+        seen ?? (persistedCursor !== undefined
             ? persistedCursor
-            : undefined;
+            : undefined);
       const baseFromMs =
         cursor !== undefined && cursor > task.createdAt ? cursor : task.createdAt;
       return computeJitteredNext(task, parsed, baseFromMs);

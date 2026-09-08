@@ -82,7 +82,7 @@ describe('safeRemove', () => {
   });
 
   it('is a no-op for a missing key', () => {
-    expect(() => safeRemove('missing')).not.toThrow();
+    expect(() =>{  safeRemove('missing'); }).not.toThrow();
   });
 });
 
@@ -118,7 +118,7 @@ describe('error swallowing', () => {
       throw new Error('quota');
     };
     installStorage(throwing);
-    expect(() => safeSetString('k', 'v')).not.toThrow();
+    expect(() =>{  safeSetString('k', 'v'); }).not.toThrow();
   });
 });
 

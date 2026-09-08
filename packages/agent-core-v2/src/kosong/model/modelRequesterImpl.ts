@@ -78,8 +78,8 @@ export class ModelRequesterImpl implements ModelRequester {
   ): AsyncIterable<ModelRequestEvent> {
     const queue = new AsyncEventQueue<ModelRequestEvent>();
     void this.runRequest(input, signal, queue, params).then(
-      () => queue.end(),
-      (error) => queue.fail(error),
+      () =>{  queue.end(); },
+      (error) =>{  queue.fail(error); },
     );
     return queue;
   }

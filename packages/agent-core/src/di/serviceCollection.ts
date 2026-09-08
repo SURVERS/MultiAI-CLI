@@ -51,6 +51,6 @@ export class ServiceCollection {
       value: unknown,
     ) => void,
   ): void {
-    this._entries.forEach((value, id) => callback(id, value));
+    this._entries.forEach((value, id) =>{  callback(id, value); });
   }
 }

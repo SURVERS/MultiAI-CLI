@@ -609,11 +609,9 @@ export class SessionCronServiceImpl extends Disposable implements ISessionCronSe
           ? task.lastFiredAt
           : undefined;
       const cursor =
-        seen !== undefined
-          ? seen
-          : persistedCursor !== undefined
+        seen ?? (persistedCursor !== undefined
             ? persistedCursor
-            : undefined;
+            : undefined);
       const baseFromMs =
         cursor !== undefined && cursor > task.createdAt ? cursor : task.createdAt;
       return this.computeJitteredNext(task, parsed, baseFromMs);

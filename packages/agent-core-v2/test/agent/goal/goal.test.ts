@@ -197,7 +197,7 @@ async function restoreGoalRecords(
   records: readonly WireRecord[],
 ): Promise<void> {
   goals.getGoal();
-  await ctx.restore(records as readonly WireRecord[]);
+  await ctx.restore(records);
 }
 
 function makeTurn(id: number): Turn {
@@ -1266,7 +1266,7 @@ describe('AgentGoalService core workflow hooks', () => {
     const resumed = await goals.resumeGoal({ continueIfPaused: true });
     endTurn(eventBus, makeTurn(41), { reason: 'cancelled' });
 
-    await vi.waitFor(() => expect(enqueue).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() =>{  expect(enqueue).toHaveBeenCalledTimes(2); });
     expect(resumed.status).toBe('active');
     expect(goals.getGoal().goal?.status).toBe('active');
   });
@@ -1341,7 +1341,7 @@ describe('AgentGoalService core workflow hooks', () => {
     await runGoalStep(loopService, firstTurn);
     endTurn(eventBus, firstTurn);
 
-    await vi.waitFor(() => expect(loopService.launches).toHaveLength(1));
+    await vi.waitFor(() =>{  expect(loopService.launches).toHaveLength(1); });
     const continuation = makeTurn(loopService.launches[0]!);
     eventBus.publish({
       type: 'turn.started',
@@ -1448,7 +1448,7 @@ describe('AgentGoalService core workflow hooks', () => {
     await goals.createGoal({ objective: 'finish the task' }, 'model');
     endTurn(eventBus, turn);
 
-    await vi.waitFor(() => expect(loopService.launches).toHaveLength(1));
+    await vi.waitFor(() =>{  expect(loopService.launches).toHaveLength(1); });
     expect(goals.getGoal().goal).toMatchObject({
       status: 'active',
       turnsUsed: 1,
@@ -1464,7 +1464,7 @@ describe('AgentGoalService core workflow hooks', () => {
     await goals.setBudgetLimits({ budgetLimits: { turnBudget: 1 } }, 'model');
     endTurn(eventBus, turn);
 
-    await vi.waitFor(() => expect(goals.getGoal().goal?.status).toBe('blocked'));
+    await vi.waitFor(() =>{  expect(goals.getGoal().goal?.status).toBe('blocked'); });
     expect(goals.getGoal().goal).toMatchObject({
       status: 'blocked',
       turnsUsed: 1,
@@ -1601,7 +1601,7 @@ describe('AgentGoalService core workflow hooks', () => {
     await runGoalStep(loopService, turn);
     endTurn(eventBus, turn);
 
-    await vi.waitFor(() => expect(goals.getGoal().goal?.status).toBe('paused'));
+    await vi.waitFor(() =>{  expect(goals.getGoal().goal?.status).toBe('paused'); });
     expect(goals.getGoal().goal?.terminalReason).toBe(
       'Paused after goal continuation failure: wire dispatch exploded',
     );
@@ -1616,7 +1616,7 @@ describe('AgentGoalService core workflow hooks', () => {
     await runGoalStep(loopService, goalTurn);
     endTurn(eventBus, goalTurn);
 
-    await vi.waitFor(() => expect(loopService.launches).toHaveLength(1));
+    await vi.waitFor(() =>{  expect(loopService.launches).toHaveLength(1); });
     expect(goals.getGoal().goal?.status).toBe('active');
     expect(loopService.hasPendingRequests()).toBe(true);
   });
@@ -2143,7 +2143,7 @@ describe('AgentGoalService mid-turn budget stop', () => {
         'Goal budget exhausted; tool calls are rejected. Write your final message.',
       );
       expect(JSON.stringify(history)).not.toContain('This step should never run.');
-      await vi.waitFor(() => expect(goals.getGoal().goal?.status).toBe('blocked'));
+      await vi.waitFor(() =>{  expect(goals.getGoal().goal?.status).toBe('blocked'); });
       expect(goals.getGoal().goal?.budget.turnBudget).toBe(1);
     } finally {
       await ctx.dispose();

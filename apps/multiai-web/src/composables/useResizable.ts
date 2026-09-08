@@ -61,7 +61,7 @@ export function useResizable(options: UseResizableOptions): UseResizable {
     return Math.min(toValue(max), Math.max(min, Math.round(value)));
   }
 
-  const width = ref<number>(clamp(readStored(storageKey) ?? defaultWidth));
+  const width = ref(clamp(readStored(storageKey) ?? defaultWidth));
   const dragging = ref(false);
 
   function setWidth(value: number): void {

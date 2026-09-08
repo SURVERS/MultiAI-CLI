@@ -17,9 +17,9 @@ export function CopyButton({ content, className }: CopyButtonProps) {
     try {
       await navigator.clipboard.writeText(content);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
+      setTimeout(() =>{  setIsCopied(false); }, 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
     }
   };
 

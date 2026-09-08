@@ -36,7 +36,7 @@ function message(text: string): ContextMessage {
 
 function harness() {
   const disposables = new DisposableStore();
-  onTestFinished(() => disposables.dispose());
+  onTestFinished(() =>{  disposables.dispose(); });
   const context = stubContextMemory();
   const loop = stubLoopWithHooks({ pendingTurnResult: true });
   const fullCompaction = {

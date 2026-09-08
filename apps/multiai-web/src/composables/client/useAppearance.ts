@@ -13,7 +13,7 @@ export type ColorScheme = 'light' | 'dark' | 'system';
 /** Accent: 'blue' (MultiAI blue, default) or 'mono' (black/white). */
 export type Accent = 'blue' | 'mono';
 
-const ACCENT_VALUES: readonly string[] = ['blue', 'mono'];
+const ACCENT_VALUES: ReadonlySet<string> = new Set(['blue', 'mono']);
 const COLOR_SCHEME_VALUES: readonly string[] = ['light', 'dark', 'system'];
 const UI_FONT_SIZE_DEFAULT = 14;
 const UI_FONT_SIZE_MIN = 12;
@@ -21,7 +21,7 @@ const UI_FONT_SIZE_MAX = 20;
 
 function loadAccent(): Accent {
   const v = safeGetString(STORAGE_KEYS.accent);
-  if (v && ACCENT_VALUES.includes(v)) return v as Accent;
+  if (v && ACCENT_VALUES.has(v)) return v as Accent;
   return 'blue';
 }
 
@@ -68,7 +68,7 @@ function applyUiFontSize(value: number): void {
 
 const colorScheme = ref<ColorScheme>(loadColorScheme());
 const accent = ref<Accent>(loadAccent());
-const uiFontSize = ref<number>(loadUiFontSize());
+const uiFontSize = ref(loadUiFontSize());
 
 watch(colorScheme, applyColorScheme, { immediate: true });
 watch(accent, applyAccent, { immediate: true });
@@ -81,7 +81,7 @@ function setColorScheme(c: ColorScheme): void {
 }
 
 function setAccent(a: Accent): void {
-  if (!ACCENT_VALUES.includes(a)) return;
+  if (!ACCENT_VALUES.has(a)) return;
   accent.value = a;
   safeSetString(STORAGE_KEYS.accent, a);
 }

@@ -49,8 +49,8 @@ describe('Cyclic dependency detection', () => {
     let captured: CyclicDependencyError | undefined;
     try {
       ix.invokeFunction((a) => a.get(IA));
-    } catch (e) {
-      captured = e as CyclicDependencyError;
+    } catch (error) {
+      captured = error as CyclicDependencyError;
     }
     expect(captured).toBeInstanceOf(CyclicDependencyError);
     expect(captured!.path).toEqual(['A', 'B', 'A']);
@@ -112,8 +112,8 @@ describe('Cyclic dependency detection', () => {
     let captured: CyclicDependencyError | undefined;
     try {
       child.invokeFunction((a) => a.get(IA));
-    } catch (e) {
-      captured = e as CyclicDependencyError;
+    } catch (error) {
+      captured = error as CyclicDependencyError;
     }
     expect(captured).toBeInstanceOf(CyclicDependencyError);
     expect(captured!.path).toEqual(['A', 'B', 'A']);
@@ -250,8 +250,8 @@ describe('Sync/Async dependency loop', () => {
     let captured: unknown;
     try {
       insta.invokeFunction((accessor) => accessor.get(IA));
-    } catch (e) {
-      captured = e;
+    } catch (error) {
+      captured = error;
     }
     expect(captured).toBeInstanceOf(Error);
     expect((captured as Error).message).toContain('RECURSIVELY');

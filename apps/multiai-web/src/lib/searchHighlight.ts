@@ -18,12 +18,12 @@ const HTML_ESCAPE: Record<string, string> = {
 
 /** Escape the five HTML-significant characters. */
 export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (ch) => HTML_ESCAPE[ch] ?? ch);
+  return s.replaceAll(/[&<>"']/g, (ch) => HTML_ESCAPE[ch] ?? ch);
 }
 
 /** Escape regexp metacharacters so `s` matches literally. */
 export function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return s.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -33,7 +33,7 @@ export function escapeRegExp(s: string): string {
  * collapsed to spaces so the snippet renders on a single line.
  */
 export function snippet(text: string, query: string, radius = 40): string {
-  const flat = text.replace(/\s+/g, ' ').trim();
+  const flat = text.replaceAll(/\s+/g, ' ').trim();
   if (flat.length === 0) return '';
   const q = query.trim();
   if (q.length === 0) return head(flat, radius * 2);

@@ -86,13 +86,13 @@ export function StateCard({
         </div>
         <div className="flex items-center gap-1.5">
           <ActionButton
-            onClick={() =>
-              setExpand((s) => ({ nonce: s.nonce + 1, depth: Number.POSITIVE_INFINITY }))
+            onClick={() =>{ 
+              setExpand((s) => ({ nonce: s.nonce + 1, depth: Number.POSITIVE_INFINITY })); }
             }
           >
             Expand
           </ActionButton>
-          <ActionButton onClick={() => setExpand((s) => ({ nonce: s.nonce + 1, depth: 0 }))}>
+          <ActionButton onClick={() =>{  setExpand((s) => ({ nonce: s.nonce + 1, depth: 0 })); }}>
             Collapse
           </ActionButton>
           <span className="text-[10px] text-neutral-600">live · 1s</span>

@@ -322,7 +322,7 @@ describe('FileMentionProvider', () => {
       const extraDir = createExtraDir();
       mkdirSync(join(extraDir, 'deep'), { recursive: true });
       writeFileSync(join(extraDir, 'deep', 'target-needle.ts'), 'export {};');
-      const provider = new FileMentionProvider([], workDir, FD_PATH!, [extraDir]);
+      const provider = new FileMentionProvider([], workDir, FD_PATH, [extraDir]);
 
       const result = await provider.getSuggestions(['@target-needle'], 0, '@target-needle'.length, {
         signal: ctrl(),
@@ -398,7 +398,7 @@ describe('FileMentionProvider', () => {
     'does not bypass fd filtering with filesystem suggestions when fd returns no matches',
     async () => {
       writeFileSync(join(workDir, 'README.md'), 'readme');
-      const provider = new FileMentionProvider([], workDir, FD_PATH!);
+      const provider = new FileMentionProvider([], workDir, FD_PATH);
 
       const result = await provider.getSuggestions(['@zzz-no-match-xyz'], 0, '@zzz-no-match-xyz'.length, {
         signal: ctrl(),

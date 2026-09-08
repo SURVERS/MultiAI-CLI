@@ -176,7 +176,7 @@ function workspaceStub(): IWorkspaceService {
     list: () => Promise.resolve([]),
     get: () => Promise.resolve(undefined),
     createOrTouch: (root, name) =>
-      Promise.resolve<Workspace>({
+      Promise.resolve({
         id: 'wd_stub',
         root,
         name: name ?? 'stub',

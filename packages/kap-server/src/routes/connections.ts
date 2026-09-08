@@ -52,7 +52,7 @@ export function registerConnectionsRoutes(
           has_client_hello: conn.hasClientHello,
           subscriptions: [...conn.subscriptionSessionIds],
         }))
-        .sort((a, b) => a.connected_at.localeCompare(b.connected_at));
+        .toSorted((a, b) => a.connected_at.localeCompare(b.connected_at));
       reply.send(okEnvelope({ connections }, req.id));
     },
   );

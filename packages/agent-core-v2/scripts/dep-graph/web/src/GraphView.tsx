@@ -97,8 +97,8 @@ function computeServicePorts(
   const result = new Map<string, ServicePortsInfo>();
   for (const [id, sets] of acc) {
     result.set(id, {
-      inPorts: [...sets.in].sort(),
-      outPorts: [...sets.out].sort(),
+      inPorts: [...sets.in].toSorted(),
+      outPorts: [...sets.out].toSorted(),
       connectedIn: sets.connectedIn,
     });
   }
@@ -427,7 +427,7 @@ function TagEditor({ tags, allTags, onChange }: TagEditorProps): JSX.Element {
             <TagChip
               key={tag}
               tag={tag}
-              onRemove={() => onChange(tags.filter((t) => t !== tag))}
+              onRemove={() =>{  onChange(tags.filter((t) => t !== tag)); }}
             />
           ))
         )}
@@ -437,7 +437,7 @@ function TagEditor({ tags, allTags, onChange }: TagEditorProps): JSX.Element {
           value={draft}
           list={listId}
           placeholder="add tag…"
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) =>{  setDraft(e.target.value); }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -456,7 +456,7 @@ function TagEditor({ tags, allTags, onChange }: TagEditorProps): JSX.Element {
           }}
         />
         <button
-          onClick={() => commit(draft)}
+          onClick={() =>{  commit(draft); }}
           style={{
             padding: '4px 10px',
             background: '#21262d',
@@ -689,14 +689,14 @@ export function GraphView({
         {...(initialViewport
           ? { defaultViewport: initialViewport }
           : { fitView: true })}
-        onMoveEnd={(_, viewport) => saveViewport(viewport)}
+        onMoveEnd={(_, viewport) =>{  saveViewport(viewport); }}
         minZoom={0.1}
         maxZoom={1.6}
         onNodeClick={(_, node) => {
           if (node.id.startsWith('band::')) return;
           onSelect(node.id);
         }}
-        onPaneClick={() => onSelect(undefined)}
+        onPaneClick={() =>{  onSelect(undefined); }}
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} color="#30363d" />
@@ -722,7 +722,7 @@ export function GraphView({
           service={selectedService}
           graph={graph}
           edges={selectedEdges}
-          onClose={() => onSelect(undefined)}
+          onClose={() =>{  onSelect(undefined); }}
           tags={tags}
           onEditTags={onEditTags}
         />
@@ -753,7 +753,7 @@ function ServicePanel({
   const byId = new Map(graph.services.map((s) => [s.id, s]));
   const nodeTags = tags[service.id] ?? [];
   const allTags = useMemo(
-    () => [...new Set(Object.values(tags).flat())].sort(),
+    () => [...new Set(Object.values(tags).flat())].toSorted(),
     [tags],
   );
   return (

@@ -240,7 +240,7 @@ class FakeSessionActivityView {
       this.busSubscriptions.delete(agentId);
       if (this.folds.delete(agentId)) this.recompute('agent_lifecycle');
     });
-    this.interactions.onDidChangePending(() => this.recompute('interaction'));
+    this.interactions.onDidChangePending(() =>{  this.recompute('interaction'); });
     this.current = this.aggregate();
   }
 
@@ -843,8 +843,8 @@ describe('SessionEventBroadcaster', () => {
       },
     });
 
-    await vi.waitFor(() => expect(s1View.envelopes).toHaveLength(1));
-    await vi.waitFor(() => expect(s2View.envelopes).toHaveLength(1));
+    await vi.waitFor(() =>{  expect(s1View.envelopes).toHaveLength(1); });
+    await vi.waitFor(() =>{  expect(s2View.envelopes).toHaveLength(1); });
 
     expect(s1View.envelopes[0]).toMatchObject({
       type: 'session.meta.updated',
@@ -883,8 +883,8 @@ describe('SessionEventBroadcaster', () => {
       payload: { agentId: 'main', sessionId: 's1', session },
     });
 
-    await vi.waitFor(() => expect(s1View.envelopes).toHaveLength(1));
-    await vi.waitFor(() => expect(s2View.envelopes).toHaveLength(1));
+    await vi.waitFor(() =>{  expect(s1View.envelopes).toHaveLength(1); });
+    await vi.waitFor(() =>{  expect(s2View.envelopes).toHaveLength(1); });
 
     expect(s1View.envelopes[0]).toMatchObject({
       type: 'event.session.created',
@@ -915,7 +915,7 @@ describe('SessionEventBroadcaster', () => {
         payload: { agentId: 'main', sessionId: 's1', session },
       });
 
-      await vi.waitFor(() => expect(globalView.envelopes).toHaveLength(1));
+      await vi.waitFor(() =>{  expect(globalView.envelopes).toHaveLength(1); });
       expect(globalView.envelopes[0]).toMatchObject({
         type: 'event.session.created',
         session_id: 's1',
@@ -984,7 +984,7 @@ describe('SessionEventBroadcaster', () => {
         payload: { agentId: 'main', sessionId: 's1', session: { id: 's1' } },
       });
 
-      await vi.waitFor(() => expect(both.envelopes).toHaveLength(1));
+      await vi.waitFor(() =>{  expect(both.envelopes).toHaveLength(1); });
       await bc.getCursor('s1'); // drain any would-be duplicate
       expect(both.envelopes).toHaveLength(1);
     });
@@ -1591,7 +1591,7 @@ describe('SessionEventBroadcaster', () => {
       },
     });
 
-    await vi.waitFor(() => expect(envelopes).toHaveLength(1));
+    await vi.waitFor(() =>{  expect(envelopes).toHaveLength(1); });
     expect(envelopes[0]!.type).toBe('session.meta.updated');
   });
 
@@ -1906,7 +1906,7 @@ describe('SessionEventBroadcaster', () => {
       const ids = transcriptEnvelopes(view.envelopes)
         .filter((e) => e.type === 'transcript.reset')
         .map((e) => (e.payload as { agent_id: string }).agent_id)
-        .sort();
+        .toSorted();
       expect(ids).toEqual(['main', 'sub-1']);
     });
 
@@ -2463,10 +2463,10 @@ describe('SessionEventBroadcaster', () => {
 
       const view = collectingTarget();
       // Unknown session, unknown target, grade-less target — all no-ops.
-      expect(() => bc.unsubscribeTranscript('nope', view.target)).not.toThrow();
-      expect(() => bc.unsubscribeTranscript('s1', view.target)).not.toThrow();
+      expect(() =>{  bc.unsubscribeTranscript('nope', view.target); }).not.toThrow();
+      expect(() =>{  bc.unsubscribeTranscript('s1', view.target); }).not.toThrow();
       await bc.subscribe('s1', view.target);
-      expect(() => bc.unsubscribeTranscript('s1', view.target, ['main'])).not.toThrow();
+      expect(() =>{  bc.unsubscribeTranscript('s1', view.target, ['main']); }).not.toThrow();
     });
 
     it('unsubscribeTranscript cancels a pending deferred baseline', async () => {

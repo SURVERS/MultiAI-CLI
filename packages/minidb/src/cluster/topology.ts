@@ -48,8 +48,8 @@ export class Topology {
       await fs.writeFile(tmpPath, JSON.stringify(requested, null, 2));
       await fs.link(tmpPath, metaPath);
       return new Topology(dir, requested);
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
     } finally {
       await fs.unlink(tmpPath).catch(() => {});
     }

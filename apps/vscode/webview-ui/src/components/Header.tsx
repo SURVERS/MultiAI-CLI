@@ -43,7 +43,7 @@ export function Header() {
             variant="ghost"
             size="xs"
             className="gap-1 h-6 border-0! pl-px! pr-1! text-muted-foreground hover:text-foreground @max-[320px]:hidden"
-            onClick={() => setShowSessionInfo(true)}
+            onClick={() =>{  setShowSessionInfo(true); }}
           >
             <span className="text-[11px] @max-[500px]:hidden">Session</span>
             <IconInfoCircle className="size-3.5 hidden @max-[500px]:block" />
@@ -58,7 +58,7 @@ export function Header() {
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-[20rem] max-w-[calc(100vw-1rem)] p-0">
-            <SessionList onClose={() => setShowSessionList(false)} />
+            <SessionList onClose={() =>{  setShowSessionList(false); }} />
           </PopoverContent>
         </Popover>
         <Button

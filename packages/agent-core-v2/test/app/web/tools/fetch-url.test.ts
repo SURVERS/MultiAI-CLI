@@ -92,7 +92,7 @@ describe('FetchURLTool abort signal', () => {
 
     expect(result.isError).toBe(true);
     if (typeof result.output !== 'string') {
-      throw new Error('expected string error output');
+      throw new TypeError('expected string error output');
     }
     expect(result.output).toContain('boom');
   });
@@ -145,6 +145,6 @@ describe('LocalFetchURLProvider abort signal', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     const [, init] = fetchImpl.mock.calls[0]!;
-    expect((init as RequestInit | undefined)?.signal).toBe(controller.signal);
+    expect((init)?.signal).toBe(controller.signal);
   });
 });

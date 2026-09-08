@@ -173,7 +173,7 @@ function main() {
 
   const closure = resolveWorkspaceDeps(workspaceMap, START_PKG);
   /** @type {string[]} */
-  const closureNames = [...closure].sort((a, b) => a.localeCompare(b));
+  const closureNames = [...closure].toSorted((a, b) => a.localeCompare(b));
 
   const flake = parseFlakeNix();
   const flakeNameSet = new Set(flake.names);
@@ -230,7 +230,7 @@ function main() {
       `\nExpected workspaceNames (${flake.names.length + missingNames.length} total):`
     );
     const expectedNames = new Set([...flake.names, ...missingNames.map((m) => m)]);
-    for (const n of [...expectedNames].sort((a, b) => a.localeCompare(b))) {
+    for (const n of [...expectedNames].toSorted((a, b) => a.localeCompare(b))) {
       console.error(`  ${n}`);
     }
 

@@ -11,8 +11,8 @@ import { WS_BEARER_PROTOCOL_PREFIX } from '../src/transport/ws/bearerProtocol';
 function openWs(url: string, protocols: string | string[]): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(url, protocols);
-    ws.once('open', () => resolve(ws));
-    ws.once('error', (err) => reject(err));
+    ws.once('open', () =>{  resolve(ws); });
+    ws.once('error', (err) =>{  reject(err); });
   });
 }
 

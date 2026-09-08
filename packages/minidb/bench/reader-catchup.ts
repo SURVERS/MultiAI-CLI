@@ -43,11 +43,10 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ClusterDb, shardDirName } from '../src/cluster/index.js';
 import { shardFor } from '../src/cluster/utils.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const WORKER = path.join(__dirname, 'reader-worker.ts');
 
 const SIZES = (process.env.READER_BENCH_KEYS ?? '10000,50000').split(',').map(Number);
@@ -83,7 +82,7 @@ function spawnWorker(args: string[]): { child: ReturnType<typeof spawn>; done: P
         reject(new Error(`worker failed (code=${code}) args=${args.join(' ')}\n${stderr}`));
         return;
       }
-      const report = JSON.parse(lines[lines.length - 1]!) as Report;
+      const report = JSON.parse(lines.at(-1)!) as Report;
       if (!report.ok) reject(new Error(`worker error args=${args.join(' ')}: ${report.error}`));
       else resolve(report);
     });
@@ -101,9 +100,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 function percentile(sorted: number[], p: number): number {
-  if (!sorted.length) return NaN;
+  if (sorted.length === 0) return NaN;
   const idx = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
-  return sorted[Math.max(0, idx)]!;
+  return sorted[Math.max(0, idx)];
 }
 
 /** The exact preload key list (same generator as reader-worker 'preload'). */
@@ -142,7 +141,7 @@ async function benchSize(n: number): Promise<Row> {
 
     db = await ClusterDb.open({ dir, readOnly: true });
     // Warm the reader cache (this first open pays the full replay once).
-    for (let i = 0; i < 3; i++) await db.get(keys[i]!);
+    for (let i = 0; i < 3; i++) await db.get(keys[i]);
     const stats0 = db.stats();
 
     const hammer = spawnWorker(['hammer', dir, String(SHARDS), String(HOT_SHARD), String(VALUE_BYTES), String(PACE_MS)]);
@@ -169,7 +168,7 @@ async function benchSize(n: number): Promise<Row> {
     while (performance.now() < deadline) {
       await sleep(POLL_MS);
       const t = performance.now();
-      await db.get(keys[i % keys.length]!);
+      await db.get(keys[i % keys.length]);
       lat.push(performance.now() - t);
       i++;
     }
@@ -231,7 +230,7 @@ async function main(): Promise<void> {
   console.log('');
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

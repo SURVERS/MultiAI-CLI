@@ -127,7 +127,7 @@ function isSameSection(
     existing.merge === (options.merge ?? deepMerge) &&
     existing.scope === (options.scope ?? ConfigScope.Core) &&
     existing.env === (options.env as ConfigSection['env']) &&
-    existing.stripEnv === (options.stripEnv as ConfigSection['stripEnv']) &&
+    existing.stripEnv === (options.stripEnv) &&
     existing.fromToml === options.fromToml &&
     existing.toToml === options.toToml &&
     deepEqual(existing.defaultValue, options.defaultValue)
@@ -245,8 +245,8 @@ export class ConfigService extends Disposable implements IConfigService {
   ) {
     super();
     this.configKey = this.bootstrap.configKey;
-    this._register(this.registry.onDidRegisterSection((e) => this.revalidateDomain(e.domain)));
-    this._register(this.registry.onDidRegisterOverlay(() => this.reapplyOverlays()));
+    this._register(this.registry.onDidRegisterSection((e) =>{  this.revalidateDomain(e.domain); }));
+    this._register(this.registry.onDidRegisterOverlay(() =>{  this.reapplyOverlays(); }));
     // One-shot config migrations run before the first load (best-effort, never
     // throws): rewrites a persisted thinking.effort "max" to "high" once.
     const { configKey } = this;

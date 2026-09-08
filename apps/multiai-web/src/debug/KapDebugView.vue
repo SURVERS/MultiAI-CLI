@@ -35,7 +35,7 @@ const all = computed<readonly TraceEntry[]>(() => {
 const sessionIds = computed<string[]>(() => {
   const ids = new Set<string>();
   for (const e of all.value) if (e.sessionId) ids.add(e.sessionId);
-  return [...ids].sort();
+  return [...ids].toSorted();
 });
 
 function isError(e: TraceEntry): boolean {
@@ -74,7 +74,7 @@ const wsAgg = computed<WsAggRow[]>(() => {
     if (e.seq !== undefined) row.lastSeq = e.seq;
     map.set(key, row);
   }
-  return [...map.values()].sort((a, b) => b.count - a.count);
+  return [...map.values()].toSorted((a, b) => b.count - a.count);
 });
 
 const restAgg = computed<RestAggRow[]>(() => {
@@ -90,7 +90,7 @@ const restAgg = computed<RestAggRow[]>(() => {
   }
   return [...map.entries()]
     .map(([key, r]) => ({ key, count: r.count, errors: r.errors, avgMs: r.timed > 0 ? Math.round(r.totalMs / r.timed) : 0 }))
-    .sort((a, b) => b.count - a.count);
+    .toSorted((a, b) => b.count - a.count);
 });
 
 // ---------------------------------------------------------------------------

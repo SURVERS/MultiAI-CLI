@@ -136,8 +136,8 @@ export class TranscriptService {
     // Live entries must not outlive their session: once it closes or archives,
     // reads should fall through to the cold rebuild from disk.
     const lifecycle = deps.core.accessor.get(ISessionLifecycleService);
-    lifecycle.onDidCloseSession(({ sessionId }) => this.dropSession(sessionId));
-    lifecycle.onDidArchiveSession(({ sessionId }) => this.dropSession(sessionId));
+    lifecycle.onDidCloseSession(({ sessionId }) =>{  this.dropSession(sessionId); });
+    lifecycle.onDidArchiveSession(({ sessionId }) =>{  this.dropSession(sessionId); });
   }
 
   /**
@@ -160,8 +160,8 @@ export class TranscriptService {
     const store = new TranscriptStore(sessionId);
     let binding: TranscriptBinding;
     try {
-      binding = bindSessionTranscript(store, session, this.deps.logger, (event) =>
-        this.handleLiveOps(sessionId, event),
+      binding = bindSessionTranscript(store, session, this.deps.logger, (event) =>{ 
+        this.handleLiveOps(sessionId, event); },
       );
     } catch (error) {
       // The session's core scope can be disposed mid-bind during shutdown

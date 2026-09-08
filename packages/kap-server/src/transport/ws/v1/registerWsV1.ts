@@ -54,7 +54,7 @@ export function registerWsV1(core: Scope, opts: RegisterWsV1Options): WebSocketS
       maxBatchSize: opts.maxBatchSize,
       highWaterMarkBytes: opts.highWaterMarkBytes,
     });
-    socket.on('close', () => registry.remove(conn.id));
+    socket.on('close', () =>{  registry.remove(conn.id); });
   });
 
   return wss;

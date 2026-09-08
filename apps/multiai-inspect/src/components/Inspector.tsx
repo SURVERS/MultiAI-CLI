@@ -64,7 +64,7 @@ export function Inspector({
   // Mark one as "not loaded" when an agent-scope call comes back with
   // `agent.not_found` (message names the agent).
   const [stoppedAgents, setStoppedAgents] = useState<ReadonlySet<string>>(new Set());
-  useEffect(() => setStoppedAgents(new Set()), [sessionId]);
+  useEffect(() =>{  setStoppedAgents(new Set()); }, [sessionId]);
   const noteAgentError = (agent: string, error: unknown) => {
     if (error instanceof Error && error.message.includes('not found in session')) {
       setStoppedAgents((prev) => (prev.has(agent) ? prev : new Set(prev).add(agent)));
@@ -97,7 +97,7 @@ export function Inspector({
           <select
             className="w-full rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5 text-[12px] text-neutral-100 outline-none focus:border-sky-600"
             value={effectiveAgent}
-            onChange={(e) => onAgentChange(e.target.value)}
+            onChange={(e) =>{  onAgentChange(e.target.value); }}
           >
             {agentIds.map((id) => (
               <option key={id} value={id}>
@@ -126,7 +126,7 @@ export function Inspector({
             <ScopePanels
               scope="agent"
               proxyFor={proxyFor}
-              onError={(error) => noteAgentError(effectiveAgent, error)}
+              onError={(error) =>{  noteAgentError(effectiveAgent, error); }}
             />
           </>
         )}
@@ -191,7 +191,7 @@ function PlanCard({ sessionId, agentId }: { sessionId: string; agentId: string }
             className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-[11px] text-neutral-100 outline-none focus:border-sky-600"
             placeholder="tool_call_id (empty = all plans)"
             value={toolCallId}
-            onChange={(e) => setToolCallId(e.target.value)}
+            onChange={(e) =>{  setToolCallId(e.target.value); }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') void query();
             }}

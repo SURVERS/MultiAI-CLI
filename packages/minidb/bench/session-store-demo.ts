@@ -32,7 +32,7 @@ async function main() {
   for (const w of ws.items) console.log(`    ${w.id}  ${w.name}`);
 
   if (ws.items.length === 0) return;
-  const wsId = ws.items[0]!.id;
+  const wsId = ws.items[0].id;
 
   // 2. list sessions in workspace (page 1 + 2)
   t = performance.now();
@@ -42,8 +42,8 @@ async function main() {
   for (const s of p1.items) console.log(`    ${new Date(s.updatedAt ?? 0).toISOString().slice(0, 10)}  ${s.title.slice(0, 50)}`);
 
   // 3. precise get
-  if (p1.items.length) {
-    const sid = p1.items[0]!.sessionId;
+  if (p1.items.length > 0) {
+    const sid = p1.items[0].sessionId;
     t = performance.now();
     const s = store.getSession(sid);
     console.log(`\n[3] getSession(${sid}) in ${ms(performance.now() - t)}`);
@@ -70,7 +70,7 @@ async function main() {
   console.log('\ndone.');
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

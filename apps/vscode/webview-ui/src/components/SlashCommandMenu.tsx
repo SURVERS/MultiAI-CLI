@@ -60,8 +60,8 @@ export function SlashCommandMenu({ commands, query, selectedIndex, onSelect, onH
           <button
             key={cmd.name}
             ref={idx === selectedIndex ? selectedRef : null}
-            onClick={() => onSelect(cmd.name)}
-            onMouseEnter={() => onHover(idx)}
+            onClick={() =>{  onSelect(cmd.name); }}
+            onMouseEnter={() =>{  onHover(idx); }}
             className={cn("w-full px-2 py-1.5 text-left flex items-center justify-between gap-3", idx === selectedIndex ? "bg-accent" : "hover:bg-accent/50")}
           >
             <span className="text-xs shrink-0">{highlightMatch(`/${cmd.name}`, query)}</span>

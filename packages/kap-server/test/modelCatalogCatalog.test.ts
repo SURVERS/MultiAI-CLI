@@ -620,7 +620,7 @@ describe('server-v2 /api/v1 catalog browse + import endpoints', () => {
     expect(status).toBe(201);
     expect(body.code).toBe(0);
     expect(body.data.models_imported).toBe(2);
-    expect(body.data.providers.map((p) => p['id']).sort()).toEqual(['acme-claude', 'acme-gpt']);
+    expect(body.data.providers.map((p) => p['id']).toSorted()).toEqual(['acme-claude', 'acme-gpt']);
     expect(seen.authorization).toBe('Bearer tok-1');
 
     const config = await readConfigToml();

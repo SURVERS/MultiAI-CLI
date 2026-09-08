@@ -39,8 +39,8 @@ export function wireRoute(home: string = MULTIAI_HOME): Hono {
         records: result.records,
         warnings: result.warnings,
       });
-    } catch (err) {
-      const msg = (err as Error).message;
+    } catch (error) {
+      const msg = (error as Error).message;
       return c.json({ error: msg, code: 'READ_ERROR' }, 500);
     }
   });

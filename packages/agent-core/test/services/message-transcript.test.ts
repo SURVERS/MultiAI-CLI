@@ -623,7 +623,7 @@ describe('MessageService over a compacted wire log', () => {
 
   it('lists the FULL history (compacted prefix + summary + tail)', async () => {
     const page = await impl.list(SESSION_ID, { page_size: 100 });
-    const asc = [...page.items].reverse();
+    const asc = [...page.items].toReversed();
     expect(
       asc.map((m) => (m.content[0] as { text?: string }).text ?? '[non-text]'),
     ).toEqual(['u1', 'a1', 'u2', 'a2', 'SUM']);
@@ -632,7 +632,7 @@ describe('MessageService over a compacted wire log', () => {
 
   it('uses wire record times for created_at, strictly increasing', async () => {
     const page = await impl.list(SESSION_ID, { page_size: 100 });
-    const asc = [...page.items].reverse();
+    const asc = [...page.items].toReversed();
     expect(asc[0]!.created_at).toBe(
       new Date(SESSION_CREATED_AT + 1_000).toISOString(),
     );
@@ -645,7 +645,7 @@ describe('MessageService over a compacted wire log', () => {
   it('appends the live tail when memory is ahead of the wire file', async () => {
     liveHistory = [...liveHistory, userMessage('u3-live')];
     const page = await impl.list(SESSION_ID, { page_size: 100 });
-    const asc = [...page.items].reverse();
+    const asc = [...page.items].toReversed();
     expect(
       asc.map((m) => (m.content[0] as { text?: string }).text ?? '[non-text]'),
     ).toEqual(['u1', 'a1', 'u2', 'a2', 'SUM', 'u3-live']);
@@ -653,7 +653,7 @@ describe('MessageService over a compacted wire log', () => {
 
   it('get() resolves ids against the same full transcript', async () => {
     const page = await impl.list(SESSION_ID, { page_size: 100 });
-    const asc = [...page.items].reverse();
+    const asc = [...page.items].toReversed();
     const fetched = await impl.get(SESSION_ID, asc[0]!.id);
     expect((fetched.content[0] as { text: string }).text).toBe('u1');
     expect(fetched.created_at).toBe(asc[0]!.created_at);
@@ -662,7 +662,7 @@ describe('MessageService over a compacted wire log', () => {
   it('falls back to the live context view when the wire file is unreadable', async () => {
     await rm(path.join(dir, 'agents', 'main', 'wire.jsonl'));
     const page = await impl.list(SESSION_ID, { page_size: 100 });
-    const asc = [...page.items].reverse();
+    const asc = [...page.items].toReversed();
     expect(asc.map((m) => (m.content[0] as { text?: string }).text)).toEqual([
       'u1',
       'u2',
@@ -681,7 +681,7 @@ describe('MessageService over a compacted wire log', () => {
     await writeFile(wirePath, prev + extra + '\n', 'utf8');
     liveHistory = [...liveHistory, userMessage('u3')];
     const page = await impl.list(SESSION_ID, { page_size: 100 });
-    const asc = [...page.items].reverse();
+    const asc = [...page.items].toReversed();
     expect(
       asc.map((m) => (m.content[0] as { text?: string }).text ?? '[non-text]'),
     ).toEqual(['u1', 'a1', 'u2', 'a2', 'SUM', 'u3']);

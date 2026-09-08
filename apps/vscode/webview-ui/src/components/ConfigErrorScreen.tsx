@@ -30,7 +30,7 @@ function ErrorDetails({ message }: { message?: string | null }) {
   const copyError = async () => {
     await navigator.clipboard.writeText(message);
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 2_000);
+    window.setTimeout(() =>{  setCopied(false); }, 2_000);
   };
 
   return (

@@ -79,11 +79,11 @@ export class CronCreateTool implements ICronCreateTool {
     let parsed: ParsedCronExpression;
     try {
       parsed = parseCronExpression(normalizedCron);
-    } catch (err) {
+    } catch (error) {
       return {
         isError: true,
         output: `Invalid cron expression: ${
-          err instanceof Error ? err.message : String(err)
+          error instanceof Error ? error.message : String(error)
         }`,
       };
     }
@@ -117,7 +117,7 @@ export class CronCreateTool implements ICronCreateTool {
       };
     }
 
-    const recurring = args.recurring !== false;
+    const recurring =  args.recurring;
 
     if (!recurring) {
       const firstFire = computeNextCronRun(parsed, nowAtPrepare);

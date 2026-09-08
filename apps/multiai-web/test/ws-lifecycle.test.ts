@@ -87,7 +87,7 @@ describe('DaemonEventSocket reconnect + staleness', () => {
     const handlers = makeHandlers();
     const socket = new DaemonEventSocket(WS_URL, CLIENT_ID, handlers);
     socket.connect();
-    const first = FakeWebSocket.instances[0]!;
+    const first = FakeWebSocket.instances[0];
     first.emitMessage(SERVER_HELLO);
     expect(handlers.states).toEqual([true]);
 
@@ -120,7 +120,7 @@ describe('DaemonEventSocket reconnect + staleness', () => {
     const handlers = makeHandlers();
     const socket = new DaemonEventSocket(WS_URL, CLIENT_ID, handlers);
     socket.connect();
-    const first = FakeWebSocket.instances[0]!;
+    const first = FakeWebSocket.instances[0];
     first.emitMessage(SERVER_HELLO);
 
     // Threshold = max(2 * 30_000, 30_000 floor) = 60s.
@@ -138,7 +138,7 @@ describe('DaemonEventSocket reconnect + staleness', () => {
     const handlers = makeHandlers();
     const socket = new DaemonEventSocket(WS_URL, CLIENT_ID, handlers);
     socket.connect();
-    const first = FakeWebSocket.instances[0]!;
+    const first = FakeWebSocket.instances[0];
     expect(socket.health().open).toBe(true);
     first.readyState = FakeWebSocket.CLOSING;
     expect(socket.health().open).toBe(false);

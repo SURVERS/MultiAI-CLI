@@ -95,7 +95,7 @@ beforeEach(() => {
   svc = ix.get(IAgentUserToolService);
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(key = KEY): Promise<WireRecord[]> {
   await wire.flush();
@@ -122,7 +122,7 @@ describe('AgentUserToolService (wire-backed)', () => {
     expect(records).toEqual([
       { type: 'tools.register_user_tool', ...toolA, time: expect.any(Number) },
     ]);
-    expect(records.every((record) => 'payload' in record === false)).toBe(true);
+    expect(records.every((record) => !( 'payload' in record))).toBe(true);
   });
 
   it('preserves deferred disclosure in the wire model and runtime registry', async () => {

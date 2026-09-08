@@ -182,7 +182,7 @@ describe('AgentSwarmService', () => {
     ix.set(IAgentSystemReminderService, new SyncDescriptor(AgentSystemReminderService));
     ix.set(IAgentSwarmService, new SyncDescriptor(AgentSwarmService));
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   async function fire(
     ctx: ResolvedToolExecutionHookContext,

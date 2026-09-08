@@ -30,8 +30,8 @@ async function bench(label, fn) {
 
 async function main() {
   const VALUE = 'x'.repeat(100); // 100-byte values
-  const N = Number(process.env.N || 200_000);
-  const NSMALL = Number(process.env.NSMALL || 3_000);
+  const N = Number(process.env.N ?? 200_000);
+  const NSMALL = Number(process.env.NSMALL ?? 3_000);
 
   console.log(`\nminidb benchmark  (N=${fmt(N)}, value=${VALUE.length}B, node ${process.version})\n`);
 
@@ -124,7 +124,7 @@ async function main() {
   console.log('\ndone.\n');
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

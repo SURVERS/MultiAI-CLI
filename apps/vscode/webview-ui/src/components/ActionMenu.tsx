@@ -148,7 +148,7 @@ export function ActionMenu({ className, onAuthAction }: ActionMenuProps) {
           {isLoggedIn && account && (
             <div className="px-2.5 py-2 text-[11px] text-muted-foreground space-y-1 border-b border-border/60">
               <div className="font-medium text-foreground truncate">
-                {account.user.display_name || account.user.email || "MultiAI account"}
+                {(account.user.display_name ?? account.user.email) ?? "MultiAI account"}
               </div>
               {account.user.email && <div className="truncate">{account.user.email}</div>}
               <div>Balance: {formatBalance(account.account.wallet.total)}</div>

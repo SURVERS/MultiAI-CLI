@@ -21,8 +21,8 @@ describe('LifecycleMachine', () => {
   it('rejects a synchronous switch from an invalid state', () => {
     const machine = new LifecycleMachine<State>('completed');
 
-    expect(() =>
-      machine.switch({ operation: 'start', from: 'idle', to: 'running' }),
+    expect(() =>{ 
+      machine.switch({ operation: 'start', from: 'idle', to: 'running' }); },
     ).toThrowError(
       expect.objectContaining({
         reason: 'invalid_state',
@@ -182,8 +182,8 @@ describe('LifecycleMachine', () => {
       async () => gate,
     );
 
-    expect(() =>
-      machine.switch({ operation: 'nested', from: 'running', to: 'failed' }),
+    expect(() =>{ 
+      machine.switch({ operation: 'nested', from: 'running', to: 'failed' }); },
     ).toThrowError(
       expect.objectContaining({
         reason: 'transition_conflict',
@@ -388,8 +388,8 @@ describe('LifecycleMachine', () => {
   it('exposes a dedicated transition error type', () => {
     const machine = new LifecycleMachine<State>('completed');
 
-    expect(() =>
-      machine.switch({ operation: 'start', from: 'idle', to: 'running' }),
+    expect(() =>{ 
+      machine.switch({ operation: 'start', from: 'idle', to: 'running' }); },
     ).toThrow(LifecycleTransitionError);
   });
 });

@@ -52,7 +52,7 @@ describe('FileServiceImpl', () => {
     });
   });
 
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   function store(): IFileService {
     return ix.get(IFileService);

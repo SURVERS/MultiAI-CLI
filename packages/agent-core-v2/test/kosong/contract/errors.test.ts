@@ -86,8 +86,8 @@ describe('throwIfAbortError', () => {
   });
 
   it('does nothing for non-abort errors', () => {
-    expect(() => throwIfAbortError(new APIConnectionError('Connection error.'))).not.toThrow();
-    expect(() => throwIfAbortError(new Error('boom'))).not.toThrow();
+    expect(() =>{  throwIfAbortError(new APIConnectionError('Connection error.')); }).not.toThrow();
+    expect(() =>{  throwIfAbortError(new Error('boom')); }).not.toThrow();
   });
 
   it('wins at the front of a classification chain, even over network-looking messages', () => {

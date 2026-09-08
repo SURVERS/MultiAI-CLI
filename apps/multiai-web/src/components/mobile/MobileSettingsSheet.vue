@@ -178,8 +178,8 @@ async function loadAllArchived(): Promise<void> {
     }
     archivedItems.value = all;
     archivedLoaded.value = true;
-  } catch (err) {
-    console.warn('loadAllArchived failed', err);
+  } catch (error) {
+    console.warn('loadAllArchived failed', error);
   } finally {
     archivedLoading.value = false;
   }

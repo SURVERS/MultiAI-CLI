@@ -160,7 +160,7 @@ test('RESP GET returns correct UTF-8 bulk for non-ASCII values', async () => {
         setTimeout(() => sock.write('GET k\r\n'), 50);
         setTimeout(() => sock.end(), 150);
       });
-      sock.on('end', () => resolve(Buffer.concat(chunks)));
+      sock.on('end', () =>{  resolve(Buffer.concat(chunks)); });
       sock.on('error', reject);
     });
     const expected = Buffer.concat([Buffer.from('$6\r\n', 'binary'), Buffer.from('北京', 'utf8'), Buffer.from('\r\n', 'binary')]);
@@ -325,7 +325,7 @@ test('RESP MSET sets all keys', async () => {
         setTimeout(() => sock.write('GET a\r\nGET b\r\nGET c\r\n'), 40);
         setTimeout(() => sock.end(), 140);
       });
-      sock.on('end', () => resolve(Buffer.concat(chunks)));
+      sock.on('end', () =>{  resolve(Buffer.concat(chunks)); });
       sock.on('error', reject);
     });
     const s = raw.toString('binary');

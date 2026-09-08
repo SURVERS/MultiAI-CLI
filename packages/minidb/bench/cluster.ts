@@ -22,10 +22,9 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { MiniDb } from '../src/index.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const WORKER = path.join(__dirname, 'cluster-worker.ts');
 
 const PROCESSES = (process.env.CLUSTER_BENCH_PROCESSES ?? '1,2,4,8').split(',').map(Number);
@@ -61,7 +60,7 @@ function runWorker(args: string[]): Promise<Report> {
         reject(new Error(`worker failed (code=${code}) args=${args.join(' ')}\n${stderr}\n${stdout}`));
         return;
       }
-      const report = JSON.parse(lines[lines.length - 1]!) as Report;
+      const report = JSON.parse(lines.at(-1)!) as Report;
       if (!report.ok) reject(new Error(`worker error args=${args.join(' ')}: ${report.error}`));
       else resolve(report);
     });
@@ -230,7 +229,7 @@ async function main(): Promise<void> {
   console.log('');
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

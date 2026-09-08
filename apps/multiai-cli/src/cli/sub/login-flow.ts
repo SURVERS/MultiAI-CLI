@@ -18,7 +18,7 @@ export async function runLoginFlow(options: {
     uiMode: 'cli',
   });
   const controller = new AbortController();
-  process.once('SIGINT', () => controller.abort());
+  process.once('SIGINT', () =>{  controller.abort(); });
   try {
     const result = await harness.auth.login({
       ...options,

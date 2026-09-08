@@ -48,7 +48,7 @@ beforeEach(() => {
   telemetryEvents = [];
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 interface Harness {
   readonly ix: TestInstantiationService;

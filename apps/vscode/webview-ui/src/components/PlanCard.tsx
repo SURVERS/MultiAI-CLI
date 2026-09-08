@@ -13,7 +13,7 @@ export function PlanCard({ children }: PlanCardProps) {
     <div className="my-2 rounded-lg border border-amber-300/50 dark:border-amber-700/50 bg-amber-50/30 dark:bg-amber-950/20 overflow-hidden">
       <button
         type="button"
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={() =>{  setCollapsed(!collapsed); }}
         className="flex items-center gap-1.5 w-full px-3 py-1.5 bg-amber-100/50 dark:bg-amber-900/30 border-b border-amber-300/50 dark:border-amber-700/50 cursor-pointer hover:bg-amber-100/80 dark:hover:bg-amber-900/50 transition-colors"
       >
         <IconClipboardList className="size-3.5 text-amber-600 dark:text-amber-400" />

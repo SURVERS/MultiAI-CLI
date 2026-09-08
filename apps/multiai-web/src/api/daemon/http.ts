@@ -113,18 +113,18 @@ export class DaemonHttpClient {
     let response: Response;
     try {
       response = await fetch(url, { method: 'GET', headers, signal: timeoutSignal() });
-    } catch (err) {
+    } catch (error) {
       traceRestFailure({
         method: 'GET',
         path,
         requestId,
         phase: 'fetch',
         durationMs: Date.now() - startedAt,
-        error: err,
+        error: error,
       });
       throw new DaemonNetworkError({
         message: `Network error calling GET ${path}`,
-        cause: err,
+        cause: error,
         method: 'GET',
         path,
         url,
@@ -347,11 +347,11 @@ export class DaemonHttpClient {
     let response: Response;
     try {
       response = await fetch(url, { method: 'POST', headers, body: formData, signal: timeoutSignal() });
-    } catch (err) {
-      traceRestFailure({ method: 'POST', path, requestId, phase: 'fetch', durationMs: Date.now() - startedAt, error: err });
+    } catch (error) {
+      traceRestFailure({ method: 'POST', path, requestId, phase: 'fetch', durationMs: Date.now() - startedAt, error: error });
       throw new DaemonNetworkError({
         message: `Network error calling POST ${path}`,
-        cause: err,
+        cause: error,
         method: 'POST',
         path,
         url,
@@ -366,11 +366,11 @@ export class DaemonHttpClient {
     const responseForDiagnostics = response.clone();
     try {
       envelope = (await response.json()) as WireEnvelope<T>;
-    } catch (err) {
-      traceRestFailure({ method: 'POST', path, requestId, phase: 'parse', durationMs: Date.now() - startedAt, status: response.status, error: err });
+    } catch (error) {
+      traceRestFailure({ method: 'POST', path, requestId, phase: 'parse', durationMs: Date.now() - startedAt, status: response.status, error: error });
       throw new DaemonNetworkError({
         message: `Failed to parse JSON response from POST ${path}`,
-        cause: err,
+        cause: error,
         method: 'POST',
         path,
         url,
@@ -460,11 +460,11 @@ export class DaemonHttpClient {
         body: body !== undefined ? JSON.stringify(body) : undefined,
         signal: timeoutSignal(),
       });
-    } catch (err) {
-      traceRestFailure({ method, path, requestId, phase: 'fetch', durationMs: Date.now() - startedAt, error: err });
+    } catch (error) {
+      traceRestFailure({ method, path, requestId, phase: 'fetch', durationMs: Date.now() - startedAt, error: error });
       throw new DaemonNetworkError({
         message: `Network error calling ${method} ${path}`,
-        cause: err,
+        cause: error,
         method,
         path,
         url,
@@ -481,11 +481,11 @@ export class DaemonHttpClient {
     const responseForDiagnostics = response.clone();
     try {
       envelope = (await response.json()) as WireEnvelope<T>;
-    } catch (err) {
-      traceRestFailure({ method, path, requestId, phase: 'parse', durationMs: Date.now() - startedAt, status: response.status, error: err });
+    } catch (error) {
+      traceRestFailure({ method, path, requestId, phase: 'parse', durationMs: Date.now() - startedAt, status: response.status, error: error });
       throw new DaemonNetworkError({
         message: `Failed to parse JSON response from ${method} ${path}`,
-        cause: err,
+        cause: error,
         method,
         path,
         url,

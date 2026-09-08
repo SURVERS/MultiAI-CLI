@@ -122,7 +122,7 @@ describe('Plan service', () => {
         const value = Reflect.get(activeFakes.fs, prop, receiver);
         return typeof value === 'function' ? value.bind(activeFakes.fs) : value;
       },
-    }) as IHostFileSystem;
+    });
   }
 
   function delegatingRunner(): ISessionProcessRunner {
@@ -131,7 +131,7 @@ describe('Plan service', () => {
         const value = Reflect.get(activeFakes.runner, prop, receiver);
         return typeof value === 'function' ? value.bind(activeFakes.runner) : value;
       },
-    }) as ISessionProcessRunner;
+    });
   }
 
   function useFakes(fakes: PlanFakes): void {

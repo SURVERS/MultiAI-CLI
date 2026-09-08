@@ -1104,7 +1104,7 @@ export class AgentTaskService extends Disposable implements IAgentTaskService {
         toolCalls: [],
         origin: context.origin,
       },
-      () => this.fireNotificationHook(context.notification),
+      () =>{  this.fireNotificationHook(context.notification); },
     );
     this.pendingNotificationRequests.set(key, request);
     try {
@@ -1115,7 +1115,7 @@ export class AgentTaskService extends Disposable implements IAgentTaskService {
           () => {
             if (request.aborted) this.clearPendingNotification(key, request);
           },
-          () => this.clearPendingNotification(key, request),
+          () =>{  this.clearPendingNotification(key, request); },
         );
     } catch (error) {
       this.clearPendingNotification(key, request);

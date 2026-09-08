@@ -162,7 +162,7 @@ describe('AgentTaskService', () => {
     ix.set(IAgentStateService, new AgentStateService());
     ix.set(IAgentTaskService, new SyncDescriptor(AgentTaskService));
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   it('registerTask / list / readOutput / stop', async () => {
     const svc = ix.get(IAgentTaskService);
@@ -267,7 +267,7 @@ describe('AgentTaskService', () => {
           onAbort(signal.reason);
           return;
         }
-        signal.addEventListener('abort', () => onAbort(signal.reason));
+        signal.addEventListener('abort', () =>{  onAbort(signal.reason); });
       },
     };
   }

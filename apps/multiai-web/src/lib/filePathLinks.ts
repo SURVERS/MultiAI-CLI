@@ -57,7 +57,7 @@ const COMMON_FILENAMES = new Set([
 ]);
 
 const EXT_PATTERN = [...COMMON_FILE_EXTENSIONS]
-  .sort((a, b) => b.length - a.length)
+  .toSorted((a, b) => b.length - a.length)
   .join('|');
 const PATH_RE = new RegExp(
   [

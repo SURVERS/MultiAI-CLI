@@ -25,7 +25,7 @@ export class GoalStartReviewAskPermissionPolicy implements PermissionPolicy {
     if (context.execution.display?.kind !== 'goal_start') return;
     return {
       kind: 'ask',
-      resolveApproval: (result) => this.resolveGoalStart(result),
+      resolveApproval: (result) =>{  this.resolveGoalStart(result); },
     };
   }
 

@@ -14,7 +14,7 @@ export function App(): JSX.Element {
   const queryParams = useMemo(() => readQueryParams(window.location.search), []);
 
   const domains = useMemo(
-    () => [...new Set(graph.services.map((s) => s.domain))].sort((a, b) => a.localeCompare(b)),
+    () => [...new Set(graph.services.map((s) => s.domain))].toSorted((a, b) => a.localeCompare(b)),
     [],
   );
 

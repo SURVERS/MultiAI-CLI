@@ -49,7 +49,7 @@ import { validateBody, validateParams, validateQuery } from './validate';
 
 /** Convert OpenAPI `{param}` segments to Fastify `:param` segments. */
 function toFastifyPath(openApiPath: string): string {
-  return openApiPath.replace(/\{([^}]+)\}/g, ':$1');
+  return openApiPath.replaceAll(/\{([^}]+)\}/g, ':$1');
 }
 
 // ---------------------------------------------------------------------------
@@ -109,7 +109,7 @@ function buildUnifiedResponseSchema(
   // Error variants — sorted by code for deterministic output
   const errorEntries = Object.entries(errors)
     .map(([code, cfg]) => [Number(code), cfg] as const)
-    .sort((a, b) => a[0] - b[0]);
+    .toSorted((a, b) => a[0] - b[0]);
 
   // No errors → return the plain envelope schema (not wrapped in oneOf)
   if (errorEntries.length === 0) {

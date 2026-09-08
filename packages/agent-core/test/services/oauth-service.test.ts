@@ -257,7 +257,7 @@ describe('OAuthService.cancelLogin', () => {
     await startPromise;
 
     const aborted = new Promise<boolean>((resolve) => {
-      mock.loginCalls[0]!.signal!.addEventListener('abort', () => resolve(true));
+      mock.loginCalls[0]!.signal!.addEventListener('abort', () =>{  resolve(true); });
     });
 
     const result = await impl.cancelLogin();

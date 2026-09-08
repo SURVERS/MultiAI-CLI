@@ -233,10 +233,10 @@ describe('AcpKaos', () => {
       try {
         await kaos.readText('/x.ts');
         throw new Error('should have thrown');
-      } catch (err) {
-        expect((err as Error & { cause?: unknown }).cause).toBe(rpcErr);
-        expect((err as Error).message).toContain('acp: readTextFile failed for /x.ts');
-        expect((err as Error).message).toContain('rpc died');
+      } catch (error) {
+        expect((error as Error & { cause?: unknown }).cause).toBe(rpcErr);
+        expect((error as Error).message).toContain('acp: readTextFile failed for /x.ts');
+        expect((error as Error).message).toContain('rpc died');
       }
     });
 
@@ -420,10 +420,10 @@ describe('AcpKaos', () => {
       await expect(kaos.writeText('/a.ts', 'hello')).rejects.toBeInstanceOf(KaosError);
       try {
         await kaos.writeText('/a.ts', 'hello');
-      } catch (err) {
-        expect((err as Error & { cause?: unknown }).cause).toBe(rpcErr);
-        expect((err as Error).message).toContain('acp: writeTextFile failed for /a.ts');
-        expect((err as Error).message).toContain('write rpc died');
+      } catch (error) {
+        expect((error as Error & { cause?: unknown }).cause).toBe(rpcErr);
+        expect((error as Error).message).toContain('acp: writeTextFile failed for /a.ts');
+        expect((error as Error).message).toContain('write rpc died');
       }
     });
   });

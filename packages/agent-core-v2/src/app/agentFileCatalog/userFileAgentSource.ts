@@ -73,11 +73,11 @@ export class UserFileAgentSource implements IUserFileAgentSource {
       this.fs,
       this.bootstrap.homeDir,
       this.builtin.getDefault(),
-      (message) => this.log.warn(message),
+      (message) =>{  this.log.warn(message); },
     );
     this.defaultProfile = systemMd ?? this.builtin.getDefault();
     const contribution = profilesFromDiscovery(
-      await discoverAgentFiles(this.fs, roots, (message) => this.log.warn(message)),
+      await discoverAgentFiles(this.fs, roots, (message) =>{  this.log.warn(message); }),
       (context) => this.defaultProfile.systemPrompt(context),
     );
     if (systemMd === undefined) return contribution;

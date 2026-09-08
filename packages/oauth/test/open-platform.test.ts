@@ -109,7 +109,7 @@ describe('fetchOpenPlatformModels', () => {
       platform,
       'sk-bad',
       fetchMock as unknown as typeof fetch,
-    ).catch((caught: unknown) => caught);
+    ).catch((error: unknown) => error);
 
     expect(error).toBeInstanceOf(OpenPlatformApiError);
     expect((error as OpenPlatformApiError).status).toBe(401);

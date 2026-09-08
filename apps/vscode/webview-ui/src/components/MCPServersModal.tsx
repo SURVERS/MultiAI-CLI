@@ -126,7 +126,7 @@ function KeyValueFields({
       <div className="flex items-center justify-between">
         <Label className="text-[10px] text-muted-foreground">{label}</Label>
         <button
-          onClick={() => onChange([...fields, { key: "", value: "" }])}
+          onClick={() =>{  onChange([...fields, { key: "", value: "" }]); }}
           className="text-xs text-muted-foreground hover:text-foreground"
         >
           + Add
@@ -136,9 +136,9 @@ function KeyValueFields({
         <div key={index} className="flex items-center gap-1 mt-1">
           <Input
             value={field.key}
-            onChange={(event) => onChange(fields.map((item, itemIndex) => (
+            onChange={(event) =>{  onChange(fields.map((item, itemIndex) => (
               itemIndex === index ? { ...item, key: event.target.value } : item
-            )))}
+            ))); }}
             placeholder="KEY"
             className="h-6 text-xs font-mono flex-1"
           />
@@ -146,14 +146,14 @@ function KeyValueFields({
           <Input
             type={field.value === MCP_SECRET_MASK ? "password" : "text"}
             value={field.value}
-            onChange={(event) => onChange(fields.map((item, itemIndex) => (
+            onChange={(event) =>{  onChange(fields.map((item, itemIndex) => (
               itemIndex === index ? { ...item, value: event.target.value } : item
-            )))}
+            ))); }}
             placeholder="value"
             className="h-6 text-xs font-mono flex-1"
           />
           <button
-            onClick={() => onChange(fields.filter((_, itemIndex) => itemIndex !== index))}
+            onClick={() =>{  onChange(fields.filter((_, itemIndex) => itemIndex !== index)); }}
             className="text-muted-foreground hover:text-destructive p-1"
           >
             <IconX className="size-3" />
@@ -196,7 +196,7 @@ function ServerForm({
       <div className="grid grid-cols-2 gap-2">
         <div>
           <Label className="text-[10px] text-muted-foreground">Name</Label>
-          <Input value={data.name} onChange={(e) => set("name", e.target.value)} className="h-7 text-xs" />
+          <Input value={data.name} onChange={(e) =>{  set("name", e.target.value); }} className="h-7 text-xs" />
         </div>
         <div>
           <Label className="text-[10px] text-muted-foreground">Transport</Label>
@@ -204,7 +204,7 @@ function ServerForm({
             {(["stdio", "http"] as const).map((t) => (
               <button
                 key={t}
-                onClick={() => set("transport", t)}
+                onClick={() =>{  set("transport", t); }}
                 className={cn(
                   "flex-1 h-7 text-xs rounded border flex items-center justify-center gap-1",
                   data.transport === t ? "border-blue-500 bg-blue-500/10 text-blue-500" : "border-border",
@@ -222,22 +222,22 @@ function ServerForm({
         <>
           <div>
             <Label className="text-[10px] text-muted-foreground">URL</Label>
-            <Input value={data.url} onChange={(e) => set("url", e.target.value)} placeholder="https://..." className="h-7 text-xs font-mono" />
+            <Input value={data.url} onChange={(e) =>{  set("url", e.target.value); }} placeholder="https://..." className="h-7 text-xs font-mono" />
             <label className="flex items-center gap-1.5 mt-1.5 cursor-pointer">
-              <input type="checkbox" checked={data.requiresAuth} onChange={(e) => set("requiresAuth", e.target.checked)} className="rounded size-3" />
+              <input type="checkbox" checked={data.requiresAuth} onChange={(e) =>{  set("requiresAuth", e.target.checked); }} className="rounded size-3" />
               <span className="text-xs text-muted-foreground">Requires OAuth</span>
             </label>
           </div>
           <KeyValueFields
             label="Headers"
             fields={data.headerVars}
-            onChange={(headerVars) => set("headerVars", headerVars)}
+            onChange={(headerVars) =>{  set("headerVars", headerVars); }}
           />
           <div>
             <Label className="text-[10px] text-muted-foreground">Bearer Token Environment Variable</Label>
             <Input
               value={data.bearerTokenEnvVar}
-              onChange={(e) => set("bearerTokenEnvVar", e.target.value)}
+              onChange={(e) =>{  set("bearerTokenEnvVar", e.target.value); }}
               placeholder="MCP_TOKEN"
               className="h-7 text-xs font-mono"
             />
@@ -247,13 +247,13 @@ function ServerForm({
         <div className="space-y-2">
           <div>
             <Label className="text-[10px] text-muted-foreground">Command</Label>
-            <Input value={data.command} onChange={(e) => set("command", e.target.value)} placeholder="npx" className="h-7 text-xs font-mono" />
+            <Input value={data.command} onChange={(e) =>{  set("command", e.target.value); }} placeholder="npx" className="h-7 text-xs font-mono" />
           </div>
           <div>
             <div className="flex items-center justify-between">
               <Label className="text-[10px] text-muted-foreground">Arguments</Label>
               <button
-                onClick={() => set("args", [...data.args, ""])}
+                onClick={() =>{  set("args", [...data.args, ""]); }}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 + Add
@@ -263,14 +263,14 @@ function ServerForm({
               <div key={index} className="flex items-center gap-1 mt-1">
                 <Input
                   value={arg}
-                  onChange={(event) => set("args", data.args.map((item, itemIndex) => (
+                  onChange={(event) =>{  set("args", data.args.map((item, itemIndex) => (
                     itemIndex === index ? event.target.value : item
-                  )))}
+                  ))); }}
                   placeholder={index === 0 ? "-y" : "@pkg/name"}
                   className="h-7 text-xs font-mono flex-1"
                 />
                 <button
-                  onClick={() => set("args", data.args.filter((_, itemIndex) => itemIndex !== index))}
+                  onClick={() =>{  set("args", data.args.filter((_, itemIndex) => itemIndex !== index)); }}
                   className="text-muted-foreground hover:text-destructive p-1"
                 >
                   <IconX className="size-3" />
@@ -285,7 +285,7 @@ function ServerForm({
         <KeyValueFields
           label="Environment Variables"
           fields={data.envVars}
-          onChange={(envVars) => set("envVars", envVars)}
+          onChange={(envVars) =>{  set("envVars", envVars); }}
         />
       )}
 
@@ -347,7 +347,7 @@ function ServerItem({ server, onDelete }: { server: MCPServerConfig; onDelete: (
 
   return (
     <div className="rounded-md border border-border/60 bg-card/30">
-      <div className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer hover:bg-muted/30" onClick={() => setExpanded(!expanded)}>
+      <div className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer hover:bg-muted/30" onClick={() =>{  setExpanded(!expanded); }}>
         <div className={cn("size-6 rounded flex items-center justify-center text-xs", isHttp ? "bg-blue-500/10 text-blue-500" : "bg-emerald-500/10 text-emerald-500")}>
           {isHttp ? <IconWorld className="size-3.5" /> : <IconTerminal2 className="size-3.5" />}
         </div>
@@ -365,7 +365,7 @@ function ServerItem({ server, onDelete }: { server: MCPServerConfig; onDelete: (
             )}
           </p>
         </div>
-        <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-0.5" onClick={(e) =>{  e.stopPropagation(); }}>
           {server.auth === "oauth" && (
             <>
               <Button variant="ghost" size="icon" className="size-6" onClick={() => { void handleAuth(); }} disabled={isLoading}>
@@ -397,7 +397,7 @@ function ServerItem({ server, onDelete }: { server: MCPServerConfig; onDelete: (
               ))}
             </div>
           )}
-          <ServerForm data={form} onChange={setForm} onSubmit={() => { void handleUpdate(); }} onCancel={() => setExpanded(false)} submitLabel="Update" />
+          <ServerForm data={form} onChange={setForm} onSubmit={() => { void handleUpdate(); }} onCancel={() =>{  setExpanded(false); }} submitLabel="Update" />
         </div>
       )}
     </div>
@@ -507,11 +507,11 @@ export function MCPServersModal() {
             <h2 className="text-xs font-medium">MCP Servers</h2>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => setShowAdd(true)}>
+            <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() =>{  setShowAdd(true); }}>
               <IconPlus className="size-3 mr-1" />
               Add
             </Button>
-            <Button variant="ghost" size="icon" className="size-6" onClick={() => setMCPModalOpen(false)}>
+            <Button variant="ghost" size="icon" className="size-6" onClick={() =>{  setMCPModalOpen(false); }}>
               <IconX className="size-3.5" />
             </Button>
           </div>
@@ -529,14 +529,14 @@ export function MCPServersModal() {
                   <IconPlus className="size-3.5 text-blue-500" />
                   <span className="text-xs font-medium">Add MCP Server</span>
                 </div>
-                <ServerForm data={addForm} onChange={setAddForm} onSubmit={() => { void handleAdd(); }} onCancel={() => setShowAdd(false)} submitLabel="Add Server" />
+                <ServerForm data={addForm} onChange={setAddForm} onSubmit={() => { void handleAdd(); }} onCancel={() =>{  setShowAdd(false); }} submitLabel="Add Server" />
               </div>
             )}
 
             {mcpServers.length > 0 && (
               <div className="space-y-1.5">
                 {mcpServers.map((server) => (
-                  <ServerItem key={server.name} server={server} onDelete={() => setDeleteTarget(server.name)} />
+                  <ServerItem key={server.name} server={server} onDelete={() =>{  setDeleteTarget(server.name); }} />
                 ))}
               </div>
             )}

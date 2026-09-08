@@ -53,15 +53,15 @@ test('secondary index: create, findEq/findRange merged across shards, maintained
 
     const found = await db.findEq('by-city', 'bj');
     assert.deepEqual(
-      found.map((r) => r.key).sort(),
-      [...expectedBj].sort(),
+      found.map((r) => r.key).toSorted(),
+      [...expectedBj].toSorted(),
     );
 
     const ranged = await db.findRange('by-age', { min: 25, max: 30, maxExclusive: true });
     assert.ok(ranged.length > 0);
     assert.ok(ranged.every((r) => r.field >= 25 && r.field < 30));
     // Sorted by field then key across shards.
-    for (let i = 1; i < ranged.length; i++) assert.ok(ranged[i]!.field >= ranged[i - 1]!.field);
+    for (let i = 1; i < ranged.length; i++) assert.ok(ranged[i].field >= ranged[i - 1].field);
 
     // Writes after index creation are indexed too (same-shard and elsewhere).
     const late = keyOnShard('late', 5, 8);
@@ -71,7 +71,7 @@ test('secondary index: create, findEq/findRange merged across shards, maintained
 
     const defs = await db.listIndexes();
     assert.deepEqual(
-      defs.map((d) => d.name).sort(),
+      defs.map((d) => d.name).toSorted(),
       ['by-age', 'by-city'],
     );
 
@@ -103,9 +103,9 @@ test('text index: search merges per-shard results by score', async () => {
     await db.createTextIndex('txt', { fields: ['body'] });
     const hits = await db.search('txt', 'log');
     assert.ok(hits.length >= 2);
-    for (let i = 1; i < hits.length; i++) assert.ok(hits[i - 1]!.score >= hits[i]!.score);
-    const keys = hits.map((h) => h.key);
-    assert.ok(keys.includes('d:b') || keys.includes('d:a') || keys.includes('d:d'));
+    for (let i = 1; i < hits.length; i++) assert.ok(hits[i - 1].score >= hits[i].score);
+    const keys = new Set(hits.map((h) => h.key));
+    assert.ok(keys.has('d:b') || keys.has('d:a') || keys.has('d:d'));
 
     const limited = await db.search('txt', 'rust OR log', { op: 'OR', limit: 2 });
     assert.equal(limited.length, 2);
@@ -150,7 +150,7 @@ test('compact rewrites every shard and preserves data', async () => {
     }
     const result = await db.compact();
     assert.equal(result.skipped.length, 0);
-    assert.deepEqual([...result.compacted].sort((a, b) => a - b), [0, 1, 2, 3]);
+    assert.deepEqual([...result.compacted].toSorted((a, b) => a - b), [0, 1, 2, 3]);
 
     const got = await db.mget(keys);
     assert.ok(got.every((v) => v === 2));
@@ -183,7 +183,7 @@ test('findRange applies offset/count/reverse to the globally merged result', asy
 
     // Reference order (field asc, key asc) computed locally from the data.
     const cmpKey = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-    const rows = entries.map(([key, d]) => ({ key, n: d.n })).sort((a, b) => a.n - b.n || cmpKey(a.key, b.key));
+    const rows = entries.map(([key, d]) => ({ key, n: d.n })).toSorted((a, b) => a.n - b.n || cmpKey(a.key, b.key));
     const keys = (rs: { key: string }[]) => rs.map((r) => r.key);
     const query = async (opts: Parameters<ClusterDb<D>['findRange']>[1]) => keys(await db.findRange('by-n', opts));
 
@@ -193,8 +193,8 @@ test('findRange applies offset/count/reverse to the globally merged result', asy
     assert.deepEqual(await query({ offset: 55 }), keys(rows.slice(55)));
     assert.deepEqual(await query({ offset: 12, count: 8 }), keys(rows.slice(12, 20)));
     // Reverse flips the merged order, including the key tie-break.
-    assert.deepEqual(await query({ reverse: true }), keys([...rows].reverse()));
-    assert.deepEqual(await query({ reverse: true, count: 7 }), keys([...rows].reverse().slice(0, 7)));
+    assert.deepEqual(await query({ reverse: true }), keys([...rows].toReversed()));
+    assert.deepEqual(await query({ reverse: true, count: 7 }), keys([...rows].toReversed().slice(0, 7)));
     // Bounds still apply globally on top of offset/count.
     const inBounds = rows.filter((r) => r.n >= 3 && r.n < 20);
     assert.deepEqual(await query({ min: 3, max: 20, maxExclusive: true, count: 5 }), keys(inBounds.slice(0, 5)));
@@ -222,7 +222,7 @@ test('concurrent createIndex from two instances keeps both registry entries', as
     // sidecars answer on every shard.
     const fresh = await ClusterDb.open<D>({ dir, shardCount, valueCodec: 'json' });
     assert.deepEqual(
-      (await fresh.listIndexes()).map((d) => d.name).sort(),
+      (await fresh.listIndexes()).map((d) => d.name).toSorted(),
       ['ia', 'ib'],
     );
     for (let id = 0; id < shardCount; id++) {

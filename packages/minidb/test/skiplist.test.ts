@@ -67,7 +67,7 @@ test('string comparator orders keys and supports prefix scans', () => {
   );
   // prefix scan via range [prefix, prefix+\uFFFF]
   const pref = 'user:';
-  const res = sl.range({ gte: pref, lt: pref + '\uffff' }).map((n) => n.key);
+  const res = sl.range({ gte: pref, lt: pref + '\uFFFF' }).map((n) => n.key);
   assert.deepEqual(res, ['user:1', 'user:10', 'user:2', 'user:3']);
 });
 
@@ -124,7 +124,7 @@ test('matches a sorted reference under random operations', () => {
   }
   const sorted = [...ref.entries()]
     .map(([val, key]) => ({ key, val }))
-    .sort((a, b) => (a.key - b.key) || (a.val < b.val ? -1 : a.val > b.val ? 1 : 0));
+    .toSorted((a, b) => (a.key - b.key) || (a.val < b.val ? -1 : a.val > b.val ? 1 : 0));
   assert.deepEqual(sl.toArray(), sorted);
   assert.equal(sl.length, sorted.length);
 });

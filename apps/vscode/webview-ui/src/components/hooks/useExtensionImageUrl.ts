@@ -4,7 +4,7 @@ export function useExtensionImageUrl(imageName: string): string {
   const [url, setUrl] = useState("");
 
   useEffect(() => {
-    const baseUri = document.body.getAttribute("data-baseuri");
+    const baseUri = document.body.dataset.baseuri;
     if (baseUri) {
       setUrl(`${baseUri}/dist/${imageName}`);
     }

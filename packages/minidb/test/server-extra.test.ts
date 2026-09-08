@@ -23,14 +23,14 @@ function encode(...args: string[]) {
 function connect(port: number): Promise<net.Socket> {
   return new Promise((resolve, reject) => {
     const sock = net.connect(port, '127.0.0.1');
-    sock.once('connect', () => resolve(sock));
+    sock.once('connect', () =>{  resolve(sock); });
     sock.once('error', reject);
   });
 }
 
 function send(sock: net.Socket, cmd: string | Buffer): Promise<string> {
   return new Promise((resolve) => {
-    sock.once('data', (d) => resolve(d.toString()));
+    sock.once('data', (d) =>{  resolve(d.toString()); });
     sock.write(cmd);
   });
 }
@@ -38,7 +38,7 @@ function send(sock: net.Socket, cmd: string | Buffer): Promise<string> {
 // Send a command and resolve when the server closes the connection (QUIT).
 function sendUntilClose(sock: net.Socket, cmd: string | Buffer): Promise<void> {
   return new Promise((resolve) => {
-    sock.once('close', () => resolve());
+    sock.once('close', () =>{  resolve(); });
     sock.write(cmd);
   });
 }
@@ -143,7 +143,7 @@ test('RESP: inline (non-array) command path', async () => {
 function collectUntil(sock: net.Socket, done: (s: string) => boolean): Promise<string> {
   return new Promise((resolve, reject) => {
     let buf = '';
-    const timer = setTimeout(() => reject(new Error(`timed out waiting for reply; got ${buf.length} bytes`)), 20_000);
+    const timer = setTimeout(() =>{  reject(new Error(`timed out waiting for reply; got ${buf.length} bytes`)); }, 20_000);
     sock.on('data', (d) => {
       buf += d.toString();
       if (done(buf)) {
@@ -185,7 +185,7 @@ test('RESP: an oversized request gets -ERR and the connection recovers', { timeo
   try {
     const sock = await connect(srv.port);
     // 65MB of bulk payload crosses the parser's 64MB cap.
-    const big = Buffer.alloc(65 * 1024 * 1024, 'x'.charCodeAt(0));
+    const big = Buffer.alloc(65 * 1024 * 1024, 'x'.codePointAt(0));
     const head = Buffer.from(`*3\r\n$3\r\nSET\r\n$1\r\nk\r\n$${big.length}\r\n`);
     sock.write(Buffer.concat([head, big, Buffer.from('\r\n')]));
     // Pipelined right behind it: once the parser recovers from the -ERR this

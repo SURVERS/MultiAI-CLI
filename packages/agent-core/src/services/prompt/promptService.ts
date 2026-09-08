@@ -11,7 +11,6 @@ import type {
   PromptSubmission,
   PromptSteerResult,
   PromptSubmitResult,
-  PromptThinking,
 } from '@multiai/protocol';
 import type { PermissionMode } from '../../agent/permission';
 import { ulid } from 'ulid';
@@ -613,7 +612,7 @@ export class PromptService
     // takes one of the `PromptThinking` literals (`off|low|...|max`); the
     // narrow cast lets diff comparisons stay typed without forcing
     // protocol to import from agent-core.
-    snapshot.thinking = config.thinkingEffort as PromptThinking;
+    snapshot.thinking = config.thinkingEffort;
     snapshot.permissionMode = permission.mode;
     snapshot.planMode = plan !== null;
     snapshot.swarmMode = swarmMode;
@@ -654,7 +653,7 @@ export class PromptService
       this._recordDispatch(sid, 'setModel', payload, promptId, source);
     }
     if (patch.thinking !== undefined && patch.thinking !== shadow.thinking) {
-      const payload = { sessionId: sid, agentId, effort: patch.thinking as PromptThinking };
+      const payload = { sessionId: sid, agentId, effort: patch.thinking };
       await this.core.rpc.setThinking(payload);
       shadow.thinking = patch.thinking;
       this._recordDispatch(sid, 'setThinking', payload, promptId, source);

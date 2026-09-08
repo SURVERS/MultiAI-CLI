@@ -330,7 +330,7 @@ export function InputArea({ onAuthAction }: InputAreaProps) {
           <div ref={menuRef} className="absolute bottom-full left-0 right-0 mb-2 z-10">
             <SlashCommandMenu
               commands={filteredCommands}
-              query={activeToken?.query || ""}
+              query={activeToken?.query ?? ""}
               selectedIndex={slashSelectedIndex}
               onSelect={handleSlashCommand}
               onHover={setSlashSelectedIndex}
@@ -360,7 +360,7 @@ export function InputArea({ onAuthAction }: InputAreaProps) {
                 setFolderPath("");
                 setFileSelectedIndex(0);
               }}
-              onSelectItem={(item) => applyMention(item.path)}
+              onSelectItem={(item) =>{  applyMention(item.path); }}
               onNavigateUp={() => {
                 setFolderPath(folderPath.split("/").slice(0, -1).join("/"));
                 setFileSelectedIndex(0);
@@ -383,8 +383,8 @@ export function InputArea({ onAuthAction }: InputAreaProps) {
                   key={item.id}
                   src={item.dataUri}
                   size="sm"
-                  onClick={item.dataUri ? () => setPreviewMedia(item.dataUri!) : undefined}
-                  onRemove={() => removeDraftMedia(item.id)}
+                  onClick={item.dataUri ? () =>{  setPreviewMedia(item.dataUri!); } : undefined}
+                  onRemove={() =>{  removeDraftMedia(item.id); }}
                 />
               ))}
             </div>
@@ -444,7 +444,7 @@ export function InputArea({ onAuthAction }: InputAreaProps) {
                       {group.models.map((model) => (
                         <DropdownMenuItem
                           key={model.id}
-                          onClick={() => updateModel(model.id)}
+                          onClick={() =>{  updateModel(model.id); }}
                           className={cn("text-xs px-3 py-1.5 cursor-pointer", currentModel === model.id && "bg-accent")}
                         >
                           {model.name}
@@ -502,7 +502,7 @@ export function InputArea({ onAuthAction }: InputAreaProps) {
           </div>
         </div>
       </div>
-      <MediaPreviewModal src={previewMedia} onClose={() => setPreviewMedia(null)} />
+      <MediaPreviewModal src={previewMedia} onClose={() =>{  setPreviewMedia(null); }} />
       <StreamingConfirmDialog
         open={showPlanModeConfirm}
         onOpenChange={setShowPlanModeConfirm}

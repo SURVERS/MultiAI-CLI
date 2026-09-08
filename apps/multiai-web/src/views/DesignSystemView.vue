@@ -42,7 +42,7 @@ onMounted(() => {
     { rootMargin: '-20% 0px -70% 0px', threshold: 0 },
   );
   map.forEach((_a, el) => io!.observe(el));
-  if (links.length) links[0].classList.add('active');
+  if (links.length > 0) links[0].classList.add('active');
 });
 
 onUnmounted(() => {

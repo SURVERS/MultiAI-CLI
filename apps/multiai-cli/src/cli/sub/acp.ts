@@ -119,8 +119,8 @@ export function registerAcpCommand(parent: Command): void {
             : {}),
         });
         process.exit(0);
-      } catch (err) {
-        process.stderr.write(`${t('acp server: fatal error:', 'сервер acp: критическая ошибка:')} ${String(err)}\n`);
+      } catch (error) {
+        process.stderr.write(`${t('acp server: fatal error:', 'сервер acp: критическая ошибка:')} ${String(error)}\n`);
         process.exit(1);
       }
     });

@@ -96,9 +96,9 @@ test('non-ASCII key: scan returns the original key and value', async () => {
     await db.set('b-ascii', '1');
     await db.set('a-é', '2');
     await db.set('c-北京', '3');
-    const keys = db.scan().map((r) => r.key);
-    assert.ok(keys.includes('a-é'), 'scan must include the accented key');
-    assert.ok(keys.includes('c-北京'), 'scan must include the CJK key');
+    const keys = new Set(db.scan().map((r) => r.key));
+    assert.ok(keys.has('a-é'), 'scan must include the accented key');
+    assert.ok(keys.has('c-北京'), 'scan must include the CJK key');
     assert.equal(db.get('a-é'), '2');
     assert.equal(db.get('c-北京'), '3');
   } finally {
@@ -114,7 +114,7 @@ test('non-ASCII key: prefix scan matches', async () => {
     await db.set('用户:1', 'a');
     await db.set('用户:2', 'b');
     await db.set('other:1', 'c');
-    const keys = db.prefix('用户:').map((r) => r.key).sort();
+    const keys = db.prefix('用户:').map((r) => r.key).toSorted();
     assert.deepEqual(keys, ['用户:1', '用户:2']);
   } finally {
     await db.close();
@@ -129,7 +129,7 @@ test('non-ASCII key: secondary equality index returns key and value', async () =
   try {
     await db.set('用户1', { city: 'Paris', n: 1 });
     await db.set('用户2', { city: 'Paris', n: 2 });
-    const r = db.findEq('byCity', 'Paris').sort((a, b) => (a.key < b.key ? -1 : 1));
+    const r = db.findEq('byCity', 'Paris').toSorted((a, b) => (a.key < b.key ? -1 : 1));
     assert.deepEqual(r.map((x) => x.key), ['用户1', '用户2']);
     assert.deepEqual(r.map((x) => (x.value as { n: number }).n), [1, 2]);
   } finally {
@@ -149,8 +149,8 @@ test('non-ASCII key: secondary index is consistent after recovery', async () => 
   try {
     const r = db.findEq('byCity', 'Paris');
     assert.equal(r.length, 1);
-    assert.equal(r[0]!.key, '用户1');
-    assert.deepEqual(r[0]!.value, { city: 'Paris' });
+    assert.equal(r[0].key, '用户1');
+    assert.deepEqual(r[0].value, { city: 'Paris' });
   } finally {
     await db.close();
     await fs.rm(dir, { recursive: true, force: true });
@@ -172,7 +172,7 @@ test('non-ASCII key: range index, dt index, compound index, text index', async (
     assert.deepEqual(db.compoundRange('byWs', 'W1').map((r) => r.key), ['用户A', '用户B']);
     assert.deepEqual(db.search('body', 'world').map((r) => r.key), ['用户A']);
     // values resolve too
-    assert.equal(db.findRange('byAge', { min: 25, max: 35 })[0]!.value?.age, 30);
+    assert.equal(db.findRange('byAge', { min: 25, max: 35 })[0].value?.age, 30);
   } finally {
     await db.close();
     await fs.rm(dir, { recursive: true, force: true });
@@ -186,7 +186,7 @@ test('non-ASCII key: unified query by exact key and by prefix', async () => {
     await db.set('post:北京', { tag: 'a' });
     await db.set('post:上海', { tag: 'b' });
     assert.deepEqual(db.query({ key: 'post:北京' }).map((r) => r.key), ['post:北京']);
-    const pref = db.query({ key: { prefix: 'post:' } }).map((r) => r.key).sort();
+    const pref = db.query({ key: { prefix: 'post:' } }).map((r) => r.key).toSorted();
     assert.deepEqual(pref, ['post:上海', 'post:北京']);
   } finally {
     await db.close();

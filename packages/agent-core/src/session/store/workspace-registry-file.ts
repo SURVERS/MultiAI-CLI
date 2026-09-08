@@ -55,18 +55,18 @@ export async function readWorkspaceRegistryFile(
   let raw: string;
   try {
     raw = await fsp.readFile(registryPath, 'utf8');
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
     if (code === 'ENOENT' || code === 'ENOTDIR') {
       return emptyRegistryFile();
     }
-    throw err;
+    throw error;
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
-  } catch (err) {
-    warn?.({ path: registryPath, err: String(err) }, 'workspaces.json malformed; treating as empty');
+  } catch (error) {
+    warn?.({ path: registryPath, err: String(error) }, 'workspaces.json malformed; treating as empty');
     return emptyRegistryFile();
   }
   if (

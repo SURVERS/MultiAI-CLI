@@ -16,9 +16,9 @@ function buildZip(entries: Record<string, string>): Promise<Buffer> {
     for (const [name, data] of Object.entries(entries)) zip.addBuffer(Buffer.from(data, 'utf8'), name);
     zip.end();
     const chunks: Buffer[] = [];
-    (zip.outputStream as NodeJS.ReadableStream).on('data', (c: Buffer) => chunks.push(c));
-    (zip.outputStream as NodeJS.ReadableStream).on('end', () => { resolve(Buffer.concat(chunks)); });
-    (zip.outputStream as NodeJS.ReadableStream).on('error', reject);
+    (zip.outputStream).on('data', (c: Buffer) => chunks.push(c));
+    (zip.outputStream).on('end', () => { resolve(Buffer.concat(chunks)); });
+    (zip.outputStream).on('error', reject);
   });
 }
 

@@ -90,7 +90,7 @@ test(
           if (String(d).includes('"holding"')) resolve();
         });
         holder.on('error', reject);
-        setTimeout(() => reject(new Error('holder never started')), 30_000);
+        setTimeout(() =>{  reject(new Error('holder never started')); }, 30_000);
       });
       holder.kill('SIGKILL');
       await new Promise((r) => holder.on('exit', r));

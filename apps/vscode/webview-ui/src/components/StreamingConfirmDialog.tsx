@@ -42,7 +42,7 @@ export function StreamingConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => onOpenChange(false)} disabled={cancelDisabled}>
+          <AlertDialogCancel onClick={() =>{  onOpenChange(false); }} disabled={cancelDisabled}>
             {cancelLabel}
           </AlertDialogCancel>
           <AlertDialogAction

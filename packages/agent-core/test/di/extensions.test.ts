@@ -186,7 +186,7 @@ describe('registerSingleton / getSingletonServiceDescriptors', () => {
 
     // 7. Teardown.
     ix.dispose();
-    expect(() => ix.invokeFunction((_a) => undefined)).toThrowError(/disposed/);
+    expect(() =>{  ix.invokeFunction((_a) => undefined); }).toThrowError(/disposed/);
 
     logSpy.mockRestore();
   });

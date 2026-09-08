@@ -34,14 +34,14 @@ export class WorkspaceFsService extends Disposable implements IWorkspaceFsServic
     let realTarget: string;
     try {
       realTarget = await fsp.realpath(target);
-    } catch (err) {
-      throw mapFsError(err, target);
+    } catch (error) {
+      throw mapFsError(error, target);
     }
     let dirents;
     try {
       dirents = await fsp.readdir(realTarget, { withFileTypes: true });
-    } catch (err) {
-      throw mapFsError(err, realTarget);
+    } catch (error) {
+      throw mapFsError(error, realTarget);
     }
     const dirOnly = dirents.filter((d) => d.isDirectory());
 

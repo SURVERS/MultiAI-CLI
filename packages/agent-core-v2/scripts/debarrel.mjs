@@ -18,16 +18,15 @@
 import { Project } from 'ts-morph';
 import path from 'node:path';
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const PKG = path.resolve(__dirname, '..');
 const SRC = path.join(PKG, 'src');
 const ENTRY = path.join(SRC, 'index.ts');
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry-run');
-const ONLY = (args.find((a) => a.startsWith('--only=')) || '').slice('--only='.length) || null;
+const ONLY = (args.find((a) => a.startsWith('--only=')) ?? '').slice('--only='.length) || null;
 const ENTRY_ONLY = args.includes('--entry');
 const DELETE_BARRELS = args.includes('--delete-barrels');
 const LIST_REGS = args.includes('--list-registers');
@@ -44,7 +43,7 @@ const isBarrelFile = (sf) => {
   const f = sf.getFilePath();
   return isUnderSrc(f) && isIndexBasename(f) && f !== ENTRY;
 };
-const resolvedFile = (decl) => decl.getModuleSpecifierSourceFile() || null;
+const resolvedFile = (decl) => decl.getModuleSpecifierSourceFile() ?? null;
 const barrelOfDecl = (decl) => {
   const sf = resolvedFile(decl);
   return sf && isBarrelFile(sf) ? sf : null;
@@ -65,7 +64,7 @@ function resolveName(barrel, name) {
       break;
     }
   }
-  if (leafName === null) leafName = (sym && sym.getName()) || name;
+  if (leafName === null) leafName = (sym && sym.getName()) ?? name;
   return { leafFile: leaf.getFilePath(), leafName };
 }
 
@@ -92,7 +91,7 @@ function expandBarrelClauses(barrel) {
       const specs = ed.getNamedExports().map((s) => ({
         name: s.getName(),
         alias: s.getAliasNode()?.getText(),
-        isTypeOnly: declType || s.isTypeOnly(),
+        isTypeOnly: declType ?? s.isTypeOnly(),
       }));
       clauses.push({ kind: 'named', file, isTypeOnly: declType, specs });
     }
@@ -118,7 +117,7 @@ function allLeavesUnderDir(dirAbs) {
     }
   };
   walk(dirAbs);
-  return out.sort((a, b) => a.localeCompare(b));
+  return out.toSorted((a, b) => a.localeCompare(b));
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +166,7 @@ function rewriteConsumerFile(sf, onlyBarrelPath) {
     }
     for (const s of named) {
       const lookup = s.getName(); // module-exported name
-      const local = s.getAliasNode()?.getText() || s.getName();
+      const local = s.getAliasNode()?.getText() ?? s.getName();
       const r = resolveName(barrel, lookup);
       if (!r) {
         report.manuals.push({ sf: sf.getFilePath(), text: s.getText(), why: 'named import unresolved' });
@@ -176,12 +175,12 @@ function rewriteConsumerFile(sf, onlyBarrelPath) {
       add(r.leafFile, {
         name: r.leafName,
         alias: local !== r.leafName ? local : undefined,
-        isTypeOnly: declType || s.isTypeOnly(),
+        isTypeOnly: declType ?? s.isTypeOnly(),
       });
     }
     const structures = buildImportStructures(groups);
     const idx = sf.getImportDeclarations().indexOf(decl);
-    if (structures.length) sf.insertImportDeclarations(idx, structures);
+    if (structures.length > 0) sf.insertImportDeclarations(idx, structures);
     decl.remove();
     report.imports++;
   }
@@ -208,7 +207,7 @@ function rewriteConsumerFile(sf, onlyBarrelPath) {
     const groups = new Map();
     for (const s of decl.getNamedExports()) {
       const lookup = s.getName(); // name the consumer re-exports (= barrel's exported name)
-      const exportedAs = s.getAliasNode()?.getText() || s.getName();
+      const exportedAs = s.getAliasNode()?.getText() ?? s.getName();
       const r = resolveName(barrel, lookup);
       if (!r) {
         report.manuals.push({ sf: sf.getFilePath(), text: s.getText(), why: 'named export unresolved' });
@@ -216,7 +215,7 @@ function rewriteConsumerFile(sf, onlyBarrelPath) {
       }
       if (!groups.has(r.leafFile)) groups.set(r.leafFile, { specs: [], allType: true });
       const g = groups.get(r.leafFile);
-      const t = declType || s.isTypeOnly();
+      const t = declType ?? s.isTypeOnly();
       g.allType = g.allType && t;
       g.specs.push({
         name: r.leafName,
@@ -245,12 +244,12 @@ function buildImportStructures(groups) {
     }
     const values = namedSpecs.filter((s) => !s.isTypeOnly);
     const types = namedSpecs.filter((s) => s.isTypeOnly);
-    if (values.length)
+    if (values.length > 0)
       structures.push({
         moduleSpecifier: spec,
         namedImports: values.map((v) => ({ name: v.name, alias: v.alias })),
       });
-    if (types.length)
+    if (types.length > 0)
       structures.push({
         moduleSpecifier: spec,
         isTypeOnly: true,
@@ -316,12 +315,12 @@ function regenerateEntry() {
       const groups = new Map();
       for (const s of decl.getNamedExports()) {
         const lookup = s.getName();
-        const exportedAs = s.getAliasNode()?.getText() || s.getName();
+        const exportedAs = s.getAliasNode()?.getText() ?? s.getName();
         const r = resolveName(barrel, lookup);
         if (!r) continue;
         if (!groups.has(r.leafFile)) groups.set(r.leafFile, { specs: [], allType: true });
         const g = groups.get(r.leafFile);
-        const t = declType || s.isTypeOnly();
+        const t = declType ?? s.isTypeOnly();
         g.allType = g.allType && t;
         g.specs.push({
           name: r.leafName,
@@ -407,7 +406,7 @@ function findRegisterFiles() {
     });
     if (hit) files.push(f);
   }
-  return files.sort();
+  return files.toSorted();
 }
 
 function reachedFromEntry() {
@@ -433,7 +432,7 @@ function verifyCoverage() {
   const reached = reachedFromEntry();
   const missing = regs.filter((f) => !reached.has(f));
   console.log(`register files: ${regs.length}; reachable from entry: ${reached.size}; missing: ${missing.length}`);
-  if (missing.length) {
+  if (missing.length > 0) {
     console.log('MISSING (not reachable from src/index.ts):');
     for (const m of missing) console.log('  ' + path.relative(PKG, m));
     return false;
@@ -500,10 +499,10 @@ function main() {
   console.log(
     `rewrote ${totals.files} files: ${totals.imports} barrel imports, ${totals.exports} barrel exports, ${totals.sideEffects} side-effect loads${DRY ? ' (dry-run)' : ''}`,
   );
-  if (totals.manuals.length) {
+  if (totals.manuals.length > 0) {
     console.log(`MANUAL (${totals.manuals.length}) — could not auto-split:`);
     for (const m of totals.manuals)
-      console.log(`  ${path.relative(PKG, m.sf)} :: ${m.why} :: ${m.text.replace(/\s+/g, ' ').slice(0, 120)}`);
+      console.log(`  ${path.relative(PKG, m.sf)} :: ${m.why} :: ${m.text.replaceAll(/\s+/g, ' ').slice(0, 120)}`);
   }
 
   if (DELETE_BARRELS) {

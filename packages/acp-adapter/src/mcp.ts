@@ -25,7 +25,7 @@
  * @see node_modules/@agentclientprotocol/sdk/dist/schema/types.gen.d.ts (McpServer)
  */
 
-import type { McpServer, McpServerStdio } from '@agentclientprotocol/sdk';
+import type { McpServer } from '@agentclientprotocol/sdk';
 import type { McpServerConfig } from '@multiai/agent-core';
 import { log } from '@multiai/sdk';
 
@@ -60,7 +60,7 @@ function acpMcpServerToConfig(
   // in the discriminated union). Anything without an explicit `type`
   // is treated as stdio.
   if (!('type' in server) || typeof server.type !== 'string') {
-    const stdio = server as McpServerStdio;
+    const stdio = server;
     const config: McpServerConfig = {
       transport: 'stdio',
       command: stdio.command,

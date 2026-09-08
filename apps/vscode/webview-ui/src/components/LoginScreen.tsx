@@ -35,12 +35,12 @@ export function LoginScreen({ onLoginSuccess, onSkip }: LoginScreenProps) {
       if (result.success) {
         onLoginSuccess();
       } else {
-        const errorMessage = result.error || "Login failed";
+        const errorMessage = result.error ?? "Login failed";
         setState("error");
         setError(errorMessage);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       setState("error");
       setError(errorMessage);
     }
@@ -50,7 +50,7 @@ export function LoginScreen({ onLoginSuccess, onSkip }: LoginScreenProps) {
     if (!url) return;
     await navigator.clipboard.writeText(url);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() =>{  setCopied(false); }, 2000);
   };
 
   if (state === "pending") {

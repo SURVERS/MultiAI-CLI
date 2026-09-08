@@ -139,9 +139,9 @@ export function BashParserView() {
           timeoutMs: timeoutMs === '' ? undefined : Number(timeoutMs),
           maxNodes: maxNodes === '' ? undefined : Number(maxNodes),
         })
-        .then(setResult, (e: unknown) => {
+        .then(setResult, (error: unknown) => {
           setResult(null);
-          setError(errorMessage(e));
+          setError(errorMessage(error));
         });
     }, PARSE_DEBOUNCE_MS);
     return () => {
@@ -180,7 +180,7 @@ export function BashParserView() {
               className="w-16 rounded border border-neutral-700 bg-neutral-950 px-1.5 py-0.5 font-mono text-[11px] text-neutral-200 outline-none focus:border-sky-600"
               placeholder="50"
               value={timeoutMs}
-              onChange={(e) => setTimeoutMs(e.target.value)}
+              onChange={(e) =>{  setTimeoutMs(e.target.value); }}
             />
           </label>
           <label className="flex items-center gap-1 text-[10px] text-neutral-500">
@@ -189,7 +189,7 @@ export function BashParserView() {
               className="w-20 rounded border border-neutral-700 bg-neutral-950 px-1.5 py-0.5 font-mono text-[11px] text-neutral-200 outline-none focus:border-sky-600"
               placeholder="50000"
               value={maxNodes}
-              onChange={(e) => setMaxNodes(e.target.value)}
+              onChange={(e) =>{  setMaxNodes(e.target.value); }}
             />
           </label>
         </div>
@@ -197,7 +197,7 @@ export function BashParserView() {
           className="min-h-0 flex-1 resize-none bg-neutral-950 p-3 font-mono text-[12px] leading-relaxed text-neutral-200 outline-none"
           spellCheck={false}
           value={source}
-          onChange={(e) => setSource(e.target.value)}
+          onChange={(e) =>{  setSource(e.target.value); }}
         />
       </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">

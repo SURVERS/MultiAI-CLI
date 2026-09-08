@@ -40,7 +40,7 @@ function recordingTelemetry(records: TelemetryRecord[]): ITelemetryService {
     track(event, properties) {
       records.push({ event, properties });
     },
-    track2: (event, properties) => telemetry.track(event, properties as TelemetryProperties),
+    track2: (event, properties) =>{  telemetry.track(event, properties as TelemetryProperties); },
     withContext: () => telemetry,
     setContext: () => {},
     addAppender: () => ({ dispose: () => {} }),

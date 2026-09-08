@@ -239,8 +239,8 @@ test(
         while (!stop && Date.now() - start < 15_000) {
           try {
             await db.set(`k${written++}`, val);
-          } catch (e) {
-            writeError ??= e;
+          } catch (error) {
+            writeError ??= error;
             stop = true;
           }
         }

@@ -128,9 +128,7 @@ describe('server-v2 /api/v1/sessions/{sid}/messages', () => {
     const session = server!.core.accessor.get(ISessionLifecycleService).get(sessionId);
     if (session === undefined) throw new Error(`session ${sessionId} not found`);
     let agent = session.accessor.get(IAgentLifecycleService).get('main');
-    if (agent === undefined) {
-      agent = await session.accessor.get(IAgentLifecycleService).create({ agentId: 'main' });
-    }
+    agent ??= await session.accessor.get(IAgentLifecycleService).create({ agentId: 'main' });
     if (messages.length > 0) {
       agent.accessor.get(IAgentContextMemoryService).append(...messages);
       // Flush the wire log so the temp home is quiescent before afterEach rm's

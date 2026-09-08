@@ -460,12 +460,12 @@ describe('createCoalescedAsyncRunner', () => {
     runner.request('session-a');
     expect(runs).toBe(1);
 
-    resolvers[0]!();
+    resolvers[0]();
     await first;
     await Promise.resolve();
 
     expect(runs).toBe(2);
-    resolvers[1]!();
+    resolvers[1]();
     await Promise.resolve();
     expect(runs).toBe(2);
   });

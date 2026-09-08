@@ -175,7 +175,7 @@ export class GitService implements IGitService {
         return { exitCode, stdout, stderr };
       }
       const timeout = new Promise<'timeout'>((resolve) => {
-        timer = setTimeout(() => resolve('timeout'), options.timeoutMs);
+        timer = setTimeout(() =>{  resolve('timeout'); }, options.timeoutMs);
         timer.unref?.();
       });
       const result = await Promise.race([

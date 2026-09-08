@@ -16,6 +16,8 @@ import {
 } from '@multiai/sdk';
 
 import { createMultiAICliUserAgent } from '#/cli/version';
+import { ApiKeyInputDialogComponent } from '../components/dialogs/api-key-input-dialog';
+import { adaptCustomBaseUrl, applyCustomDirectProvider, planCustomProvider } from '#/cli/sub/custom-provider';
 import { ChoicePickerComponent } from '../components/dialogs/choice-picker';
 import {
   CustomRegistryImportDialogComponent,
@@ -114,6 +116,10 @@ async function handleProviderAdd(host: SlashCommandHost): Promise<void> {
     return;
   }
 
+  if (source === 'direct') {
+    await handleDirectProviderAdd(host);
+    return;
+  }
   if (source === 'known') {
     await handleCatalogProviderAdd(host);
     return;
@@ -124,6 +130,45 @@ async function handleProviderAdd(host: SlashCommandHost): Promise<void> {
   }
 }
 
+async function handleDirectProviderAdd(host: SlashCommandHost): Promise<void> {
+  const baseUrl = await promptBaseUrl(host, t('Custom provider', 'Свой провайдер'));
+  if (baseUrl === undefined) return;
+  const apiKey = await promptApiKey(host, t('Custom provider API key', 'API-ключ своего провайдера'));
+  if (apiKey === undefined) return;
+  const endpoint = new URL(baseUrl);
+  if (!['https:', 'http:'].includes(endpoint.protocol) || endpoint.username || endpoint.password) {
+    throw new Error(t('Enter an HTTP(S) API URL without credentials.', 'Введите HTTP(S) URL API без логина и пароля в адресе.'));
+  }
+  const wire = await new Promise<'openai' | 'anthropic' | undefined>((resolve) => {
+    host.mountEditorReplacement(new ChoicePickerComponent({
+      title: t('API protocol', 'Протокол API'),
+      options: [{ value: 'openai', label: 'OpenAI' }, { value: 'anthropic', label: 'Anthropic' }],
+      onSelect: (value) => { host.restoreEditor(); resolve(value === 'anthropic' ? 'anthropic' : 'openai'); },
+      onCancel: () => { host.restoreEditor(); resolve(undefined); },
+    }));
+  });
+  if (wire === undefined) return;
+  const modelId = await new Promise<string | undefined>((resolve) => {
+    host.mountEditorReplacement(new ApiKeyInputDialogComponent(
+      t('Model ID', 'ID модели'),
+      [t('Enter the exact model ID; the provider catalog will also be imported.', 'Введите точный ID модели; каталог провайдера тоже будет загружен.')],
+      (result) => { host.restoreEditor(); resolve(result.kind === 'ok' ? result.value : undefined); },
+      { title: t('Model ID', 'ID модели'), mask: false, emptyHint: t('Model ID is required.', 'Введите ID модели.') },
+    ));
+  });
+  if (modelId === undefined) return;
+  const config = await host.harness.getConfig();
+  const prefix = `custom-${endpoint.hostname.replaceAll('.', '-')}`;
+  let providerId = prefix;
+  for (let suffix = 2; config.providers[providerId]; suffix++) providerId = `${prefix}-${suffix}`;
+  const plan = await planCustomProvider({ providerId, wire, baseUrl: adaptCustomBaseUrl(baseUrl, wire), apiKey, modelIds: [modelId] });
+  applyCustomDirectProvider(config, plan);
+  await host.harness.setConfig({ providers: config.providers, models: config.models });
+  await host.authFlow.refreshConfigAfterLogin();
+  host.showStatus(t(`Provider added: ${providerId}`, `Провайдер добавлен: ${providerId}`));
+  reopenProviderManager(host);
+}
+
 function reopenProviderManager(host: SlashCommandHost): void {
   const options = buildProviderManagerOptions(host);
   const component = new ProviderManagerComponent(options);
@@ -132,17 +177,18 @@ function reopenProviderManager(host: SlashCommandHost): void {
 
 function promptProviderAddSource(
   host: SlashCommandHost,
-): Promise<'known' | 'custom' | undefined> {
+): Promise<'known' | 'custom' | 'direct' | undefined> {
   return new Promise((resolve) => {
     const picker = new ChoicePickerComponent({
       title: t('Add provider', 'Добавить провайдера'),
       options: [
+        { value: 'direct', label: t('Custom endpoint + API key', 'Свой endpoint + API-ключ') },
         { value: 'known', label: t('Known third-party provider', 'Известный сторонний провайдер') },
         { value: 'custom', label: t('Custom registry (api.json)', 'Пользовательский реестр (api.json)') },
       ],
       onSelect: (value) => {
         host.restoreEditor();
-        resolve(value === 'known' || value === 'custom' ? value : undefined);
+        resolve(value === 'known' || value === 'custom' || value === 'direct' ? value : undefined);
       },
       onCancel: () => {
         host.restoreEditor();

@@ -48,7 +48,7 @@ export function WorkDirModal() {
 
   const displayPath = (fullPath: string) => {
     if (!workspaceRoot) return fullPath;
-    if (fullPath === workspaceRoot) return fullPath.split("/").pop() || fullPath;
+    if (fullPath === workspaceRoot) return fullPath.split("/").pop() ?? fullPath;
     return fullPath.replace(workspaceRoot, ".");
   };
 
@@ -117,7 +117,7 @@ export function WorkDirModal() {
               </Button>
             )}
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setWorkDirModalOpen(false)}>
+          <Button variant="ghost" size="sm" onClick={() =>{  setWorkDirModalOpen(false); }}>
             Cancel
           </Button>
         </DialogFooter>

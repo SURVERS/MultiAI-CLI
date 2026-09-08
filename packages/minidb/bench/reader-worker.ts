@@ -36,7 +36,7 @@ async function main(): Promise<void> {
   if (mode === 'preload') {
     const [dir, shards, shard, n, valueBytes] = rest;
     const db = await ClusterDb.open({
-      dir: dir!,
+      dir: dir,
       shardCount: Number(shards),
       valueCodec: 'json',
       fsyncPolicy: 'no',
@@ -46,7 +46,7 @@ async function main(): Promise<void> {
     const t0 = performance.now();
     const count = Number(n);
     for (let i = 0; i < count; i++) {
-      await db.set(gen.next().value!, value(i, Number(valueBytes)));
+      await db.set(gen.next().value, value(i, Number(valueBytes)));
     }
     const writeMs = performance.now() - t0;
     const t1 = performance.now();
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
   if (mode === 'hammer') {
     const [dir, shards, shard, valueBytes, paceMs = '5'] = rest;
     const db = await ClusterDb.open({
-      dir: dir!,
+      dir: dir,
       shardCount: Number(shards),
       valueCodec: 'json',
       fsyncPolicy: 'no',
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
     let i = 0;
     const t0 = performance.now();
     while (!stop) {
-      await db.set(gen.next().value!, value(i, Number(valueBytes)));
+      await db.set(gen.next().value, value(i, Number(valueBytes)));
       i++;
       if (pace > 0) await new Promise((r) => setTimeout(r, pace));
     }
@@ -98,7 +98,7 @@ async function main(): Promise<void> {
   process.exit(1);
 }
 
-main().catch((e) => {
-  out({ ok: 0, mode, error: String(e && (e as Error).stack ? (e as Error).stack : e) });
+main().catch((error) => {
+  out({ ok: 0, mode, error: String(error && (error as Error).stack ? (error as Error).stack : error) });
   process.exit(1);
 });

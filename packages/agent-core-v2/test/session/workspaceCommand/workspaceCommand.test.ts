@@ -334,7 +334,7 @@ describe('SessionWorkspaceCommandService', () => {
 
     const written = fs.files.get(`${WORK_DIR}/.multiai/local.toml`);
     expect(written).toBeDefined();
-    const matches = written?.match(new RegExp(EXTRA_DIR.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'));
+    const matches = written?.match(new RegExp(EXTRA_DIR.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'));
     expect(matches).toHaveLength(1);
   });
 

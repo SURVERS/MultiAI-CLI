@@ -462,8 +462,8 @@ export class EditorKeyboardController {
       maxEdge: this.host.harness?.imageLimits?.maxEdgePx(),
       telemetry: {
         client: {
-          track: (event, properties) =>
-            this.host.track(event, properties === undefined ? undefined : { ...properties }),
+          track: (event, properties) =>{ 
+            this.host.track(event, properties === undefined ? undefined : { ...properties }); },
         },
         source: 'tui_paste',
       },

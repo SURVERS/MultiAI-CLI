@@ -23,7 +23,7 @@ import { startServer } from '../../src/server.js';
 import { tmpDir, rmrf } from './helpers/tmp.js';
 import { mulberry32 } from './helpers/prng.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 
 const fmtErrs = (errs: unknown[], n = 5): string =>
   errs
@@ -54,8 +54,8 @@ async function driveStormWithRotation(
           await db.set(key, value);
           acked.set(key, value);
           if (compactsAt.has(acked.size)) compacting.push(db.compact());
-        } catch (err) {
-          failures.push(err);
+        } catch (error) {
+          failures.push(error);
         }
       }
     }),
@@ -323,7 +323,7 @@ test(
     // Compaction must keep working regardless of document content.
     await expect(db.compact(), 'compaction failed because of a document').resolves.toBeUndefined();
     // The index must still answer instead of silently returning nothing.
-    expect(db.search('docs', 'hello').map((h) => h.key).sort(), 'search after compaction').toEqual([
+    expect(db.search('docs', 'hello').map((h) => h.key).toSorted(), 'search after compaction').toEqual([
       'normal',
       'poison',
     ]);
@@ -517,7 +517,7 @@ test(
         }
         if (iter % 250 === 249) {
           for (const term of ['tok5', 'tok77']) {
-            const hits = db.search('docs', term, { limit: 10_000 }).map((h) => h.key).sort();
+            const hits = db.search('docs', term, { limit: 10_000 }).map((h) => h.key).toSorted();
             expect(hits, `iter ${iter}: search("${term}")`).toEqual(liveHits(term));
           }
         }
@@ -528,7 +528,7 @@ test(
     const db2 = await MiniDb.open<{ body: string }>({ dir, valueCodec: 'json' });
     try {
       for (const term of ['tok5', 'tok77']) {
-        const hits = db2.search('docs', term, { limit: 10_000 }).map((h) => h.key).sort();
+        const hits = db2.search('docs', term, { limit: 10_000 }).map((h) => h.key).toSorted();
         expect(hits, `after reopen: search("${term}")`).toEqual(liveHits(term));
       }
     } finally {
@@ -563,10 +563,10 @@ test(
       expect(db.stats.compactions).toBeGreaterThan(0);
       expect(db.store.bytes).toBeLessThanOrEqual(Math.ceil(budget * 1.05));
       expect(db.stats.evictions).toBeGreaterThan(0);
-    } catch (err) {
+    } catch (error) {
       await db.close().catch(() => {});
       await rmrf(dir).catch(() => {});
-      throw err;
+      throw error;
     }
     const before = new Map(db.scan().map((e) => [e.key, e.value] as const));
     await db.close();
@@ -603,9 +603,9 @@ test('stress: maxMemory reject leaves the db consistent and writable', { timeout
       try {
         await db.set(`rk${i}`, { i, pad: 'r'.repeat(400) });
         ok++;
-      } catch (err) {
+      } catch (error) {
         rej++;
-        expect(String((err as Error).message)).toMatch(/maxMemory/);
+        expect(String((error as Error).message)).toMatch(/maxMemory/);
       }
     }
     expect(ok).toBeGreaterThan(0);
@@ -617,10 +617,10 @@ test('stress: maxMemory reject leaves the db consistent and writable', { timeout
     for (let i = 0; i < 400; i += 2) await db.del(`rk${i}`);
     await db.set('post-reject', { i: -1, pad: 'ok' });
     expect(db.get('post-reject')).toEqual({ i: -1, pad: 'ok' });
-  } catch (err) {
+  } catch (error) {
     await db.close().catch(() => {});
     await rmrf(dir).catch(() => {});
-    throw err;
+    throw error;
   }
   const before = new Map(db.scan().map((e) => [e.key, e.value] as const));
   await db.close();
@@ -664,8 +664,8 @@ test('stress: read-only openers alongside a live compacting writer', { timeout: 
         const rows = ro.scan();
         for (const r of rows) expect(r.key).toMatch(/^rk\d+$/);
         await ro.close();
-      } catch (err) {
-        errors.push(err);
+      } catch (error) {
+        errors.push(error);
       }
       await new Promise((r) => setTimeout(r, 40));
     }
@@ -708,8 +708,8 @@ test('stress: batch durability under compaction churn', { timeout: 120_000 }, as
         try {
           await db.batch(ops);
           for (const o of ops) acked.set(o.key, o.value);
-        } catch (err) {
-          failures.push(err);
+        } catch (error) {
+          failures.push(error);
         }
       }
     }),
@@ -770,19 +770,19 @@ test(
       const scanned = dbi.scan({});
       expect(scanned.length, `${ctx}: scan length`).toBe(model.size);
       for (const e of scanned) expect(e.value, `${ctx}: value of ${e.key}`).toEqual(model.get(e.key)!.doc);
-      const byDt = dbi.dtRange('created').map((r) => r.key).sort();
-      const modelDt = [...model].filter(([, v]) => v.dt !== null).map(([k]) => k).sort();
+      const byDt = dbi.dtRange('created').map((r) => r.key).toSorted();
+      const modelDt = [...model].filter(([, v]) => v.dt !== null).map(([k]) => k).toSorted();
       expect(byDt, `${ctx}: dtRange('created')`).toEqual(modelDt);
       for (const g of [0, 3, 7]) {
-        const hits = dbi.findEq('g', g).map((r) => r.key).sort();
-        const want = [...model].filter(([, v]) => v.doc.g === g).map(([k]) => k).sort();
+        const hits = dbi.findEq('g', g).map((r) => r.key).toSorted();
+        const want = [...model].filter(([, v]) => v.doc.g === g).map(([k]) => k).toSorted();
         expect(hits, `${ctx}: findEq(g=${g})`).toEqual(want);
       }
-      const ranged = dbi.findRange('score', { min: 0, max: 100 }).map((r) => r.key).sort();
-      const wantRanged = [...model].filter(([, v]) => v.doc.score >= 0 && v.doc.score <= 100).map(([k]) => k).sort();
+      const ranged = dbi.findRange('score', { min: 0, max: 100 }).map((r) => r.key).toSorted();
+      const wantRanged = [...model].filter(([, v]) => v.doc.score >= 0 && v.doc.score <= 100).map(([k]) => k).toSorted();
       expect(ranged, `${ctx}: findRange(score 0..100)`).toEqual(wantRanged);
-      const hits = dbi.search('docs', 'alpha', { limit: 10_000 }).map((h) => h.key).sort();
-      const wantHits = [...model].filter(([, v]) => (v.doc.body ?? '').split(' ').includes('alpha')).map(([k]) => k).sort();
+      const hits = dbi.search('docs', 'alpha', { limit: 10_000 }).map((h) => h.key).toSorted();
+      const wantHits = [...model].filter(([, v]) => (v.doc.body ?? '').split(' ').includes('alpha')).map(([k]) => k).toSorted();
       expect(hits, `${ctx}: search(alpha)`).toEqual(wantHits);
     };
 
@@ -835,10 +835,10 @@ test(
       await checkAll('final', db);
       await db.close();
       await rmrf(dir);
-    } catch (err) {
+    } catch (error) {
       await db.close().catch(() => {});
       await rmrf(dir).catch(() => {});
-      throw err;
+      throw error;
     }
   },
 );

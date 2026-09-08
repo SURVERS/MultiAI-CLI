@@ -27,9 +27,9 @@ export async function renameReplace(src: string, dst: string, opts: RenameReplac
   const base = opts.baseDelayMs ?? 20;
   for (let attempt = 0; ; attempt++) {
     try {
-      return await fs.rename(src, dst);
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'EPERM' || attempt >= retries) throw e;
+       await fs.rename(src, dst);; return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EPERM' || attempt >= retries) throw error;
       await sleep(base + Math.floor(Math.random() * (base + 10)));
     }
   }

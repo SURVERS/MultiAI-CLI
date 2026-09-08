@@ -434,7 +434,7 @@ describe('AgentMcpService', () => {
 
   it('reconnects the server and retries the call once when the transport dies', async () => {
     const manager = new FakeMcpManager();
-    const deadClient = throwingClient(fakeMcpClient(), () => manager.fail('s'));
+    const deadClient = throwingClient(fakeMcpClient(), () =>{  manager.fail('s'); });
     const freshCounter = { calls: 0 };
     const freshClient = countingClient(fakeMcpClient(), freshCounter);
     let reconnects = 0;
@@ -529,7 +529,7 @@ describe('AgentMcpService', () => {
 
   it('rethrows the original error when the server does not come back', async () => {
     const manager = new FakeMcpManager();
-    const deadClient = throwingClient(fakeMcpClient(), () => manager.fail('s'));
+    const deadClient = throwingClient(fakeMcpClient(), () =>{  manager.fail('s'); });
     manager.reconnectHandler = async (name) => {
       manager.fail(name);
     };
@@ -553,7 +553,7 @@ describe('AgentMcpService', () => {
 
   it('reports both errors when the reconnect attempt itself fails', async () => {
     const manager = new FakeMcpManager();
-    const deadClient = throwingClient(fakeMcpClient(), () => manager.fail('s'));
+    const deadClient = throwingClient(fakeMcpClient(), () =>{  manager.fail('s'); });
     manager.reconnectHandler = async () => {
       throw new Error('spawn failed');
     };
@@ -604,7 +604,7 @@ describe('AgentMcpService', () => {
 
   it('dedupes concurrent reconnects from parallel failing tool calls', async () => {
     const manager = new FakeMcpManager();
-    const deadClient = throwingClient(fakeMcpClient(), () => manager.fail('s'));
+    const deadClient = throwingClient(fakeMcpClient(), () =>{  manager.fail('s'); });
     const freshClient = fakeMcpClient();
     let reconnects = 0;
     manager.reconnectHandler = async (name) => {
@@ -643,7 +643,7 @@ describe('AgentMcpService', () => {
     const manager = new FakeMcpManager();
     const reconnectStarted = deferred<void>();
     const reconnectReleased = deferred<void>();
-    const deadClient = throwingClient(fakeMcpClient(), () => manager.fail('s'));
+    const deadClient = throwingClient(fakeMcpClient(), () =>{  manager.fail('s'); });
     const freshClient = fakeMcpClient();
     let reconnects = 0;
     manager.reconnectHandler = async (name) => {

@@ -110,7 +110,7 @@ export class SessionEventJournal {
         const parsed = parseJournalLine(raw);
         if (parsed === undefined) continue; // torn/corrupt line — skip
         if (parsed.kind === 'journal_header') {
-          if (epoch === undefined) epoch = parsed.epoch;
+          epoch ??= parsed.epoch;
           continue;
         }
         if (parsed.seq > lastSeq) lastSeq = parsed.seq;
@@ -170,11 +170,9 @@ export class SessionEventJournal {
 
   async flush(): Promise<void> {
     while (this.flushPromise !== undefined || this.pendingLines.length > 0) {
-      if (this.flushPromise === undefined) {
-        this.flushPromise = this.flushOnce().finally(() => {
+      this.flushPromise ??= this.flushOnce().finally(() => {
           this.flushPromise = undefined;
         });
-      }
       await this.flushPromise;
     }
   }

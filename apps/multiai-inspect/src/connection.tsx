@@ -328,11 +328,11 @@ function ConnectScreen({
                   key={s.id}
                   type="button"
                   className="flex w-full items-center gap-2 rounded border border-neutral-700 bg-neutral-950 px-3 py-2 text-left text-[12px] text-neutral-200 hover:border-sky-600"
-                  onClick={() =>
+                  onClick={() =>{ 
                     onConnect(
                       { url: s.url, token: discovery.data?.token ?? '' },
                       { persist: false, rememberServerUrl: s.url },
-                    )
+                    ); }
                   }
                 >
                   <span className="font-mono">{s.url.replace(/^https?:\/\//, '')}</span>
@@ -350,14 +350,14 @@ function ConnectScreen({
           className="mb-4 w-full rounded border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-sky-600"
           placeholder="http://127.0.0.1:58627 (empty = dev proxy)"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) =>{  setUrl(e.target.value); }}
         />
         <label className="mb-1 block text-xs text-neutral-400">Bearer token (optional)</label>
         <input
           className="mb-5 w-full rounded border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-sky-600"
           placeholder="~/.multiai/server.token"
           value={token}
-          onChange={(e) => setToken(e.target.value)}
+          onChange={(e) =>{  setToken(e.target.value); }}
         />
         <button
           type="submit"

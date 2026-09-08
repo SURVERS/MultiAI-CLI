@@ -143,7 +143,7 @@ test('TextIndex: add + search (AND/OR) disk-backed', async () => {
 
     assert.deepEqual(ti.search('hello').map((h) => h.key), ['a']);
     assert.deepEqual(ti.search('北京').map((h) => h.key), ['b']);
-    assert.deepEqual(ti.search('北京 上海', { op: 'OR' }).map((h) => h.key).sort(), ['b', 'c']);
+    assert.deepEqual(ti.search('北京 上海', { op: 'OR' }).map((h) => h.key).toSorted(), ['b', 'c']);
     // AND across two terms only present together in 'b'
     assert.deepEqual(ti.search('北京 编程').map((h) => h.key), ['b']);
     ti.close();
@@ -198,7 +198,7 @@ test('TextIndex: build persists to disk + merges delta after build', async () =>
 
     // new writes after build go to the in-memory delta and are still found
     ti.add('c', { bio: 'hello from c' });
-    assert.deepEqual(ti.search('hello').map((h) => h.key).sort(), ['a', 'c']);
+    assert.deepEqual(ti.search('hello').map((h) => h.key).toSorted(), ['a', 'c']);
     ti.close();
 
     // a fresh TextIndex over the same file sees the base but not the lost delta

@@ -13,14 +13,14 @@ const webPort = Number(process.env.WEB_PORT) || 5175;
 // both can run at once) for multi-instance debugging. Override with
 // MULTIAI_BACKEND_DEFAULT_URL / MULTIAI_BACKEND_MULTI_URL.
 const backendPresets = {
-  default: process.env.MULTIAI_BACKEND_DEFAULT_URL || 'http://127.0.0.1:58627',
-  multi: process.env.MULTIAI_BACKEND_MULTI_URL || 'http://127.0.0.1:58628',
+  default: process.env.MULTIAI_BACKEND_DEFAULT_URL ?? 'http://127.0.0.1:58627',
+  multi: process.env.MULTIAI_BACKEND_MULTI_URL ?? 'http://127.0.0.1:58628',
 } as const;
 type BackendName = keyof typeof backendPresets;
 // Where the dev proxy forwards server traffic. Defaults to the `default`
 // preset; MULTIAI_SERVER_URL pins the initial target (and disables nothing — the
 // dev switcher can still move it at runtime).
-const serverTarget = process.env.MULTIAI_SERVER_URL || backendPresets.default;
+const serverTarget = process.env.MULTIAI_SERVER_URL ?? backendPresets.default;
 // Mutable proxy target. Vite copies its proxy-options object per HTTP request
 // and reads it directly per WS upgrade, so assigning `target` on the captured
 // options repoints the proxy without a dev-server restart (see the plugin).
@@ -56,7 +56,7 @@ function backendSwitcherPlugin(): Plugin {
     name: 'multiai-backend-switcher',
     configureServer(server) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
-        if (req.url !== '/__multiai-dev/backend') return next();
+        if (req.url !== '/__multiai-dev/backend') {  next();; return; }
         if (req.method === 'GET') {
           sendJson(res, state());
           return;
@@ -76,7 +76,7 @@ function backendSwitcherPlugin(): Plugin {
               sendJson(res, { error: 'expected { "name": "default" | "multi" }' });
               return;
             }
-            switchTo(name as BackendName);
+            switchTo(name);
             sendJson(res, state());
           });
           return;
@@ -113,8 +113,8 @@ const apiProxyOptions = {
     options: { target?: unknown },
   ) => {
     backendProxyOpts = options;
-    proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin'));
-    proxy.on('proxyReqWs', (proxyReq) => proxyReq.removeHeader('origin'));
+    proxy.on('proxyReq', (proxyReq) =>{  proxyReq.removeHeader('origin'); });
+    proxy.on('proxyReqWs', (proxyReq) =>{  proxyReq.removeHeader('origin'); });
   },
 };
 

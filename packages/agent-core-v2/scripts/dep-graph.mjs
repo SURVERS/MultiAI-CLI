@@ -13,10 +13,8 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const SRC_ROOT = join(__dirname, '..', 'src');
 
 const SCOPE_DIRS = new Set(['app', 'session', 'agent']);
@@ -94,10 +92,10 @@ function main() {
     byDomain.get(domain).push(...services);
   }
 
-  const domains = [...byDomain.keys()].sort();
+  const domains = [...byDomain.keys()].toSorted();
   let total = 0;
   for (const domain of domains) {
-    const services = byDomain.get(domain).sort((a, b) => a.token.localeCompare(b.token));
+    const services = byDomain.get(domain).toSorted((a, b) => a.token.localeCompare(b.token));
     console.log(`\n## ${domain}`);
     for (const s of services) {
       total++;

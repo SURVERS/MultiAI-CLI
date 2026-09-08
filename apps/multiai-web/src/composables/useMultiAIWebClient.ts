@@ -658,7 +658,7 @@ async function refreshSessionStatus(sessionId: string): Promise<void> {
   }
   updateSession(sessionId, (s) => ({
     ...s,
-    model: st.model || s.model,
+    model: st.model ?? s.model,
     usage: {
       ...s.usage,
       contextTokens: st.contextTokens,
@@ -736,10 +736,10 @@ function persistSessionProfile(patch: {
   return Promise.resolve(getMultiAIWebApi().updateSession(sid, patch))
     .then(() => refreshSessionStatus(sid))
     .then(() => true)
-    .catch((err) => {
+    .catch((error) => {
       // Local state already reflects the change; tell the user (and the log)
       // that the daemon did not persist it.
-      pushOperationFailure('persistSessionProfile', err, { sessionId: sid });
+      pushOperationFailure('persistSessionProfile', error, { sessionId: sid });
       return false;
     });
 }
@@ -765,7 +765,7 @@ function saveConversationTocToStorage(v: boolean): void {
     // ignore
   }
 }
-const conversationToc = ref<boolean>(loadConversationTocFromStorage());
+const conversationToc = ref(loadConversationTocFromStorage());
 function setConversationToc(v: boolean): void {
   conversationToc.value = v;
   saveConversationTocToStorage(v);
@@ -783,7 +783,7 @@ function loadStringFromStorage(key: string): string {
     return '';
   }
 }
-const onboarded = ref<boolean>(loadStringFromStorage(ONBOARDED_STORAGE_KEY) === '1');
+const onboarded = ref(loadStringFromStorage(ONBOARDED_STORAGE_KEY) === '1');
 function setOnboarded(done: boolean): void {
   onboarded.value = done;
   try {
@@ -1005,7 +1005,7 @@ function processEvent(appEvent: AppEvent, meta: MultiAIEventMeta): void {
 }
 
 const enqueueEvent = createEventBatcher<PendingAppEvent>(
-  ({ appEvent, meta }) => processEvent(appEvent, meta),
+  ({ appEvent, meta }) =>{  processEvent(appEvent, meta); },
   ({ appEvent }) => isRenderEvent(appEvent),
   { coalesce: coalesceAppRenderEvents },
 );
@@ -1500,12 +1500,12 @@ async function syncSessionFromSnapshot(sessionId: string): Promise<SyncSessionRe
     if (snapUsagePlaceholder) void refreshSessionStatus(sessionId);
     void pullSessionWarnings(sessionId);
     return 'ok';
-  } catch (err) {
-    if (isSessionNotFoundError(err)) {
+  } catch (error) {
+    if (isSessionNotFoundError(error)) {
       await handleSessionNotFound(sessionId);
       return 'not-found';
     }
-    pushOperationFailure('getSessionSnapshot', err, {
+    pushOperationFailure('getSessionSnapshot', error, {
       title: i18n.global.t('warnings.sessionSnapshotTitle'),
       message: i18n.global.t('warnings.sessionSnapshotMessage'),
       sessionId,
@@ -2197,7 +2197,7 @@ const changes = computed<{ path: string; status: string }[]>(() => {
   if (!gs) return [];
   return Object.entries(gs.entries)
     .map(([path, status]) => ({ path, status }))
-    .sort((a, b) => a.path.localeCompare(b.path));
+    .toSorted((a, b) => a.path.localeCompare(b.path));
 });
 
 /** Aggregate working-tree line stats (vs HEAD) for the active session's header
@@ -2234,8 +2234,8 @@ const status = computed<ConversationStatus>(() => {
     modelProvider.models.value.find((m) => m.id === rawModel) ??
     modelProvider.models.value.find((m) => m.model === rawModel);
   const displayModel =
-    matched?.displayName ||
-    matched?.model ||
+    (matched?.displayName ??
+    matched?.model) ??
     (rawModel.includes('/') ? rawModel.split('/').pop()! : rawModel);
 
   return {
@@ -2314,7 +2314,7 @@ const mergedWorkspaces = computed<AppWorkspace[]>(() =>
  * sidebar stops following the daemon's recency-based order: once a workspace is
  * known, its position is fixed until the user drags it elsewhere.
  */
-const workspaceOrder = ref<string[]>(loadWorkspaceOrder());
+const workspaceOrder = ref(loadWorkspaceOrder());
 
 /**
  * Sidebar workspace sort mode. `recent` (default) re-sorts by each workspace's

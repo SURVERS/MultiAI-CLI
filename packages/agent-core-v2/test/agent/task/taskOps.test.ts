@@ -42,7 +42,7 @@ beforeEach(() => {
   log = host.log;
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(key = KEY): Promise<WireRecord[]> {
   await wire.flush();

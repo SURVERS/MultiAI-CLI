@@ -86,7 +86,7 @@ function transformPermissionRule(value: unknown, decision?: 'allow' | 'deny' | '
   const match = rule['match'];
   const pattern = rule['pattern'];
   const out: Record<string, unknown> = {
-    decision: decision !== undefined ? decision : rule['decision'],
+    decision: decision ?? rule['decision'],
     scope: rule['scope'],
     reason: rule['reason'],
   };

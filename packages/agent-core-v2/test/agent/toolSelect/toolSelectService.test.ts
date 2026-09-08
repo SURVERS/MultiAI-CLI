@@ -87,7 +87,7 @@ beforeEach(() => {
   disclosureToolActive = true;
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 function makeCapabilities(overrides: {
   readonly tool_use?: boolean;

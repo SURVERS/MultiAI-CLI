@@ -21,7 +21,7 @@ export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   if (ms <= 0) return promise;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new TimeoutError(ms)), ms);
+    timer = setTimeout(() =>{  reject(new TimeoutError(ms)); }, ms);
     timer.unref?.();
   });
   return Promise.race([promise, timeout]).finally(() => {

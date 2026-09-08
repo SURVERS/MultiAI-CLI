@@ -33,8 +33,8 @@ async function main(): Promise<void> {
     for (;;) {
       try {
         return await fn();
-      } catch (e) {
-        if ((e as { code?: string }).code !== 'ELOCKED' && !(e instanceof LockError)) throw e;
+      } catch (error) {
+        if ((error as { code?: string }).code !== 'ELOCKED' && !(error instanceof LockError)) throw error;
         retries++;
         await sleep(15 + Math.floor(Math.random() * 45));
       }
@@ -43,7 +43,7 @@ async function main(): Promise<void> {
 
   if (mode === 'write') {
     const db = await ClusterDb.open({
-      dir: dir!,
+      dir: dir,
       shardCount,
       valueCodec: 'json',
       fsyncPolicy: 'everysec',
@@ -65,7 +65,7 @@ async function main(): Promise<void> {
   }
 
   if (mode === 'read') {
-    const db = await ClusterDb.open({ dir: dir!, shardCount, valueCodec: 'json', readOnly: true });
+    const db = await ClusterDb.open({ dir: dir, shardCount, valueCodec: 'json', readOnly: true });
     let found = 0;
     const t0 = performance.now();
     for (let i = 0; found < want; i++) {
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
   process.exit(1);
 }
 
-main().catch((e) => {
-  out({ ok: 0, mode, error: String(e && (e as Error).stack ? (e as Error).stack : e) });
+main().catch((error) => {
+  out({ ok: 0, mode, error: String(error && (error as Error).stack ? (error as Error).stack : error) });
   process.exit(1);
 });

@@ -12,7 +12,7 @@ import { Model } from './helpers/model.js';
 import { mulberry32, pick } from './helpers/prng.js';
 import { tmpDir, rmrf } from './helpers/tmp.js';
 
-const SOAK = Number(process.env.SOAK || 0);
+const SOAK = Number(process.env.SOAK ?? 0);
 
 test('soak: sustained random ops do not leak memory or corrupt', { skip: !SOAK }, async () => {
   const dir = await tmpDir();

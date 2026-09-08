@@ -53,7 +53,7 @@ function makeText(targetChars: number): string {
   let n = 0;
   while (n < targetChars) {
     if (Math.random() < 0.55) {
-      const t = LATIN[(Math.random() * LATIN.length) | 0]!;
+      const t = LATIN[(Math.random() * LATIN.length) | 0];
       parts.push(t);
       n += t.length + 1;
     } else {
@@ -224,7 +224,7 @@ async function main(): Promise<void> {
   await fs.rm(dir, { recursive: true, force: true });
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

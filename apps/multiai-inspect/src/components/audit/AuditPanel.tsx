@@ -120,7 +120,7 @@ export function AuditPanel({ trail }: { trail: AuditTrail }) {
           <input
             type="checkbox"
             checked={follow}
-            onChange={(e) => setFollow(e.target.checked)}
+            onChange={(e) =>{  setFollow(e.target.checked); }}
             className="accent-sky-500"
           />
           follow
@@ -163,7 +163,7 @@ export function AuditPanel({ trail }: { trail: AuditTrail }) {
                 ? 'bg-neutral-800 text-neutral-100'
                 : 'text-neutral-500 hover:text-neutral-300'
             }`}
-            onClick={() => setTab(name)}
+            onClick={() =>{  setTab(name); }}
           >
             {name === 'diff' ? 'Diff vs prev' : name === 'state' ? 'State' : 'Event'}
           </button>

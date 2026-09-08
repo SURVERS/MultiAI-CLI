@@ -20,7 +20,7 @@ function rawToString(data: RawData): string {
   if (typeof data === 'string') return data;
   if (Buffer.isBuffer(data)) return data.toString('utf8');
   if (Array.isArray(data)) return Buffer.concat(data).toString('utf8');
-  return Buffer.from(data as ArrayBuffer).toString('utf8');
+  return Buffer.from(data).toString('utf8');
 }
 
 function openConn(url: string, protocols: string[]): Promise<{ ws: WebSocket; firstFrame: unknown }> {
@@ -52,12 +52,12 @@ function expectRejected(url: string): Promise<void> {
       else reject(err);
     };
     const t = setTimeout(
-      () => done(new Error('connection was not rejected within timeout')),
+      () =>{  done(new Error('connection was not rejected within timeout')); },
       1500,
     );
-    ws.once('open', () => done(new Error('connection unexpectedly opened')));
-    ws.once('error', () => done());
-    ws.once('close', () => done());
+    ws.once('open', () =>{  done(new Error('connection unexpectedly opened')); });
+    ws.once('error', () =>{  done(); });
+    ws.once('close', () =>{  done(); });
   });
 }
 

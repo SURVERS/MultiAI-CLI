@@ -175,11 +175,11 @@ export function registerFilesRoutes(app: FilesRouteHost, core: Scope): void {
           r.header('content-range', `bytes ${range.start}-${range.end}/${size}`)
             .header('content-length', range.end - range.start + 1)
             .code(206);
-          return r.send(file.stream(range)) as unknown as void;
+          return r.send(file.stream(range)) as void;
         }
 
         r.header('content-length', size).code(200);
-        return r.send(file.stream()) as unknown as void;
+        return r.send(file.stream()) as void;
       } catch (error) {
         sendMappedError(reply as unknown as FilesReply, req, error);
         return;

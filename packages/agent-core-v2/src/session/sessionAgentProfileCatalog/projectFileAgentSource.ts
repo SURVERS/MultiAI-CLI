@@ -51,7 +51,7 @@ export class ProjectFileAgentSource implements IProjectFileAgentSource {
       },
     );
     return profilesFromDiscovery(
-      await discoverAgentFiles(this.fs, roots, (message) => this.log.warn(message)),
+      await discoverAgentFiles(this.fs, roots, (message) =>{  this.log.warn(message); }),
       (context) => this.user.getDefaultProfile().systemPrompt(context),
     );
   }

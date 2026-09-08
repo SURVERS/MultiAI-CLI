@@ -65,7 +65,7 @@ function loadAllMessages(): Msg[] {
       const ts = typeof o.time === 'number' ? o.time : 0;
       if (o.type === 'context.append_message' && o.message) {
         let text = '';
-        for (const c of o.message.content || [])
+        for (const c of o.message.content ?? [])
           if (c && c.type === 'text' && typeof c.text === 'string') text += c.text;
         out.push({ id: `${meta.sessionId}:u${out.length}`, ts, role: 'user', text });
       } else if (
@@ -87,7 +87,7 @@ function scaleTo(real: Msg[], n: number): Msg[] {
   const now = Date.now();
   const span = WINDOW_DAYS * 864e5;
   const out: Msg[] = Array.from({ length: n }, (_, i) => {
-    const r = real[i % real.length]!;
+    const r = real[i % real.length];
     return { id: `m${i}`, ts: now - Math.floor((i / n) * span), role: r.role, text: r.text };
   });
   return out;
@@ -102,7 +102,7 @@ async function buildMinidb(msgs: Msg[]) {
   for (let s = 0; s < msgs.length; s += CHUNK) {
     const p: Promise<unknown>[] = [];
     for (let i = s; i < Math.min(s + CHUNK, msgs.length); i++) {
-      const m = msgs[i]!;
+      const m = msgs[i];
       p.push(db.set(m.id, { role: m.role, text: m.text }, { dt: { ts: m.ts } }));
     }
     await Promise.all(p);
@@ -118,7 +118,7 @@ function med(fn: () => void, runs = 9): number {
     t.push(performance.now() - t0);
   }
   t.sort((a, b) => a - b);
-  return t[(runs / 2) | 0]!;
+  return t[(runs / 2) | 0];
 }
 
 async function runCase(label: string, msgs: Msg[]) {
@@ -137,7 +137,7 @@ async function runCase(label: string, msgs: Msg[]) {
     }).length;
   });
   const aNaive = med(() => {
-    aHits = msgs.filter((m) => m.role === 'user' && m.ts >= since).sort((a, b) => b.ts - a.ts).slice(0, LIMIT).length;
+    aHits = msgs.filter((m) => m.role === 'user' && m.ts >= since).toSorted((a, b) => b.ts - a.ts).slice(0, LIMIT).length;
   });
 
   // B. ALL user in window (no limit)
@@ -181,7 +181,7 @@ async function runCase(label: string, msgs: Msg[]) {
 
 async function main() {
   const real = loadAllMessages();
-  const byRole = real.reduce((a: any, m) => ((a[m.role] = (a[m.role] || 0) + 1), a), {});
+  const byRole = real.reduce((a: any, m) => ((a[m.role] = (a[m.role] ?? 0) + 1), a), {});
   console.log(`loaded ${fmt(real.length)} real messages: ${JSON.stringify(byRole)}`);
   for (const n of [real.length, 100_000, 1_000_000]) {
     const msgs = n === real.length ? real : scaleTo(real, n);
@@ -190,7 +190,7 @@ async function main() {
   console.log('\ndone.');
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

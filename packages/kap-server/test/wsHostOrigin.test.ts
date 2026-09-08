@@ -27,7 +27,7 @@ interface ConnectOptions {
 function openConn(url: string, opts?: ConnectOptions): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(url, [`multiai.bearer.${TOKEN}`], { headers: opts?.headers });
-    ws.once('open', () => resolve(ws));
+    ws.once('open', () =>{  resolve(ws); });
     ws.once('error', reject);
   });
 }
@@ -47,12 +47,12 @@ function expectRejected(url: string, opts?: ConnectOptions): Promise<void> {
       else resolve();
     };
     const t = setTimeout(
-      () => done(new Error('connection was not rejected within timeout')),
+      () =>{  done(new Error('connection was not rejected within timeout')); },
       1500,
     );
-    ws.once('open', () => done(new Error('connection unexpectedly opened')));
-    ws.once('error', () => done());
-    ws.once('close', () => done());
+    ws.once('open', () =>{  done(new Error('connection unexpectedly opened')); });
+    ws.once('error', () =>{  done(); });
+    ws.once('close', () =>{  done(); });
   });
 }
 

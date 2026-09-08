@@ -66,9 +66,9 @@ function loadRealMessages(): Msg[] {
       const m = o.message;
       const ts = typeof o.time === 'number' ? o.time : 0;
       let text = '';
-      for (const c of m.content || [])
+      for (const c of m.content ?? [])
         if (c && c.type === 'text' && typeof c.text === 'string') text += c.text;
-      out.push({ id: `${meta.sessionId}:${out.length}`, ts, role: m.role || 'user', text });
+      out.push({ id: `${meta.sessionId}:${out.length}`, ts, role: m.role ?? 'user', text });
     }
   }
   return out;
@@ -80,7 +80,7 @@ function scaleTo(real: Msg[], n: number): Msg[] {
   const now = Date.now();
   const span = WINDOW_DAYS * 864e5;
   const out: Msg[] = Array.from({ length: n }, (_, i) => {
-    const r = real[i % real.length]!;
+    const r = real[i % real.length];
     return {
       id: `m${i}`,
       ts: now - Math.floor((i / n) * span),
@@ -100,7 +100,7 @@ async function buildMinidb(msgs: Msg[]): Promise<{ db: any; buildMs: number; dir
   for (let s = 0; s < msgs.length; s += CHUNK) {
     const p: Promise<unknown>[] = [];
     for (let i = s; i < Math.min(s + CHUNK, msgs.length); i++) {
-      const m = msgs[i]!;
+      const m = msgs[i];
       p.push(db.set(m.id, { role: m.role, text: m.text }, { dt: { ts: m.ts } }));
     }
     await Promise.all(p);
@@ -116,7 +116,7 @@ function med(fn: () => void, runs = 9): number {
     t.push(performance.now() - t0);
   }
   t.sort((a, b) => a - b);
-  return t[(runs / 2) | 0]!;
+  return t[(runs / 2) | 0];
 }
 
 async function runCase(label: string, msgs: Msg[]) {
@@ -143,7 +143,7 @@ async function runCase(label: string, msgs: Msg[]) {
   // ---- naive baseline ----
   let naiveHits = 0;
   const naiveMs = med(() => {
-    const res = msgs.filter((m) => m.ts >= since).sort((a, b) => b.ts - a.ts).slice(0, LIMIT);
+    const res = msgs.filter((m) => m.ts >= since).toSorted((a, b) => b.ts - a.ts).slice(0, LIMIT);
     naiveHits = res.length;
   });
   let naiveAllHits = 0;
@@ -173,7 +173,7 @@ async function main() {
   console.log('\ndone.');
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

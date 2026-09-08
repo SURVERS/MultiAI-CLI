@@ -113,7 +113,7 @@ function popupStyle(rect: DOMRect): React.CSSProperties {
 function MultilineString({ value, tone }: { value: string; tone: DiffStatus }) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => clearTimeout(closeTimer.current), []);
+  useEffect(() => () =>{  clearTimeout(closeTimer.current); }, []);
 
   const lines = value.split('\n');
   const firstLine = lines[0] ?? '';
@@ -125,7 +125,7 @@ function MultilineString({ value, tone }: { value: string; tone: DiffStatus }) {
   };
   const scheduleClose = () => {
     clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setRect(null), 150);
+    closeTimer.current = setTimeout(() =>{  setRect(null); }, 150);
   };
 
   return (
@@ -142,7 +142,7 @@ function MultilineString({ value, tone }: { value: string; tone: DiffStatus }) {
         <div
           className="fixed z-50 flex flex-col rounded border border-neutral-700 bg-neutral-950 shadow-xl"
           style={popupStyle(rect)}
-          onMouseEnter={() => clearTimeout(closeTimer.current)}
+          onMouseEnter={() =>{  clearTimeout(closeTimer.current); }}
           onMouseLeave={scheduleClose}
         >
           <div className="shrink-0 border-b border-neutral-800 px-3 py-1 text-[10px] text-neutral-500">
@@ -207,7 +207,7 @@ function Node({
       <div
         className={`cursor-pointer select-none border-l-2 px-1 font-mono text-[11px] leading-[1.7] hover:bg-neutral-800/70 ${ROW_TONE[effective.status]}`}
         style={{ paddingLeft: `${depth * 14 + 4}px` }}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() =>{  setOpen((v) => !v); }}
       >
         <span className="text-neutral-600">{open ? '▾ ' : '▸ '}</span>
         {label}

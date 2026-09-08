@@ -57,17 +57,17 @@ export function FilePickerMenu({
     selectedRef.current?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
-  const preventFocus = (e: React.MouseEvent) => e.preventDefault();
+  const preventFocus = (e: React.MouseEvent) =>{  e.preventDefault(); };
 
   // Calculate header count based on mode and options
   const getHeaderCount = () => {
     if (mode === "search") {
       // Select media (if shown) + Browse folders
       return showMediaOption ? 2 : 1;
-    } else {
+    }
       // Back to search + optional parent nav
       return currentPath ? 2 : 1;
-    }
+    
   };
 
   const headerCount = getHeaderCount();
@@ -81,7 +81,7 @@ export function FilePickerMenu({
               ref={selectedIndex === 0 ? selectedRef : null}
               onMouseDown={preventFocus}
               onClick={onSelectMedia}
-              onMouseEnter={() => onHover(0)}
+              onMouseEnter={() =>{  onHover(0); }}
               className={cn("w-full px-2 py-1.5 text-left flex items-center gap-2 border-b border-border", selectedIndex === 0 ? "bg-accent" : "hover:bg-accent/50")}
             >
               <IconPhoto className="size-3.5 text-muted-foreground" />
@@ -92,7 +92,7 @@ export function FilePickerMenu({
             ref={selectedIndex === (showMediaOption ? 1 : 0) ? selectedRef : null}
             onMouseDown={preventFocus}
             onClick={onSwitchToFolder}
-            onMouseEnter={() => onHover(showMediaOption ? 1 : 0)}
+            onMouseEnter={() =>{  onHover(showMediaOption ? 1 : 0); }}
             className={cn(
               "w-full px-2 py-1.5 text-left flex items-center gap-2 border-b border-border",
               selectedIndex === (showMediaOption ? 1 : 0) ? "bg-accent" : "hover:bg-accent/50",
@@ -108,7 +108,7 @@ export function FilePickerMenu({
             ref={selectedIndex === 0 ? selectedRef : null}
             onMouseDown={preventFocus}
             onClick={onSwitchToSearch}
-            onMouseEnter={() => onHover(0)}
+            onMouseEnter={() =>{  onHover(0); }}
             className={cn("w-full px-2 py-1.5 text-left flex items-center gap-2 border-b border-border", selectedIndex === 0 ? "bg-accent" : "hover:bg-accent/50")}
           >
             <IconArrowLeft className="size-3.5 text-muted-foreground" />
@@ -119,7 +119,7 @@ export function FilePickerMenu({
               ref={selectedIndex === 1 ? selectedRef : null}
               onMouseDown={preventFocus}
               onClick={onNavigateUp}
-              onMouseEnter={() => onHover(1)}
+              onMouseEnter={() =>{  onHover(1); }}
               className={cn("w-full px-2 py-1.5 text-left flex items-center gap-2 border-b border-border/50", selectedIndex === 1 ? "bg-accent" : "hover:bg-accent/50")}
             >
               <IconFolder className="size-3.5 text-muted-foreground" />
@@ -149,13 +149,13 @@ export function FilePickerMenu({
                     onSelectItem(item);
                   }
                 }}
-                onMouseEnter={() => onHover(itemIndex)}
+                onMouseEnter={() =>{  onHover(itemIndex); }}
                 className={cn("w-full px-2 py-1.5 text-left flex items-center justify-between gap-3", itemIndex === selectedIndex ? "bg-accent" : "hover:bg-accent/50")}
               >
                 <span className="flex items-center gap-1.5 text-xs shrink-0">
                   {item.isDirectory ? <IconFolder className="size-3 text-muted-foreground" /> : <IconFile className="size-3 text-muted-foreground" />}
                   <span className={cn(item.isDirectory && "font-medium")}>
-                    {mode === "folder" ? item.name : item.highlightedName || item.name}
+                    {mode === "folder" ? item.name : item.highlightedName ?? item.name}
                     {item.isDirectory && "/"}
                   </span>
                 </span>

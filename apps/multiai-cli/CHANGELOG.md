@@ -1,5 +1,11 @@
 # multiai-cli
 
+## 1.1.2
+
+### Patch Changes
+
+- Allow custom endpoints and API keys in the provider menu and send session routing headers for OpenCode Go requests.
+
 ## 1.0.0
 
 ### Major Changes

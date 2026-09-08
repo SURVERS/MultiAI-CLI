@@ -2,7 +2,7 @@
 // Helpers for tool display. Labels/chips are localized via the shared i18n instance.
 
 import { i18n } from '../i18n';
-import { iconSvg, type IconName } from './icons';
+import type { IconName } from './icons';
 
 const t = i18n.global.t;
 
@@ -71,7 +71,7 @@ const NAME_ALIASES: Record<string, string> = {
 };
 
 export function normalizeToolName(name: string): string {
-  const lower = (name ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const lower = (name ?? '').trim().toLowerCase().replaceAll(/[\s-]+/g, '_');
   return NAME_ALIASES[lower] ?? lower;
 }
 
@@ -115,7 +115,7 @@ export function toolGlyph(name: string): IconName {
   const key = normalizeToolName(name);
   let icon = TOOL_GLYPH[key];
   if (!icon && (name ?? '').trim().toLowerCase().includes('skill')) icon = 'bolt';
-  if (!icon) icon = 'tool';
+  icon ??= 'tool';
   return icon;
 }
 

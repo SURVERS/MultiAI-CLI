@@ -78,10 +78,10 @@ describe('blob-resolver', () => {
 
       rehydrateWireEntries(entries, 'sess-1', 'main');
 
-      expect((entries[0]!.data as any).input[0].imageUrl.url).toBe(
+      expect((entries[0]!.data).input[0].imageUrl.url).toBe(
         '/api/sessions/sess-1/blobs/hashA?agent=main&mime=image%2Fpng',
       );
-      expect((entries[0]!.raw as any).input[0].imageUrl.url).toBe(
+      expect((entries[0]!.raw).input[0].imageUrl.url).toBe(
         'blobref:image/png;hashA',
       );
     });
@@ -105,7 +105,7 @@ describe('blob-resolver', () => {
 
       rehydrateWireEntries(entries, 'sess-2', 'sub-1');
 
-      const parts = (entries[0]!.data as any).event.result.output;
+      const parts = (entries[0]!.data).event.result.output;
       expect(parts[0].audioUrl.url).toBe(
         '/api/sessions/sess-2/blobs/hashB?agent=sub-1&mime=audio%2Fwav',
       );
@@ -125,7 +125,7 @@ describe('blob-resolver', () => {
 
       rehydrateWireEntries(entries, 'sess-3', 'main', 'http://localhost:3001');
 
-      expect((entries[0]!.data as any).input[0].imageUrl.url).toBe(
+      expect((entries[0]!.data).input[0].imageUrl.url).toBe(
         'http://localhost:3001/api/sessions/sess-3/blobs/hashC?agent=main&mime=image%2Fpng',
       );
     });

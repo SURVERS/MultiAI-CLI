@@ -108,7 +108,7 @@ describe('SessionActivityHub', () => {
     });
 
     instances[0]!.emit('open');
-    await vi.waitFor(() => expect(hub.store.get('s1')).toBeDefined());
+    await vi.waitFor(() =>{  expect(hub.store.get('s1')).toBeDefined(); });
 
     expect(hub.store.get('s1')).toEqual(facts({ busy: true, mainTurnActive: true }));
     expect(hub.store.get('s2')?.pendingInteraction).toBe('approval');

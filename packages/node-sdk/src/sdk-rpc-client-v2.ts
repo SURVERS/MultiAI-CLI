@@ -1861,11 +1861,9 @@ export class SDKRpcClientV2 extends SDKRpcClientBase {
 
   /** v1's per-core `globalMcpOAuth`, built over the app-scope document store. */
   private get globalMcpOAuthService(): McpOAuthService {
-    if (this.globalMcpOAuth === undefined) {
-      this.globalMcpOAuth = new McpOAuthService({
+    this.globalMcpOAuth ??= new McpOAuthService({
         store: createMcpOAuthStore(this.engineAccessor.get(IAtomicDocumentStore)),
       });
-    }
     return this.globalMcpOAuth;
   }
 

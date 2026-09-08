@@ -53,9 +53,9 @@ export function resetUnexpectedErrorHandler(): void {
 export function onUnexpectedError(err: unknown): void {
   try {
     currentHandler(err);
-  } catch (handlerErr) {
+  } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[unexpected] handler threw', handlerErr, 'while reporting', err);
+    console.error('[unexpected] handler threw', error, 'while reporting', err);
   }
 }
 
@@ -67,7 +67,7 @@ export function onUnexpectedError(err: unknown): void {
 export function safelyCallListener(listener: () => void): void {
   try {
     listener();
-  } catch (err) {
-    onUnexpectedError(err);
+  } catch (error) {
+    onUnexpectedError(error);
   }
 }

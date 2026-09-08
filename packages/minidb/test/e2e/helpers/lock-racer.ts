@@ -7,8 +7,8 @@
 import fs from 'node:fs';
 import { LockFile } from '../../../src/lockfile.js';
 
-const lockPath = process.argv[2]!;
-const gateDir = process.argv[3]!;
+const lockPath = process.argv[2];
+const gateDir = process.argv[3];
 const rounds = Number(process.argv[4] ?? 200);
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));

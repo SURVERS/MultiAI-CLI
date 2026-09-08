@@ -37,7 +37,7 @@ describe('message history (IAgentContextMemoryService)', () => {
     registerTestAgentWire(ix, 'wire/message-history', { eventBus: ix.get(IEventBus) });
     ix.set(IAgentContextMemoryService, new SyncDescriptor(AgentContextMemoryService));
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   it('round-trips user/assistant messages with their text content', () => {
     const ctx = ix.get(IAgentContextMemoryService);

@@ -70,7 +70,7 @@ describe('SessionInteractionService', () => {
     ix.set(ISessionStateService, new SessionStateService());
     ix.set(ISessionInteractionService, new SyncDescriptor(SessionInteractionService));
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   it('request blocks until respond resolves it', async () => {
     const svc = ix.get(ISessionInteractionService);
@@ -125,7 +125,7 @@ describe('SessionInteractionService', () => {
 
   it('respond to an unknown id is a no-op', () => {
     const svc = ix.get(ISessionInteractionService);
-    expect(() => svc.respond('nope', 'x')).not.toThrow();
+    expect(() =>{  svc.respond('nope', 'x'); }).not.toThrow();
   });
 
   it('enqueue parks a request and returns it without blocking', () => {
@@ -194,7 +194,7 @@ describe('SessionInteractionService', () => {
   it('cancelPendingForTurn is a no-op when no interaction matches', () => {
     const svc = ix.get(ISessionInteractionService);
     svc.enqueue({ id: 'a1', kind: 'approval', payload: {}, origin: { turnId: 1 } });
-    expect(() => svc.cancelPendingForTurn(99)).not.toThrow();
+    expect(() =>{  svc.cancelPendingForTurn(99); }).not.toThrow();
     expect(svc.listPending()).toHaveLength(1);
   });
 
@@ -302,7 +302,7 @@ describe('interaction ops (wire-backed)', () => {
     log = ix.get(IAppendLogStore);
     wire = registerTestAgentWire(ix, testWireScope(SCOPE, KEY), { log });
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   async function readRecords(key = KEY): Promise<WireRecord[]> {
     await wire.flush();

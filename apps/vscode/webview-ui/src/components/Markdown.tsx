@@ -26,9 +26,9 @@ function useIsDark(): boolean {
   useEffect(() => {
     if (typeof document === "undefined") return;
     const el = document.documentElement;
-    const obs = new MutationObserver(() => setIsDark(el.classList.contains("dark")));
+    const obs = new MutationObserver(() =>{  setIsDark(el.classList.contains("dark")); });
     obs.observe(el, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
+    return () =>{  obs.disconnect(); };
   }, []);
   return isDark;
 }
@@ -53,7 +53,7 @@ export function FileLink({ path, display }: { path: string; display: string }) {
 }
 
 function VideoLink({ src }: { src: string }) {
-  const filename = src.split("/").pop() || src;
+  const filename = src.split("/").pop() ?? src;
   return (
     <button
       type="button"
@@ -118,7 +118,7 @@ function LocalImage({ src, alt, onPreview }: { src: string; alt?: string; onPrev
   });
 
   if (!data) return <ImageLoadFail path={src} />;
-  return <StreamImagePreview src={data} alt={alt || src} onPreview={onPreview} />;
+  return <StreamImagePreview src={data} alt={alt ?? src} onPreview={onPreview} />;
 }
 
 function ColorEnrichedText({ text }: { text: string }) {
@@ -190,7 +190,7 @@ export const Markdown = memo(function Markdown({ content, className, enableEnric
       return;
     }
     const paths = extractPaths(content);
-    if (!paths.length) {
+    if (paths.length === 0) {
       setFileMap({});
       return;
     }
@@ -246,7 +246,7 @@ export const Markdown = memo(function Markdown({ content, className, enableEnric
         return <StreamImagePreview src={src} alt={alt} onPreview={setPreviewSrc} />;
       },
       code: ({ className: cn, children, ...props }: any) => {
-        const match = /language-(\w+)/.exec(cn || "");
+        const match = /language-(\w+)/.exec(cn ?? "");
         const code = String(children ?? "").replace(/\n$/, "");
         const isInline = !code.includes("\n") && !match;
 
@@ -270,7 +270,7 @@ export const Markdown = memo(function Markdown({ content, className, enableEnric
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={components}>
         {content}
       </ReactMarkdown>
-      <MediaPreviewModal src={previewSrc} onClose={() => setPreviewSrc(null)} />
+      <MediaPreviewModal src={previewSrc} onClose={() =>{  setPreviewSrc(null); }} />
     </div>
   );
 });

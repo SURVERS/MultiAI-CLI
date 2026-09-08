@@ -224,7 +224,7 @@ export function useDetailPanel({
     detailTarget.value = 'diff';
     detailDiffMode.value = 'list';
     detailDiffPath.value = null;
-    void client.loadGitStatus(client.activeSessionId.value!);
+    void client.loadGitStatus(client.activeSessionId.value);
   }
 
   function closeDiffDetail(): void {

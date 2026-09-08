@@ -28,7 +28,7 @@ describe('JsonAtomicDocumentStore', () => {
     config = ix.get(IAtomicDocumentStore);
   });
 
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   it('get returns undefined for a missing key', async () => {
     expect(await config.get('session', 'state.json')).toBeUndefined();
@@ -119,7 +119,7 @@ describe('TomlAtomicDocumentStore', () => {
     config = ix.get(IAtomicTomlDocumentStore);
   });
 
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   it('get returns undefined for a missing key', async () => {
     expect(await config.get('session', 'config.toml')).toBeUndefined();

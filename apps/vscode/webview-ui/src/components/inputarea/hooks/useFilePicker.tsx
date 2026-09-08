@@ -43,7 +43,7 @@ export function useFilePicker(activeToken: ActiveToken | null, onInsertFile: (pa
   const [folderPath, setFolderPath] = useState("");
 
   const showFileMenu = activeToken?.trigger === "@";
-  const query = activeToken?.query || "";
+  const query = activeToken?.query ?? "";
 
   // 搜索文件 - query 变化时重新搜索
   const { data: searchResults = [], loading: isSearchLoading } = useRequest(() => bridge.getProjectFiles({ query: query || undefined }), {

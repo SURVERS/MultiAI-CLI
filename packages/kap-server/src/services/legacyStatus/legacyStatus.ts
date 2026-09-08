@@ -170,7 +170,7 @@ export function toLegacyPhase(state: AgentActivityState): AgentPhase | undefined
 
   if (lifecycle === 'ready' && turn !== undefined) {
     if (turn.pendingApprovals.length > 0) {
-      const latest = turn.pendingApprovals[turn.pendingApprovals.length - 1]!;
+      const latest = turn.pendingApprovals.at(-1)!;
       return {
         kind: 'awaiting_approval',
         turnId: turn.turnId,
@@ -221,7 +221,7 @@ export function toLegacyPhase(state: AgentActivityState): AgentPhase | undefined
           since: turn.since,
         };
       case 'tool_call': {
-        const latest = turn.activeToolCalls[turn.activeToolCalls.length - 1];
+        const latest = turn.activeToolCalls.at(-1);
         return {
           kind: 'tool_call',
           turnId: turn.turnId,

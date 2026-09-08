@@ -129,7 +129,7 @@ export function createScopedChildHandle(
     get: <T>(serviceId: ServiceIdentifier<T>): T =>
       child.invokeFunction((a) => a.get(serviceId)),
   };
-  return { id, kind, accessor, dispose: () => child.dispose() };
+  return { id, kind, accessor, dispose: () =>{  child.dispose(); } };
 }
 
 export class Scope implements IDisposable {
@@ -194,7 +194,7 @@ export class Scope implements IDisposable {
   }
 
   toHandle(): IScopeHandle {
-    return { id: this.id, kind: this.kind, accessor: this.accessor, dispose: () => this.dispose() };
+    return { id: this.id, kind: this.kind, accessor: this.accessor, dispose: () =>{  this.dispose(); } };
   }
 
   dispose(): void {

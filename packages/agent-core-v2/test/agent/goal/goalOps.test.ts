@@ -157,7 +157,7 @@ beforeEach(() => {
   eventBus = host.eventBus;
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(key = KEY): Promise<WireRecord[]> {
   await wire.flush();
@@ -192,7 +192,7 @@ describe('AgentGoalService (wire-backed)', () => {
       }),
       expect.objectContaining({ type: 'goal.update', status: 'paused', reason: 'break' }),
     ]);
-    expect(records.every((record) => 'payload' in record === false)).toBe(true);
+    expect(records.every((record) => !( 'payload' in record))).toBe(true);
   });
 
   it('clear persists a goal.clear record and empties the model', async () => {

@@ -41,7 +41,7 @@ export function ApprovalDialog() {
         <div className="flex items-center justify-between shrink-0">
           <div className="text-xs font-semibold text-foreground">Allow this {req.action.toLowerCase()}?</div>
           {hasDisplay && (
-            <button onClick={() => setExpanded(!expanded)} className="p-1 hover:bg-muted rounded transition-colors">
+            <button onClick={() =>{  setExpanded(!expanded); }} className="p-1 hover:bg-muted rounded transition-colors">
               {expanded ? <IconChevronDown className="size-4 text-muted-foreground" /> : <IconChevronUp className="size-4 text-muted-foreground" />}
             </button>
           )}
@@ -64,7 +64,7 @@ export function ApprovalDialog() {
               onClick={() => {
                 void handleResponse(opt.key);
               }}
-              onMouseEnter={() => setSelectedIndex(opt.index)}
+              onMouseEnter={() =>{  setSelectedIndex(opt.index); }}
               className={cn(
                 "w-full text-left px-2 py-1 rounded-md text-xs transition-colors",
                 "border border-border cursor-pointer",

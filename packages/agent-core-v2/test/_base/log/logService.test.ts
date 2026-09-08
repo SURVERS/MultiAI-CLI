@@ -87,7 +87,7 @@ describe('BoundLogger', () => {
         },
       },
     );
-    expect(() => logger.warn('proxy payload', payload)).not.toThrow();
+    expect(() =>{  logger.warn('proxy payload', payload); }).not.toThrow();
     expect(sink.entries.map((e) => e.msg)).not.toContain('proxy payload');
   });
 

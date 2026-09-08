@@ -52,7 +52,7 @@ describe('SessionBtwService', () => {
     } as unknown as IAgentLifecycleService);
     ix.set(ISessionBtwService, new SyncDescriptor(SessionBtwService));
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   it('forks main and configures a side-question child agent', async () => {
     const svc = ix.get(ISessionBtwService);

@@ -71,7 +71,7 @@ describe('IntervalTimer', () => {
 
   it('cancel on a fresh timer is a no-op', () => {
     const timer = new IntervalTimer();
-    expect(() => timer.cancel()).not.toThrow();
+    expect(() =>{  timer.cancel(); }).not.toThrow();
     expect(timer.isSet()).toBe(false);
   });
 });

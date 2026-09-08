@@ -23,7 +23,7 @@ import { PostingsFile } from './text-postings.js';
 import type { PostingEntry } from './text-postings.js';
 
 const LATIN = /[a-z0-9]+/g;
-const CJK = /[\u3400-\u9fff\u3040-\u30ff\uff00-\uffef]+/g;
+const CJK = /[\u3400-\u9FFF\u3040-\u30FF\uFF00-\uFFEF]+/g;
 // Postings records store the term length in a uint16. A single document with a
 // longer token previously made every postings rebuild throw after the index had
 // already been cleared, permanently poisoning the index (and compaction). Such
@@ -123,7 +123,7 @@ export class TextIndex {
   }
 
   private extract(doc: unknown): string {
-    if (this.fields && this.fields.length) {
+    if (this.fields && this.fields.length > 0) {
       return this.fields
         .map((f) => getPath(doc, f))
         .filter((v): v is string => typeof v === 'string')
@@ -194,7 +194,7 @@ export class TextIndex {
       let dict: Map<string, PostingEntry>;
       try {
         dict = PostingsFile.rebuildSync(this.path, aggToSorted(agg));
-      } catch (e) {
+      } catch (error) {
         // rebuildSync failed before the atomic rename, so the old file is
         // intact: re-attach it and keep serving the previous index until the
         // next successful build.
@@ -205,7 +205,7 @@ export class TextIndex {
             /* old handle unrecoverable; the next successful build fixes it */
           }
         }
-        throw e;
+        throw error;
       }
       // The rename happened — the old postings are replaced on disk, so from
       // here the swap commits to the new index. A failed reopen (EMFILE & co.)
@@ -307,7 +307,7 @@ export class TextIndex {
 
   search(query: string, opts: SearchOptions = {}): SearchHit[] {
     const qtokens = [...new Set(tokenize(query))];
-    if (!qtokens.length) return [];
+    if (qtokens.length === 0) return [];
     const op = opts.op ?? 'AND';
     const limit = opts.limit ?? 50;
 
@@ -323,7 +323,7 @@ export class TextIndex {
       if (lists.some((m) => m.size === 0)) return [];
       lists.sort((a, b) => a.size - b.size);
       candidates = new Set(lists[0]!.keys());
-      for (let i = 1; i < lists.length && candidates.size; i++) {
+      for (let i = 1; i < lists.length && candidates.size > 0; i++) {
         for (const id of candidates) if (!lists[i]!.has(id)) candidates.delete(id);
       }
     }

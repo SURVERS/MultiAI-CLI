@@ -334,7 +334,7 @@ export function getIcon(name: IconName): IconEntry {
 
 function applySize(svg: string, px: number): string {
   return svg
-    .replace(/\s(?:width|height)="[^"]*"/g, '')
+    .replaceAll(/\s(?:width|height)="[^"]*"/g, '')
     .replace(/^<svg\b/, `<svg class="kw-icon" width="${px}" height="${px}" aria-hidden="true"`);
 }
 

@@ -97,7 +97,7 @@ describe('RestGateway', () => {
     ix.stub(ILogService, stubLog());
     ix.set(IRestGateway, new SyncDescriptor(RestGateway));
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   it('routes prompt to the agent prompt service', async () => {
     const gw = ix.get(IRestGateway);

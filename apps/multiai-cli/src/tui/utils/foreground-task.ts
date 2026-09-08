@@ -18,7 +18,7 @@ export function pickForegroundTasks(
 ): BackgroundTaskInfo[] {
   return tasks
     .filter(isDetachableForegroundTask)
-    .sort((a, b) => b.startedAt - a.startedAt);
+    .toSorted((a, b) => b.startedAt - a.startedAt);
 }
 
 /**

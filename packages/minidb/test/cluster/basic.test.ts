@@ -152,7 +152,7 @@ test('scan/prefix merge across shards: sorted, bounded, limited, reversible', { 
       keys.push(k);
       await db.set(k, i);
     }
-    const byteSorted = [...keys].sort((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)));
+    const byteSorted = [...keys].toSorted((a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b)));
 
     const all = await db.scan();
     assert.equal(all.length, 300);
@@ -181,7 +181,7 @@ test('scan/prefix merge across shards: sorted, bounded, limited, reversible', { 
     assert.deepEqual(limited.map((e) => e.key), byteSorted.slice(0, 7));
 
     const rev = await db.scan({ reverse: true, limit: 5 });
-    assert.deepEqual(rev.map((e) => e.key), [...byteSorted].reverse().slice(0, 5));
+    assert.deepEqual(rev.map((e) => e.key), [...byteSorted].toReversed().slice(0, 5));
 
     // Prefix within ScanOptions beats range bounds.
     const prefOpt = await db.scan({ prefix: 's:029', gte: 'zzz' });
@@ -197,8 +197,8 @@ test('hash routing distributes keys over all shards and is deterministic', async
   for (let i = 0; i < 4000; i++) counts[shardFor(`dist:${i}`, 16)]++;
   const avg = 4000 / 16;
   for (let s = 0; s < 16; s++) {
-    assert.ok(counts[s]! > 0, `shard ${s} got keys`);
-    assert.ok(counts[s]! < avg * 3, `shard ${s} not hot (${counts[s]} vs avg ${avg})`);
+    assert.ok(counts[s] > 0, `shard ${s} got keys`);
+    assert.ok(counts[s] < avg * 3, `shard ${s} not hot (${counts[s]} vs avg ${avg})`);
   }
   // Stable across calls (crypto-free pure function).
   assert.equal(shardFor('dist:42', 16), shardFor('dist:42', 16));

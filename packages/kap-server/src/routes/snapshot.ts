@@ -104,19 +104,19 @@ export function registerSnapshotRoutes(app: SnapshotRouteHost, deps: SnapshotRou
           ? await readViaReader(reader, session_id, config.timeoutMs)
           : await readViaLegacyAssembly(core, broadcaster, session_id);
         reply.send(okEnvelope(data, req.id));
-      } catch (err) {
-        if (err instanceof SnapshotNotFoundError) {
-          reply.send(errEnvelope(ErrorCode.SESSION_NOT_FOUND, err.message, req.id, err.stack));
+      } catch (error) {
+        if (error instanceof SnapshotNotFoundError) {
+          reply.send(errEnvelope(ErrorCode.SESSION_NOT_FOUND, error.message, req.id, error.stack));
           return;
         }
-        if (err instanceof SnapshotTimeoutError) {
+        if (error instanceof SnapshotTimeoutError) {
           core.accessor
             .get(ILogService)
-            .warn('snapshot.timeout', { sid: session_id, duration_ms: err.timeoutMs });
-          reply.send(errEnvelope(ErrorCode.INTERNAL_ERROR, err.message, req.id, err.stack));
+            .warn('snapshot.timeout', { sid: session_id, duration_ms: error.timeoutMs });
+          reply.send(errEnvelope(ErrorCode.INTERNAL_ERROR, error.message, req.id, error.stack));
           return;
         }
-        throw err;
+        throw error;
       }
     },
   );
@@ -130,7 +130,7 @@ async function readViaReader(
 ): Promise<SessionSnapshotResponse> {
   let timer: NodeJS.Timeout | undefined;
   const timeoutPromise = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new SnapshotTimeoutError(sid, timeoutMs)), timeoutMs);
+    timer = setTimeout(() =>{  reject(new SnapshotTimeoutError(sid, timeoutMs)); }, timeoutMs);
     timer.unref?.();
   });
   try {

@@ -55,7 +55,7 @@ export function SessionPane({
             className={`flex-1 px-2 py-2 font-medium uppercase tracking-wider ${
               tab === t ? 'bg-neutral-800 text-sky-400' : 'text-neutral-500 hover:text-neutral-300'
             }`}
-            onClick={() => setTab(t)}
+            onClick={() =>{  setTab(t); }}
           >
             {t === 'services' ? 'Services' : 'State'}
           </button>

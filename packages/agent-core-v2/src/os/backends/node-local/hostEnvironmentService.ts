@@ -46,15 +46,15 @@ export class HostEnvironmentService implements IHostEnvironment {
   }
 
   get osKind(): OsKind {
-    return this.require('osKind') as OsKind;
+    return this.require('osKind');
   }
 
   get osArch(): string {
-    return this.require('osArch') as string;
+    return this.require('osArch');
   }
 
   get osVersion(): string {
-    return this.require('osVersion') as string;
+    return this.require('osVersion');
   }
 
   get shellName(): ShellName {
@@ -62,7 +62,7 @@ export class HostEnvironmentService implements IHostEnvironment {
   }
 
   get shellPath(): string {
-    return this.require('shellPath') as string;
+    return this.require('shellPath');
   }
 
   get pathClass(): PathClass {
@@ -70,7 +70,7 @@ export class HostEnvironmentService implements IHostEnvironment {
   }
 
   get homeDir(): string {
-    return this.require('homeDir') as string;
+    return this.require('homeDir');
   }
 }
 

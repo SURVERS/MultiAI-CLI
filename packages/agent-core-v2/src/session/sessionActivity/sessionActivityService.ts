@@ -85,7 +85,7 @@ export class SessionActivityView extends Disposable implements ISessionActivityV
         if (this.folds.delete(agentId)) this.recompute('agent_lifecycle');
       }),
     );
-    this._register(this.interactions.onDidChangePending(() => this.recompute('interaction')));
+    this._register(this.interactions.onDidChangePending(() =>{  this.recompute('interaction'); }));
     this._register(
       toDisposable(() => {
         for (const subscription of this.agentSubscriptions.values()) subscription.dispose();
@@ -118,7 +118,7 @@ export class SessionActivityView extends Disposable implements ISessionActivityV
     if (bus === undefined) return;
     this.agentSubscriptions.set(
       handle.id,
-      bus.subscribe('agent.activity.updated', (event) => this.onActivity(handle.id, event)),
+      bus.subscribe('agent.activity.updated', (event) =>{  this.onActivity(handle.id, event); }),
     );
   }
 

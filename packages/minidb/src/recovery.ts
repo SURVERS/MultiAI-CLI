@@ -176,7 +176,7 @@ export async function recover({
       walFrames = r.frames.length;
       walCorrupt = r.corruptRanges;
       walScanEnd = r.eofOffset;
-      const last = r.corruptRanges[r.corruptRanges.length - 1];
+      const last = r.corruptRanges.at(-1);
       if (last && last[1] === walSize) {
         // A torn/corrupt tail is normally truncated so the next writer appends
         // cleanly. In read-only mode (truncate = false) we must never mutate the
@@ -226,9 +226,9 @@ export function catchUpWal(
   let fd: number;
   try {
     fd = fsSync.openSync(walPath, 'r');
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw e;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
   }
   try {
     const st = fsSync.fstatSync(fd);

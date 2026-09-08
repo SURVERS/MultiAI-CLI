@@ -79,9 +79,7 @@ function resolveSubagentTarget(
     return null;
   }
 
-  if (!toolItem.subagent_steps) {
-    toolItem.subagent_steps = [];
-  }
+  toolItem.subagent_steps ??= [];
 
   return { steps: toolItem.subagent_steps, event, toolItem };
 }
@@ -216,7 +214,7 @@ function applyEventToSteps(steps: UIStep[], event: { type: string; payload: any 
         : findLastToolUse();
 
       if (tool) {
-        tool.call.arguments = (tool.call.arguments || "") + arguments_part;
+        tool.call.arguments = (tool.call.arguments ?? "") + arguments_part;
       }
 
       break;
@@ -279,9 +277,7 @@ function handleRuntimeError(draft: ChatState, code: string, message: string, det
   const lastAssistant = getLastAssistant(draft);
   if (lastAssistant) {
     // 如果完全没有内容，添加一个空的 step 以便显示错误
-    if (!lastAssistant.steps) {
-      lastAssistant.steps = [];
-    }
+    lastAssistant.steps ??= [];
     finishAllTextItems(lastAssistant.steps);
     // 设置内嵌错误，保留服务器原始错误信息
     lastAssistant.inlineError = { code, message, detail };
@@ -367,9 +363,7 @@ const eventHandlers: Record<string, EventHandler> = {
     const last = getLastAssistant(draft);
 
     if (last) {
-      if (!last.steps) {
-        last.steps = [];
-      }
+      last.steps ??= [];
 
       if (last.steps.length === 0) {
         last.steps.push({ n: 0, items: [] });
@@ -391,9 +385,7 @@ const eventHandlers: Record<string, EventHandler> = {
     const last = getLastAssistant(draft);
 
     if (last) {
-      if (!last.steps) {
-        last.steps = [];
-      }
+      last.steps ??= [];
 
       applyEventToSteps(last.steps, { type: "StepBegin", payload });
 
@@ -478,10 +470,10 @@ const eventHandlers: Record<string, EventHandler> = {
 
       if (token_usage) {
         addTokenUsage(draft.activeTokenUsage, {
-          input_other: token_usage.input_other || 0,
-          output: token_usage.output || 0,
-          input_cache_read: token_usage.input_cache_read || 0,
-          input_cache_creation: token_usage.input_cache_creation || 0,
+          input_other: token_usage.input_other ?? 0,
+          output: token_usage.output ?? 0,
+          input_cache_read: token_usage.input_cache_read ?? 0,
+          input_cache_creation: token_usage.input_cache_creation ?? 0,
         });
       }
 
@@ -535,10 +527,10 @@ const eventHandlers: Record<string, EventHandler> = {
 
     if (token_usage) {
       addTokenUsage(draft.activeTokenUsage, {
-        input_other: token_usage.input_other || 0,
-        output: token_usage.output || 0,
-        input_cache_read: token_usage.input_cache_read || 0,
-        input_cache_creation: token_usage.input_cache_creation || 0,
+        input_other: token_usage.input_other ?? 0,
+        output: token_usage.output ?? 0,
+        input_cache_read: token_usage.input_cache_read ?? 0,
+        input_cache_creation: token_usage.input_cache_creation ?? 0,
       });
     }
 

@@ -246,12 +246,12 @@ function listenOnPort(host: string, port: number): Promise<Server> {
   return new Promise((resolve, reject) => {
     const server = createServer();
     server.once('error', reject);
-    server.listen({ host, port }, () => resolve(server));
+    server.listen({ host, port }, () =>{  resolve(server); });
   });
 }
 
 function closeNetServer(server: Server): Promise<void> {
-  return new Promise((resolve) => server.close(() => resolve()));
+  return new Promise((resolve) => server.close(() =>{  resolve(); }));
 }
 
 /** Find `port` such that both `port` and `port + 1` are free to bind. */

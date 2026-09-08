@@ -12,7 +12,7 @@ import { createTestAgent, execEnvServices, hostEnvironmentServices, type TestAge
 const profile: ResolvedAgentProfile = {
   name: 'agents-profile',
   systemPrompt: (context) =>
-    typeof context['agentsMd'] === 'string' ? (context['agentsMd'] as string) : '',
+    typeof context['agentsMd'] === 'string' ? (context['agentsMd']) : '',
   tools: [],
 };
 

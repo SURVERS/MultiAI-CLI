@@ -78,7 +78,7 @@ export class ExtraFileAgentSource extends Disposable implements IExtraFileAgentS
             this.log.warn(message, error);
           },
         ),
-        (message) => this.log.warn(message),
+        (message) =>{  this.log.warn(message); },
       ),
       (context) => this.user.getDefaultProfile().systemPrompt(context),
     );

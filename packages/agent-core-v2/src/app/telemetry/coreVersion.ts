@@ -11,7 +11,6 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const PACKAGE_NAME = '@multiai/agent-core-v2';
 const UNKNOWN_VERSION = 'unknown';
@@ -26,7 +25,7 @@ export function resolveCoreVersion(): string {
 
 function walkForPackageVersion(): string {
   try {
-    let dir = dirname(fileURLToPath(import.meta.url));
+    let dir = import.meta.dirname;
     for (let i = 0; i < MAX_WALK_UP; i++) {
       const candidate = resolve(dir, 'package.json');
       if (existsSync(candidate)) {

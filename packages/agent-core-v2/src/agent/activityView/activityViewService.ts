@@ -85,15 +85,15 @@ export class AgentActivityView extends Disposable implements IAgentActivityView 
     this.seedFromTasks();
     this.seedFromFullCompaction();
 
-    this._register(this.eventBus.subscribe('turn.started', (e) => this.onTurnStarted(e.turnId, e.origin)));
-    this._register(this.eventBus.subscribe('turn.step.started', (e) => this.onStepStarted(e.step)));
-    this._register(this.eventBus.subscribe('assistant.delta', () => this.onDelta('assistant')));
-    this._register(this.eventBus.subscribe('thinking.delta', () => this.onDelta('thinking')));
-    this._register(this.eventBus.subscribe('tool.call.delta', () => this.onDelta('tool_call')));
+    this._register(this.eventBus.subscribe('turn.started', (e) =>{  this.onTurnStarted(e.turnId, e.origin); }));
+    this._register(this.eventBus.subscribe('turn.step.started', (e) =>{  this.onStepStarted(e.step); }));
+    this._register(this.eventBus.subscribe('assistant.delta', () =>{  this.onDelta('assistant'); }));
+    this._register(this.eventBus.subscribe('thinking.delta', () =>{  this.onDelta('thinking'); }));
+    this._register(this.eventBus.subscribe('tool.call.delta', () =>{  this.onDelta('tool_call'); }));
     this._register(
-      this.eventBus.subscribe('tool.call.started', (e) => this.onToolCallStarted(e.toolCallId, e.name)),
+      this.eventBus.subscribe('tool.call.started', (e) =>{  this.onToolCallStarted(e.toolCallId, e.name); }),
     );
-    this._register(this.eventBus.subscribe('tool.result', (e) => this.onToolResult(e.toolCallId)));
+    this._register(this.eventBus.subscribe('tool.result', (e) =>{  this.onToolResult(e.toolCallId); }));
     this._register(
       this.eventBus.subscribe('turn.step.retrying', (e) => {
         this.mutateTurn((t) => {
@@ -120,19 +120,19 @@ export class AgentActivityView extends Disposable implements IAgentActivityView 
       }),
     );
     this._register(
-      this.eventBus.subscribe('turn.step.interrupted', (e) => this.onStepInterrupted(e.turnId, e.reason)),
+      this.eventBus.subscribe('turn.step.interrupted', (e) =>{  this.onStepInterrupted(e.turnId, e.reason); }),
     );
     this._register(
-      this.eventBus.subscribe('turn.ended', (e) => this.onTurnEnded(e.turnId, e.reason)),
+      this.eventBus.subscribe('turn.ended', (e) =>{  this.onTurnEnded(e.turnId, e.reason); }),
     );
     this._register(
-      this.eventBus.subscribe('permission.approval.requested', (e) =>
-        this.onApprovalRequested(e.toolCallId),
+      this.eventBus.subscribe('permission.approval.requested', (e) =>{ 
+        this.onApprovalRequested(e.toolCallId); },
       ),
     );
     this._register(
-      this.eventBus.subscribe('permission.approval.resolved', (e) =>
-        this.onApprovalResolved(e.toolCallId),
+      this.eventBus.subscribe('permission.approval.resolved', (e) =>{ 
+        this.onApprovalResolved(e.toolCallId); },
       ),
     );
     this._register(

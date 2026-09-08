@@ -285,7 +285,7 @@ export class CustomEditor extends Editor {
     const closed = this.autocompleteWasShowing && !showing;
     this.autocompleteWasShowing = showing;
     if (closed) {
-      queueMicrotask(() => this.requestFullRenderOnAutocompleteClose());
+      queueMicrotask(() =>{  this.requestFullRenderOnAutocompleteClose(); });
     }
   }
 

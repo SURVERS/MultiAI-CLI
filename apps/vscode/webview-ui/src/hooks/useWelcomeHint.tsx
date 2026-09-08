@@ -110,11 +110,11 @@ export function useWelcomeHint(): WelcomeHint {
     bridge
       .checkFileExists("AGENT.md")
       .then(setHasAgentMd)
-      .catch(() => setHasAgentMd(false));
+      .catch(() =>{  setHasAgentMd(false); });
     bridge
       .getMultiAISessions()
-      .then((s) => setHasHistory(s.length > 0))
-      .catch(() => setHasHistory(false));
+      .then((s) =>{  setHasHistory(s.length > 0); })
+      .catch(() =>{  setHasHistory(false); });
   }, []);
 
   return useMemo(() => {

@@ -289,8 +289,8 @@ describe('startServer — instance registry wiring', () => {
     const live = await listLiveServerInstances(home);
     expect(live).toHaveLength(2);
     expect(new Set(live.map((i) => i.serverId)).size).toBe(2);
-    expect(live.map((i) => i.port).sort((x, y) => x - y)).toEqual(
-      [a.port, b.port].sort((x, y) => x - y),
+    expect(live.map((i) => i.port).toSorted((x, y) => x - y)).toEqual(
+      [a.port, b.port].toSorted((x, y) => x - y),
     );
     // The legacy single-instance lock is never created.
     expect(existsSync(join(home, 'server', 'lock'))).toBe(false);

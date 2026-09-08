@@ -51,7 +51,7 @@ export function collectTagCounts(tags: TagMap): TagCount[] {
   }
   return [...counts]
     .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => a.tag.localeCompare(b.tag));
+    .toSorted((a, b) => a.tag.localeCompare(b.tag));
 }
 
 export function tagsEqual(tags: TagMap, nodeId: string, next: string[]): boolean {

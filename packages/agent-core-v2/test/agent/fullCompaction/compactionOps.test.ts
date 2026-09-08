@@ -46,7 +46,7 @@ beforeEach(() => {
   log = host.log;
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(key = KEY): Promise<WireRecord[]> {
   await wire.flush();
@@ -79,7 +79,7 @@ describe('fullCompaction ops (wire-backed)', () => {
       'full_compaction.begin',
       'full_compaction.cancel',
     ]);
-    expect(records.every((record) => 'payload' in record === false)).toBe(true);
+    expect(records.every((record) => !( 'payload' in record))).toBe(true);
     expect(records[0]).toEqual(
       expect.objectContaining({
         type: 'full_compaction.begin',

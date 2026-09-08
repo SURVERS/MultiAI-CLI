@@ -54,9 +54,9 @@ export function installReverseRpcHandler<Req, Res>(
         const response = await opts.handler(payload);
         await opts.postResolve(sessionId, id, response);
       })
-      .catch((err) => {
+      .catch((error) => {
         opts.logger('warn', `reverse-rpc: ${opts.requestEventType} resolve failed`, {
-          err: String(err),
+          err: String(error),
           sessionId,
           id,
         });

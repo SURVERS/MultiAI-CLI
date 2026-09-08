@@ -229,7 +229,7 @@ describe('DaemonMultiAIWebApi.connectEvents', () => {
       onError() {},
       onConnectionChange() {},
     });
-    const socket = FakeWebSocket.instances[0]!;
+    const socket = FakeWebSocket.instances[0];
 
     socket.emit({ type: 'server_hello', payload: { protocol_version: 2 } });
     socket.emit({

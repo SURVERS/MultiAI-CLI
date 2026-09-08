@@ -258,7 +258,7 @@ export class AgentToolSelectService extends Disposable implements IAgentToolSele
         if (shaped !== undefined) shaped.push(message);
         continue;
       }
-      if (shaped === undefined) shaped = messages.slice(0, i);
+      shaped ??= messages.slice(0, i);
       if (next !== undefined) shaped.push(next);
     }
     return shaped ?? messages;
@@ -275,7 +275,7 @@ export class AgentToolSelectService extends Disposable implements IAgentToolSele
         if (kept !== undefined) kept.push(tool);
         continue;
       }
-      if (kept === undefined) kept = tools.slice(0, i);
+      kept ??= tools.slice(0, i);
     }
     if (kept === undefined) return message;
     if (kept.length > 0) return { ...message, tools: kept };
@@ -310,7 +310,7 @@ export class AgentToolSelectService extends Disposable implements IAgentToolSele
         if (filtered !== undefined) filtered.push(entry);
         continue;
       }
-      if (filtered === undefined) filtered = entries.slice(0, i);
+      filtered ??= entries.slice(0, i);
     }
     return filtered ?? entries;
   }

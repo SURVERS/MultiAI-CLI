@@ -399,7 +399,7 @@ describe("Webview RPC boundary (validates requests before host dispatch)", () =>
     expect(writeLog).toHaveBeenCalledWith(
       expect.stringMatching(/Unable to restore session file changes.*Unable to read baseline snapshot/),
     );
-    await vi.waitFor(() => expect(showLogs).toHaveBeenCalledOnce());
+    await vi.waitFor(() =>{  expect(showLogs).toHaveBeenCalledOnce(); });
   });
 
   it("returns a readable error when persisted session state is corrupt without wedging the bridge", async () => {

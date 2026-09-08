@@ -92,8 +92,8 @@ export class TerminalService extends Disposable implements ITerminalService {
       closed: false,
     };
     record.disposables.push(
-      process.onData((data) => this.onData(record, data)),
-      process.onExit((event) => this.onExit(record, event.exitCode)),
+      process.onData((data) =>{  this.onData(record, data); }),
+      process.onExit((event) =>{  this.onExit(record, event.exitCode); }),
     );
     this.records.set(recordKey(sessionId, terminal.id), record);
     return { ...terminal };
@@ -248,9 +248,9 @@ export class NodePtyTerminalBackend implements TerminalBackend {
       onData: (listener) => proc.onData(listener),
       onExit: (listener) =>
         proc.onExit((event) => listener({ exitCode: event.exitCode })),
-      write: (data) => proc.write(data),
-      resize: (cols, rows) => proc.resize(cols, rows),
-      kill: () => proc.kill(),
+      write: (data) =>{  proc.write(data); },
+      resize: (cols, rows) =>{  proc.resize(cols, rows); },
+      kill: () =>{  proc.kill(); },
     };
   }
 }
@@ -267,7 +267,7 @@ function defaultShell(): string {
   // Use `||` (not `??`): an EMPTY $SHELL (set but blank, as some daemon/launchd
   // envs leave it) must still fall back, or node-pty spawns an empty path and
   // fails with "posix_spawnp failed".
-  return process.env['SHELL'] || (os.platform() === 'win32' ? 'powershell.exe' : '/bin/sh');
+  return process.env['SHELL'] ?? (os.platform() === 'win32' ? 'powershell.exe' : '/bin/sh');
 }
 
 registerSingleton(

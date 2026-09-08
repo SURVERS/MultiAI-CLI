@@ -275,7 +275,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (event.type === "stream_complete" || event.type === "error") {
       const { queue, isStreaming: stillStreaming } = get();
       if (!stillStreaming && queue.length > 0) {
-        setTimeout(() => get().sendNextQueued(), 50);
+        setTimeout(() =>{  get().sendNextQueued(); }, 50);
       }
     }
   },

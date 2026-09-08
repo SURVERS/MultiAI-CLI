@@ -704,13 +704,17 @@ export class OpenAILegacyChatProvider implements ChatProvider {
 
     try {
       const client = this._createClient(options?.auth);
+      const endpoint = new URL(this._baseUrl ?? 'https://api.openai.com/v1');
+      const headers = endpoint.hostname === 'opencode.ai'
+        && endpoint.pathname.startsWith('/zen/go/') && options?.cacheKey
+        ? { 'x-opencode-session': options.cacheKey } : undefined;
       options?.onRequestSent?.();
       // `withResponse()` resolves as soon as the response headers arrive
       // (before the stream body), so the trace id is available mid-stream.
       const { data, response } = await client.chat.completions
         .create(
           finalParams as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
-          options?.signal ? { signal: options.signal } : undefined,
+          { signal: options?.signal, headers },
         )
         .withResponse();
       return new OpenAILegacyStreamedMessage(

@@ -90,11 +90,11 @@ export function useAppInit(): AppInitState {
         }
 
         setState({ status: "ready", errorMessage: null, modelsCount });
-      } catch (err) {
+      } catch (error) {
         if (!cancelled) {
           setState({
             status: "runtime-error",
-            errorMessage: err instanceof Error ? err.message : "Failed to initialize",
+            errorMessage: error instanceof Error ? error.message : "Failed to initialize",
             modelsCount: 0,
           });
         }

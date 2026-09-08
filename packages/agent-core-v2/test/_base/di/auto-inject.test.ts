@@ -123,8 +123,8 @@ describe('@IFoo auto-injection', () => {
     let captured: unknown;
     try {
       ix.invokeFunction((a) => a.get(IA));
-    } catch (e) {
-      captured = e;
+    } catch (error) {
+      captured = error;
     }
     expect(captured).toBeInstanceOf(CyclicDependencyError);
     expect((captured as CyclicDependencyError).message).toMatch(

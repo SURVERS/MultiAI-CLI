@@ -235,7 +235,7 @@ describe('prompt-attached video resolution', () => {
       get requests() {
         return state.requests;
       },
-      close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+      close: () => new Promise<void>((resolve) => server.close(() =>{  resolve(); })),
     };
   }
 
@@ -301,7 +301,7 @@ describe('prompt-attached video resolution', () => {
       expect(ctx.agent.context.data().history).toEqual([]);
     } finally {
       server.closeAllConnections();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await new Promise<void>((resolve) => server.close(() =>{  resolve(); }));
     }
   });
 

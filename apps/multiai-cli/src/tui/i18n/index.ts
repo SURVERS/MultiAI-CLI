@@ -13,7 +13,7 @@ function loadInitialLanguage(): TuiLanguage {
     process.argv.some((argument) => argument.toLowerCase().includes('vitest'))
   ) return 'en';
   try {
-    const dataDir = process.env['MULTIAI_HOME'] || join(homedir(), '.multiai');
+    const dataDir = process.env['MULTIAI_HOME'] ?? join(homedir(), '.multiai');
     const config = readFileSync(join(dataDir, 'tui.toml'), 'utf-8');
     return /^language\s*=\s*"ru"\s*(?:#.*)?$/m.test(config) ? 'ru' : 'en';
   } catch {

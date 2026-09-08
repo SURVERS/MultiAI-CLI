@@ -182,7 +182,7 @@ beforeEach(() => {
   blob = new StubBlobService();
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 describe('AgentContextMemoryService (wire-backed)', () => {
   it('splice/append/undo/apply_compaction/clear/append_loop_event each update getModel with a NEW reference and persist flat records', async () => {
@@ -211,7 +211,7 @@ describe('AgentContextMemoryService (wire-backed)', () => {
     );
     expect(model()).not.toBe(prev);
     expect(model()).toHaveLength(2);
-    expect(model()![0]).toMatchObject({
+    expect(model()[0]).toMatchObject({
       role: 'user',
       content: [{ type: 'text', text: 'sum' }],
       origin: { kind: 'compaction_summary' },
@@ -224,7 +224,7 @@ describe('AgentContextMemoryService (wire-backed)', () => {
 
     await host.wire.flush();
     const records = await readRecords(host.log);
-    expect(records.every((record) => 'payload' in record === false)).toBe(true);
+    expect(records.every((record) => !( 'payload' in record))).toBe(true);
     expect(records.map((record) => record.type)).toEqual([
       'context.append_message',
       'context.append_message',

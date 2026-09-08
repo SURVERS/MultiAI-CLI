@@ -103,9 +103,9 @@ function extractApprovalRule(execution: ToolExecution): string {
   if (isErrorExecution(execution)) {
     throw new Error('expected runnable execution, got error');
   }
-  const rule = (execution as RunnableToolExecution).approvalRule;
+  const rule = (execution).approvalRule;
   if (typeof rule !== 'string') {
-    throw new Error('expected approvalRule to be a string');
+    throw new TypeError('expected approvalRule to be a string');
   }
   return rule;
 }

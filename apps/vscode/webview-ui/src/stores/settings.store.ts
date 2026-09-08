@@ -191,9 +191,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   slashCommands: [],
   isLoggedIn: false,
 
-  setCurrentModel: (currentModel) => set({ currentModel }),
+  setCurrentModel: (currentModel) =>{  set({ currentModel }); },
 
-  setThinkingEffort: (thinkingEffort) => set({ thinkingEffort }),
+  setThinkingEffort: (thinkingEffort) =>{  set({ thinkingEffort }); },
 
   updateModel: (modelId) => {
     const { models, defaultThinking, defaultThinkingEffort, currentModel, thinkingEffort: previousEffort } = get();
@@ -273,21 +273,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     );
   },
 
-  setExtensionConfig: (extensionConfig) => set({ extensionConfig }),
+  setExtensionConfig: (extensionConfig) =>{  set({ extensionConfig }); },
 
-  setMCPServers: (mcpServers) => set({ mcpServers }),
+  setMCPServers: (mcpServers) =>{  set({ mcpServers }); },
 
-  setMCPModalOpen: (mcpModalOpen) => set({ mcpModalOpen }),
+  setMCPModalOpen: (mcpModalOpen) =>{  set({ mcpModalOpen }); },
 
-  setWorkDirModalOpen: (workDirModalOpen) => set({ workDirModalOpen }),
+  setWorkDirModalOpen: (workDirModalOpen) =>{  set({ workDirModalOpen }); },
 
-  setCurrentWorkDir: (currentWorkDir) => set({ currentWorkDir }),
+  setCurrentWorkDir: (currentWorkDir) =>{  set({ currentWorkDir }); },
 
-  setWorkspaceRoot: (workspaceRoot) => set({ workspaceRoot }),
+  setWorkspaceRoot: (workspaceRoot) =>{  set({ workspaceRoot }); },
 
   initModels: (models, defaultModel, defaultThinking, defaultThinkingEffort) => {
     settingsSaveRevision += 1;
-    const initialModel = defaultModel || models[0]?.id || "";
+    const initialModel = (defaultModel ?? models[0]?.id) || "";
     const model = getModelById(models, initialModel);
 
     const thinkingEffort = model ? defaultEffortForModel(model, defaultThinking, defaultThinkingEffort) : "off";
@@ -310,7 +310,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     });
   },
 
-  setIsLoggedIn: (isLoggedIn) => set({ isLoggedIn }),
+  setIsLoggedIn: (isLoggedIn) =>{  set({ isLoggedIn }); },
 
   getCurrentThinkingMode: () => {
     const { models, currentModel } = get();

@@ -34,17 +34,17 @@ function setupPopupDocument(win: Window): HTMLElement {
   // <base> so root-relative asset URLs (fonts) in cloned CSS resolve to the app.
   const base = doc.createElement('base');
   base.href = location.href;
-  doc.head.appendChild(base);
+  doc.head.append(base);
   // Clone every stylesheet so CSS variables, fonts, and scoped component styles
   // apply in the popup.
   for (const node of Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))) {
-    doc.head.appendChild(node.cloneNode(true));
+    doc.head.append(node.cloneNode(true));
   }
   syncThemeAttrs(doc);
   doc.body.style.margin = '0';
   const mount = doc.createElement('div');
   mount.style.height = '100vh';
-  doc.body.appendChild(mount);
+  doc.body.append(mount);
   return mount;
 }
 

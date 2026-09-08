@@ -47,10 +47,10 @@ export function StreamImagePreview({ src, alt, onPreview }: StreamImagePreviewPr
   return (
     <img
       src={src}
-      alt={alt || ""}
+      alt={alt ?? ""}
       style={{ width, height: IMG_HEIGHT }}
       className="rounded my-2 cursor-pointer hover:opacity-90 transition-opacity object-cover"
-      onClick={() => onPreview(src)}
+      onClick={() =>{  onPreview(src); }}
     />
   );
 }
@@ -71,7 +71,7 @@ export function MediaPreviewModal({ src, onClose }: MediaPreviewModalProps) {
   useLayoutEffect(() => {
     if (src) {
       document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
+      return () =>{  document.removeEventListener("keydown", handleKeyDown); };
     }
   }, [src, handleKeyDown]);
 
@@ -85,9 +85,9 @@ export function MediaPreviewModal({ src, onClose }: MediaPreviewModalProps) {
         <IconX className="size-5" />
       </button>
       {isVideo ? (
-        <video src={src} className="max-w-[90vw] max-h-[90vh] rounded-lg" controls autoPlay onClick={(e) => e.stopPropagation()} />
+        <video src={src} className="max-w-[90vw] max-h-[90vh] rounded-lg" controls autoPlay onClick={(e) =>{  e.stopPropagation(); }} />
       ) : (
-        <img src={src} alt="Preview" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+        <img src={src} alt="Preview" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg" onClick={(e) =>{  e.stopPropagation(); }} />
       )}
     </div>
   );

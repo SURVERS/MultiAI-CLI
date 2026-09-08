@@ -57,7 +57,7 @@ export class McpService extends Disposable implements IMcpService {
     if (all.length === 0) return undefined;
     // Sort by createdAt desc — newest sessions are the most likely to have
     // an active MCP RPC binding.
-    const sorted = [...all].sort((a, b) => b.createdAt - a.createdAt);
+    const sorted = [...all].toSorted((a, b) => b.createdAt - a.createdAt);
     return sorted[0]?.id;
   }
 }

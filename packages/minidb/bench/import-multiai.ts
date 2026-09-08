@@ -113,7 +113,7 @@ async function main() {
 
   // workspaces
   const wsRaw = JSON.parse(readFileSync(path.join(DATA, 'workspaces.json'), 'utf8'));
-  const workspaces = wsRaw.workspaces || wsRaw;
+  const workspaces = wsRaw.workspaces ?? wsRaw;
 
   // session index
   const lines = readFileSync(path.join(DATA, 'session_index.jsonl'), 'utf8').trim().split('\n');
@@ -158,12 +158,12 @@ async function main() {
     totalMessages += messages;
 
     const wsId = path.basename(path.dirname(sessionDir)); // <workspaceId>/<sessionId>
-    const ws = workspaces[wsId] || {};
+    const ws = workspaces[wsId] ?? {};
     const doc = {
-      title: state.title || '',
+      title: state.title ?? '',
       workspaceId: wsId,
-      workspaceName: ws.name || '',
-      workDir: workDir || '',
+      workspaceName: ws.name ?? '',
+      workDir: workDir ?? '',
       text: (state.title ? state.title + '\n' : '') + text,
       messageCount: messages,
     };
@@ -211,7 +211,7 @@ async function main() {
     const ms = performance.now() - s0;
     console.log(`  "${q}"  ->  ${res.length} hits in ${ms.toFixed(1)} ms`);
     for (const r of res.slice(0, 3)) {
-      const title = (r.value && r.value.title) || '';
+      const title = (r.value && r.value.title) ?? '';
       console.log(`     [${r.score.toFixed(3)}] ${r.value.workspaceName} :: ${title.slice(0, 60)}`);
     }
   }
@@ -241,7 +241,7 @@ async function main() {
   console.log(`\ndone. db at: ${OUT}`);
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

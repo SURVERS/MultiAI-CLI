@@ -202,7 +202,7 @@ describe('AgentPlanService plan-guard listener', () => {
     });
   });
 
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   function plan(): IAgentPlanService {
     return ix.get(IAgentPlanService);

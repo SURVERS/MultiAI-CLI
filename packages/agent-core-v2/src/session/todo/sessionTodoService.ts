@@ -52,7 +52,7 @@ export class SessionTodoService extends Disposable implements ISessionTodoServic
       }),
     );
     this._register(
-      this.agentLifecycle.onDidDispose((agentId) => this.disposeAgentBindings(agentId)),
+      this.agentLifecycle.onDidDispose((agentId) =>{  this.disposeAgentBindings(agentId); }),
     );
 
     for (const handle of this.agentLifecycle.list()) {

@@ -767,7 +767,7 @@ function createMockBatchRunner(
   readonly attempts: MockAttemptRecord[];
 } {
   const attempts: MockAttemptRecord[] = [];
-  let activeTasks: readonly QueuedSubagentTask<unknown>[] = [];
+  let activeTasks: readonly QueuedSubagentTask[] = [];
 
   const createHandle = <T,>(
     runOptions: RunSubagentOptions,
@@ -837,7 +837,7 @@ function createMockBatchRunner(
 }
 
 function findMockTask<T>(
-  tasks: readonly QueuedSubagentTask<unknown>[],
+  tasks: readonly QueuedSubagentTask[],
   options: RunSubagentOptions,
 ): QueuedSubagentTask<T> {
   const task = tasks.find(
@@ -851,7 +851,7 @@ function findMockTask<T>(
   return task as QueuedSubagentTask<T>;
 }
 
-function mockAgentId(task: QueuedSubagentTask<unknown>, attemptIndex: number): string {
+function mockAgentId(task: QueuedSubagentTask, attemptIndex: number): string {
   if (typeof task.data === 'number') return `agent-${String(task.data)}`;
   return `agent-${String(attemptIndex + 1)}`;
 }

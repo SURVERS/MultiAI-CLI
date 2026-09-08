@@ -299,7 +299,7 @@ export class WireService extends Disposable implements IWireService {
         }
         this.appendRecord(output);
       })
-      .catch((error: unknown) => onUnexpectedError(error));
+      .catch((error: unknown) =>{  onUnexpectedError(error); });
     this.persistQueue = queued;
     void queued.then(() => {
       if (this.persistQueue === queued) this.persistQueue = undefined;

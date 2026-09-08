@@ -156,7 +156,7 @@ function observeProcessStream(
       settle(resolve);
     };
     const fail = (error: unknown): void => {
-      settle(() => reject(error));
+      settle(() =>{  reject(error); });
     };
     const onEnd = (): void => {
       ended = true;

@@ -30,7 +30,7 @@ function buildTable(): Uint32Array {
  * @returns unsigned 32-bit crc
  */
 export function crc32(buf: Buffer | Uint8Array, prev = 0): number {
-  if (TABLE === null) TABLE = buildTable();
+  TABLE ??= buildTable();
   let c = prev ^ 0xffffffff;
   for (let i = 0; i < buf.length; i++) {
     c = TABLE[(c ^ buf[i]!) & 0xff]! ^ (c >>> 8);

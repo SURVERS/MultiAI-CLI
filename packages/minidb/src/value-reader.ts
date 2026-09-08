@@ -28,9 +28,9 @@ export class ValueReader {
   private openIfExists(file: string): number | null {
     try {
       return fs.openSync(file, 'r');
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
-      throw e;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+      throw error;
     }
   }
 

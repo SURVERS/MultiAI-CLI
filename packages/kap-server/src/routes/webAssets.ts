@@ -41,7 +41,7 @@ async function serveWebAsset(
 ): Promise<unknown> {
   const requestUrl = new URL(req.url, 'http://multiai-web.local');
   if (isReservedPath(requestUrl.pathname)) {
-    return reply.callNotFound();
+     reply.callNotFound();; return;
   }
 
   const filePath = await resolveStaticFile(assetsDir, requestUrl.pathname);

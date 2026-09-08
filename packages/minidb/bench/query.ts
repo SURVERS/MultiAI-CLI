@@ -24,8 +24,8 @@ async function bench(label, fn, iters = 1) {
 }
 
 async function main() {
-  const N = Number(process.env.N || 50_000);
-  const ITERS = Number(process.env.ITERS || 200);
+  const N = Number(process.env.N ?? 50_000);
+  const ITERS = Number(process.env.ITERS ?? 200);
   console.log(`\nminidb query benchmark  (N=${fmt(N)} docs, ${ITERS} iters each, node ${process.version})\n`);
 
   const dir = await tmpDir();
@@ -91,7 +91,7 @@ async function main() {
   console.log('\ndone.\n');
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

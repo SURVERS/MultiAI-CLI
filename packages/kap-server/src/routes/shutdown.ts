@@ -47,7 +47,7 @@ export function registerShutdownRoutes(
       );
       reply.send(okEnvelope({ ok: true }, req.id));
       // Let the response flush before tearing the server down.
-      setImmediate(() => opts.onShutdown());
+      setImmediate(() =>{  opts.onShutdown(); });
     },
   );
   app.post(

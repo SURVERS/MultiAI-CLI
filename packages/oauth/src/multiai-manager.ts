@@ -107,7 +107,7 @@ function mergeIdentity(verified: MultiAIIdentity, current: MultiAIIdentity): Mul
 
 async function closeServer(server: Server): Promise<void> {
   if (!server.listening) return;
-  await new Promise<void>((resolve) => server.close(() => resolve()));
+  await new Promise<void>((resolve) => server.close(() =>{  resolve(); }));
 }
 
 export class MultiAIOAuthManager {
@@ -162,7 +162,7 @@ export class MultiAIOAuthManager {
     const metadata = await this.metadata();
     const attempt = createPkceAttempt();
     const persistence = options.persistence ?? 'keyring';
-    const deviceName = options.deviceName?.trim() || `MultiAI CLI on ${hostname()}`;
+    const deviceName = options.deviceName?.trim() ?? `MultiAI CLI on ${hostname()}`;
     requestAborted(options.signal);
     const token =
       (options.method ?? 'browser') === 'device'
@@ -247,20 +247,20 @@ export class MultiAIOAuthManager {
         ) {
           response.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
           response.end('MultiAI authorization validation failed. You can close this window.');
-          finish(() => reject(new MultiAIOAuthError('invalid_callback', 'OAuth callback validation failed.')));
+          finish(() =>{  reject(new MultiAIOAuthError('invalid_callback', 'OAuth callback validation failed.')); });
           return;
         }
         const oauthError = url.searchParams.get('error');
         if (oauthError !== null) {
           response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
           response.end('MultiAI authorization was cancelled. You can close this window.');
-          finish(() => reject(new MultiAIOAuthError(oauthError, 'MultiAI authorization was denied.')));
+          finish(() =>{  reject(new MultiAIOAuthError(oauthError, 'MultiAI authorization was denied.')); });
           return;
         }
         const code = url.searchParams.get('code');
         if (code === null || code.length === 0) {
           response.writeHead(400).end();
-          finish(() => reject(new MultiAIOAuthError('invalid_callback', 'OAuth callback has no code.')));
+          finish(() =>{  reject(new MultiAIOAuthError('invalid_callback', 'OAuth callback has no code.')); });
           return;
         }
         response.writeHead(200, {
@@ -270,13 +270,13 @@ export class MultiAIOAuthManager {
         response.end(
           '<!doctype html><meta charset="utf-8"><title>MultiAI CLI</title><p>Вход выполнен. Это окно можно закрыть.</p>',
         );
-        finish(() => resolve({ code, redirectUri: `http://127.0.0.1:${address.port}${callbackPath}` }));
+        finish(() =>{  resolve({ code, redirectUri: `http://127.0.0.1:${address.port}${callbackPath}` }); });
       });
-      server.once('error', (error) => finish(() => reject(error)));
+      server.once('error', (error) =>{  finish(() => reject(error)); });
       server.listen(0, '127.0.0.1', () => {
         const address = server.address();
         if (address === null || typeof address === 'string') {
-          finish(() => reject(new MultiAIOAuthError('loopback_failed', 'Unable to bind OAuth callback listener.')));
+          finish(() =>{  reject(new MultiAIOAuthError('loopback_failed', 'Unable to bind OAuth callback listener.')); });
           return;
         }
         const redirectUri = `http://127.0.0.1:${address.port}${callbackPath}`;
@@ -295,19 +295,19 @@ export class MultiAIOAuthManager {
             expiresIn: BROWSER_LOGIN_TIMEOUT_MS / 1000,
           });
           void Promise.resolve(notified).catch((error: unknown) => {
-            finish(() => reject(error));
+            finish(() =>{  reject(error); });
           });
         } catch (error) {
-          finish(() => reject(error));
+          finish(() =>{  reject(error); });
         }
       });
       timeout = setTimeout(
-        () => finish(() => reject(new MultiAIOAuthError('expired_token', 'MultiAI login expired.'))),
+        () =>{  finish(() => reject(new MultiAIOAuthError('expired_token', 'MultiAI login expired.'))); },
         BROWSER_LOGIN_TIMEOUT_MS,
       );
       options.signal?.addEventListener(
         'abort',
-        () => finish(() => reject(new MultiAIOAuthError('cancelled', 'MultiAI login was cancelled.'))),
+        () =>{  finish(() => reject(new MultiAIOAuthError('cancelled', 'MultiAI login was cancelled.'))); },
         { once: true },
       );
     });

@@ -37,8 +37,8 @@ test('batch with dt + indexes updates everything', async () => {
       { op: 'set', key: 'u1', value: { city: 'Paris' }, dt: { created: 100 } },
       { op: 'set', key: 'u2', value: { city: 'Paris' }, dt: { created: 200 } },
     ]);
-    assert.deepEqual(db.findEq('byCity', 'Paris').map((r) => r.key).sort(), ['u1', 'u2']);
-    assert.deepEqual(db.dtRange('created', { gte: 100 }).map((r) => r.key).sort(), ['u1', 'u2']);
+    assert.deepEqual(db.findEq('byCity', 'Paris').map((r) => r.key).toSorted(), ['u1', 'u2']);
+    assert.deepEqual(db.dtRange('created', { gte: 100 }).map((r) => r.key).toSorted(), ['u1', 'u2']);
   } finally {
     await db.close();
     await fs.rm(dir, { recursive: true, force: true });

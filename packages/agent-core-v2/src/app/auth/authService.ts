@@ -100,7 +100,7 @@ export class OAuthService extends Disposable implements IOAuthService {
     @IEventService private readonly events: IEventService,
   ) {
     super();
-    this._register(this.providers.onDidChangeProviders((event) => this.invalidateFlows(event)));
+    this._register(this.providers.onDidChangeProviders((event) =>{  this.invalidateFlows(event); }));
   }
 
   async startLogin(request: OAuthLoginRequest | string): Promise<OAuthFlowStart> {

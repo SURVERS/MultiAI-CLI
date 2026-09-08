@@ -228,8 +228,8 @@ describe('AcpServer error mapping', () => {
     let captured: unknown;
     try {
       await client.prompt({ sessionId, prompt: [textBlock('hi')] });
-    } catch (err) {
-      captured = err;
+    } catch (error) {
+      captured = error;
     }
     expect(captured).toMatchObject({ code: -32603 });
     // Privacy guarantee: the JSON-RPC error response carries only the

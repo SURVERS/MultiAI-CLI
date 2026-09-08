@@ -39,8 +39,8 @@ export class TelemetryService implements ITelemetryService {
     for (const appender of this.appenders) {
       try {
         appender.track(event, merged);
-      } catch (err) {
-        onUnexpectedError(err);
+      } catch (error) {
+        onUnexpectedError(error);
       }
     }
   }
@@ -65,7 +65,7 @@ export class TelemetryService implements ITelemetryService {
 
   addAppender(appender: ITelemetryAppender): IDisposable {
     this.appenders.push(appender);
-    return toDisposable(() => this.removeAppender(appender));
+    return toDisposable(() =>{  this.removeAppender(appender); });
   }
 
   removeAppender(appender: ITelemetryAppender): void {

@@ -73,7 +73,7 @@ describe('server-v2 GET /api/v1/connections', () => {
       const token = (server as RunningServer).authTokenService.getToken();
       const ws = new WebSocket(wsUrl, [`multiai.bearer.${token}`]);
       // Resolve on the server's first (`server_hello`) frame.
-      ws.once('message', () => resolve(ws));
+      ws.once('message', () =>{  resolve(ws); });
       ws.once('error', reject);
     });
   }
@@ -98,7 +98,7 @@ describe('server-v2 GET /api/v1/connections', () => {
 
   it('lists a raw connection without hello', async () => {
     const ws = await connect();
-    const closed = new Promise<void>((res) => ws.on('close', () => res()));
+    const closed = new Promise<void>((res) => ws.on('close', () =>{  res(); }));
     await waitForSize(1);
 
     const connections = await listConnections();

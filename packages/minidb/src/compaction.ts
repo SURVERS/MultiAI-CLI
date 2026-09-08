@@ -164,10 +164,10 @@ export async function compact(db: CompactionTarget): Promise<void> {
       db.onCompacted?.();
       db.stats.compactions++;
       db.lastCompactError = null;
-    } catch (err) {
+    } catch (error) {
       db.stats.compactErrors = (db.stats.compactErrors ?? 0) + 1;
-      db.lastCompactError = err;
-      throw err;
+      db.lastCompactError = error;
+      throw error;
     } finally {
       db.compacting = false;
       // A failed rotation must not leave writers parked forever.
@@ -298,7 +298,7 @@ async function runCompaction(db: CompactionTarget): Promise<void> {
     // observe a new pointer against an old fd or vice versa.
     remap();
     db.valueReader?.reopenBoth();
-  } catch (err) {
+  } catch (error) {
     try {
       // Swap the sealed/closed WAL for a fresh handle on db.walPath. The swap
       // comes first: it both restores appendability and stops late in-flight
@@ -314,7 +314,7 @@ async function runCompaction(db: CompactionTarget): Promise<void> {
     } catch {
       // Best-effort recovery only — on-disk state is consistent regardless.
     }
-    throw err;
+    throw error;
   } finally {
     releaseRotation();
     db._rotateLock = null;

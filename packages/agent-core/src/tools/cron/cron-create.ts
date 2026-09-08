@@ -149,11 +149,11 @@ export class CronCreateTool implements BuiltinTool<CronCreateInput> {
     let parsed: ParsedCronExpression;
     try {
       parsed = parseCronExpression(normalizedCron);
-    } catch (err) {
+    } catch (error) {
       return {
         isError: true,
         output: `Invalid cron expression: ${
-          err instanceof Error ? err.message : String(err)
+          error instanceof Error ? error.message : String(error)
         }`,
       };
     }
@@ -204,7 +204,7 @@ export class CronCreateTool implements BuiltinTool<CronCreateInput> {
     // boolean (rather than trusting the post-default arg) to match the
     // canonical "recurring iff not explicitly false" convention used
     // everywhere else in the cron stack.
-    const recurring = args.recurring !== false;
+    const recurring =  args.recurring;
 
     // 7. One-shot "rolled to next year" guard. The tool docs recommend
     //    pinning today's dom/month for "remind me at X today"; if

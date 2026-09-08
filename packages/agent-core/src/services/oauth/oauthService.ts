@@ -129,18 +129,18 @@ export class OAuthService extends Disposable implements IOAuthService {
 
     // Surface a synchronous failure (device-auth request itself fails before
     // `onDeviceCode` fires) by racing the login promise.
-    loginPromise.catch((err) => {
-      rejectAuth(err);
+    loginPromise.catch((error) => {
+      rejectAuth(error);
     });
 
     let deviceAuth: MultiAIDeviceAuthorization;
     try {
       deviceAuth = await authPromise;
-    } catch (err) {
+    } catch (error) {
       // The OAuth host or the network broke before we got a device code.
       // No flow state was registered yet; just surface the error to the
       // REST handler → 50001.
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = error instanceof Error ? error.message : String(error);
       throw new MultiAIOAuthError('authorization_failed', `Failed to start device flow: ${msg}`);
     }
 
@@ -164,8 +164,8 @@ export class OAuthService extends Disposable implements IOAuthService {
     // Wire the background promise's terminal transition. We branch on error
     // class + message — see the file header for the mapping.
     loginPromise.then(
-      () => this._handleSuccess(state),
-      (err) => this._handleFailure(state, err),
+      () =>{  this._handleSuccess(state); },
+      (error) =>{  this._handleFailure(state, error); },
     );
 
     return {

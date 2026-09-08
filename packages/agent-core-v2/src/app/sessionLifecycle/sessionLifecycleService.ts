@@ -153,7 +153,7 @@ export class SessionLifecycleService extends Disposable implements ISessionLifec
               agentId: MAIN_AGENT_ID,
               binding: opts.mainAgentBinding,
             });
-      if (this.config.get<boolean>(DEFAULT_PLAN_MODE_SECTION) === true) {
+      if (this.config.get<boolean>(DEFAULT_PLAN_MODE_SECTION)) {
         const planAgent = main ?? (await ensureMainAgent(handle));
         await planAgent.accessor.get(IAgentPlanService).enter();
       }
@@ -425,7 +425,7 @@ export class SessionLifecycleService extends Disposable implements ISessionLifec
         });
       }
 
-      const title = opts.title ?? `Fork: ${sourceMeta?.title || sourceId}`;
+      const title = opts.title ?? `Fork: ${sourceMeta?.title ?? sourceId}`;
       await targetMeta.update({
         title,
         isCustomTitle: opts.title !== undefined ? true : sourceMeta?.isCustomTitle === true,

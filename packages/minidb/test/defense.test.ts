@@ -149,7 +149,7 @@ test('LockFile release/releaseSync are no-ops when not held', async () => {
   const dir = await tmpDir();
   const lock = new LockFile(path.join(dir, 'db.lock'));
   await assert.doesNotReject(() => lock.release());
-  assert.doesNotThrow(() => lock.releaseSync());
+  assert.doesNotThrow(() =>{  lock.releaseSync(); });
   await fs.rm(dir, { recursive: true, force: true });
 });
 
@@ -229,11 +229,11 @@ test('RESP server replies with -ERR when a command throws', async () => {
   try {
     const sock = await new Promise<net.Socket>((resolve, reject) => {
       const s = net.connect(srv.port, '127.0.0.1');
-      s.once('connect', () => resolve(s));
+      s.once('connect', () =>{  resolve(s); });
       s.once('error', reject);
     });
     const r = await new Promise<string>((resolve) => {
-      sock.once('data', (d) => resolve(d.toString()));
+      sock.once('data', (d) =>{  resolve(d.toString()); });
       // 129-byte key exceeds MAX_KEY_LEN -> db.set throws -> server replies -ERR.
       const key = 'x'.repeat(129);
       sock.write(`*3\r\n$3\r\nSET\r\n$${key.length}\r\n${key}\r\n$1\r\nv\r\n`);

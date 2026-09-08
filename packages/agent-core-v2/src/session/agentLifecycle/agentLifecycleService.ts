@@ -90,7 +90,7 @@ export class AgentLifecycleService extends Disposable implements IAgentLifecycle
     @ITelemetryService private readonly telemetry: ITelemetryService,
   ) {
     super();
-    this._register(this.onDidCreate((handle) => this.subscribeInteractionBus(handle)));
+    this._register(this.onDidCreate((handle) =>{  this.subscribeInteractionBus(handle); }));
     this._register(
       this.onDidDispose((agentId) => {
         const d = this.interactionBusDisposables.get(agentId);
@@ -112,7 +112,7 @@ export class AgentLifecycleService extends Disposable implements IAgentLifecycle
     if (this.interactionBusDisposables.has(handle.id)) return;
     const d = handle.accessor
       .get(IEventBus)
-      .subscribe('turn.ended', (e) => this.interaction.cancelPendingForTurn(e.turnId));
+      .subscribe('turn.ended', (e) =>{  this.interaction.cancelPendingForTurn(e.turnId); });
     this.interactionBusDisposables.set(handle.id, d);
   }
 

@@ -723,7 +723,7 @@ describe('AgentToolPolicyService.setSessionDisabledTools', () => {
       .replace(TOOLS_SECTION, { disabled: ['Skill'] }, ConfigTarget.Memory);
 
     expect(toolPolicy.isToolActive('Skill')).toBe(false);
-    await vi.waitFor(() => expect(profile.getSystemPrompt()).not.toContain(skillMarker));
+    await vi.waitFor(() =>{  expect(profile.getSystemPrompt()).not.toContain(skillMarker); });
   });
 });
 

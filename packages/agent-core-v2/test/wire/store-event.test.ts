@@ -83,7 +83,7 @@ beforeEach(() => {
   ({ wire, eventBus, log } = setup(KEY));
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(
   target: IAppendLogStore = log,

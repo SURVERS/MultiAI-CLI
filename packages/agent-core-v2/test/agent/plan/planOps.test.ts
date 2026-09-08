@@ -48,7 +48,7 @@ beforeEach(() => {
   log = host.log;
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(key = KEY): Promise<WireRecord[]> {
   await wire.flush();
@@ -83,7 +83,7 @@ describe('plan ops (wire-backed)', () => {
       'plan_mode.enter',
       'plan_mode.exit',
     ]);
-    expect(records.every((record) => 'payload' in record === false)).toBe(true);
+    expect(records.every((record) => !( 'payload' in record))).toBe(true);
     expect(records[0]).toEqual(
       expect.objectContaining({
         type: 'plan_mode.enter',
@@ -221,7 +221,7 @@ describe('plan ops (wire-backed)', () => {
         time: expect.any(Number),
       }),
     );
-    expect(records.every((record) => 'payload' in record === false)).toBe(true);
+    expect(records.every((record) => !( 'payload' in record))).toBe(true);
   });
 
   it('keeps the revision counter across the lifecycle and emits the event only live', async () => {

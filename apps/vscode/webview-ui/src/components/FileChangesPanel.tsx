@@ -35,7 +35,7 @@ interface FileItemProps {
 
 function FileItem({ file, onRevert, onKeep, onViewDiff, disabled, isStreaming }: FileItemProps) {
   const { icon: Icon, color } = STATUS_CONFIG[file.status];
-  const name = file.path.split("/").pop() || file.path;
+  const name = file.path.split("/").pop() ?? file.path;
   const dir = file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/")) : "";
 
   return (
@@ -115,7 +115,7 @@ export function FileChangesPanel({ changes }: FileChangesPanelProps) {
 
   const stats = getTotalStats(changes);
 
-  if (!changes.length) {
+  if (changes.length === 0) {
     return <div className="px-2.5 py-3 text-xs text-muted-foreground text-center">No file changes</div>;
   }
 

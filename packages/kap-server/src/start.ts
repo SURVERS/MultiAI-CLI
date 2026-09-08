@@ -418,7 +418,7 @@ export async function startServer(opts: ServerStartOptions = {}): Promise<Runnin
     enableTerminals,
     guiStore,
     onShutdown: () => {
-      void close().catch((err: unknown) => logger.error({ err }, 'server close failed'));
+      void close().catch((error: unknown) =>{  logger.error({ error }, 'server close failed'); });
     },
     connectionRegistry,
     broadcaster,
@@ -514,8 +514,8 @@ export async function startServer(opts: ServerStartOptions = {}): Promise<Runnin
     wssV1.handleUpgrade(req, socket, head, (ws) => wssV1.emit('connection', ws, req));
   };
   app.server.on('upgrade', (req, socket, head) => {
-    void handleUpgrade(req, socket, head).catch((error: unknown) =>
-      logger.error({ err: error }, 'ws upgrade handler failed'),
+    void handleUpgrade(req, socket, head).catch((error: unknown) =>{ 
+      logger.error({ err: error }, 'ws upgrade handler failed'); },
     );
   });
 

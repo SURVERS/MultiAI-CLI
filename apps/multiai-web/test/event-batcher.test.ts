@@ -416,7 +416,7 @@ describe('coalesceAppRenderEvents (lossless stream grouping)', () => {
     let expectedOffset = 0;
     for (let index = 0; index < groupOffsets.length; index += 1) {
       expect(groupOffsets[index]).toBe(expectedOffset);
-      expectedOffset += groupLengths[index]!;
+      expectedOffset += groupLengths[index];
     }
     expect(state.lastSeqBySession['session-1']).toBe(160_000);
     expect(state.messagesBySession['session-1']?.[0]?.content).toEqual([
@@ -471,7 +471,7 @@ describe('coalesceAppRenderEvents (lossless stream grouping)', () => {
   });
 
   it('splits one oversized incoming delta without breaking a surrogate pair', () => {
-    const value = '\ud83d\ude00'.repeat(50_000) + 'tail';
+    const value = '\uD83D\uDE00'.repeat(50_000) + 'tail';
 
     const parts = splitOversizedAppRenderEvent(pendingDelta(value, 7));
 

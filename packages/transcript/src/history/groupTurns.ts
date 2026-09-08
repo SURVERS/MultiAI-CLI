@@ -119,7 +119,7 @@ export function groupMessagesIntoSnapshot(
     for (const part of message.content ?? []) {
       if (part.type === 'image' || part.type === 'video' || part.type === 'audio') {
         if (!('source' in part) || part.source === undefined) continue;
-        const source = part.source as HistoryMediaSource;
+        const source = part.source;
         const entity: TranscriptAttachment = {
           attachmentId: `att_${attachments.length + 1}`,
           mediaType:
@@ -137,10 +137,10 @@ export function groupMessagesIntoSnapshot(
       } else if (part.type === 'file' && 'file_id' in part) {
         const entity: TranscriptAttachment = {
           attachmentId: `att_${attachments.length + 1}`,
-          mediaType: part.media_type as string,
-          name: part.name as string,
-          size: part.size as number,
-          source: { kind: 'file', fileId: part.file_id as string },
+          mediaType: part.media_type,
+          name: part.name,
+          size: part.size,
+          source: { kind: 'file', fileId: part.file_id },
         };
         attachments.push(entity);
         ids.push(entity.attachmentId);

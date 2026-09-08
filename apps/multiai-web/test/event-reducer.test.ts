@@ -602,7 +602,7 @@ describe('reduceAppEvent messageCreated cron origin', () => {
       { type: 'messageCreated', message: cronMessage },
       { sessionId: sid, seq: 2 },
     );
-    const msgs = next.messagesBySession[sid]!;
+    const msgs = next.messagesBySession[sid];
     expect(msgs).toHaveLength(2);
     expect(msgs.map((m) => m.id)).toEqual(['opt_1', 'cron_1']);
   });

@@ -48,7 +48,7 @@ describe('ProtocolTrait', () => {
       capability: () => undefined,
       uploadVideo: () => Promise.reject(new Error('unused')),
     };
-    expect(Object.keys(fullTrait).sort()).toEqual([
+    expect(Object.keys(fullTrait).toSorted()).toEqual([
       'buildParams',
       'cacheKey',
       'capability',

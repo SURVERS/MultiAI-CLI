@@ -61,7 +61,7 @@ export class MessageLegacyService implements IMessageLegacyService {
 
   async list(sessionId: string, query: MessageListQuery): Promise<PageResponse<Message>> {
     const all = await this.loadMessages(sessionId);
-    const desc = [...all].reverse();
+    const desc = [...all].toReversed();
 
     let pivotIndex = -1;
     if (query.before_id !== undefined) {

@@ -40,7 +40,7 @@ class RespParser {
   }
 
   *feed(chunk: Buffer): Generator<Buffer[]> {
-    this.buf = this.buf.length ? Buffer.concat([this.buf, chunk]) : chunk;
+    this.buf = this.buf.length > 0 ? Buffer.concat([this.buf, chunk]) : chunk;
     if (this.buf.length > this.maxBuf) {
       // Drop the buffered oversized request before reporting: without the
       // reset every later chunk would fail with the same error and the giant
@@ -48,7 +48,7 @@ class RespParser {
       this.buf = Buffer.alloc(0);
       throw new Error(`RESP request too large (>${this.maxBuf} bytes)`);
     }
-    while (this.buf.length) {
+    while (this.buf.length > 0) {
       const parsed = this.tryParse();
       if (!parsed) break;
       yield parsed;
@@ -89,7 +89,7 @@ class RespParser {
 
 async function handle(db: MiniDb<string>, args: Buffer[]): Promise<string | Buffer | null> {
   const cmd = args[0]!.toString().toUpperCase();
-  const S = (i: number): string | undefined => (args[i] === undefined ? undefined : args[i]!.toString());
+  const S = (i: number): string | undefined => (args[i] === undefined ? undefined : args[i].toString());
 
   switch (cmd) {
     case 'PING':
@@ -98,7 +98,7 @@ async function handle(db: MiniDb<string>, args: Buffer[]): Promise<string | Buff
       return reply.bulk(S(1));
     case 'GET': {
       const v = db.get(S(1)!);
-      return reply.bulk(v === undefined ? null : v);
+      return reply.bulk(v ?? (null));
     }
     case 'SET': {
       const key = S(1)!;
@@ -123,7 +123,7 @@ async function handle(db: MiniDb<string>, args: Buffer[]): Promise<string | Buff
       const out: unknown[] = [];
       for (let i = 1; i < args.length; i++) {
         const v = db.get(S(i)!);
-        out.push(v === undefined ? null : v);
+        out.push(v ?? (null));
       }
       return reply.array(out);
     }
@@ -193,10 +193,10 @@ export async function startServer({ dir, port = 6379, host = '127.0.0.1', fsyncP
             let res: string | Buffer | null;
             try {
               res = await handle(db, args);
-            } catch (e) {
+            } catch (error) {
               // One failing command must not starve the replies of the
               // commands already parsed from the same chunk.
-              res = reply.err((e as Error).message);
+              res = reply.err((error as Error).message);
             }
             if (res === null) {
               socket.end();
@@ -204,10 +204,10 @@ export async function startServer({ dir, port = 6379, host = '127.0.0.1', fsyncP
             }
             send(res);
           }
-        } catch (e) {
+        } catch (error) {
           // Parser-level failure (e.g. oversized request): feed() has already
           // reset its buffer, so the connection can keep serving new commands.
-          send(reply.err((e as Error).message));
+          send(reply.err((error as Error).message));
         }
       });
     });

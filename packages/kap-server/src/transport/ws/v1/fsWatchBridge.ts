@@ -200,7 +200,7 @@ export class FsWatchBridge {
     sw.union = union;
     sw.fsWatch.setWatchedPaths([...union]);
     if (union.size > 0 && sw.sub === undefined) {
-      sw.sub = sw.fsWatch.onDidChangeFiles((ev) => this.onSessionEvent(sw.id, ev));
+      sw.sub = sw.fsWatch.onDidChangeFiles((ev) =>{  this.onSessionEvent(sw.id, ev); });
     }
   }
 
@@ -257,7 +257,7 @@ export class FsWatchBridge {
     return {
       code: FS_WATCH_CODE.OK,
       msg: 'success',
-      watched_paths: entry === undefined ? [] : [...entry.paths].sort(),
+      watched_paths: entry === undefined ? [] : [...entry.paths].toSorted(),
       current_count: this.countFor(conn.id),
     };
   }

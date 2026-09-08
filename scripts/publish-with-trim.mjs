@@ -7,7 +7,7 @@
 // After a successful publish we clamp every oversized release body back
 // under the limit via the REST API.
 
-import { execFileSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 
 const REPO = 'SURVERS/MultiAI-CLI';
 const MAX_BODY_CHARS = 100_000;
@@ -65,6 +65,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`[publish] post-publish trim failed: ${error.message}`);
+  console.error(`[publish] publish or release body trim failed: ${error.message}`);
   process.exitCode = 1;
 });

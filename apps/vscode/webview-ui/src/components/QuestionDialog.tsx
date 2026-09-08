@@ -51,7 +51,7 @@ export function QuestionDialog() {
               onClick={() => {
                 void handleSelect(option.label);
               }}
-              onMouseEnter={() => setSelectedIndex(idx + 1)}
+              onMouseEnter={() =>{  setSelectedIndex(idx + 1); }}
               className={cn(
                 "w-full text-left px-2 py-1 rounded-md text-xs transition-colors",
                 "border border-border cursor-pointer",
@@ -70,7 +70,7 @@ export function QuestionDialog() {
               <input
                 autoFocus
                 value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
+                onChange={(e) =>{  setCustomInput(e.target.value); }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void handleCustomSubmit();
                   if (e.key === "Escape") setShowCustom(false);
@@ -90,8 +90,8 @@ export function QuestionDialog() {
             </div>
           ) : (
             <button
-              onClick={() => setShowCustom(true)}
-              onMouseEnter={() => setSelectedIndex(customIndex)}
+              onClick={() =>{  setShowCustom(true); }}
+              onMouseEnter={() =>{  setSelectedIndex(customIndex); }}
               className={cn(
                 "w-full text-left px-2 py-1 rounded-md text-xs transition-colors",
                 "border border-border cursor-pointer",

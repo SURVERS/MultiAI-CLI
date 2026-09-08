@@ -36,7 +36,7 @@ describe('SessionApprovalService', () => {
     ix.set(ISessionInteractionService, new SyncDescriptor(SessionInteractionService));
     ix.set(ISessionApprovalService, new SyncDescriptor(SessionApprovalService));
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   it('request parks until decide resolves it', async () => {
     const svc = ix.get(ISessionApprovalService);
@@ -50,7 +50,7 @@ describe('SessionApprovalService', () => {
 
   it('decide on unknown id is a no-op', () => {
     const svc = ix.get(ISessionApprovalService);
-    expect(() => svc.decide('missing', { decision: 'rejected' })).not.toThrow();
+    expect(() =>{  svc.decide('missing', { decision: 'rejected' }); }).not.toThrow();
   });
 
   it('enqueue parks a request and returns it with its id without blocking', () => {

@@ -324,7 +324,7 @@ function makeSessionService(): {
   };
   return {
     sessionService,
-    triggerClose: (sid: string) => closeEmitter.fire({ sessionId: sid }),
+    triggerClose: (sid: string) =>{  closeEmitter.fire({ sessionId: sid }); },
   };
 }
 

@@ -194,13 +194,11 @@ export class WorkspaceService implements IWorkspaceService {
       // resurrectable from the session index) would resurface as this
       // directory's representative on the next list().
       let root = catalog.workspaces.find((ws) => ws.id === id)?.root;
-      if (root === undefined) {
-        // Derived/unknown id: recover its spelling from the session index so
+      // Derived/unknown id: recover its spelling from the session index so
         // the whole alias set can still be tombstoned.
-        root = (await readSessionIndexEntries(this.storage)).find(
+        root ??= (await readSessionIndexEntries(this.storage)).find(
           (line) => encodeWorkDirKey(line.workDir) === id,
         )?.workDir;
-      }
       if (root === undefined) {
         await this.store.save({
           workspaces: catalog.workspaces.filter((ws) => ws.id !== id),

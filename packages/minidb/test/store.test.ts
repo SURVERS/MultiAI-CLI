@@ -73,7 +73,7 @@ test('entries() yields only live entries', () => {
 
 test('ordered scan over keys (range)', () => {
   const s = new Store({ activeExpireIntervalMs: 0 });
-  ['c', 'a', 'd', 'b'].forEach((k) => s.set(k, B(k)));
+  ['c', 'a', 'd', 'b'].forEach((k) =>{  s.set(k, B(k)); });
   assert.deepEqual(
     [...s.scan({ gte: 'b', lte: 'd' })].map((r) => r.key.toString()),
     ['b', 'c', 'd'],
@@ -82,7 +82,7 @@ test('ordered scan over keys (range)', () => {
 
 test('prefix scan over keys', () => {
   const s = new Store({ activeExpireIntervalMs: 0 });
-  ['user:1', 'user:2', 'user:10', 'order:1'].forEach((k) => s.set(k, B(k)));
+  ['user:1', 'user:2', 'user:10', 'order:1'].forEach((k) =>{  s.set(k, B(k)); });
   assert.deepEqual(
     [...s.prefix('user:')].map((r) => r.key.toString()),
     ['user:1', 'user:10', 'user:2'],
@@ -99,7 +99,7 @@ test('stores dt per record and exposes via getRecord', () => {
 
 test('delete removes key from the ordered index', () => {
   const s = new Store({ activeExpireIntervalMs: 0 });
-  ['a', 'b', 'c'].forEach((k) => s.set(k, B(k)));
+  ['a', 'b', 'c'].forEach((k) =>{  s.set(k, B(k)); });
   s.del('b');
   assert.deepEqual([...s.scan()].map((r) => r.key.toString()), ['a', 'c']);
 });

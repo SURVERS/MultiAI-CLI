@@ -381,7 +381,7 @@ export const multiAIErrorCodeSchema = z.enum([
   'internal',
 ]);
 
-export const multiAIErrorPayloadSchema: z.ZodType<unknown> = z.lazy(
+export const multiAIErrorPayloadSchema: z.ZodType = z.lazy(
   () => multiAIErrorPayloadObjectSchema,
 );
 

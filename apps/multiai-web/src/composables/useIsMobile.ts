@@ -33,12 +33,12 @@ export function useIsMobile(): Ref<boolean> {
   // for older Safari. Guard both so we never throw.
   if (typeof mql.addEventListener === 'function') {
     mql.addEventListener('change', onChange);
-    onUnmounted(() => mql.removeEventListener('change', onChange));
+    onUnmounted(() =>{  mql.removeEventListener('change', onChange); });
   } else if (typeof mql.addListener === 'function') {
     // eslint-disable-next-line deprecation/deprecation
     mql.addListener(onChange);
     // eslint-disable-next-line deprecation/deprecation
-    onUnmounted(() => mql.removeListener(onChange));
+    onUnmounted(() =>{  mql.removeListener(onChange); });
   }
 
   return isMobile;

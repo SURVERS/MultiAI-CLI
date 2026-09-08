@@ -39,7 +39,7 @@ function telemetryWithAppenders(...appenders: ITelemetryAppender[]): TelemetrySe
 describe('TelemetryService (unit)', () => {
   it('noop by default — does not throw', () => {
     const svc = new TelemetryService();
-    expect(() => svc.track('evt', { a: 1 })).not.toThrow();
+    expect(() =>{  svc.track('evt', { a: 1 }); }).not.toThrow();
   });
 
   it('merges bound context into tracked properties', () => {
@@ -174,8 +174,8 @@ describe('TelemetryService (unit)', () => {
 });
 
 describe('TelemetryService (error isolation)', () => {
-  beforeEach(() => setUnexpectedErrorHandler(() => {}));
-  afterEach(() => resetUnexpectedErrorHandler());
+  beforeEach(() =>{  setUnexpectedErrorHandler(() => {}); });
+  afterEach(() =>{  resetUnexpectedErrorHandler(); });
 
   it('a throwing appender does not prevent delivery to other appenders', () => {
     const bad: ITelemetryAppender = {
@@ -185,7 +185,7 @@ describe('TelemetryService (error isolation)', () => {
     };
     const good = new CapturingAppender();
     const svc = telemetryWithAppenders(bad, good);
-    expect(() => svc.track('evt')).not.toThrow();
+    expect(() =>{  svc.track('evt'); }).not.toThrow();
     expect(good.events).toEqual([{ event: 'evt', properties: {} }]);
   });
 
@@ -231,7 +231,7 @@ describe('ITelemetryService (scoped)', () => {
   it('resolves from the App scope', () => {
     const host = createScopedTestHost();
     const svc = host.app.accessor.get(ITelemetryService);
-    expect(() => svc.track('scoped')).not.toThrow();
+    expect(() =>{  svc.track('scoped'); }).not.toThrow();
     host.dispose();
   });
 });

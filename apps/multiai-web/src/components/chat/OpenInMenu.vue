@@ -40,7 +40,7 @@ const isMac = isMacOS();
 
 const TRAILING_SLASH = /\/+$/;
 function compactPath(path: string, maxLength = 22): string {
-  const trimmed = path.trim().replace(/\\/g, '/');
+  const trimmed = path.trim().replaceAll(/\\/g, '/');
   const normalized = trimmed === '' ? '/' : trimmed.replace(TRAILING_SLASH, '') || '/';
   if (normalized.length <= maxLength) return normalized;
   const parts = normalized.split('/').filter(Boolean);

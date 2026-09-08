@@ -42,8 +42,8 @@ describe('CronManager', () => {
       // for setInterval / clean it up; we just want start() and stop()
       // to be wired and idempotent.
       const manager = new CronManager(agent, { pollIntervalMs: null });
-      expect(() => manager.start()).not.toThrow();
-      expect(() => manager.start()).not.toThrow(); // idempotent
+      expect(() =>{  manager.start(); }).not.toThrow();
+      expect(() =>{  manager.start(); }).not.toThrow(); // idempotent
       await expect(manager.stop()).resolves.toBeUndefined();
       await expect(manager.stop()).resolves.toBeUndefined();
     });

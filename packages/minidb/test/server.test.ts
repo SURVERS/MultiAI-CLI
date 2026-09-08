@@ -23,7 +23,7 @@ function encode(...args) {
 function connect(port) {
   return new Promise((resolve, reject) => {
     const sock = net.connect(port, '127.0.0.1');
-    sock.once('connect', () => resolve(sock));
+    sock.once('connect', () =>{  resolve(sock); });
     sock.once('error', reject);
   });
 }
@@ -31,7 +31,7 @@ function connect(port) {
 // Send one command and resolve with the next response chunk.
 function send(sock, cmd) {
   return new Promise((resolve) => {
-    sock.once('data', (d) => resolve(d.toString()));
+    sock.once('data', (d) =>{  resolve(d.toString()); });
     sock.write(cmd);
   });
 }

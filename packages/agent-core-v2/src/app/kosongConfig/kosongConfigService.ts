@@ -87,7 +87,7 @@ export class KosongConfigService extends Disposable implements IKosongConfigServ
       this.config.get<ModelsSection>(MODELS_SECTION) ?? {},
       this.config.get<string>(DEFAULT_MODEL_SECTION),
     );
-    this._register(this.config.onDidSectionChange((e) => this.onConfigSectionChanged(e)));
+    this._register(this.config.onDidSectionChange((e) =>{  this.onConfigSectionChanged(e); }));
     // The guards mirror the ones inside the persist tasks: skipping the echo
     // here (instead of registering a no-op `waitUntil`) keeps config-originated
     // syncs fully synchronous for every other listener, even while the persist
@@ -152,12 +152,12 @@ export class KosongConfigService extends Disposable implements IKosongConfigServ
       case DEFAULT_PROVIDER_SECTION:
         void this.providers
           .setDefaultProvider(e.value as string | undefined)
-          .catch((error) => this.logPersistFailure(error));
+          .catch((error) =>{  this.logPersistFailure(error); });
         break;
       case DEFAULT_MODEL_SECTION:
         void this.models
           .setDefaultModel(e.value as string | undefined)
-          .catch((error) => this.logPersistFailure(error));
+          .catch((error) =>{  this.logPersistFailure(error); });
         break;
     }
   }
@@ -201,11 +201,11 @@ export class KosongConfigService extends Disposable implements IKosongConfigServ
       if (domain === DEFAULT_PROVIDER_SECTION) {
         void this.providers
           .setDefaultProvider(effective)
-          .catch((error) => this.logPersistFailure(error));
+          .catch((error) =>{  this.logPersistFailure(error); });
       } else if (domain === DEFAULT_MODEL_SECTION) {
         void this.models
           .setDefaultModel(effective)
-          .catch((error) => this.logPersistFailure(error));
+          .catch((error) =>{  this.logPersistFailure(error); });
       }
     });
   }
@@ -235,7 +235,7 @@ export class KosongConfigService extends Disposable implements IKosongConfigServ
     // The chain itself always recovers so one failed task cannot poison the
     // persists queued behind it; the returned promise is what the registry's
     // `waitUntil` (and thereby the mutation's caller) observes.
-    this.persistChain = this.persistChain.then(task).catch((error) => this.logPersistFailure(error));
+    this.persistChain = this.persistChain.then(task).catch((error) =>{  this.logPersistFailure(error); });
     return this.persistChain;
   }
 

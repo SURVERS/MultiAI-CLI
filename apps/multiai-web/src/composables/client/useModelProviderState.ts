@@ -42,7 +42,7 @@ function loadStarredModelsFromStorage(): string[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
-      return parsed as string[];
+      return parsed;
     }
   } catch {
     // ignore (localStorage not available or malformed)
@@ -106,7 +106,7 @@ export function useModelProviderState(
 
   // Models + Providers reactive state (lazy-loaded, cached)
   const models = ref<AppModel[]>([]);
-  const starredModelIds = ref<string[]>(loadStarredModelsFromStorage());
+  const starredModelIds = ref(loadStarredModelsFromStorage());
 
   // Session-scoped skills (slash-invocable). Loaded lazily per session; the active
   // session's list feeds the composer's `/` menu.
@@ -257,7 +257,7 @@ export function useModelProviderState(
       .setConfig({
         thinking: thinkingLevelToConfig(level, modelById(currentModelId())?.supportEfforts),
       })
-      .catch((error: unknown) => pushOperationFailure('setConfig', error));
+      .catch((error: unknown) =>{  pushOperationFailure('setConfig', error); });
   }
 
   async function loadSkillsForSession(sessionId: string): Promise<void> {
@@ -295,8 +295,8 @@ export function useModelProviderState(
       if (active !== undefined) {
         rawState.thinking = thinkingLevelForSession(rawState.activeSessionId, active);
       }
-    } catch (err) {
-      pushOperationFailure('loadModels', err);
+    } catch (error) {
+      pushOperationFailure('loadModels', error);
     }
   }
 
@@ -305,8 +305,8 @@ export function useModelProviderState(
     try {
       const api = getMultiAIWebApi();
       providers.value = await api.listProviders();
-    } catch (err) {
-      pushOperationFailure('loadProviders', err);
+    } catch (error) {
+      pushOperationFailure('loadProviders', error);
     }
   }
 
@@ -361,7 +361,7 @@ export function useModelProviderState(
         model: modelId,
         thinking: nextThinking !== prevThinking ? nextThinking : undefined,
       });
-    } catch (err) {
+    } catch (error) {
       // The model change rides HTTP, not the WS, so a dropped socket alone does
       // not fail it — but when the daemon is unreachable the request throws here.
       // Roll the picker back to the real model so the UI can't keep showing the
@@ -373,7 +373,7 @@ export function useModelProviderState(
           rawState.thinkingBySession = { ...rawState.thinkingBySession, [sid]: prevThinking };
         }
       }
-      pushOperationFailure('setModel', err, { sessionId: sid });
+      pushOperationFailure('setModel', error, { sessionId: sid });
       return false;
     }
     // The switch reached the daemon: also persist the thinking pick as the
@@ -458,13 +458,13 @@ export function useModelProviderState(
       );
       if (!persisted) throw PROFILE_PERSIST_FAILED;
       await getMultiAIWebApi().activateSkill(sid, skillName, args);
-    } catch (err) {
+    } catch (error) {
       if (guarded) {
         rawState.inFlightBySession = { ...rawState.inFlightBySession, [sid]: false };
         updateSessionMessages(sid, (msgs) => msgs.filter((m) => m.id !== tempId));
       }
       // The persist failure was already surfaced by persistSessionProfile.
-      if (err !== PROFILE_PERSIST_FAILED) pushOperationFailure('activateSkill', err, { sessionId: sid });
+      if (error !== PROFILE_PERSIST_FAILED) pushOperationFailure('activateSkill', error, { sessionId: sid });
     } finally {
       // The daemon answered the activation (accepted or rejected) — the
       // pending window in which a snapshot can't reflect this turn is over.
@@ -483,8 +483,8 @@ export function useModelProviderState(
       const api = getMultiAIWebApi();
       await api.addProvider(input);
       await Promise.all([loadProviders(), loadModels()]);
-    } catch (err) {
-      pushOperationFailure('addProvider', err);
+    } catch (error) {
+      pushOperationFailure('addProvider', error);
     }
   }
 
@@ -494,8 +494,8 @@ export function useModelProviderState(
       const api = getMultiAIWebApi();
       await api.deleteProvider(id);
       await Promise.all([loadProviders(), loadModels()]);
-    } catch (err) {
-      pushOperationFailure('deleteProvider', err);
+    } catch (error) {
+      pushOperationFailure('deleteProvider', error);
     }
   }
 
@@ -509,8 +509,8 @@ export function useModelProviderState(
         });
       }
       await Promise.all([loadProviders(), loadModels()]);
-    } catch (err) {
-      pushOperationFailure('refreshProvider', err);
+    } catch (error) {
+      pushOperationFailure('refreshProvider', error);
     }
   }
 
@@ -524,8 +524,8 @@ export function useModelProviderState(
         });
       }
       await Promise.all([loadProviders(), loadModels()]);
-    } catch (err) {
-      pushOperationFailure('refreshAllProviders', err);
+    } catch (error) {
+      pushOperationFailure('refreshAllProviders', error);
     }
   }
 
@@ -552,10 +552,10 @@ export function useModelProviderState(
     try {
       const api = getMultiAIWebApi();
       return await api.pollOAuthLogin();
-    } catch (err) {
+    } catch (error) {
       // The dialog counts consecutive nulls and gives up after a few; keep the
       // cause in the log so a dead daemon is diagnosable.
-      console.warn('[multiai-web] pollOAuthLogin failed', err);
+      console.warn('[multiai-web] pollOAuthLogin failed', error);
       return null;
     }
   }

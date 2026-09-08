@@ -129,7 +129,7 @@ export function Sidebar({
               key={ws.id}
               ws={ws}
               selected={ws.id === workspaceId}
-              onClick={() => setWorkspaceId(ws.id)}
+              onClick={() =>{  setWorkspaceId(ws.id); }}
               onNew={() => void createSession(ws)}
             />
           ))}
@@ -152,7 +152,7 @@ export function Sidebar({
               s={s}
               activity={activities.get(s.id)}
               active={s.id === activeSessionId}
-              onClick={() => onSelectSession(s.id)}
+              onClick={() =>{  onSelectSession(s.id); }}
             />
           ))}
           {sessions.isLoading ? (

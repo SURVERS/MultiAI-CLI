@@ -67,7 +67,7 @@ describe('createDecorator (P0.3)', () => {
     const deps = _util.getServiceDependencies(Target as unknown as _util.DI_TARGET_OBJ);
     // Order of insertion follows decorator evaluation order, not parameter
     // order; tests should sort by index before asserting.
-    const sorted = [...deps].sort((a, b) => a.index - b.index);
+    const sorted = [...deps].toSorted((a, b) => a.index - b.index);
     expect(sorted).toEqual([
       { id: IFoo, index: 0 },
       { id: IBar, index: 1 },
@@ -101,13 +101,13 @@ describe('createDecorator (P0.3)', () => {
   it('applying with arguments.length !== 3 throws the parameter-decorator error', () => {
     const IFoo = createDecorator<{ a: 1 }>('deco-IFoo-arglen');
     const fn = IFoo as unknown as (...args: unknown[]) => void;
-    expect(() => fn({})).toThrowError(
+    expect(() =>{  fn({}); }).toThrowError(
       /can only be used to decorate a parameter/,
     );
-    expect(() => fn({}, 'k')).toThrowError(
+    expect(() =>{  fn({}, 'k'); }).toThrowError(
       /can only be used to decorate a parameter/,
     );
     // 3 args: still records metadata (smoke).
-    expect(() => fn(class Ok {}, '', 0)).not.toThrow();
+    expect(() =>{  fn(class Ok {}, '', 0); }).not.toThrow();
   });
 });

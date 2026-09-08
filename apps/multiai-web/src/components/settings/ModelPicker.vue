@@ -71,7 +71,7 @@ const filtered = computed<AppModel[]>(() => {
   if (activeTab.value !== 'all') return list;
   // In the "All" tab, starred models are pinned to the top while preserving
   // the original order within each group.
-  return list.sort((a, b) => {
+  return list.toSorted((a, b) => {
     const aStarred = isStarred(a.id) ? 1 : 0;
     const bStarred = isStarred(b.id) ? 1 : 0;
     return bStarred - aStarred;

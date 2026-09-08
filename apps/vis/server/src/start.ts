@@ -38,7 +38,10 @@ export async function startVisServer(
         url: `http://${hostForUrl(host)}:${info.port}/`,
         close: () =>
           new Promise<void>((done, fail) => {
-            server.close((err?: Error) => (err ? fail(err) : done()));
+            server.close((err?: Error) => {
+            if (err) fail(err);
+            else done();
+          });
           }),
       });
     });

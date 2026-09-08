@@ -136,7 +136,7 @@ function QuestionView({
           <div className="mb-1 text-[11px] text-neutral-300">{q.question}</div>
           <div className="flex flex-wrap gap-1.5">
             {(q.options ?? []).map((opt) => (
-              <ActionButton key={opt.label} onClick={() => onAnswer(q.question, opt.label)}>
+              <ActionButton key={opt.label} onClick={() =>{  onAnswer(q.question, opt.label); }}>
                 {opt.label}
               </ActionButton>
             ))}

@@ -40,7 +40,7 @@ interface RangeIndex {
   type: 'range';
   unique: boolean;
   sparse: boolean;
-  list: SkipList<number, string>;
+  list: SkipList<number>;
   byPk: Map<string, number[]>; // array fields index every element
 }
 
@@ -54,13 +54,13 @@ export class UniqueViolationError extends Error {
 }
 
 function getField(doc: unknown, path: string): unknown {
-  return path.split('.').reduce<unknown>((o, k) => (o === null || o === undefined ? undefined : (o as Record<string, unknown>)[k]), doc);
+  return path.split('.').reduce((o, k) => (o === null || o === undefined ? undefined : (o as Record<string, unknown>)[k]), doc);
 }
 
 function stableStringify(v: unknown): string {
   if (v === null || typeof v !== 'object') return JSON.stringify(v);
   if (Array.isArray(v)) return `[${v.map(stableStringify).join(',')}]`;
-  const keys = Object.keys(v as Record<string, unknown>).sort();
+  const keys = Object.keys(v as Record<string, unknown>).toSorted();
   return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify((v as Record<string, unknown>)[k])}`).join(',')}}`;
 }
 
@@ -90,7 +90,7 @@ export class IndexManager {
             type,
             unique,
             sparse,
-            list: new SkipList<number, string>({ compareKey: cmpNumber, compareVal: cmpString }),
+            list: new SkipList<number>({ compareKey: cmpNumber, compareVal: cmpString }),
             byPk: new Map(),
           }
         : { name, field, type, unique, sparse, map: new Map(), byPk: new Map() };
@@ -128,7 +128,7 @@ export class IndexManager {
         if (idx.type === 'range') {
           if (typeof v !== 'number' || !Number.isFinite(v)) continue;
           const hit = idx.list.range({ gte: v, lte: v, count: 1 });
-          if (hit.length && hit[0]!.val !== pk) throw new UniqueViolationError(idx.name, v);
+          if (hit.length > 0 && hit[0]!.val !== pk) throw new UniqueViolationError(idx.name, v);
         } else {
           const set = idx.map.get(scalarKey(v));
           if (set && (set.size > 1 || (set.size === 1 && !set.has(pk)))) {
@@ -308,7 +308,7 @@ export class IndexManager {
   rebuild(entries: Iterable<{ key: string | Buffer; value: unknown }>): void {
     for (const idx of this.indexes.values()) {
       if (idx.type === 'range') {
-        idx.list = new SkipList<number, string>({ compareKey: cmpNumber, compareVal: cmpString });
+        idx.list = new SkipList<number>({ compareKey: cmpNumber, compareVal: cmpString });
         idx.byPk.clear();
       } else {
         idx.map.clear();

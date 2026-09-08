@@ -78,7 +78,7 @@ export function parseAnthropicModelVersion(
     return {
       family: familyFirst[1] as AnthropicModelFamily,
       major: Number.parseInt(familyFirst[2]!, 10),
-      minor: familyFirst[3] !== undefined ? Number.parseInt(familyFirst[3]!, 10) : null,
+      minor: familyFirst[3] !== undefined ? Number.parseInt(familyFirst[3], 10) : null,
     };
   }
 

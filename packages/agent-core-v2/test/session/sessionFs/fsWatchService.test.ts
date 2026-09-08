@@ -114,7 +114,7 @@ function makeSession(gitignore?: string): Harness {
   const svc = session.accessor.get(ISessionFsWatchService);
   const events: FsChangeEvent[] = [];
   svc.onDidChangeFiles((e) => events.push(e));
-  disposers.push(() => host.dispose());
+  disposers.push(() =>{  host.dispose(); });
   return { svc, watch, events };
 }
 
@@ -191,8 +191,8 @@ describe('SessionFsWatchService', () => {
 
   it('rejects paths that escape the workspace', () => {
     const { svc } = makeSession();
-    expect(() => svc.setWatchedPaths(['../x'])).toThrowError(/escapes workspace|rejected/);
-    expect(() => svc.setWatchedPaths(['/abs'])).toThrowError(/rejected/);
+    expect(() =>{  svc.setWatchedPaths(['../x']); }).toThrowError(/escapes workspace|rejected/);
+    expect(() =>{  svc.setWatchedPaths(['/abs']); }).toThrowError(/rejected/);
   });
 
   it('disposes the os handle when the subscription set becomes empty', () => {

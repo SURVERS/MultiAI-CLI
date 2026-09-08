@@ -235,7 +235,7 @@ export class SkipList<K = number, V = string> {
 
     const hasLower = opts.gte !== undefined || opts.gt !== undefined;
     let x = hasLower
-      ? this.lowerBound(opts.gte !== undefined ? opts.gte : (opts.gt as K), { strict: opts.gt !== undefined })
+      ? this.lowerBound(opts.gte ?? (opts.gt as K), { strict: opts.gt !== undefined })
       : this.header.level[0]!.forward;
     while (x) {
       if (opts.lte !== undefined && this.cmpK(x.key, opts.lte) > 0) break;
@@ -283,7 +283,7 @@ export class SkipList<K = number, V = string> {
 
     const hasLower = opts.gte !== undefined || opts.gt !== undefined;
     let x = hasLower
-      ? this.lowerBound(opts.gte !== undefined ? opts.gte : (opts.gt as K), { strict: opts.gt !== undefined })
+      ? this.lowerBound(opts.gte ?? (opts.gt as K), { strict: opts.gt !== undefined })
       : this.header.level[0]!.forward;
     while (x) {
       if (opts.lte !== undefined && this.cmpK(x.key, opts.lte) > 0) break;

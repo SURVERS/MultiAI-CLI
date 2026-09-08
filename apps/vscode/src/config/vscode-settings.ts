@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import type { ExtensionConfig } from "../../shared/types";
 
 declare const __EXTENSION_VERSION__: string;
-const EXTENSION_VERSION = typeof __EXTENSION_VERSION__ !== "undefined" ? __EXTENSION_VERSION__ : "0.0.0";
+const EXTENSION_VERSION = __EXTENSION_VERSION__ ?? "0.0.0";
 
 function getConfig() {
   return vscode.workspace.getConfiguration("multiai");
@@ -10,27 +10,27 @@ function getConfig() {
 
 export const VSCodeSettings = {
   get yoloMode(): boolean {
-    return getConfig().get<boolean>("yoloMode", false);
+    return getConfig().get("yoloMode", false);
   },
 
   get autosave(): boolean {
-    return getConfig().get<boolean>("autosave", true);
+    return getConfig().get("autosave", true);
   },
 
   get enableNewConversationShortcut(): boolean {
-    return getConfig().get<boolean>("enableNewConversationShortcut", false);
+    return getConfig().get("enableNewConversationShortcut", false);
   },
 
   get useCtrlEnterToSend(): boolean {
-    return getConfig().get<boolean>("useCtrlEnterToSend", false);
+    return getConfig().get("useCtrlEnterToSend", false);
   },
 
   get showThinkingContent(): boolean {
-    return getConfig().get<boolean>("showThinkingContent", false);
+    return getConfig().get("showThinkingContent", false);
   },
 
   get showThinkingExpanded(): boolean {
-    return getConfig().get<boolean>("showThinkingExpanded", false);
+    return getConfig().get("showThinkingExpanded", false);
   },
 
   get editorContext(): "never" | "onConversationStart" | "onFileChange" {

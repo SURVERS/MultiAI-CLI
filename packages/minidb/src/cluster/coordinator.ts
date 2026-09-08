@@ -36,7 +36,7 @@ export class Coordinator<V = unknown> {
       if (arr) arr.push(item);
       else byShard.set(id, [item]);
     }
-    return [...byShard.entries()].sort((a, b) => a[0] - b[0]);
+    return [...byShard.entries()].toSorted((a, b) => a[0] - b[0]);
   }
 
   private async runGroups<T>(
@@ -49,9 +49,9 @@ export class Coordinator<V = unknown> {
     for (const [id, items] of groups) {
       try {
         await run(id, items);
-      } catch (e) {
+      } catch (error) {
         // best-effort: earlier groups may be committed already; report, don't hide.
-        errors.push(e);
+        errors.push(error);
       }
     }
     if (errors.length > 0) {
@@ -83,8 +83,8 @@ export class Coordinator<V = unknown> {
           if (existing.length > 0) await db.batch(existing.map((key) => ({ op: 'del' as const, key })));
           return existing.length;
         });
-      } catch (e) {
-        errors.push(e);
+      } catch (error) {
+        errors.push(error);
       }
     }
     if (errors.length > 0) {

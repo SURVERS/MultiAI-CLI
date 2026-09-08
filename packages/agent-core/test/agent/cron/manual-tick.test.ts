@@ -149,7 +149,7 @@ describe('CronManager — P1.8 manual tick + SIGUSR1', () => {
         process.emit('SIGUSR1', 'SIGUSR1');
         expect(writeSpy).toHaveBeenCalled();
         const calls = writeSpy.mock.calls.map((c) => String(c[0]));
-        expect(calls.some((s) => /cron\/manager.*SIGUSR1/.test(s))).toBe(true);
+        expect(calls.some((s) => /cron[/]manager.*SIGUSR1/.test(s))).toBe(true);
         expect(calls.some((s) => s.includes('debug-boom'))).toBe(true);
       } finally {
         writeSpy.mockRestore();
@@ -174,7 +174,7 @@ describe('CronManager — P1.8 manual tick + SIGUSR1', () => {
         process.emit('SIGUSR1', 'SIGUSR1');
         // No cron/manager line was emitted because debug is off.
         const calls = writeSpy.mock.calls.map((c) => String(c[0]));
-        expect(calls.some((s) => /cron\/manager/.test(s))).toBe(false);
+        expect(calls.some((s) => s.includes('cron/manager'))).toBe(false);
       } finally {
         writeSpy.mockRestore();
         await manager.stop();

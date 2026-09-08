@@ -70,7 +70,7 @@ export class SessionExternalHooksService
         await next();
       }),
     );
-    this._register(subagents.onDidStopAgentTask((ctx) => this.notifySubagentStop(ctx)));
+    this._register(subagents.onDidStopAgentTask((ctx) =>{  this.notifySubagentStop(ctx); }));
   }
 
   private async triggerSessionStart(source: SessionStartHookSource): Promise<void> {

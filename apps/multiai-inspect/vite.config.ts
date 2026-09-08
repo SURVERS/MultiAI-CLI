@@ -9,7 +9,7 @@ const webPort = Number(process.env['INSPECT_PORT']) || 5176;
 // arbitrary server URL typed into the connect screen (loopback cross-origin is
 // allowed by kap-server), but the default connection is same-origin through
 // this proxy so no CORS / Origin handling is involved.
-const serverTarget = process.env['MULTIAI_SERVER_URL'] || 'http://127.0.0.1:58627';
+const serverTarget = process.env['MULTIAI_SERVER_URL'] ?? 'http://127.0.0.1:58627';
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), serverDiscoveryPlugin({ proxyTarget: serverTarget })],

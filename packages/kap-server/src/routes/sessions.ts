@@ -433,9 +433,9 @@ export function registerSessionsRoutes(app: SessionRouteHost, core: Scope): void
       if (archivedOnly) {
         visible =
           raw.busy === undefined
-            ? window.filter((entry) => entry.summary.archived === true)
+            ? window.filter((entry) =>  entry.summary.archived)
             : window.flatMap((entry) => {
-                if (entry.summary.archived !== true) return [];
+                if (!entry.summary.archived) return [];
                 const facts = resolveSessionFacts(core, entry.summary.id);
                 return facts.busy === raw.busy ? [{ ...entry, facts }] : [];
               });

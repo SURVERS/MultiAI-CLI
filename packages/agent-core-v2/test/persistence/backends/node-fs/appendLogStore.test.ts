@@ -58,7 +58,7 @@ describe('AppendLogStore', () => {
     record = ix.get(IAppendLogStore);
   });
 
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
   async function collect<R>(scope: string, key: string): Promise<readonly R[]> {
     const out: R[] = [];
@@ -73,9 +73,9 @@ describe('AppendLogStore', () => {
   });
 
   it('append + read round-trips records in order', async () => {
-    record.append<Rec>(SCOPE, KEY, { n: 1 });
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
-    record.append<Rec>(SCOPE, KEY, { n: 3 });
+    record.append(SCOPE, KEY, { n: 1 });
+    record.append(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 3 });
     expect(await collect<Rec>(SCOPE, KEY)).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
   });
 
@@ -87,7 +87,7 @@ describe('AppendLogStore', () => {
       return original(...args);
     };
 
-    for (let n = 0; n < 10; n++) record.append<Rec>(SCOPE, KEY, { n });
+    for (let n = 0; n < 10; n++) record.append(SCOPE, KEY, { n });
     await record.flush();
 
     expect(await collect<Rec>(SCOPE, KEY)).toHaveLength(10);
@@ -230,8 +230,8 @@ describe('AppendLogStore', () => {
   });
 
   it('rewrite atomically replaces the whole log', async () => {
-    record.append<Rec>(SCOPE, KEY, { n: 1 });
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 1 });
+    record.append(SCOPE, KEY, { n: 2 });
     await record.flush();
 
     await record.rewrite<Rec>(SCOPE, KEY, [{ n: 9 }, { n: 8 }]);
@@ -254,7 +254,7 @@ describe('AppendLogStore', () => {
       return originalWrite(...args);
     };
     const replacement = [{ n: 9 }];
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 2 });
 
     const rewrite = record.rewrite<Rec>(SCOPE, KEY, replacement);
     await writeStarted;
@@ -286,7 +286,7 @@ describe('AppendLogStore', () => {
       return originalAppend(...args);
     };
     const replacement = [{ n: 9 }];
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 2 });
     await appendStarted;
 
     const rewrite = record.rewrite<Rec>(SCOPE, KEY, replacement);
@@ -321,7 +321,7 @@ describe('AppendLogStore', () => {
       }
       return originalAppend(...args);
     };
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 2 });
     await appendStarted;
 
     const rewrite = record.rewrite<Rec>(SCOPE, KEY, [{ n: 9 }]);
@@ -354,7 +354,7 @@ describe('AppendLogStore', () => {
     storage.write = async () => {
       throw failure;
     };
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 2 });
     await appendStarted;
 
     const rewriteRejected = expect(
@@ -385,7 +385,7 @@ describe('AppendLogStore', () => {
       await appendGate;
       return originalAppend(...args);
     };
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 2 });
     await appendStarted;
 
     const invalid = expect(
@@ -426,7 +426,7 @@ describe('AppendLogStore', () => {
       if (writeAttempts === 1) throw failure;
       return originalWrite(...args);
     };
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 2 });
     await appendStarted;
 
     const failedRewrite = expect(
@@ -501,10 +501,10 @@ describe('AppendLogStore', () => {
       return originalWrite(...args);
     };
 
-    record.append<Rec>(SCOPE, KEY, { n: 1 });
+    record.append(SCOPE, KEY, { n: 1 });
     await record.flush();
     const rewrite = record.rewrite<Rec>(SCOPE, KEY, [{ n: 9 }]);
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 2 });
     releaseWrite();
     await rewrite;
     await record.flush();
@@ -523,7 +523,7 @@ describe('AppendLogStore', () => {
       return originalWrite(...args);
     };
 
-    record.append<Rec>(SCOPE, KEY, { n: 1 });
+    record.append(SCOPE, KEY, { n: 1 });
     await record.flush();
     const rewrite = record.rewrite<Rec>(SCOPE, KEY, [{ n: 9 }]);
     const flushed = record.flush();
@@ -559,7 +559,7 @@ describe('AppendLogStore', () => {
     };
 
     const rewrite = record.rewrite<Rec>(SCOPE, KEY, [{ n: 9 }]);
-    record.append<Rec>(SCOPE, KEY, { n: 2 });
+    record.append(SCOPE, KEY, { n: 2 });
     const flushed = record.flush();
     let flushSettled = false;
     void flushed.then(() => {
@@ -579,8 +579,8 @@ describe('AppendLogStore', () => {
   });
 
   it('logs addressed by different scope/key are independent', async () => {
-    record.append<Rec>('a', 'l', { n: 1 });
-    record.append<Rec>('b', 'l', { n: 2 });
+    record.append('a', 'l', { n: 1 });
+    record.append('b', 'l', { n: 2 });
     expect(await collect<Rec>('a', 'l')).toEqual([{ n: 1 }]);
     expect(await collect<Rec>('b', 'l')).toEqual([{ n: 2 }]);
   });

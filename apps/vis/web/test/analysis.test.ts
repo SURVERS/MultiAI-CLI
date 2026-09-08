@@ -35,35 +35,35 @@ describe('analyzeWire', () => {
 
     // Turn grouping
     expect(a.turns).toHaveLength(2);
-    expect(a.turns[0]!.promptText).toBe('hello');
-    expect(a.turns[0]!.trigger).toBe('prompt');
-    expect(a.turns[0]!.steps).toHaveLength(2);
-    expect(a.turns[1]!.steps).toHaveLength(1);
+    expect(a.turns[0].promptText).toBe('hello');
+    expect(a.turns[0].trigger).toBe('prompt');
+    expect(a.turns[0].steps).toHaveLength(2);
+    expect(a.turns[1].steps).toHaveLength(1);
 
     // Tool duration + truncation + size
-    const tc = a.turns[0]!.steps[0]!.toolCalls[0]!;
+    const tc = a.turns[0].steps[0].toolCalls[0];
     expect(tc.durationMs).toBe(300);
     expect(tc.truncated).toBe(true);
     expect(tc.outputBytes).toBe(50);
     expect(tc.isError).toBe(false);
 
     // Context-window fill snapshots (agent-core formula)
-    expect(a.turns[0]!.steps[0]!.contextTokens).toBe(210); // 100+20+80+10
-    expect(a.turns[0]!.steps[1]!.contextTokens).toBe(400); // 200+50+150+0
+    expect(a.turns[0].steps[0].contextTokens).toBe(210); // 100+20+80+10
+    expect(a.turns[0].steps[1].contextTokens).toBe(400); // 200+50+150+0
     expect(a.summary.peakContextTokens).toBe(400);
     expect(a.contextSeries.map((p) => p.contextTokens)).toEqual([210, 400, 300]);
 
     // Per-turn token cost = sum of step usages
-    expect(a.turns[0]!.tokens).toEqual({ inputOther: 300, output: 70, inputCacheRead: 230, inputCacheCreation: 10 });
+    expect(a.turns[0].tokens).toEqual({ inputOther: 300, output: 70, inputCacheRead: 230, inputCacheCreation: 10 });
 
     // Idle / wait
-    expect(a.turns[1]!.waitBeforeMs).toBe(8000);
+    expect(a.turns[1].waitBeforeMs).toBe(8000);
     expect(a.idleGaps).toHaveLength(1);
     expect(a.idleGaps[0]).toMatchObject({ gapMs: 8000, kind: 'between_turns', afterLineNo: 7, beforeLineNo: 8 });
 
     // Errors
-    expect(a.turns[1]!.steps[0]!.isError).toBe(true); // finishReason 'filtered'
-    expect(a.turns[1]!.toolErrorCount).toBe(1);
+    expect(a.turns[1].steps[0].isError).toBe(true); // finishReason 'filtered'
+    expect(a.turns[1].toolErrorCount).toBe(1);
 
     // Summary
     expect(a.summary.turnCount).toBe(2);
@@ -108,12 +108,12 @@ describe('analyzeWire', () => {
       e({ type: 'config.update', modelAlias: 'sonnet' }, 10),
     ]);
     expect(a.configChanges).toHaveLength(2);
-    expect(a.configChanges[0]!.changed).toEqual([
+    expect(a.configChanges[0].changed).toEqual([
       { field: 'model', value: 'opus' },
       { field: 'thinking', value: 'high' },
       { field: 'systemPrompt', value: '120 chars' },
     ]);
-    expect(a.configChanges[1]!.changed).toEqual([{ field: 'model', value: 'sonnet' }]);
+    expect(a.configChanges[1].changed).toEqual([{ field: 'model', value: 'sonnet' }]);
   });
 
   it('does not reset context-window fill on a zero-usage step.end', () => {
@@ -126,8 +126,8 @@ describe('analyzeWire', () => {
       // content-filtered: usage all zero — must keep the prior 200, not drop to 0.
       loop({ type: 'step.end', uuid: 's2', turnId: 'T', step: 1, finishReason: 'filtered', usage: { inputOther: 0, output: 0, inputCacheRead: 0, inputCacheCreation: 0 } }, 4),
     ]);
-    expect(a.turns[0]!.steps[0]!.contextTokens).toBe(200);
-    expect(a.turns[0]!.steps[1]!.contextTokens).toBe(200); // carried, not 0
+    expect(a.turns[0].steps[0].contextTokens).toBe(200);
+    expect(a.turns[0].steps[1].contextTokens).toBe(200); // carried, not 0
     expect(a.contextSeries.map((p) => p.contextTokens)).toEqual([200, 200]);
     expect(a.summary.peakContextTokens).toBe(200);
   });

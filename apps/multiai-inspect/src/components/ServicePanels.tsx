@@ -254,7 +254,7 @@ export function ScopePanelsScrollspy({
             className="w-full rounded border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-[11px] text-neutral-100 outline-none focus:border-sky-600"
             placeholder="Filter services…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) =>{  setQuery(e.target.value); }}
           />
         </div>
         {filtered.length === 0 ? (
@@ -268,7 +268,7 @@ export function ScopePanelsScrollspy({
               if (el === null) navRefs.current.delete(name);
               else navRefs.current.set(name, el);
             }}
-            onClick={() => scrollTo(name)}
+            onClick={() =>{  scrollTo(name); }}
             className={`block w-full truncate px-3 py-1 text-left font-mono text-[11px] transition-colors ${
               active === name
                 ? 'bg-neutral-800 text-sky-400'
@@ -315,7 +315,7 @@ export function ScopePanelsScrollspy({
       <HistoryPane
         records={records}
         expandedId={expandedId}
-        onToggle={(id) => setExpandedId((prev) => (prev === id ? null : id))}
+        onToggle={(id) =>{  setExpandedId((prev) => (prev === id ? null : id)); }}
         onClear={() => {
           setRecords([]);
           setExpandedId(null);
@@ -411,7 +411,7 @@ function HistoryPane({
             <div key={r.id} className="mb-2 rounded border border-neutral-800 bg-neutral-900/60">
               <div
                 className="flex cursor-pointer items-center gap-2 px-2 py-1.5 select-none"
-                onClick={() => onToggle(r.id)}
+                onClick={() =>{  onToggle(r.id); }}
               >
                 <span className={`shrink-0 text-[9px] ${r.ok ? 'text-emerald-400' : 'text-red-400'}`}>
                   ●
@@ -464,7 +464,7 @@ function CopyableName({ name, className }: { name: string; className?: string })
         e.stopPropagation();
         void navigator.clipboard.writeText(name).then(() => {
           setCopied(true);
-          setTimeout(() => setCopied(false), 1200);
+          setTimeout(() =>{  setCopied(false); }, 1200);
         });
       }}
     >
@@ -631,7 +631,7 @@ function DynamicServiceCard({
         className={`flex items-center justify-between px-3 py-2 ${
           collapsible ? 'cursor-pointer select-none' : ''
         }`}
-        onClick={collapsible ? () => setOpen((v) => !v) : undefined}
+        onClick={collapsible ? () =>{  setOpen((v) => !v); } : undefined}
       >
         <div>
           <CopyableName
@@ -668,11 +668,11 @@ function DynamicServiceCard({
                   <MethodArgInputs
                     fields={fields}
                     values={inputs[m.name] ?? {}}
-                    onChange={(key, value) =>
+                    onChange={(key, value) =>{ 
                       setInputs((prev) => ({
                         ...prev,
                         [m.name]: { ...prev[m.name], [key]: value },
-                      }))
+                      })); }
                     }
                   />
                 ) : null}
@@ -724,7 +724,7 @@ function MethodArgInputs({
                     <ArgInput
                       placeholder="JSON or plain string"
                       value={values[fieldKey(i, key)] ?? ''}
-                      onChange={(v) => onChange(fieldKey(i, key), v)}
+                      onChange={(v) =>{  onChange(fieldKey(i, key), v); }}
                     />
                   </div>
                 ))}
@@ -741,7 +741,7 @@ function MethodArgInputs({
                   f.defaultValue !== undefined ? `default: ${f.defaultValue}` : 'JSON or plain string'
                 }
                 value={values[fieldKey(i)] ?? ''}
-                onChange={(v) => onChange(fieldKey(i), v)}
+                onChange={(v) =>{  onChange(fieldKey(i), v); }}
               />
             </div>
           );
@@ -752,7 +752,7 @@ function MethodArgInputs({
             <ArgInput
               placeholder="arg (JSON)"
               value={values[fieldKey(i)] ?? ''}
-              onChange={(v) => onChange(fieldKey(i), v)}
+              onChange={(v) =>{  onChange(fieldKey(i), v); }}
             />
           </div>
         );
@@ -786,7 +786,7 @@ function ArgInput({
       className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-[11px] text-neutral-100 outline-none focus:border-sky-600"
       placeholder={placeholder}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) =>{  onChange(e.target.value); }}
     />
   );
 }

@@ -266,7 +266,7 @@ describe('useWorkspaceState — abortCurrentPrompt', () => {
     apiMock.abortPrompt.mockResolvedValue({ aborted: true });
     const state = createState();
     state.promptIdBySession = {};
-    state.sessions = [{ ...state.sessions[0]!, currentPromptId: 'msg_live' }];
+    state.sessions = [{ ...state.sessions[0], currentPromptId: 'msg_live' }];
     const workspace = useWorkspaceState(state, createDeps());
 
     await workspace.abortCurrentPrompt();
@@ -279,7 +279,7 @@ describe('useWorkspaceState — abortCurrentPrompt', () => {
     apiMock.abortSession.mockResolvedValue({ aborted: true });
     const state = createState();
     state.promptIdBySession = {};
-    state.sessions = [{ ...state.sessions[0]!, currentPromptId: 'pr_synthetic' }];
+    state.sessions = [{ ...state.sessions[0], currentPromptId: 'pr_synthetic' }];
     const workspace = useWorkspaceState(state, createDeps());
 
     await workspace.abortCurrentPrompt();
@@ -878,7 +878,7 @@ describe('useWorkspaceState — startSessionAndActivateSkill', () => {
     await ws2.startSessionAndActivateSkill('wd_1', 'pre-changelog');
 
     expect(persistSessionProfile2).toHaveBeenCalledOnce();
-    const patch = persistSessionProfile2.mock.calls[0]![0] as Record<string, unknown>;
+    const patch = persistSessionProfile2.mock.calls[0][0] as Record<string, unknown>;
     expect(patch).toMatchObject({ model: 'kimi-code', planMode: true, swarmMode: false });
     expect('thinking' in patch).toBe(false);
     expect(activateSkill2).toHaveBeenCalledWith('pre-changelog', undefined, 'sess_new');
@@ -1630,7 +1630,7 @@ describe('useWorkspaceState — snapshot prompt recovery', () => {
 
     ws.handleSessionSnapshot('sess_1', { inFlightTurn: null, busy: true });
 
-    await vi.waitFor(() => expect(apiMock.submitPrompt).toHaveBeenCalledOnce());
+    await vi.waitFor(() =>{  expect(apiMock.submitPrompt).toHaveBeenCalledOnce(); });
     expect(state.queuedBySession.sess_1).toEqual([
       { text: 'second queued', attachments: undefined },
     ]);
@@ -1665,7 +1665,7 @@ describe('useWorkspaceState — snapshot prompt recovery', () => {
 
     ws.finishPromptLocal('sess_1', { turnWasActive: true });
 
-    await vi.waitFor(() => expect(apiMock.submitPrompt).toHaveBeenCalledOnce());
+    await vi.waitFor(() =>{  expect(apiMock.submitPrompt).toHaveBeenCalledOnce(); });
     expect(state.queuedBySession.sess_1).toEqual([
       { text: 'second queued', attachments: undefined },
     ]);
@@ -1787,7 +1787,7 @@ describe('useWorkspaceState — snapshot prompt recovery', () => {
 
     ws.handleSessionSnapshot('sess_a', { inFlightTurn: null, busy: true });
 
-    await vi.waitFor(() => expect(apiMock.submitPrompt).toHaveBeenCalled());
+    await vi.waitFor(() =>{  expect(apiMock.submitPrompt).toHaveBeenCalled(); });
     expect(resolveThinkingForPrompt).toHaveBeenCalledWith('sess_a', 'provider/model-a');
     expect(apiMock.submitPrompt).toHaveBeenCalledWith(
       'sess_a',
@@ -1813,7 +1813,7 @@ describe('useWorkspaceState — snapshot prompt recovery', () => {
 
     ws.handleSessionSnapshot('sess_a', { inFlightTurn: null, busy: true });
 
-    await vi.waitFor(() => expect(apiMock.submitPrompt).toHaveBeenCalled());
+    await vi.waitFor(() =>{  expect(apiMock.submitPrompt).toHaveBeenCalled(); });
     expect(apiMock.submitPrompt).toHaveBeenCalledWith(
       'sess_a',
       expect.objectContaining({ model: 'provider/gone-model', thinking: 'max' }),
@@ -1864,7 +1864,7 @@ describe('useWorkspaceState — snapshot prompt recovery', () => {
     ws.afterLocalTurnStartsSettle('sess_1', retrySnapshot);
     expect(retrySnapshot).not.toHaveBeenCalled();
 
-    await vi.waitFor(() => expect(apiMock.submitPrompt).toHaveBeenCalled());
+    await vi.waitFor(() =>{  expect(apiMock.submitPrompt).toHaveBeenCalled(); });
     resolveSubmit({ promptId: 'prompt_new' });
     await pendingSubmit;
     expect(ws.localTurnStartState('sess_1').pending).toBe(false);
@@ -2011,7 +2011,7 @@ describe('useWorkspaceState — snapshot prompt recovery', () => {
 
     // Facade forget path (e.g. archive) while the submit is pending. The
     // daemon definitively rejects afterwards — even then, no resurrection.
-    await vi.waitFor(() => expect(apiMock.submitPrompt).toHaveBeenCalled());
+    await vi.waitFor(() =>{  expect(apiMock.submitPrompt).toHaveBeenCalled(); });
     state.sessions = [];
     delete state.queuedBySession.sess_1;
     rejectSubmit(new DaemonApiError({ code: 50000, msg: 'network down', requestId: 'r' }));

@@ -99,8 +99,8 @@ export function registerMessagesRoutes(app: MessageRouteHost, core: Scope): void
         const { session_id } = req.params;
         const page = await core.accessor.get(IMessageLegacyService).list(session_id, req.query);
         reply.send(okEnvelope(page, req.id));
-      } catch (err) {
-        sendMappedError(reply, req, err);
+      } catch (error) {
+        sendMappedError(reply, req, error);
       }
     },
   );
@@ -130,8 +130,8 @@ export function registerMessagesRoutes(app: MessageRouteHost, core: Scope): void
         const { session_id, message_id } = req.params;
         const message = await core.accessor.get(IMessageLegacyService).get(session_id, message_id);
         reply.send(okEnvelope(message, req.id));
-      } catch (err) {
-        sendMappedError(reply, req, err);
+      } catch (error) {
+        sendMappedError(reply, req, error);
       }
     },
   );

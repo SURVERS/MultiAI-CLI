@@ -186,7 +186,7 @@ export class AgentExternalHooksService extends Disposable implements IAgentExter
 
   private registerTurnHooks(): void {
     this._register(
-      this.eventBus.subscribe('turn.ended', (e) => this.notifyTurnEnded(e)),
+      this.eventBus.subscribe('turn.ended', (e) =>{  this.notifyTurnEnded(e); }),
     );
   }
 
@@ -228,7 +228,7 @@ export class AgentExternalHooksService extends Disposable implements IAgentExter
       fullCompaction.hooks.onWillCompact.register('externalHooks', async (ctx, next) => {
         await this.runPreCompact(ctx);
         void ctx.promise
-          .then((result) => this.notifyPostCompact(ctx, result))
+          .then((result) =>{  this.notifyPostCompact(ctx, result); })
           .catch(() => undefined);
         await next();
       }),

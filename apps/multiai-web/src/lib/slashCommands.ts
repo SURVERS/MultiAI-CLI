@@ -118,7 +118,7 @@ export function filterCommands(
       return { item, index, score };
     })
     .filter(({ score }) => score > 0)
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       if (a.score !== b.score) return b.score - a.score;
       return a.index - b.index;
     })

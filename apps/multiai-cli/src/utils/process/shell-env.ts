@@ -9,10 +9,10 @@ function detectMultiplexer(): string | undefined {
 
 export function detectShellEnvironment(): ShellEnvironment {
   return {
-    term: process.env['TERM'] || undefined,
-    termProgram: process.env['TERM_PROGRAM'] || undefined,
-    termProgramVersion: process.env['TERM_PROGRAM_VERSION'] || undefined,
+    term: process.env['TERM'] ?? undefined,
+    termProgram: process.env['TERM_PROGRAM'] ?? undefined,
+    termProgramVersion: process.env['TERM_PROGRAM_VERSION'] ?? undefined,
     multiplexer: detectMultiplexer(),
-    shell: process.env['SHELL'] || undefined,
+    shell: process.env['SHELL'] ?? undefined,
   };
 }

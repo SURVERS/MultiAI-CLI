@@ -39,7 +39,7 @@ function stringifyPayload(payload: Exclude<LogPayload, undefined>): string {
   if (typeof payload === 'string') return payload;
   try {
     const json = JSON.stringify(payload);
-    return json === undefined ? String(payload) : json;
+    return json ?? String(payload);
   } catch {
     return String(payload);
   }

@@ -16,6 +16,7 @@ const MODELS_DEV_URL = 'https://models.dev/api.json';
 export type CustomWire = 'openai' | 'anthropic';
 
 export interface CustomProviderMeta {
+	id?: string;
 	displayName?: string;
 	maxContextSize?: number;
 	maxOutputSize?: number;
@@ -123,8 +124,8 @@ export async function fetchProviderOwnMeta(
 		for (const row of rows) {
 			if (!row || typeof row !== 'object') continue;
 			const ext = row as Record<string, unknown>;
-			const id = (stringField(ext['id']) ?? stringField(ext['name']) ?? '').trim();
-			if (!id || lookup.has(id.toLowerCase())) continue;
+const id = (stringField(ext['id']) ?? stringField(ext['name']) ?? '').trim();
+				if (!id || lookup.has(id.toLowerCase())) continue;
 			const contextWindow =
 				toFiniteInt(ext['context_length']) ??
 				toFiniteInt(ext['context_window']) ??
@@ -153,8 +154,9 @@ export async function fetchProviderOwnMeta(
 			const arch = ext['architecture'] as Record<string, unknown> | undefined;
 			const inputModalities =
 				toStringArray(ext['input_modalities']) ?? (arch ? toStringArray(arch['input_modalities']) : undefined);
-			lookup.set(id.toLowerCase(), {
-				displayName:
+lookup.set(id.toLowerCase(), {
+					id,
+					displayName:
 					typeof ext['name'] === 'string' && ext['name'] && ext['name'] !== id ? ext['name'] : undefined,
 				maxContextSize: contextWindow,
 				maxOutputSize: maxOutput,
@@ -221,7 +223,7 @@ export async function planCustomProvider(options: {
 		: await fetchModelsDevLookup();
 
 	const ids = new Set<string>();
-	for (const meta of ownMeta.keys()) ids.add(meta);
+	for (const [key, meta] of ownMeta) ids.add(meta.id ?? key);
 	for (const raw of options.modelIds) {
 		const id = raw.trim();
 		if (id) ids.add(id);
@@ -234,7 +236,7 @@ export async function planCustomProvider(options: {
 
 	const aliases: Record<string, CustomAliasFields> = {};
 	let enrichedCount = 0;
-	for (const id of Array.from(ids).sort((a, b) => a.localeCompare(b))) {
+	for (const id of Array.from(ids).toSorted((a, b) => a.localeCompare(b))) {
 		const fields = mergeMeta(ownMeta.get(id.toLowerCase()), devMeta.get(id.toLowerCase()));
 		if (Object.keys(fields).length > 0) enrichedCount += 1;
 		aliases[`${options.providerId}/${id}`] = {

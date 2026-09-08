@@ -154,8 +154,8 @@ export class WAL {
         }
         if (this.policy === 'always') await this.sync();
         for (const b of batch) b.resolve();
-      } catch (err) {
-        for (const b of batch) b.reject(err);
+      } catch (error) {
+        for (const b of batch) b.reject(error);
       } finally {
         this.flushing = false;
         this.inflight = null;

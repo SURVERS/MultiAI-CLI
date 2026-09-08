@@ -16,7 +16,7 @@ import os from 'node:os';
 const argv = process.argv.slice(2);
 const arg = (name: string, def: string) => {
   const i = argv.indexOf(`--${name}`);
-  return i === -1 ? def : argv[i + 1]!;
+  return i === -1 ? def : argv[i + 1];
 };
 const DATA = path.resolve(arg('data', path.join(os.homedir(), '.multiai')));
 const FULL = argv.includes('--full'); // also index full tool results (matches import-multiai --full)
@@ -117,14 +117,14 @@ function med<T>(fn: () => T, runs = 7): { value: T; ms: number } {
     times.push(performance.now() - t0);
   }
   times.sort((a, b) => a - b);
-  return { value, ms: times[(runs / 2) | 0]! };
+  return { value, ms: times[(runs / 2) | 0] };
 }
 
 async function main() {
   console.log(`data: ${DATA}`);
 
   const wsRaw = JSON.parse(readFileSync(path.join(DATA, 'workspaces.json'), 'utf8'));
-  const workspaces = wsRaw.workspaces || wsRaw;
+  const workspaces = wsRaw.workspaces ?? wsRaw;
   const lines = readFileSync(path.join(DATA, 'session_index.jsonl'), 'utf8').trim().split('\n');
 
   const t0 = performance.now();
@@ -152,11 +152,11 @@ async function main() {
     const text = (state.title ? state.title + '\n' : '') + body;
     totalTextBytes += Buffer.byteLength(text, 'utf8');
     const wsId = path.basename(path.dirname(sessionDir));
-    const ws = workspaces[wsId] || {};
+    const ws = workspaces[wsId] ?? {};
     docs.push({
       sessionId,
-      title: state.title || '',
-      workspaceName: ws.name || '',
+      title: state.title ?? '',
+      workspaceName: ws.name ?? '',
       text,
       lower: text.toLowerCase(),
       updated: state.updatedAt ? Date.parse(state.updatedAt) : 0,
@@ -212,7 +212,7 @@ async function main() {
   console.log(`\ndone.`);
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

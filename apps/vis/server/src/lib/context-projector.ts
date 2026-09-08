@@ -14,7 +14,6 @@ import type {
   PermissionMode,
   AgentConfigUpdateData,
   TokenUsage,
-  ToolCall,
   WireEntry,
 } from './agent-record-types';
 
@@ -159,7 +158,7 @@ export function projectContext(
         } else if (ev.type === 'content.part') {
           const projected = openSteps.get(ev.stepUuid);
           if (projected !== undefined) {
-            (projected.message.content as ContentPart[]).push(ev.part);
+            (projected.message.content).push(ev.part);
           }
         } else if (ev.type === 'tool.call') {
           const projected = openSteps.get(ev.stepUuid);
@@ -170,7 +169,7 @@ export function projectContext(
                 : ev.args === undefined
                   ? null
                   : JSON.stringify(ev.args);
-            (projected.message.toolCalls as ToolCall[]).push({
+            (projected.message.toolCalls).push({
               type: 'function',
               id: ev.toolCallId,
               name: ev.name,
@@ -391,7 +390,7 @@ export function projectContext(
         // contextTokens; byScope/byModel are for the cumulative breakdown only.
         const scope = (rec.usageScope ?? 'session') as 'session' | 'turn';
         addUsage(usage.byScope[scope], rec.usage);
-        if (!usage.byModel[rec.model]) usage.byModel[rec.model] = { ...ZERO };
+        usage.byModel[rec.model] ??= { ...ZERO };
         addUsage(usage.byModel[rec.model]!, rec.usage);
         break;
       }

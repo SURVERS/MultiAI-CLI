@@ -40,15 +40,15 @@ function QueueItem({ id, content, isStreaming, onEdit }: { id: string; content: 
             <IconBolt className="size-3" />
           </Button>
         )}
-        <Button variant="ghost" size="icon" className="size-5 border-0!" onClick={() => onEdit(id)}>
+        <Button variant="ghost" size="icon" className="size-5 border-0!" onClick={() =>{  onEdit(id); }}>
           <IconPencil className="size-3" />
         </Button>
         {!isFirst && (
-          <Button variant="ghost" size="icon" className="size-5 border-0!" onClick={() => moveQueueItemUp(id)}>
+          <Button variant="ghost" size="icon" className="size-5 border-0!" onClick={() =>{  moveQueueItemUp(id); }}>
             <IconArrowUp className="size-3" />
           </Button>
         )}
-        <Button variant="ghost" size="icon" className="size-5 border-0! text-muted-foreground hover:text-destructive" onClick={() => removeFromQueue(id)}>
+        <Button variant="ghost" size="icon" className="size-5 border-0! text-muted-foreground hover:text-destructive" onClick={() =>{  removeFromQueue(id); }}>
           <IconTrash className="size-3" />
         </Button>
       </div>
@@ -72,7 +72,7 @@ function EditingItem({ id, initialContent, onDone }: { id: string; initialConten
       <input
         autoFocus
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) =>{  setText(e.target.value); }}
         onKeyDown={(e) => {
           if (e.key === "Enter") handleSave();
           if (e.key === "Escape") onDone();
@@ -99,7 +99,7 @@ export function QueuedMessagesPanel() {
     <div className="max-h-48 overflow-y-auto bg-card shrink">
       {queue.map((item) =>
         editingId === item.id ? (
-          <EditingItem key={item.id} id={item.id} initialContent={Content.getText(item.content)} onDone={() => setEditingId(null)} />
+          <EditingItem key={item.id} id={item.id} initialContent={Content.getText(item.content)} onDone={() =>{  setEditingId(null); }} />
         ) : (
           <QueueItem key={item.id} id={item.id} content={item.content} isStreaming={isStreaming} onEdit={setEditingId} />
         ),

@@ -428,21 +428,21 @@ export function appService<T>(
   id: ServiceIdentifier<T>,
   value: T | SyncDescriptor<T>,
 ): TestAgentServiceOverride {
-  return appServices((reg) => defineServiceValue(reg, id, value));
+  return appServices((reg) =>{  defineServiceValue(reg, id, value); });
 }
 
 export function sessionService<T>(
   id: ServiceIdentifier<T>,
   value: T | SyncDescriptor<T>,
 ): TestAgentServiceOverride {
-  return sessionServices((reg) => defineServiceValue(reg, id, value));
+  return sessionServices((reg) =>{  defineServiceValue(reg, id, value); });
 }
 
 export function agentService<T>(
   id: ServiceIdentifier<T>,
   value: T | SyncDescriptor<T>,
 ): TestAgentServiceOverride {
-  return agentServices((reg) => defineServiceValue(reg, id, value));
+  return agentServices((reg) =>{  defineServiceValue(reg, id, value); });
 }
 
 function scopedServices(
@@ -831,20 +831,20 @@ function collectScopeSeed(
   };
 
   const baseReg: TestAgentServiceRegistration = {
-    define: (id, ctor) => register(id, new SyncDescriptor(ctor), false),
-    defineDescriptor: (id, descriptor) => register(id, descriptor, false),
-    defineInstance: (id, instance) => register(id, instance, false),
-    definePartialInstance: (id, instance) => register(id, instance, false),
+    define: (id, ctor) =>{  register(id, new SyncDescriptor(ctor), false); },
+    defineDescriptor: (id, descriptor) =>{  register(id, descriptor, false); },
+    defineInstance: (id, instance) =>{  register(id, instance, false); },
+    definePartialInstance: (id, instance) =>{  register(id, instance, false); },
   };
   for (const group of baseGroups) {
     group(baseReg);
   }
 
   const additionalReg: TestAgentServiceRegistration = {
-    define: (id, ctor) => register(id, new SyncDescriptor(ctor), true),
-    defineDescriptor: (id, descriptor) => register(id, descriptor, true),
-    defineInstance: (id, instance) => register(id, instance, true),
-    definePartialInstance: (id, instance) => register(id, instance, true),
+    define: (id, ctor) =>{  register(id, new SyncDescriptor(ctor), true); },
+    defineDescriptor: (id, descriptor) =>{  register(id, descriptor, true); },
+    defineInstance: (id, instance) =>{  register(id, instance, true); },
+    definePartialInstance: (id, instance) =>{  register(id, instance, true); },
   };
   for (const override of overrides) {
     if (override.scope === scope) {
@@ -1047,7 +1047,7 @@ export class AgentTestContext {
             IAppendLogStore,
             new PersistenceAppendLogStore(
               persistence,
-              (event) => this.captureRecord(event),
+              (event) =>{  this.captureRecord(event); },
               () => { },
             ),
           );
@@ -2003,16 +2003,16 @@ export class AgentTestContext {
   private createRpcPassthroughAdapters(): AgentRpcPassthroughAPI {
     return {
       runShellCommand: (payload) => this.get(IAgentShellCommandService).run(payload),
-      cancelShellCommand: (payload) =>
-        this.get(IAgentShellCommandService).cancel(payload.commandId),
-      setThinking: (payload) => this.get(IAgentProfileService).setThinking(payload.level),
+      cancelShellCommand: (payload) =>{ 
+        this.get(IAgentShellCommandService).cancel(payload.commandId); },
+      setThinking: (payload) =>{  this.get(IAgentProfileService).setThinking(payload.level); },
       setModel: (payload) => this.get(IAgentProfileService).setModel(payload.model),
       getModel: () => this.get(IAgentProfileService).getModel(),
       enterPlan: () => this.get(IAgentPlanService).enter(),
-      cancelPlan: (payload) => this.get(IAgentPlanService).cancel(payload.id),
+      cancelPlan: (payload) =>{  this.get(IAgentPlanService).cancel(payload.id); },
       clearPlan: () => this.get(IAgentPlanService).clear(),
-      enterSwarm: (payload) => this.get(IAgentSwarmService).enter(payload.trigger),
-      exitSwarm: () => this.get(IAgentSwarmService).exit(),
+      enterSwarm: (payload) =>{  this.get(IAgentSwarmService).enter(payload.trigger); },
+      exitSwarm: () =>{  this.get(IAgentSwarmService).exit(); },
       getSwarmMode: () => this.get(IAgentSwarmService).isActive,
       startBtw: () => this.get(ISessionBtwService).start(),
       beginCompaction: (payload) =>
@@ -2020,10 +2020,10 @@ export class AgentTestContext {
           source: 'manual',
           instruction: payload.instruction,
         }),
-      registerTool: (payload) => this.get(IAgentUserToolService).register(payload),
-      unregisterTool: (payload) => this.get(IAgentUserToolService).unregister(payload.name),
-      setActiveTools: (payload) =>
-        this.get(IAgentProfileService).update({ activeToolNames: payload.names }),
+      registerTool: (payload) =>{  this.get(IAgentUserToolService).register(payload); },
+      unregisterTool: (payload) =>{  this.get(IAgentUserToolService).unregister(payload.name); },
+      setActiveTools: (payload) =>{ 
+        this.get(IAgentProfileService).update({ activeToolNames: payload.names }); },
       stopTask: (payload) => {
         const tasks = this.get(IAgentTaskService);
         if (payload.reason === undefined) {
@@ -2033,7 +2033,7 @@ export class AgentTestContext {
         void tasks.stop(payload.taskId, payload.reason);
       },
       detachTask: (payload) => this.get(IAgentTaskService).detach(payload.taskId),
-      clearContext: () => this.get(IAgentPromptService).clear(),
+      clearContext: () =>{  this.get(IAgentPromptService).clear(); },
       createGoal: (payload) => this.get(IAgentGoalService).createGoal(payload),
       getGoal: () => this.get(IAgentGoalService).getGoal(),
       pauseGoal: () => this.get(IAgentGoalService).pauseGoal(),

@@ -30,12 +30,12 @@ export function ThinkingButton({ mode, effort, efforts = [], alwaysOn = false, d
     <button
       type="button"
       onClick={mode === "switch" && !disabled ? onToggle : undefined}
-      disabled={disabled || mode === "always"}
+      disabled={disabled ?? mode === "always"}
       className={cn(
         "flex items-center gap-0.5 justify-center h-6 min-w-6 px-1 rounded-md transition-all",
         active ? "bg-blue-500/15 text-blue-500" : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
         !disabled && mode !== "always" && "cursor-pointer hover:bg-blue-500/25",
-        (disabled || mode === "always") && "cursor-default",
+        (disabled ?? mode === "always") && "cursor-default",
       )}
     >
       <IconBulb className="size-4" />
@@ -55,7 +55,7 @@ export function ThinkingButton({ mode, effort, efforts = [], alwaysOn = false, d
         </Tooltip>
         <DropdownMenuContent align="start">
           {options.map((option) => (
-            <DropdownMenuItem key={option} onClick={() => onSelectEffort(option)} className="text-xs gap-2">
+            <DropdownMenuItem key={option} onClick={() =>{  onSelectEffort(option); }} className="text-xs gap-2">
               <IconCheck className={cn("size-3", option !== effort && "opacity-0")} />
               {label(option)}
             </DropdownMenuItem>

@@ -381,26 +381,26 @@ function highlightLine(line: string): string {
   let html = escapeHtml(line);
 
   if (contentKind.value === 'json' || lang === 'json' || lang === 'jsonc') {
-    html = html.replace(/(&quot;[^&]*?&quot;)(\s*:)/g, '<span class="tok-key">$1</span>$2');
-    html = html.replace(/(:\s*)(&quot;[^&]*?&quot;)/g, '$1<span class="tok-string">$2</span>');
-    html = html.replace(/\b(true|false|null)\b/g, '<span class="tok-literal">$1</span>');
-    html = html.replace(/(:\s*)(-?\d+(?:\.\d+)?)/g, '$1<span class="tok-number">$2</span>');
+    html = html.replaceAll(/(&quot;[^&]*?&quot;)(\s*:)/g, '<span class="tok-key">$1</span>$2');
+    html = html.replaceAll(/(:\s*)(&quot;[^&]*?&quot;)/g, '$1<span class="tok-string">$2</span>');
+    html = html.replaceAll(/\b(true|false|null)\b/g, '<span class="tok-literal">$1</span>');
+    html = html.replaceAll(/(:\s*)(-?\d+(?:\.\d+)?)/g, '$1<span class="tok-number">$2</span>');
     return html;
   }
 
   if (contentKind.value === 'html' || lang === 'html' || lang === 'xml' || lang === 'svg') {
-    html = html.replace(/\s([A-Za-z_:][-A-Za-z0-9_:.]*)(=)/g, ' <span class="tok-attr">$1</span>$2');
-    html = html.replace(/(&quot;.*?&quot;)/g, '<span class="tok-string">$1</span>');
-    html = html.replace(/(&lt;\/?)([A-Za-z][\w:-]*)/g, '$1<span class="tok-tag">$2</span>');
+    html = html.replaceAll(/\s([A-Za-z_:][-A-Za-z0-9_:.]*)(=)/g, ' <span class="tok-attr">$1</span>$2');
+    html = html.replaceAll(/(&quot;.*?&quot;)/g, '<span class="tok-string">$1</span>');
+    html = html.replaceAll(/(&lt;\/?)([A-Za-z][\w:-]*)/g, '$1<span class="tok-tag">$2</span>');
     return html;
   }
 
-  html = html.replace(
+  html = html.replaceAll(
     /\b(async|await|break|case|catch|class|const|continue|else|export|extends|finally|for|from|function|if|import|interface|let|new|return|switch|throw|try|type|while)\b/g,
     '<span class="tok-keyword">$1</span>',
   );
-  html = html.replace(/(&quot;.*?&quot;|'.*?')/g, '<span class="tok-string">$1</span>');
-  html = html.replace(/(\/\/.*)$/g, '<span class="tok-comment">$1</span>');
+  html = html.replaceAll(/(&quot;.*?&quot;|'.*?')/g, '<span class="tok-string">$1</span>');
+  html = html.replaceAll(/(\/\/.*)$/g, '<span class="tok-comment">$1</span>');
   return html;
 }
 

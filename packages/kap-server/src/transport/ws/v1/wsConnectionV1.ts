@@ -46,7 +46,6 @@ import {
   type AgentFilter,
   type BroadcastDelivery,
   type BroadcastTarget,
-  type ResyncReason,
   type SessionEventBroadcaster,
   type TargetSubscription,
 } from './sessionEventBroadcaster';
@@ -149,9 +148,9 @@ export class WsConnectionV1 implements BroadcastTarget {
     this.maxBatchSize = opts.maxBatchSize ?? DEFAULT_MAX_BATCH_SIZE;
     this.highWaterMarkBytes = opts.highWaterMarkBytes ?? DEFAULT_HIGH_WATER_MARK_BYTES;
 
-    this.socket.on('message', (data: RawData) => this.onMessage(data));
-    this.socket.on('close', () => this.onClose());
-    this.socket.on('error', () => this.onClose());
+    this.socket.on('message', (data: RawData) =>{  this.onMessage(data); });
+    this.socket.on('close', () =>{  this.onClose(); });
+    this.socket.on('error', () =>{  this.onClose(); });
 
     opts.connectionRegistry.add(this);
     // Global events (session/workspace/config facts) flow to every established
@@ -173,7 +172,7 @@ export class WsConnectionV1 implements BroadcastTarget {
   }
 
   get subscriptionSessionIds(): readonly string[] {
-    return Array.from(this.subscriptions.keys()).sort();
+    return Array.from(this.subscriptions.keys()).toSorted();
   }
 
   /** BroadcastTarget — buffer subscription traffic; public traffic is a FIFO barrier. */
@@ -476,7 +475,7 @@ export class WsConnectionV1 implements BroadcastTarget {
     const result = await this.broadcaster.getBufferedSince(sid, cursor, filter, transcriptGrades);
     if (result.resyncRequired !== false) {
       this.sendImmediateFrame(
-        buildResyncRequired(sid, result.resyncRequired as ResyncReason, result.currentSeq, result.epoch),
+        buildResyncRequired(sid, result.resyncRequired, result.currentSeq, result.epoch),
       );
       resyncRequired.push(sid);
     } else {
@@ -491,7 +490,7 @@ export class WsConnectionV1 implements BroadcastTarget {
     // authenticates at the upgrade and sends no token here). If a token IS
     // presented it must still be valid.
     const payload = frame.payload ?? {};
-    const token = typeof payload['token'] === 'string' ? (payload['token'] as string) : undefined;
+    const token = typeof payload['token'] === 'string' ? (payload['token']) : undefined;
     if (token === undefined || this.validateCredential === undefined) return true;
     let ok = false;
     try {
@@ -577,7 +576,7 @@ export class WsConnectionV1 implements BroadcastTarget {
 
   private deferForBackpressure(): void {
     const now = Date.now();
-    if (this.backpressureSince === undefined) this.backpressureSince = now;
+    this.backpressureSince ??= now;
     if (now - this.backpressureSince >= DEFAULT_BACKPRESSURE_MAX_DELAY_MS) {
       // Peer stayed above the watermark too long — force-flush to avoid
       // starving the stream; the socket layer will buffer or drop.
@@ -647,7 +646,7 @@ function rawDataToString(data: RawData): string {
   if (typeof data === 'string') return data;
   if (Buffer.isBuffer(data)) return data.toString('utf8');
   if (Array.isArray(data)) return Buffer.concat(data).toString('utf8');
-  return Buffer.from(data as ArrayBuffer).toString('utf8');
+  return Buffer.from(data).toString('utf8');
 }
 
 // ---------------------------------------------------------------------------

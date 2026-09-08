@@ -25,9 +25,9 @@ test('comparison operators $eq $ne $gt $gte $lt $lte', async () => {
   const { dir, db } = await seed();
   try {
     assert.deepEqual(db.query({ filter: { age: { $eq: 25 } } }).map((r) => r.key), ['c']);
-    assert.deepEqual(db.query({ filter: { age: { $ne: 25 } } }).map((r) => r.key).sort(), ['a', 'b', 'd']);
-    assert.deepEqual(db.query({ filter: { age: { $gte: 30 } } }).map((r) => r.key).sort(), ['a', 'd']);
-    assert.deepEqual(db.query({ filter: { age: { $lte: 25 } } }).map((r) => r.key).sort(), ['b', 'c']);
+    assert.deepEqual(db.query({ filter: { age: { $ne: 25 } } }).map((r) => r.key).toSorted(), ['a', 'b', 'd']);
+    assert.deepEqual(db.query({ filter: { age: { $gte: 30 } } }).map((r) => r.key).toSorted(), ['a', 'd']);
+    assert.deepEqual(db.query({ filter: { age: { $lte: 25 } } }).map((r) => r.key).toSorted(), ['b', 'c']);
     // Combine two operators in one cond object (both must hold).
     assert.deepEqual(
       db.query({ filter: { age: { $gt: 17, $lt: 30 } } }).map((r) => r.key),
@@ -42,12 +42,12 @@ test('comparison operators $eq $ne $gt $gte $lt $lte', async () => {
 test('$in / $nin membership', async () => {
   const { dir, db } = await seed();
   try {
-    assert.deepEqual(db.query({ filter: { city: { $in: ['Paris', 'Berlin'] } } }).map((r) => r.key).sort(), [
+    assert.deepEqual(db.query({ filter: { city: { $in: ['Paris', 'Berlin'] } } }).map((r) => r.key).toSorted(), [
       'a',
       'c',
       'd',
     ]);
-    assert.deepEqual(db.query({ filter: { city: { $nin: ['Paris'] } } }).map((r) => r.key).sort(), ['b', 'd']);
+    assert.deepEqual(db.query({ filter: { city: { $nin: ['Paris'] } } }).map((r) => r.key).toSorted(), ['b', 'd']);
     // Non-array argument never matches.
     assert.deepEqual(db.query({ filter: { city: { $in: 'Paris' as unknown as string[] } } }).map((r) => r.key), []);
     assert.deepEqual(db.query({ filter: { city: { $nin: 'Paris' as unknown as string[] } } }).map((r) => r.key), []);
@@ -61,9 +61,9 @@ test('$exists and $type', async () => {
   const { dir, db } = await seed();
   try {
     // 'active' is set on a, b, d but not c.
-    assert.deepEqual(db.query({ filter: { active: { $exists: true } } }).map((r) => r.key).sort(), ['a', 'b', 'd']);
+    assert.deepEqual(db.query({ filter: { active: { $exists: true } } }).map((r) => r.key).toSorted(), ['a', 'b', 'd']);
     assert.deepEqual(db.query({ filter: { active: { $exists: false } } }).map((r) => r.key), ['c']);
-    assert.deepEqual(db.query({ filter: { name: { $type: 'string' } } }).map((r) => r.key).sort(), [
+    assert.deepEqual(db.query({ filter: { name: { $type: 'string' } } }).map((r) => r.key).toSorted(), [
       'a',
       'b',
       'c',
@@ -116,11 +116,11 @@ test('logical operators $and $or $nor $not', async () => {
   const { dir, db } = await seed();
   try {
     assert.deepEqual(
-      db.query({ filter: { $and: [{ city: 'Paris' }, { age: { $gt: 20 } }] } }).map((r) => r.key).sort(),
+      db.query({ filter: { $and: [{ city: 'Paris' }, { age: { $gt: 20 } }] } }).map((r) => r.key).toSorted(),
       ['a', 'c'],
     );
     assert.deepEqual(
-      db.query({ filter: { $or: [{ name: 'Ann' }, { name: 'Bob' }] } }).map((r) => r.key).sort(),
+      db.query({ filter: { $or: [{ name: 'Ann' }, { name: 'Bob' }] } }).map((r) => r.key).toSorted(),
       ['a', 'b'],
     );
     // $nor: matches documents that satisfy NONE of the branches.
@@ -128,7 +128,7 @@ test('logical operators $and $or $nor $not', async () => {
       db.query({ filter: { $nor: [{ city: 'Paris' }, { city: 'London' }] } }).map((r) => r.key),
       ['d'],
     );
-    assert.deepEqual(db.query({ filter: { $not: { city: 'Paris' } } }).map((r) => r.key).sort(), ['b', 'd']);
+    assert.deepEqual(db.query({ filter: { $not: { city: 'Paris' } } }).map((r) => r.key).toSorted(), ['b', 'd']);
     await db.close();
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
@@ -167,10 +167,10 @@ test('nested dot + bracket paths in filter and projection', async () => {
 
     // Nested projection rebuilds the nested shape in the output.
     const projected = db.query({ filter: { 'user.name': 'Ann' }, project: ['user.addr.zip', 'items[0].sku'] });
-    assert.deepEqual(projected[0]!.value, { user: { addr: { zip: '75001' } }, items: [{ sku: 'A' }] });
+    assert.deepEqual(projected[0].value, { user: { addr: { zip: '75001' } }, items: [{ sku: 'A' }] });
 
     // Projecting a missing path drops it; empty project list returns the doc.
-    assert.deepEqual(db.query({ project: [] })[0]!.value, (await db.get('p1')));
+    assert.deepEqual(db.query({ project: [] })[0].value, (await db.get('p1')));
     await db.close();
   } finally {
     await fs.rm(dir, { recursive: true, force: true });

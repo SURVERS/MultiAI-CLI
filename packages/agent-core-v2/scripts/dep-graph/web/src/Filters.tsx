@@ -67,7 +67,7 @@ export function Filters({
       <input
         placeholder="search service, interface, method…"
         value={state.search}
-        onChange={(e) => onChange({ ...state, search: e.target.value })}
+        onChange={(e) =>{  onChange({ ...state, search: e.target.value }); }}
         title="Substring match across impl class, token interface, domain, and public members"
         style={{
           width: '100%',
@@ -89,7 +89,7 @@ export function Filters({
             count={scopeCounts[s] ?? 0}
             checked={state.scopes.has(s)}
             color={SCOPE_STYLE[s].color}
-            onToggle={() => onChange({ ...state, scopes: toggle(state.scopes, s) })}
+            onToggle={() =>{  onChange({ ...state, scopes: toggle(state.scopes, s) }); }}
           />
         ))}
       </Section>
@@ -103,7 +103,7 @@ export function Filters({
             checked={state.kinds.has(k)}
             color={EDGE_STYLE[k].color}
             dashed={EDGE_STYLE[k].dashed}
-            onToggle={() => onChange({ ...state, kinds: toggle(state.kinds, k) })}
+            onToggle={() =>{  onChange({ ...state, kinds: toggle(state.kinds, k) }); }}
           />
         ))}
       </Section>
@@ -112,12 +112,12 @@ export function Filters({
         <CheckRow
           label="hide orphans"
           checked={state.hideOrphans}
-          onToggle={() => onChange({ ...state, hideOrphans: !state.hideOrphans })}
+          onToggle={() =>{  onChange({ ...state, hideOrphans: !state.hideOrphans }); }}
         />
         <CheckRow
           label="group by scope"
           checked={state.groupByScope}
-          onToggle={() => onChange({ ...state, groupByScope: !state.groupByScope })}
+          onToggle={() =>{  onChange({ ...state, groupByScope: !state.groupByScope }); }}
         />
       </Section>
 
@@ -131,18 +131,18 @@ export function Filters({
             <div style={{ marginBottom: 6, display: 'flex', gap: 6 }}>
               <button
                 style={btnStyle}
-                onClick={() =>
+                onClick={() =>{ 
                   onChange({
                     ...state,
                     activeTags: new Set(tagCounts.map((t) => t.tag)),
-                  })
+                  }); }
                 }
               >
                 all
               </button>
               <button
                 style={btnStyle}
-                onClick={() => onChange({ ...state, activeTags: new Set() })}
+                onClick={() =>{  onChange({ ...state, activeTags: new Set() }); }}
               >
                 none
               </button>
@@ -154,8 +154,8 @@ export function Filters({
                 count={count}
                 checked={state.activeTags.has(tag)}
                 color={tagColor(tag).color}
-                onToggle={() =>
-                  onChange({ ...state, activeTags: toggle(state.activeTags, tag) })
+                onToggle={() =>{ 
+                  onChange({ ...state, activeTags: toggle(state.activeTags, tag) }); }
                 }
               />
             ))}
@@ -167,13 +167,13 @@ export function Filters({
         <div style={{ marginBottom: 6, display: 'flex', gap: 6 }}>
           <button
             style={btnStyle}
-            onClick={() => onChange({ ...state, hiddenDomains: new Set() })}
+            onClick={() =>{  onChange({ ...state, hiddenDomains: new Set() }); }}
           >
             all
           </button>
           <button
             style={btnStyle}
-            onClick={() => onChange({ ...state, hiddenDomains: new Set(domains) })}
+            onClick={() =>{  onChange({ ...state, hiddenDomains: new Set(domains) }); }}
           >
             none
           </button>
@@ -184,8 +184,8 @@ export function Filters({
             label={d}
             count={domainCounts[d] ?? 0}
             checked={!state.hiddenDomains.has(d)}
-            onToggle={() =>
-              onChange({ ...state, hiddenDomains: toggle(state.hiddenDomains, d) })
+            onToggle={() =>{ 
+              onChange({ ...state, hiddenDomains: toggle(state.hiddenDomains, d) }); }
             }
           />
         ))}

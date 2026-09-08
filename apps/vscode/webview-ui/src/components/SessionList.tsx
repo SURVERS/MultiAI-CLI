@@ -41,8 +41,8 @@ function SessionItem({ session, isSelected, onSelect, onDelete, dirLabel }: Sess
   return (
     <div
       className={cn("group relative px-2 py-1 rounded-md cursor-pointer transition-colors", isSelected ? "bg-accent" : "hover:bg-accent/50")}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() =>{  setIsHovered(true); }}
+      onMouseLeave={() =>{  setIsHovered(false); }}
       onClick={onSelect}
     >
       <p className="text-xs leading-relaxed line-clamp-3 text-foreground">{cleanSystemTags(session.brief) || "Untitled"}</p>
@@ -55,7 +55,7 @@ function SessionItem({ session, isSelected, onSelect, onDelete, dirLabel }: Sess
         <div className={cn("transition-opacity", isHovered ? "opacity-100" : "opacity-0")}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="p-1 -m-1 rounded hover:bg-muted transition-colors" onClick={(e) => e.stopPropagation()}>
+              <button className="p-1 -m-1 rounded hover:bg-muted transition-colors" onClick={(e) =>{  e.stopPropagation(); }}>
                 <IconDots className="size-3.5 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
@@ -89,7 +89,7 @@ export function SessionList({ onClose }: SessionListProps) {
   const { data: multiaiSessions = [], loading, mutate } = useRequest(() => bridge.getAllMultiAISessions());
 
   const getWorkDirLabel = (sessionWorkDir: string): string | null => {
-    const activeWorkDir = currentWorkDir || workspaceRoot;
+    const activeWorkDir = currentWorkDir ?? workspaceRoot;
     if (sessionWorkDir === activeWorkDir) return null;
     if (!workspaceRoot) return sessionWorkDir;
     // Show (root) for workspace root, relative path for subdirs
@@ -123,7 +123,7 @@ export function SessionList({ onClose }: SessionListProps) {
   const doLoadSession = async (session: SessionInfo) => {
     try {
       // Switch workDir if session is from a different directory
-      const activeWorkDir = currentWorkDir || workspaceRoot;
+      const activeWorkDir = currentWorkDir ?? workspaceRoot;
       if (session.workDir !== activeWorkDir) {
         const newWorkDir = session.workDir === workspaceRoot ? null : session.workDir;
         const result = await bridge.setWorkDir(newWorkDir);
@@ -157,7 +157,7 @@ export function SessionList({ onClose }: SessionListProps) {
         await startNewConversation();
       }
 
-      mutate((prev) => prev?.filter((s) => s.id !== deleteTarget.id) || []);
+      mutate((prev) => prev?.filter((s) => s.id !== deleteTarget.id) ?? []);
     } catch (error) {
       console.error("[SessionList] Failed to delete session:", error);
       toast.error(`Unable to delete the conversation: ${error instanceof Error ? error.message : String(error)}`);
@@ -173,7 +173,7 @@ export function SessionList({ onClose }: SessionListProps) {
         <div className="p-2 border-b border-border shrink-0">
           <div className="relative">
             <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-            <Input placeholder="Search conversations..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 h-8 text-xs" />
+            <Input placeholder="Search conversations..." value={searchQuery} onChange={(e) =>{  setSearchQuery(e.target.value); }} className="pl-8 h-8 text-xs" />
           </div>
         </div>
         <div className="overflow-y-auto flex-1 min-h-0">
@@ -191,7 +191,7 @@ export function SessionList({ onClose }: SessionListProps) {
                   onSelect={() => {
                     void handleSelect(session);
                   }}
-                  onDelete={() => setDeleteTarget(session)}
+                  onDelete={() =>{  setDeleteTarget(session); }}
                   dirLabel={getWorkDirLabel(session.workDir)}
                 />
               ))

@@ -17,7 +17,7 @@ describe('TaskService', () => {
     disposables = new DisposableStore();
     svc = disposables.add(new TaskService());
   });
-  afterEach(() => disposables.dispose());
+  afterEach(() =>{  disposables.dispose(); });
 
 
   describe('run()', () => {
@@ -122,7 +122,7 @@ describe('TaskService', () => {
     it('dispose cancels a running task', async () => {
       const handle = svc.run(async (signal) => {
         await new Promise<void>((resolve) => {
-          signal.addEventListener('abort', () => resolve());
+          signal.addEventListener('abort', () =>{  resolve(); });
         });
       });
       handle.dispose();
@@ -139,7 +139,7 @@ describe('TaskService', () => {
       const handle = svc.defer<number>();
       handle.resolve(42);
       await handle.result;
-      expect(() => handle.dispose()).not.toThrow();
+      expect(() =>{  handle.dispose(); }).not.toThrow();
       expect(handle.state).toBe('completed');
     });
   });
@@ -189,7 +189,7 @@ describe('TaskService', () => {
     });
 
     it('lets a detach signal win the race while the task keeps running', async () => {
-      const detach = new Promise<'detach'>((r) => setTimeout(() => r('detach'), 5));
+      const detach = new Promise<'detach'>((r) => setTimeout(() =>{  r('detach'); }, 5));
       const handle = svc.run(async (signal) => {
         await new Promise<void>((resolve) => {
           const timer = setTimeout(resolve, 1000);
@@ -214,7 +214,7 @@ describe('TaskService', () => {
     it('resolves a deferred handle settled from outside the awaiting turn', async () => {
       const handle = svc.defer<string>();
 
-      setTimeout(() => handle.resolve('from-outside'), 10);
+      setTimeout(() =>{  handle.resolve('from-outside'); }, 10);
 
       const result = await handle.result;
       expect(result).toBe('from-outside');

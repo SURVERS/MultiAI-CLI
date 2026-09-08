@@ -74,7 +74,7 @@ export function v2MetaToSessionMeta(meta: V2SessionMeta): SessionMeta {
     forkedFrom: meta.forkedFrom,
     workDir: meta.cwd,
     agents: v2AgentsToV1(meta.agents ?? {}),
-    custom: (meta.custom ?? {}) as Record<string, unknown>,
+    custom: (meta.custom ?? {}),
   };
 }
 

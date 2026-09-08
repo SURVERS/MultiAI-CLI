@@ -153,7 +153,7 @@ async function discoverAgentsFromDisk(sessionDir: string): Promise<AgentInfo[]> 
       swarmItem: null,
     });
   }
-  return out.sort((a, b) => compareAgentIds(a.agentId, b.agentId));
+  return out.toSorted((a, b) => compareAgentIds(a.agentId, b.agentId));
 }
 
 async function tryReadSummary(
@@ -288,7 +288,7 @@ async function inventoryAgents(sessionDir: string, state: StateJson): Promise<Ag
       swarmItem: meta.swarmItem ?? null,
     });
   }
-  return result.sort((a, b) => compareAgentIds(a.agentId, b.agentId));
+  return result.toSorted((a, b) => compareAgentIds(a.agentId, b.agentId));
 }
 
 async function readState(sessionDir: string): Promise<StateJson | null> {

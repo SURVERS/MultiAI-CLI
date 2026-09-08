@@ -83,12 +83,12 @@ export async function readAgentWire(path: string): Promise<WireReadResult> {
       metadata = { protocolVersion: pv, createdAt: ca };
       continue;
     }
-    const raw = parsed as Record<string, unknown>;
+    const raw = parsed;
     let migrated: Record<string, unknown>;
     try {
       migrated =
         migrations.length === 0
-          ? (structuredClone(raw) as Record<string, unknown>)
+          ? (structuredClone(raw))
           : (migrateWireRecord(
               raw as Record<string, unknown> & { type: string },
               migrations,
@@ -99,7 +99,7 @@ export async function readAgentWire(path: string): Promise<WireReadResult> {
       warnings.push(
         `line ${lineNo}: migration failed (${(error as Error).message}); using raw record`,
       );
-      migrated = structuredClone(raw) as Record<string, unknown>;
+      migrated = structuredClone(raw);
     }
     records.push({ lineNo, data: migrated as AgentRecord, raw });
   }

@@ -257,7 +257,7 @@ describe('SessionTodoService', () => {
   it('does not append to the wire when the main agent is absent', () => {
     const lifecycle = makeLifecycleStub();
     const service = new SessionTodoService(lifecycle.service);
-    expect(() => service.setTodos([{ title: 'x', status: 'pending' }])).not.toThrow();
+    expect(() =>{  service.setTodos([{ title: 'x', status: 'pending' }]); }).not.toThrow();
     expect(service.getTodos()).toEqual([]);
   });
 
@@ -294,7 +294,7 @@ describe('SessionTodoService', () => {
     lifecycle.fireCreate(main.handle);
 
     expect(main.registeredVariants).toContain(TODO_LIST_REMINDER_VARIANT);
-    expect(() => lifecycle.fireDispose('main')).not.toThrow();
+    expect(() =>{  lifecycle.fireDispose('main'); }).not.toThrow();
     expect(service.getTodos()).toEqual([]);
   });
 

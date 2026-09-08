@@ -93,7 +93,7 @@ export class AgentStepRetryService extends Disposable implements IAgentStepRetry
         await next();
       }),
     );
-    this._register(this.eventBus.subscribe('turn.started', () => this.resetAttempts()));
+    this._register(this.eventBus.subscribe('turn.started', () =>{  this.resetAttempts(); }));
   }
 
   private get lastFailedDriverId(): string | undefined {

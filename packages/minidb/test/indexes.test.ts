@@ -19,7 +19,7 @@ test('equality index findEq', async () => {
     await db.set('u1', { name: 'Ann', city: 'Paris' });
     await db.set('u2', { name: 'Bob', city: 'Paris' });
     await db.set('u3', { name: 'Eve', city: 'London' });
-    const res = db.findEq('byCity', 'Paris').map((r) => r.key).sort();
+    const res = db.findEq('byCity', 'Paris').map((r) => r.key).toSorted();
     assert.deepEqual(res, ['u1', 'u2']);
     await db.close();
   } finally {
@@ -79,7 +79,7 @@ test('array field is indexed per element', async () => {
     await db.set('a', { tags: ['red', 'blue'] });
     await db.set('b', { tags: ['blue', 'green'] });
     assert.deepEqual(db.findEq('byTag', 'red').map((r) => r.key), ['a']);
-    assert.deepEqual(db.findEq('byTag', 'blue').map((r) => r.key).sort(), ['a', 'b']);
+    assert.deepEqual(db.findEq('byTag', 'blue').map((r) => r.key).toSorted(), ['a', 'b']);
     await db.close();
   } finally {
     await fs.rm(dir, { recursive: true, force: true });

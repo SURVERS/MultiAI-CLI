@@ -96,7 +96,7 @@ export class SessionRuntime {
     this.captureBaseline = options.captureBaseline;
     this.log = options.log;
     this.sessionApproval = options.sessionApproval;
-    this.reverseRpc = new ReverseRpcController((event) => this.emitStreamEvent(event));
+    this.reverseRpc = new ReverseRpcController((event) =>{  this.emitStreamEvent(event); });
 
     // Forward every approval request to the user. The engine permission mode
     // (mapped from the legacy flags) already auto-approves what yolo/auto
@@ -104,7 +104,7 @@ export class SessionRuntime {
     // (sensitive file, plan review, ask rule) the user must decide on.
     this.session.setApprovalHandler((request) => this.reverseRpc.requestApproval(request));
     this.session.setQuestionHandler((request) => this.reverseRpc.requestQuestion(request));
-    this.unsubscribe = this.session.onEvent((event) => this.onSdkEvent(event));
+    this.unsubscribe = this.session.onEvent((event) =>{  this.onSdkEvent(event); });
   }
 
   get id(): string {

@@ -20,7 +20,7 @@ declare module '#/wire/types' {
   }
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const PKG_ROOT = join(__dirname, '..', '..');
 const SRC_ROOT = join(PKG_ROOT, 'src');
 const FIXTURE_ROOT = join(__dirname, 'fixtures');

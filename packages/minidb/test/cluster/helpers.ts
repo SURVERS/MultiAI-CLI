@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { shardFor } from '../../src/cluster/utils.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 export const WORKER = path.join(__dirname, 'mp-worker.ts');
 
 /** rm -rf with retry: children may still be finishing their final syscalls
@@ -19,9 +19,9 @@ export async function rmrf(dir: string): Promise<void> {
     try {
       await fs.rm(dir, { recursive: true, force: true });
       return;
-    } catch (e) {
-      const code = (e as NodeJS.ErrnoException).code;
-      if (attempt >= 5 || (code !== 'ENOTEMPTY' && code !== 'EBUSY' && code !== 'EACCES' && code !== 'EPERM')) throw e;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (attempt >= 5 || (code !== 'ENOTEMPTY' && code !== 'EBUSY' && code !== 'EACCES' && code !== 'EPERM')) throw error;
       await sleep(50 * (attempt + 1));
     }
   }
@@ -64,7 +64,7 @@ export function runWorker(args: string[], opts: { timeoutMs?: number } = {}): Pr
       let json: Record<string, unknown> | null = null;
       if (lines.length > 0) {
         try {
-          json = JSON.parse(lines[lines.length - 1]!) as Record<string, unknown>;
+          json = JSON.parse(lines.at(-1)!) as Record<string, unknown>;
         } catch {
           /* leave json null */
         }

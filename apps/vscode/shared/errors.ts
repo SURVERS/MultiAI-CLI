@@ -94,7 +94,7 @@ export function classifyError(code: string): ErrorPhase {
 }
 
 export function getUserMessage(code: string, fallback?: string): string {
-  return ERROR_MESSAGES[code] || fallback || "An unknown error occurred.";
+  return (ERROR_MESSAGES[code] ?? fallback) ?? "An unknown error occurred.";
 }
 
 export function isPreflightError(code: string): boolean {

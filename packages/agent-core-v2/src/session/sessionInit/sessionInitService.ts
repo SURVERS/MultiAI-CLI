@@ -102,7 +102,7 @@ export class SessionInitService implements ISessionInitService {
         profileName: INIT_PROFILE_NAME,
         prompt: DEFAULT_INIT_PROMPT,
         signal: controller.signal,
-        cancel: (reason) => controller.abort(reason),
+        cancel: (reason) =>{  controller.abort(reason); },
       });
 
       const agentsMd = await loadAgentsMd(

@@ -109,10 +109,10 @@ function MessageMedia({ images, videos, onPreview }: { images: string[]; videos:
   return (
     <div className="flex flex-wrap gap-2 my-2">
       {images.map((src, idx) => (
-        <MediaThumbnail key={`img-${idx}`} src={src} size="md" onClick={() => onPreview(src)} />
+        <MediaThumbnail key={`img-${idx}`} src={src} size="md" onClick={() =>{  onPreview(src); }} />
       ))}
       {videos.map((src, idx) => (
-        <MediaThumbnail key={`vid-${idx}`} src={src} size="md" onClick={() => onPreview(src)} />
+        <MediaThumbnail key={`vid-${idx}`} src={src} size="md" onClick={() =>{  onPreview(src); }} />
       ))}
     </div>
   );
@@ -229,7 +229,7 @@ function UserMessage({ message }: { message: ChatMessageType }) {
         )}
         <MessageMedia images={images} videos={videos} onPreview={setPreviewMedia} />
       </div>
-      <MediaPreviewModal src={previewMedia} onClose={() => setPreviewMedia(null)} />
+      <MediaPreviewModal src={previewMedia} onClose={() =>{  setPreviewMedia(null); }} />
     </div>
   );
 }
@@ -238,7 +238,7 @@ function AssistantMessage({ message, turnIndex, isStreaming }: { message: ChatMe
   const [previewMedia, setPreviewMedia] = useState<string | null>(null);
   const isCompacting = useChatStore((s) => s.isCompacting);
 
-  const steps = message.steps || [];
+  const steps = message.steps ?? [];
   const hasSteps = steps.length > 0;
   const images = Content.getImages(message.content);
   const videos = Content.getVideos(message.content);
@@ -249,7 +249,10 @@ function AssistantMessage({ message, turnIndex, isStreaming }: { message: ChatMe
     if (!hasSteps) {
       return typeof message.content === "string" ? message.content : "";
     }
-    const lastStep = steps[steps.length - 1];
+    const lastStep = steps.at(-1);
+    if (lastStep === undefined) {
+      return typeof message.content === "string" ? message.content : "";
+    }
     const textItems = lastStep.items.filter((item) => item.type === "text");
     if (textItems.length > 0) {
       return textItems.map((item) => (item as { type: "text"; content: string }).content).join("\n");
@@ -320,7 +323,7 @@ function AssistantMessage({ message, turnIndex, isStreaming }: { message: ChatMe
           </div>
         </div>
       </div>
-      <MediaPreviewModal src={previewMedia} onClose={() => setPreviewMedia(null)} />
+      <MediaPreviewModal src={previewMedia} onClose={() =>{  setPreviewMedia(null); }} />
     </div>
   );
 }

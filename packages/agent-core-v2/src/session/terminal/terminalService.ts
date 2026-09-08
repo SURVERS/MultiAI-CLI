@@ -104,8 +104,8 @@ export class SessionTerminalService extends Disposable implements ISessionTermin
       closed: false,
     };
     record.disposables.push(
-      process.onProcessData((data) => this.onData(record, data)),
-      process.onProcessExit((event) => this.onExit(record, event.exitCode)),
+      process.onProcessData((data) =>{  this.onData(record, data); }),
+      process.onProcessExit((event) =>{  this.onExit(record, event.exitCode); }),
     );
     this.records.set(terminal.id, record);
     return { ...terminal };
@@ -249,7 +249,7 @@ function frameSeq(frame: TerminalFrame): number {
 }
 
 function defaultShell(): string {
-  return process.env['SHELL'] || '/bin/sh';
+  return process.env['SHELL'] ?? '/bin/sh';
 }
 
 registerScopedService(

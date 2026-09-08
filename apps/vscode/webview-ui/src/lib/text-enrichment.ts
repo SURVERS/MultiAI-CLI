@@ -71,7 +71,7 @@ export function parseSegments(text: string, fileExistsMap: Record<string, boolea
     segments.push({ type: "text", value: text.slice(lastIndex) });
   }
 
-  return segments.length ? segments : [{ type: "text", value: text }];
+  return segments.length > 0 ? segments : [{ type: "text", value: text }];
 }
 
 export function parseColorSegments(text: string): Segment[] {
@@ -96,7 +96,7 @@ export function parseColorSegments(text: string): Segment[] {
     segments.push({ type: "text", value: text.slice(lastIndex) });
   }
 
-  return segments.length ? segments : [{ type: "text", value: text }];
+  return segments.length > 0 ? segments : [{ type: "text", value: text }];
 }
 
 export function hasColors(text: string): boolean {
@@ -108,7 +108,7 @@ const CACHE_TTL = 10_000;
 const fileExistsCache = new Map<string, { exists: boolean; ts: number }>();
 
 export async function checkFilesExist(paths: string[]): Promise<Record<string, boolean>> {
-  if (!paths.length) {
+  if (paths.length === 0) {
     return {};
   }
 
@@ -125,7 +125,7 @@ export async function checkFilesExist(paths: string[]): Promise<Record<string, b
     }
   }
 
-  if (uncached.length) {
+  if (uncached.length > 0) {
     try {
       const fetched = await bridge.checkFilesExist(uncached);
       for (const p of uncached) {

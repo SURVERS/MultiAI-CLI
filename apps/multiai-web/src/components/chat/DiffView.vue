@@ -138,7 +138,7 @@ interface TreeNode {
 
 function buildTree(changes: { path: string; status: string }[]): TreeNode[] {
   const root: TreeNode = { name: '', path: '', kind: 'folder', children: [] };
-  const sorted = [...changes].sort((a, b) => a.path.localeCompare(b.path));
+  const sorted = [...changes].toSorted((a, b) => a.path.localeCompare(b.path));
   for (const entry of sorted) {
     const parts = entry.path.split('/');
     let current = root;

@@ -93,7 +93,7 @@ beforeEach(() => {
   wire = registerTestAgentWire(ix, testWireScope(SCOPE, KEY), { log, eventBus });
 });
 
-afterEach(() => disposables.dispose());
+afterEach(() =>{  disposables.dispose(); });
 
 async function readRecords(
   target: IAppendLogStore = log,
@@ -225,13 +225,13 @@ describe('WireService', () => {
 
   it('throws CycleError when a dispatch cascade exceeds MAX_DRAIN', () => {
     disposables.add(
-      eventBus.subscribe('wire.test.counter_changed', () => wire.dispatch(otherInc({}))),
+      eventBus.subscribe('wire.test.counter_changed', () =>{  wire.dispatch(otherInc({})); }),
     );
     disposables.add(
-      eventBus.subscribe('wire.test.other_changed', () => wire.dispatch(counterAdd({ by: 1 }))),
+      eventBus.subscribe('wire.test.other_changed', () =>{  wire.dispatch(counterAdd({ by: 1 })); }),
     );
 
-    expect(() => wire.dispatch(counterAdd({ by: 1 }))).toThrow(CycleError);
+    expect(() =>{  wire.dispatch(counterAdd({ by: 1 })); }).toThrow(CycleError);
     try {
       wire.dispatch(counterAdd({ by: 1 }));
       expect.unreachable('dispatch should have thrown');
@@ -283,7 +283,7 @@ describe('WireService', () => {
   it('throws when an apply mutates its already-frozen incoming state', () => {
     wire.dispatch(counterAdd({ by: 1 }));
 
-    expect(() => wire.dispatch(mutateCounter({}))).toThrow(TypeError);
+    expect(() =>{  wire.dispatch(mutateCounter({})); }).toThrow(TypeError);
     expect(wire.getModel(CounterModel)).toEqual({ value: 1 });
   });
 });

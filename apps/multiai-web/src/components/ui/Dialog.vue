@@ -75,7 +75,7 @@ function onKeydown(event: KeyboardEvent) {
   if (event.key !== 'Tab') return;
   const list = focusables();
   const first = list[0];
-  const last = list[list.length - 1];
+  const last = list.at(-1);
   if (!first || !last) {
     event.preventDefault();
     panel.value?.focus();

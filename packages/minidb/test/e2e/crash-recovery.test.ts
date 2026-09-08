@@ -15,7 +15,7 @@ import path from 'node:path';
 import { MiniDb } from '../../src/index.js';
 import { tmpDir, rmrf } from './helpers/tmp.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const WRITER = path.join(__dirname, 'helpers', 'crash-writer.ts');
 
 function crashWriter(dir: string, compactEvery: number, runMs: number): Promise<void> {
@@ -27,7 +27,7 @@ function crashWriter(dir: string, compactEvery: number, runMs: number): Promise<
     // Wait until the child signals progress (>=25 keys durable) before starting
     // the kill clock, so the test is robust even under heavy CPU contention.
     child.stdout.on('data', () => {
-      if (!killTimer) killTimer = setTimeout(() => child.kill('SIGKILL'), runMs);
+      killTimer ??= setTimeout(() => child.kill('SIGKILL'), runMs);
     });
     const safety = setTimeout(() => child.kill('SIGKILL'), 8000); // should not happen
     child.on('exit', () => {

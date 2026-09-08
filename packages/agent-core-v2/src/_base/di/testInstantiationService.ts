@@ -330,9 +330,9 @@ export function createServices(
   };
 
   const baseReg: ServiceRegistration = {
-    define: (id, ctor) => register(id, new SyncDescriptor(ctor), false, false),
-    defineInstance: (id, instance) => register(id, instance, true, false),
-    definePartialInstance: (id, instance) => register(id, instance, true, false),
+    define: (id, ctor) =>{  register(id, new SyncDescriptor(ctor), false, false); },
+    defineInstance: (id, instance) =>{  register(id, instance, true, false); },
+    definePartialInstance: (id, instance) =>{  register(id, instance, true, false); },
   };
 
   for (const group of options.base ?? []) {
@@ -341,9 +341,9 @@ export function createServices(
 
   if (options.additionalServices) {
     const overrideReg: ServiceRegistration = {
-      define: (id, ctor) => register(id, new SyncDescriptor(ctor), false, true),
-      defineInstance: (id, instance) => register(id, instance, true, true),
-      definePartialInstance: (id, instance) => register(id, instance, true, true),
+      define: (id, ctor) =>{  register(id, new SyncDescriptor(ctor), false, true); },
+      defineInstance: (id, instance) =>{  register(id, instance, true, true); },
+      definePartialInstance: (id, instance) =>{  register(id, instance, true, true); },
     };
     options.additionalServices(overrideReg);
   }

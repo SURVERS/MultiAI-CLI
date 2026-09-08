@@ -609,7 +609,7 @@ describe('Agent loop', () => {
         await Promise.race([
           running,
           new Promise<void>((_, reject) => {
-            hookCtx.signal.addEventListener('abort', () => reject(hookCtx.signal.reason), { once: true });
+            hookCtx.signal.addEventListener('abort', () =>{  reject(hookCtx.signal.reason); }, { once: true });
           }),
         ]);
       }
@@ -641,7 +641,7 @@ describe('Agent loop', () => {
     loop.hooks.onWillBeginStep.register('test-dispose-loop', async (hookCtx, next) => {
       stepStarted();
       await new Promise<void>((_, reject) => {
-        hookCtx.signal.addEventListener('abort', () => reject(hookCtx.signal.reason), { once: true });
+        hookCtx.signal.addEventListener('abort', () =>{  reject(hookCtx.signal.reason); }, { once: true });
       });
       await next();
     });
@@ -916,7 +916,7 @@ describe('turn telemetry', () => {
         localLoop.hooks.onWillBeginStep.register('test-hang', async (hookCtx, next) => {
           stepStarted();
           await new Promise<void>((_, reject) => {
-            hookCtx.signal.addEventListener('abort', () => reject(hookCtx.signal.reason), {
+            hookCtx.signal.addEventListener('abort', () =>{  reject(hookCtx.signal.reason); }, {
               once: true,
             });
           });

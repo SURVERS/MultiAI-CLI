@@ -248,8 +248,8 @@ async function loadAllArchived(): Promise<void> {
     }
     archivedItems.value = all;
     archivedLoaded.value = true;
-  } catch (err) {
-    console.warn('loadAllArchived failed', err);
+  } catch (error) {
+    console.warn('loadAllArchived failed', error);
   } finally {
     archivedLoading.value = false;
   }
@@ -264,7 +264,7 @@ watch(activeTab, (tab) => {
 const archiveWorkspaces = computed<string[]>(() => {
   const set = new Set<string>();
   for (const s of archivedItems.value) set.add(s.cwd);
-  return Array.from(set).sort((a, b) => a.localeCompare(b));
+  return Array.from(set).toSorted((a, b) => a.localeCompare(b));
 });
 
 const filteredArchived = computed<AppSession[]>(() => {

@@ -57,7 +57,7 @@ export async function runHostSlashCommand(
   }
 
   const actionId = runtime.beginHostAction(command.raw, command.name === "import");
-  const emit = (text: string): void => runtime.emitHostText(text, actionId);
+  const emit = (text: string): void =>{  runtime.emitHostText(text, actionId); };
   try {
     if (command.name === "import") {
       const result = await importContext(runtime, command.args, ctx);
@@ -143,7 +143,7 @@ async function runPlanCommand(
   const subcommand = args.trim().toLowerCase();
   if (subcommand === "view") {
     const plan = await runtime.session.getPlan();
-    emit(plan?.content.trim() || "No plan file found for this session.");
+    emit(plan?.content.trim() ?? "No plan file found for this session.");
     return;
   }
   if (subcommand === "clear") {

@@ -312,7 +312,7 @@ function updateActiveTocQuery(): void {
   // the active one even if its message sits below the pane's vertical middle —
   // otherwise the highlight would lag one query behind at the bottom.
   if (distanceFromBottom() <= BOTTOM_THRESHOLD) {
-    activeTurnId.value = items[items.length - 1]!.id;
+    activeTurnId.value = items.at(-1)!.id;
     return;
   }
 

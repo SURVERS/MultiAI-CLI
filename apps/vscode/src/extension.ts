@@ -17,7 +17,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.extensionUri,
     context,
     () => outputChannel?.show(),
-    (message) => log(message),
+    (message) =>{  log(message); },
   );
   context.subscriptions.push(provider, outputChannel);
 
@@ -52,7 +52,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (changedKeys.includes("yoloMode")) {
         void provider
           ?.setYoloModeForActiveSessions(VSCodeSettings.yoloMode)
-          .catch((error) => logError("Unable to update session permission", error));
+          .catch((error) =>{  logError("Unable to update session permission", error); });
       }
     }),
     vscode.window.registerWebviewViewProvider("multiai.webview", provider, {

@@ -260,7 +260,7 @@ export class AgentLoopService extends Disposable implements IAgentLoopService {
     if (this.disposing) throw abortError('Agent loop disposed');
     if (this.activeTurnJob !== undefined || this.hasPendingRequests()) return undefined;
     this.quiescenceDepth += 1;
-    return toDisposable(() => this.releaseQuiescence());
+    return toDisposable(() =>{  this.releaseQuiescence(); });
   }
 
   private releaseQuiescence(): void {
@@ -491,7 +491,7 @@ export class AgentLoopService extends Disposable implements IAgentLoopService {
       result = await this.run({
         turnId: turn.id,
         signal: turn.signal,
-        onStarted: () => ready.resolve(),
+        onStarted: () =>{  ready.resolve(); },
       });
       return result;
     } catch (error) {

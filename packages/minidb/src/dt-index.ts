@@ -9,7 +9,7 @@ import { SkipList, cmpNumber, cmpString } from './skiplist.js';
 import type { RangeEntry } from './skiplist.js';
 
 interface DtColumn {
-  list: SkipList<number, string>;
+  list: SkipList<number>;
   byKey: Map<string, number>;
 }
 
@@ -25,7 +25,7 @@ export class DtIndex {
   private col(name: string): DtColumn {
     let c = this.cols.get(name);
     if (!c) {
-      c = { list: new SkipList<number, string>({ compareKey: cmpNumber, compareVal: cmpString }), byKey: new Map() };
+      c = { list: new SkipList<number>({ compareKey: cmpNumber, compareVal: cmpString }), byKey: new Map() };
       this.cols.set(name, c);
     }
     return c;
@@ -55,7 +55,7 @@ export class DtIndex {
       c.byKey.set(key, ms);
     }
 
-    if (Object.keys(next).length) this.byKey.set(key, { ...next });
+    if (Object.keys(next).length > 0) this.byKey.set(key, { ...next });
     else this.byKey.delete(key);
   }
 
@@ -74,7 +74,7 @@ export class DtIndex {
   }
 
   /** Range over a dt column. */
-  range(col: string, opts: Parameters<SkipList<number, string>['range']>[0] = {}): DtRangeEntry[] {
+  range(col: string, opts: Parameters<SkipList<number>['range']>[0] = {}): DtRangeEntry[] {
     const c = this.cols.get(col);
     if (!c) return [];
     return c.list.range(opts).map((n: RangeEntry<number, string>) => ({ key: n.val, value: n.key }));
@@ -84,7 +84,7 @@ export class DtIndex {
    *  range() but lets the caller stop early without materializing everything. */
   *iterate(
     col: string,
-    opts: Parameters<SkipList<number, string>['iterate']>[0] = {},
+    opts: Parameters<SkipList<number>['iterate']>[0] = {},
   ): Generator<DtRangeEntry> {
     const c = this.cols.get(col);
     if (!c) return;

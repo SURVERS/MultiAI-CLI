@@ -29,14 +29,14 @@ function renderDiffLine(parts: DiffPart[], type: "added" | "removed"): React.Rea
           {part.value}
         </span>
       );
-    } else {
+    }
       if (part.removed) return null;
       return (
         <span key={i} className={cn(part.added && "bg-emerald-300/50 dark:bg-emerald-700/50 rounded-sm")}>
           {part.value}
         </span>
       );
-    }
+    
   });
 }
 
@@ -86,7 +86,7 @@ function computeDiffLines(oldText: string, newText: string): { oldLines: DiffPar
 }
 
 export function DiffBlockView({ block, maxHeight = "max-h-40" }: DiffBlockProps) {
-  const fileName = block.path.split("/").pop() || block.path;
+  const fileName = block.path.split("/").pop() ?? block.path;
   const hasOld = block.old_text.length > 0;
   const hasNew = block.new_text.length > 0;
 
@@ -102,7 +102,7 @@ export function DiffBlockView({ block, maxHeight = "max-h-40" }: DiffBlockProps)
               {oldLines.map((lineParts, i) => (
                 <div key={i} className="flex">
                   <span className="text-red-500 select-none mr-2 shrink-0">-</span>
-                  <span className="text-red-600 dark:text-red-400 whitespace-pre-wrap break-all">{renderDiffLine(lineParts, "removed") || " "}</span>
+                  <span className="text-red-600 dark:text-red-400 whitespace-pre-wrap break-all">{renderDiffLine(lineParts, "removed") ?? " "}</span>
                 </div>
               ))}
             </div>
@@ -114,7 +114,7 @@ export function DiffBlockView({ block, maxHeight = "max-h-40" }: DiffBlockProps)
               {newLines.map((lineParts, i) => (
                 <div key={i} className="flex">
                   <span className="text-emerald-500 select-none mr-2 shrink-0">+</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 whitespace-pre-wrap break-all">{renderDiffLine(lineParts, "added") || " "}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 whitespace-pre-wrap break-all">{renderDiffLine(lineParts, "added") ?? " "}</span>
                 </div>
               ))}
             </div>

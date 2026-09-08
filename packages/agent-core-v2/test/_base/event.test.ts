@@ -99,7 +99,7 @@ describe('Emitter / Event', () => {
 
     expect(seen).toEqual([]);
     expect(subscription).toBe(Disposable.None);
-    expect(() => subscription.dispose()).not.toThrow();
+    expect(() =>{  subscription.dispose(); }).not.toThrow();
   });
 
   it('disposables array overload collects the subscription disposable', () => {

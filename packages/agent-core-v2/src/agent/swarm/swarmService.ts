@@ -88,7 +88,7 @@ export class AgentSwarmService extends Disposable implements IAgentSwarmService 
     const trigger = this.wire.getModel(SwarmModel);
     if (trigger === null) return;
     const history = this.context.get();
-    const last = history[history.length - 1];
+    const last = history.at(-1);
     const willPop =
       last?.origin?.kind === 'injection' && last.origin.variant === 'swarm_mode';
     this.wire.dispatch(swarmExit({}));
