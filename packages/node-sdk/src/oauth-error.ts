@@ -31,7 +31,9 @@ export function mapOAuthTokenError(error: unknown, providerName: string): MultiA
   }
   if (
     error instanceof MultiAIOAuthError &&
-    ['metadata_unavailable', 'temporarily_unavailable', 'server_error'].includes(error.code)
+    ['network_error', 'metadata_unavailable', 'temporarily_unavailable', 'server_error'].includes(
+      error.code,
+    )
   ) {
     return new MultiAIError(
       ErrorCodes.PROVIDER_CONNECTION_ERROR,

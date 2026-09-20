@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, type Mock } from 'vitest';
 
 import { MultiAIOAuthManager } from '../src/multiai-manager';
 import { MemorySessionStorage, type SecureSessionStorage } from '../src/secure-storage';
@@ -73,7 +73,7 @@ function userInfoResponse(): Response {
 }
 
 describe('MultiAI refresh-token rotation', () => {
-  it('deletes the local session after an ambiguous refresh network failure', async () => {
+  it('keeps the local session after an ambiguous refresh network failure', async () => {
     const storage = await seededStorage();
     const fetchImpl = vi.fn(async (input: FetchInput) => {
       const url = fetchUrl(input);
@@ -87,9 +87,18 @@ describe('MultiAI refresh-token rotation', () => {
     });
 
     await expect(manager.getAccessToken()).rejects.toMatchObject({
-      code: 'login_required',
+      code: 'network_error',
     });
-    await expect(manager.hasSession()).resolves.toBe(false);
+    await expect(manager.hasSession()).resolves.toBe(true);
+    // A later attempt retries the refresh instead of demanding a fresh login.
+    (fetchImpl as Mock).mockImplementation(async (input: FetchInput) => {
+      const url = fetchUrl(input);
+      if (url.endsWith('/.well-known/oauth-authorization-server')) return metadataResponse();
+      if (url.endsWith('/oauth/token')) return tokenResponse('refresh-2', 'access-2');
+      if (url.endsWith('/oauth/userinfo')) return userInfoResponse();
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    await expect(manager.getAccessToken({ force: true })).resolves.toBe('access-2');
   });
 
   it('does not publish an access token when refresh-token CAS fails', async () => {

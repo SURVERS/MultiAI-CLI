@@ -42,6 +42,62 @@ export type DeviceTokenPoll =
 
 const METADATA_PATH = '/.well-known/oauth-authorization-server';
 
+// Requests through proxies/VPNs can hang for minutes before the proxy gives
+// up, so every request is bounded and idempotent GETs are retried.
+const REQUEST_TIMEOUT_MS = 15_000;
+const GET_RETRY_ATTEMPTS = 3;
+
+async function fetchWithTimeout(
+  endpoint: string,
+  init: RequestInit,
+  fetchImpl: typeof fetch,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetchImpl(endpoint, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function postFormWithTimeout(
+  endpoint: string,
+  body: URLSearchParams,
+  fetchImpl: typeof fetch,
+): Promise<{ readonly response: Response; readonly payload: Record<string, unknown> }> {
+  const response = await fetchWithTimeout(
+    endpoint,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body,
+    },
+    fetchImpl,
+  );
+  const payload = await responseJson(response);
+  return { response, payload };
+}
+
+async function fetchJsonWithRetries(
+  endpoint: string,
+  headers: Record<string, string>,
+  fetchImpl: typeof fetch,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < GET_RETRY_ATTEMPTS; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+    }
+    try {
+      return await fetchWithTimeout(endpoint, { headers: { ...headers, Accept: 'application/json' } }, fetchImpl);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
 function base64url(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString('base64url');
 }
@@ -168,7 +224,11 @@ export async function fetchAuthorizationServerMetadata(
   fetchImpl: typeof fetch = fetch,
 ): Promise<OAuthAuthorizationServerMetadata> {
   const issuer = issuerUrl(config.issuer);
-  const response = await fetchImpl(new URL(METADATA_PATH, `${issuer.toString()}/`));
+  const response = await fetchJsonWithRetries(
+    new URL(METADATA_PATH, `${issuer.toString()}/`).toString(),
+    {},
+    fetchImpl,
+  );
   if (!response.ok) {
     throw new MultiAIOAuthError('metadata_unavailable', 'Unable to load MultiAI OAuth metadata.', {
       status: response.status,
@@ -251,13 +311,7 @@ async function postForm(
   body: URLSearchParams,
   fetchImpl: typeof fetch,
 ): Promise<{ readonly response: Response; readonly payload: Record<string, unknown> }> {
-  const response = await fetchImpl(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
-    body,
-  });
-  const payload = await responseJson(response);
-  return { response, payload };
+  return postFormWithTimeout(endpoint, body, fetchImpl);
 }
 
 export function buildAuthorizationUri(options: {
@@ -382,10 +436,11 @@ export async function refreshToken(options: {
       options.fetchImpl ?? fetch,
     ));
   } catch (error) {
-    throw new MultiAIOAuthLoginRequiredError(
-      'The refresh result is ambiguous; sign in to MultiAI again.',
-      { cause: error },
-    );
+    // Distinguish "request never completed" from a server verdict so the
+    // manager can keep the session on transport failures.
+    throw new MultiAIOAuthError('network_error', 'The refresh request failed in transit; retry later.', {
+      cause: error,
+    });
   }
   if (!response.ok) throw protocolError(payload, response.status);
   return parseToken(payload, options.now ?? (() => Math.floor(Date.now() / 1000)));
@@ -398,14 +453,18 @@ export async function revokeToken(options: {
   readonly fetchImpl?: typeof fetch;
 }): Promise<void> {
   try {
-    await (options.fetchImpl ?? fetch)(options.metadata.revocation_endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: options.config.clientId,
-        token: options.refreshToken,
-      }),
-    });
+    await fetchWithTimeout(
+      options.metadata.revocation_endpoint,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: options.config.clientId,
+          token: options.refreshToken,
+        }),
+      },
+      options.fetchImpl ?? fetch,
+    );
   } catch {
     // Logout is local-first after this best-effort revocation attempt.
   }
@@ -443,6 +502,24 @@ function validateIdentityClaims(payload: JWTPayload, issuer: string): MultiAIIde
   };
 }
 
+// One JWKS resolver per metadata object: jose caches keys in memory and
+// refetches only when an unknown kid shows up, so login and refreshes do not
+// each hit the jwks endpoint through a possibly slow proxy. Keying on the
+// metadata object (not the URI) keeps concurrent tenants and tests isolated.
+const jwksResolvers = new WeakMap<OAuthAuthorizationServerMetadata, ReturnType<typeof createRemoteJWKSet>>();
+
+function jwksResolver(metadata: OAuthAuthorizationServerMetadata): ReturnType<typeof createRemoteJWKSet> {
+  let resolver = jwksResolvers.get(metadata);
+  if (resolver === undefined) {
+    resolver = createRemoteJWKSet(new URL(metadata.jwks_uri), {
+      timeoutDuration: 15_000,
+      cooldownDuration: 30_000,
+    });
+    jwksResolvers.set(metadata, resolver);
+  }
+  return resolver;
+}
+
 export async function verifyIdToken(options: {
   readonly token: string;
   readonly metadata: OAuthAuthorizationServerMetadata;
@@ -453,12 +530,14 @@ export async function verifyIdToken(options: {
   const now = (options.now ?? (() => Math.floor(Date.now() / 1000)))();
   const result = await jwtVerify(
     options.token,
-    createRemoteJWKSet(new URL(options.metadata.jwks_uri)),
+    jwksResolver(options.metadata),
     {
       algorithms: ['RS256'],
       issuer: options.metadata.issuer,
       audience: options.clientId,
-      clockTolerance: 60,
+      // Local clocks drift from the issuer, especially offline laptops; a
+      // five-minute allowance keeps a skewed clock from failing the login.
+      clockTolerance: 300,
       currentDate: new Date(now * 1000),
     },
   );
@@ -472,7 +551,7 @@ export async function verifyIdToken(options: {
   if (
     typeof result.payload.exp !== 'number' ||
     typeof result.payload.iat !== 'number' ||
-    result.payload.iat > now + 60
+    result.payload.iat > now + 300
   ) {
     throw new MultiAIOAuthError('invalid_id_token', 'ID token lifetime claims are invalid.');
   }
@@ -491,9 +570,7 @@ async function authorizedJson(
   accessToken: string,
   fetchImpl: typeof fetch,
 ): Promise<Record<string, unknown>> {
-  const response = await fetchImpl(url, {
-    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
-  });
+  const response = await fetchJsonWithRetries(url, { Authorization: `Bearer ${accessToken}` }, fetchImpl);
   let payload: Record<string, unknown>;
   try {
     payload = await responseJson(response);

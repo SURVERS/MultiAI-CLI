@@ -454,9 +454,26 @@ describe('MultiAI ID tokens', () => {
     ).rejects.toBeDefined();
   });
 
-  it('rejects an expired token outside the clock-skew allowance', async () => {
+  it('accepts an expired token within the clock-skew allowance', async () => {
     const { token, jwk } = await signedToken({}, undefined, {
       expirationTime: now - 61,
+    });
+    stubJwks(jwk);
+
+    await expect(
+      verifyIdToken({
+        token,
+        metadata: metadata(),
+        clientId,
+        nonce: 'nonce-1',
+        now: () => now,
+      }),
+    ).resolves.toMatchObject({ subject: 'account-123' });
+  });
+
+  it('rejects an expired token outside the clock-skew allowance', async () => {
+    const { token, jwk } = await signedToken({}, undefined, {
+      expirationTime: now - 301,
     });
     stubJwks(jwk);
 
@@ -471,9 +488,26 @@ describe('MultiAI ID tokens', () => {
     ).rejects.toBeDefined();
   });
 
-  it('rejects a token issued in the future outside the clock-skew allowance', async () => {
+  it('accepts a token issued slightly in the future within the clock-skew allowance', async () => {
     const { token, jwk } = await signedToken({}, undefined, {
       issuedAt: now + 61,
+    });
+    stubJwks(jwk);
+
+    await expect(
+      verifyIdToken({
+        token,
+        metadata: metadata(),
+        clientId,
+        nonce: 'nonce-1',
+        now: () => now,
+      }),
+    ).resolves.toMatchObject({ subject: 'account-123' });
+  });
+
+  it('rejects a token issued in the future outside the clock-skew allowance', async () => {
+    const { token, jwk } = await signedToken({}, undefined, {
+      issuedAt: now + 301,
     });
     stubJwks(jwk);
 

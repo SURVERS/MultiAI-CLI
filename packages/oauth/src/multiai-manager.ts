@@ -20,6 +20,7 @@ import {
   requestDeviceAuthorization,
   revokeToken,
   verifyIdToken,
+  type DeviceTokenPoll,
 } from './multiai-client';
 import {
   MultiAIAccountUnavailableError,
@@ -148,7 +149,14 @@ export class MultiAIOAuthManager {
 
   private metadata(): Promise<OAuthAuthorizationServerMetadata> {
     this.validateClient();
-    this.metadataPromise ??= fetchAuthorizationServerMetadata(this.config, this.fetchImpl);
+    this.metadataPromise ??= fetchAuthorizationServerMetadata(this.config, this.fetchImpl).catch(
+      (error: unknown) => {
+        // A failed fetch (proxy hiccup, captive portal) must not poison the
+        // cache for the rest of the process lifetime; the next call retries.
+        this.metadataPromise = undefined;
+        throw error;
+      },
+    );
     return this.metadataPromise;
   }
 
@@ -331,18 +339,30 @@ export class MultiAIOAuthManager {
     await options.onAuthorization?.({ method: 'device', ...authorization });
     const deadline = this.now() + authorization.expiresIn;
     let interval = authorization.interval;
+    let consecutiveFailures = 0;
     while (this.now() < deadline) {
       requestAborted(options.signal);
       await this.sleep(interval * 1000);
       requestAborted(options.signal);
-      const result = await pollDeviceToken({
-        metadata,
-        config: this.config,
-        deviceCode: authorization.deviceCode,
-        verifier,
-        fetchImpl: this.fetchImpl,
-        now: this.now,
-      });
+      let result: DeviceTokenPoll;
+      try {
+        result = await pollDeviceToken({
+          metadata,
+          config: this.config,
+          deviceCode: authorization.deviceCode,
+          verifier,
+          fetchImpl: this.fetchImpl,
+          now: this.now,
+        });
+        consecutiveFailures = 0;
+      } catch (error) {
+        // Through a flaky proxy a single poll can fail while the user has
+        // already approved the request; keep polling until the code expires.
+        consecutiveFailures += 1;
+        if (consecutiveFailures >= 5) throw error;
+        interval = Math.min(interval + 2, 15);
+        continue;
+      }
       if (result.kind === 'success') return result.token;
       if (result.kind === 'denied') {
         throw new MultiAIOAuthError('access_denied', 'MultiAI authorization was denied.');
@@ -452,6 +472,15 @@ export class MultiAIOAuthManager {
     }
   }
 
+  private isNetworkError(error: unknown): boolean {
+    // The client marks transport failures with this code; anything else it
+    // wraps is a protocol verdict (invalid_grant, expired, ...) that means
+    // the stored session is genuinely unusable.
+    if (error instanceof MultiAIOAuthError) return error.code === 'network_error';
+    // Raw fetch failures (aborted timer, socket reset) are transport too.
+    return error instanceof Error;
+  }
+
   private async refreshUnderLock(
     storage: SecureSessionStorage,
     _lockTarget: string | undefined,
@@ -474,6 +503,11 @@ export class MultiAIOAuthManager {
         now: this.now,
       });
     } catch (error) {
+      if (this.isNetworkError(error)) {
+        // Ambiguous outcome (request never completed): keep the refresh
+        // token and let the next getAccessToken() try again.
+        throw error;
+      }
       await storage.remove(this.sessionKey).catch(() => undefined);
       this.accessSession = undefined;
       throw error;
@@ -510,6 +544,11 @@ export class MultiAIOAuthManager {
         });
         identity = mergeIdentity(identity, verified);
       } catch (error) {
+        if (this.isNetworkError(error)) {
+          // JWKS fetch failed in transit; the token itself was never judged.
+          this.accessSession = { token, identity, persistence };
+          throw error;
+        }
         await storage.remove(this.sessionKey).catch(() => undefined);
         this.accessSession = undefined;
         throw new MultiAIOAuthLoginRequiredError(
@@ -526,6 +565,11 @@ export class MultiAIOAuthManager {
       });
       identity = mergeIdentity(identity, freshIdentity);
     } catch (error) {
+      if (this.isNetworkError(error)) {
+        // Userinfo could not be reached; the fresh token is still valid.
+        this.accessSession = { token, identity, persistence };
+        throw error;
+      }
       if (
         error instanceof MultiAIAccountUnavailableError ||
         error instanceof MultiAIOAuthLoginRequiredError
