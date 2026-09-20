@@ -1,5 +1,11 @@
 # multiai-cli
 
+## 1.1.3
+
+### Patch Changes
+
+- Make managed MultiAI sign-in reliable through flaky proxies and clock drift. All OAuth requests are now bounded by a 15s timeout, idempotent GETs (metadata, userinfo, models) retry, and the JWKS key set is cached across logins instead of re-fetched every time. The ID-token clock-skew allowance grows from 60s to 300s so a skewed laptop clock no longer rejects sign-in with an "expired ID token" error. A transient refresh or device-poll network failure no longer deletes your stored session or aborts an in-progress login; a once-failed OAuth metadata fetch is retried on the next attempt rather than being cached as broken for the rest of the process.
+
 ## 1.1.2
 
 ### Patch Changes
