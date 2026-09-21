@@ -1,5 +1,11 @@
 # multiai-cli
 
+## 1.1.6
+
+### Patch Changes
+
+- [#4](https://github.com/SURVERS/MultiAI-CLI/pull/4) [`50dbd0a`](https://github.com/SURVERS/MultiAI-CLI/commit/50dbd0af8aaae6b261065424419ea89f4811b526) Thanks [@Wolf02012](https://github.com/Wolf02012)! - Honor model output-token limits from managed and custom provider catalogs across Anthropic, OpenAI, OpenAI Responses, and Google GenAI requests. Refresh managed MultiAI metadata even when model IDs are unchanged, and keep catalog limits as mandatory ceilings over user-configured budgets.
+
 ## 1.1.5
 
 ### Patch Changes
