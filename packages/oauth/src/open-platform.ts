@@ -52,6 +52,13 @@ function toModelInfo(item: unknown): ProviderDiscoveryModelInfo | undefined {
   if (!Number.isInteger(contextLength) || contextLength <= 0) {
     throw new Error(`Model "${item['id']}" must include a positive context_length.`);
   }
+  const rawMaxOutputSize =
+    item['max_output_tokens'] ?? item['max_completion_tokens'] ?? item['max_tokens'];
+  const parsedMaxOutputSize = Number(rawMaxOutputSize);
+  const maxOutputSize =
+    Number.isInteger(parsedMaxOutputSize) && parsedMaxOutputSize > 0
+      ? parsedMaxOutputSize
+      : undefined;
   const displayName = item['display_name'];
   const normalizedDisplayName =
     typeof displayName === 'string' && displayName.length > 0 ? displayName : undefined;
@@ -64,6 +71,7 @@ function toModelInfo(item: unknown): ProviderDiscoveryModelInfo | undefined {
   return {
     id: item['id'],
     contextLength,
+    maxOutputSize,
     supportsReasoning: Boolean(item['supports_reasoning']),
     supportsImageIn: Boolean(item['supports_image_in']),
     supportsVideoIn: Boolean(item['supports_video_in']),
@@ -194,6 +202,7 @@ export function applyOpenPlatformConfig(
       provider: providerKey,
       model: model.id,
       maxContextSize: model.contextLength,
+      maxOutputSize: model.maxOutputSize,
       capabilities: capabilitiesForModel(model),
       ...(model.displayName !== undefined ? { displayName: model.displayName } : {}),
       ...(model.supportEfforts !== undefined ? { supportEfforts: model.supportEfforts } : {}),

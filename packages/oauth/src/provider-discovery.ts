@@ -5,6 +5,7 @@ export type ProviderDiscoveryThinkingSupport = 'only' | 'no' | 'both';
 export interface ProviderDiscoveryModelInfo {
   readonly id: string;
   readonly contextLength: number;
+  readonly maxOutputSize?: number;
   readonly supportsReasoning: boolean;
   readonly supportsImageIn: boolean;
   readonly supportsVideoIn: boolean;
@@ -48,6 +49,7 @@ export interface ProviderDiscoveryModelAlias {
   provider: string;
   model: string;
   maxContextSize: number;
+  maxOutputSize?: number;
   capabilities?: string[];
   supportEfforts?: readonly string[];
   defaultEffort?: string;

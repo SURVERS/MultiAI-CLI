@@ -35,6 +35,7 @@ registerProtocolBase({
         baseUrl:
           config.baseUrl ?? firstProcessEnv(endpoint?.baseUrlEnv) ?? endpoint?.defaultBaseUrl,
         defaultHeaders: traitDefaultHeaders(traits),
+        maxOutputTokens: config.providerOptions?.defaultMaxTokens,
         vertexai: config.providerOptions?.vertexai,
         project: config.providerOptions?.project,
         location: config.providerOptions?.location,

@@ -109,6 +109,7 @@ export interface MultiAIAccountSnapshot {
 export interface MultiAIModelInfo {
   readonly id: string;
   readonly contextLength?: number;
+  readonly maxOutputSize?: number;
   readonly inputMultiplier?: number;
   readonly cachedInputMultiplier?: number;
   readonly outputMultiplier?: number;

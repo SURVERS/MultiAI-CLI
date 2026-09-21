@@ -7,6 +7,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 
 import {
   MULTIAI_API_BASE_URL,
@@ -276,6 +277,7 @@ export class OAuthService extends Disposable implements IOAuthService {
       return { changed: [], unchanged: [], failed: [] };
     }
     try {
+      const beforeSnapshot = managedConfigSnapshot(current);
       const before = providerModelIds(current);
       const models = await this.toolkit.getModels();
       const next = structuredClone(current);
@@ -285,7 +287,7 @@ export class OAuthService extends Disposable implements IOAuthService {
         issuer: MULTIAI_OAUTH_ISSUER,
       });
       const after = providerModelIds(next);
-      if (setsEqual(before, after)) {
+      if (isDeepStrictEqual(beforeSnapshot, managedConfigSnapshot(next))) {
         return { changed: [], unchanged: [MULTIAI_PROVIDER_NAME], failed: [] };
       }
       await this.writeConfig(next);
@@ -546,8 +548,18 @@ function providerModelIds(config: ManagedMultiAIConfigShape): Set<string> {
   return ids;
 }
 
-function setsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
-  return left.size === right.size && [...left].every((value) => right.has(value));
+function managedConfigSnapshot(config: ManagedMultiAIConfigShape): unknown {
+  return {
+    provider: config.providers[MULTIAI_PROVIDER_NAME],
+    models: Object.fromEntries(
+      Object.entries(config.models ?? {}).filter(
+        ([, model]) =>
+          (model as { provider?: unknown }).provider === MULTIAI_PROVIDER_NAME,
+      ),
+    ),
+    defaultModel: config.defaultModel,
+    thinking: config.thinking,
+  };
 }
 
 function isProviderlessModel(model: ModelRecord | undefined): boolean {

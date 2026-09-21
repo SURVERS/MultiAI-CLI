@@ -12,8 +12,8 @@ const MIN_FLOOR = 1;
 const DEFAULT_UNKNOWN_CONTEXT_FALLBACK = 32000;
 
 /**
- * Resolve configured completion budget. Env values are explicit hard caps;
- * non-positive env values disable clamping.
+ * Resolve configured completion budget. The model catalog's output limit is a
+ * mandatory ceiling; environment values may lower it, never raise or disable it.
  */
 export function resolveCompletionBudget(args: {
   readonly maxOutputSize?: number;
@@ -21,16 +21,32 @@ export function resolveCompletionBudget(args: {
   readonly env?: NodeJS.ProcessEnv;
 }): CompletionBudgetConfig | undefined {
   const env = args.env ?? process.env;
+  const modelOutputCap =
+    args.maxOutputSize !== undefined && args.maxOutputSize > 0
+      ? args.maxOutputSize
+      : undefined;
   const fromNew = parseEnvBudget(env['MULTIAI_MODEL_MAX_COMPLETION_TOKENS']);
   if (fromNew !== 'absent') {
-    return fromNew === 'disabled' ? undefined : { hardCap: fromNew };
+    if (fromNew === 'disabled') {
+      return modelOutputCap === undefined ? undefined : { hardCap: modelOutputCap };
+    }
+    return {
+      hardCap:
+        modelOutputCap === undefined ? fromNew : Math.min(fromNew, modelOutputCap),
+    };
   }
   const fromLegacy = parseEnvBudget(env['MULTIAI_MODEL_MAX_TOKENS']);
   if (fromLegacy !== 'absent') {
-    return fromLegacy === 'disabled' ? undefined : { hardCap: fromLegacy };
+    if (fromLegacy === 'disabled') {
+      return modelOutputCap === undefined ? undefined : { hardCap: modelOutputCap };
+    }
+    return {
+      hardCap:
+        modelOutputCap === undefined ? fromLegacy : Math.min(fromLegacy, modelOutputCap),
+    };
   }
-  if (args.maxOutputSize !== undefined && args.maxOutputSize > 0) {
-    return { hardCap: args.maxOutputSize };
+  if (modelOutputCap !== undefined) {
+    return { hardCap: modelOutputCap };
   }
   if (args.reservedContextSize !== undefined && args.reservedContextSize > 0) {
     return { fallback: args.reservedContextSize };

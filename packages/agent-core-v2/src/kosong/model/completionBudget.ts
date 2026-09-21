@@ -30,12 +30,23 @@ export function resolveCompletionBudget(args: {
   readonly reservedContextSize?: number;
   readonly maxCompletionTokensCap?: number;
 }): CompletionBudgetConfig | undefined {
+  const modelOutputCap =
+    args.maxOutputSize !== undefined && args.maxOutputSize > 0
+      ? args.maxOutputSize
+      : undefined;
   if (args.maxCompletionTokensCap !== undefined) {
-    if (args.maxCompletionTokensCap <= 0) return undefined;
-    return { hardCap: args.maxCompletionTokensCap };
+    if (args.maxCompletionTokensCap <= 0) {
+      return modelOutputCap === undefined ? undefined : { hardCap: modelOutputCap };
+    }
+    return {
+      hardCap:
+        modelOutputCap === undefined
+          ? args.maxCompletionTokensCap
+          : Math.min(args.maxCompletionTokensCap, modelOutputCap),
+    };
   }
-  if (args.maxOutputSize !== undefined && args.maxOutputSize > 0) {
-    return { hardCap: args.maxOutputSize };
+  if (modelOutputCap !== undefined) {
+    return { hardCap: modelOutputCap };
   }
   if (args.reservedContextSize !== undefined && args.reservedContextSize > 0) {
     return { fallback: args.reservedContextSize };

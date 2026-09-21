@@ -24,6 +24,7 @@ export interface ManagedMultiAIModelAlias {
   provider: typeof MULTIAI_PROVIDER_NAME;
   model: string;
   maxContextSize?: number;
+  maxOutputSize?: number;
   capabilities?: readonly string[];
   supportEfforts?: readonly string[];
   defaultEffort?: string;
@@ -241,6 +242,7 @@ export function applyManagedMultiAIConfig(
       provider: MULTIAI_PROVIDER_NAME,
       model: model.id,
       maxContextSize: model.contextLength,
+      maxOutputSize: model.maxOutputSize,
       capabilities: model.capabilities ?? profile?.capabilities,
       supportEfforts: model.supportEfforts ?? profile?.supportEfforts,
       defaultEffort: model.defaultEffort ?? profile?.defaultEffort,
