@@ -42,6 +42,7 @@ import type {
 import type { Tool } from '#/kosong/contract/tool';
 import type { TokenUsage } from '#/kosong/contract/usage';
 
+import { resolveDefaultMaxTokens } from '../anthropic/anthropic';
 import {
   convertOpenAIError,
   hasModelPrefix,
@@ -1056,7 +1057,10 @@ export class OpenAIResponsesChatProvider implements ChatProvider {
     this._convertErrorHook = options.convertError;
 
     if (options.maxOutputTokens !== undefined) {
-      this._generationKwargs.max_output_tokens = options.maxOutputTokens;
+      this._generationKwargs.max_output_tokens = resolveDefaultMaxTokens(
+        this._model,
+        options.maxOutputTokens,
+      );
     }
 
     this._client = this._apiKey === undefined ? undefined : this._buildClient(this._apiKey);
@@ -1125,7 +1129,10 @@ export class OpenAIResponsesChatProvider implements ChatProvider {
       ) {
         cap = Math.min(cap, options.maxContextTokens - options.usedContextTokens);
       }
-      kwargs = { ...kwargs, max_output_tokens: Math.max(1, cap) };
+      kwargs = {
+        ...kwargs,
+        max_output_tokens: resolveDefaultMaxTokens(this._model, Math.max(1, cap)),
+      };
     }
 
     const reasoningEffort = kwargs['reasoning_effort'] as string | undefined;

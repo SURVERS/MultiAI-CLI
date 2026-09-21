@@ -753,6 +753,40 @@ describe('per-turn intent wire encoding (behavior probes)', () => {
     expect(body['prompt_cache_key']).toBe('session-probe');
   });
 
+  it('clamps a Claude budget on the Responses wire to the model output ceiling', async () => {
+    const provider = new OpenAIResponsesChatProvider({
+      model: 'claude-fable-5-1',
+      apiKey: 'sk-probe',
+    });
+
+    const body = await captureResponsesBody(provider, { maxCompletionTokens: 200000 });
+
+    expect(body['max_output_tokens']).toBe(128000);
+  });
+
+  it('leaves non-Claude Responses budgets unchanged', async () => {
+    const provider = new OpenAIResponsesChatProvider({
+      model: 'gpt-5',
+      apiKey: 'sk-probe',
+    });
+
+    const body = await captureResponsesBody(provider, { maxCompletionTokens: 200000 });
+
+    expect(body['max_output_tokens']).toBe(200000);
+  });
+
+  it('clamps a configured Claude Responses output limit to the model ceiling', async () => {
+    const provider = new OpenAIResponsesChatProvider({
+      model: 'claude-fable-5-1',
+      apiKey: 'sk-probe',
+      maxOutputTokens: 200000,
+    });
+
+    const body = await captureResponsesBody(provider);
+
+    expect(body['max_output_tokens']).toBe(128000);
+  });
+
   it('encodes cacheKey on Anthropic as metadata.user_id', async () => {
     const provider = registry.createChatProvider({
       protocol: 'anthropic',
@@ -1161,6 +1195,7 @@ describe('Anthropic thinking keep (context-management overlay)', () => {
 describe('Anthropic max-tokens profile', () => {
   it('returns per-version Messages-API caps for known Claude models', () => {
     expect(resolveDefaultMaxTokens('claude-fable-5')).toBe(128000);
+    expect(resolveDefaultMaxTokens('claude-fable-5-1')).toBe(128000);
     expect(resolveDefaultMaxTokens('claude-opus-4-8')).toBe(128000);
     expect(resolveDefaultMaxTokens('claude-opus-4-7')).toBe(128000);
     expect(resolveDefaultMaxTokens('claude-opus-4-6')).toBe(128000);
@@ -1204,17 +1239,17 @@ describe('Anthropic max-tokens profile', () => {
     expect(params['max_tokens']).toBe(128000);
   });
 
-  it('sends an explicit defaultMaxTokens unclamped, even above the model ceiling', async () => {
+  it('clamps an explicit defaultMaxTokens to the model ceiling', async () => {
     const provider = new AnthropicChatProvider({
-      model: 'claude-opus-4-7',
+      model: 'claude-fable-5-1',
       apiKey: 'sk-probe',
       stream: false,
-      defaultMaxTokens: 999999,
+      defaultMaxTokens: 200000,
     });
 
     const { params } = await captureAnthropicBody(provider);
 
-    expect(params['max_tokens']).toBe(999999);
+    expect(params['max_tokens']).toBe(128000);
   });
 
   it('clamps the per-turn budget against the model ceiling', async () => {
@@ -1230,17 +1265,17 @@ describe('Anthropic max-tokens profile', () => {
     expect(above.params['max_tokens']).toBe(128000);
   });
 
-  it('lets an explicit constructor defaultMaxTokens win over the per-turn budget', async () => {
+  it('keeps an explicit constructor cap after clamping it to the model ceiling', async () => {
     const provider = new AnthropicChatProvider({
-      model: 'claude-opus-4-7',
+      model: 'claude-fable-5-1',
       apiKey: 'sk-probe',
       stream: false,
-      defaultMaxTokens: 999999,
+      defaultMaxTokens: 200000,
     });
 
     const { params } = await captureAnthropicBody(provider, { maxCompletionTokens: 5000 });
 
-    expect(params['max_tokens']).toBe(999999);
+    expect(params['max_tokens']).toBe(128000);
   });
 });
 

@@ -20,6 +20,7 @@ import type { Tool } from '#/tool';
 import type { TokenUsage } from '#/usage';
 import OpenAI from 'openai';
 
+import { resolveDefaultMaxTokens } from './anthropic';
 import { usesOpenAIResponsesDeveloperRole } from './capability-registry';
 import {
   convertOpenAIError,
@@ -1069,7 +1070,10 @@ export class OpenAIResponsesChatProvider implements ChatProvider {
     this._clientFactory = options.clientFactory;
 
     if (options.maxOutputTokens !== undefined) {
-      this._generationKwargs.max_output_tokens = options.maxOutputTokens;
+      this._generationKwargs.max_output_tokens = resolveDefaultMaxTokens(
+        this._model,
+        options.maxOutputTokens,
+      );
     }
 
     this._client = this._apiKey === undefined ? undefined : this._buildClient(this._apiKey);
@@ -1190,7 +1194,9 @@ export class OpenAIResponsesChatProvider implements ChatProvider {
   }
 
   withMaxCompletionTokens(maxCompletionTokens: number): OpenAIResponsesChatProvider {
-    return this.withGenerationKwargs({ max_output_tokens: maxCompletionTokens });
+    return this.withGenerationKwargs({
+      max_output_tokens: resolveDefaultMaxTokens(this._model, maxCompletionTokens),
+    });
   }
 
   private _clone(): OpenAIResponsesChatProvider {
