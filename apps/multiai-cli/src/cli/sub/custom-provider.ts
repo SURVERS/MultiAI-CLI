@@ -121,50 +121,63 @@ export async function fetchProviderOwnMeta(
 		if (!resp.ok) return lookup;
 		const payload = (await resp.json()) as { data?: unknown; models?: unknown };
 		const rows = Array.isArray(payload.data) ? payload.data : Array.isArray(payload.models) ? payload.models : [];
-		for (const row of rows) {
-			if (!row || typeof row !== 'object') continue;
-			const ext = row as Record<string, unknown>;
-const id = (stringField(ext['id']) ?? stringField(ext['name']) ?? '').trim();
+			for (const row of rows) {
+				if (!row || typeof row !== 'object') continue;
+				const ext = row as Record<string, unknown>;
+				const id = (stringField(ext['id']) ?? stringField(ext['name']) ?? '').trim();
 				if (!id || lookup.has(id.toLowerCase())) continue;
-			const contextWindow =
-				toFiniteInt(ext['context_length']) ??
-				toFiniteInt(ext['context_window']) ??
-				toFiniteInt(ext['max_context_tokens']);
-			const maxOutput =
-				toFiniteInt(ext['max_output_tokens']) ??
-				toFiniteInt(ext['max_output_length']) ??
-				toFiniteInt(ext['max_completion_tokens']);
-			const ssp = toStringArray(ext['supported_sampling_parameters']) ?? [];
-			const sp = toStringArray(ext['supported_parameters']) ?? [];
-			let supportEfforts: string[] | undefined;
-			let reasoningKey: string | undefined;
-			if (ssp.includes('reasoning_effort') || sp.includes('reasoning_effort')) {
-				supportEfforts = ['low', 'medium', 'high'];
-				reasoningKey = 'effort';
-			}
-			const reasoning = ext['reasoning'];
-			if (reasoning && typeof reasoning === 'object') {
-				const r = reasoning as Record<string, unknown>;
-				const levels = toStringArray(r['levels'] ?? r['efforts'] ?? r['supported_efforts']);
-				if (levels) {
-					supportEfforts = levels;
+				const limit =
+					ext['limit'] && typeof ext['limit'] === 'object'
+						? (ext['limit'] as Record<string, unknown>)
+						: undefined;
+				const contextWindow =
+					toFiniteInt(ext['max_context_tokens']) ??
+					toFiniteInt(ext['context_window']) ??
+					toFiniteInt(ext['contextWindow']) ??
+					toFiniteInt(ext['context_length']) ??
+					toFiniteInt(limit?.['context']);
+				const maxOutput =
+					toFiniteInt(ext['max_output_tokens']) ??
+					toFiniteInt(ext['max_completion_tokens']) ??
+					toFiniteInt(ext['max_tokens']) ??
+					toFiniteInt(ext['maxOutputTokens']) ??
+					toFiniteInt(ext['max_output_length']) ??
+					toFiniteInt(limit?.['output']);
+				const ssp = toStringArray(ext['supported_sampling_parameters']) ?? [];
+				const sp = toStringArray(ext['supported_parameters']) ?? [];
+				let supportEfforts: string[] | undefined;
+				let reasoningKey: string | undefined;
+				if (ssp.includes('reasoning_effort') || sp.includes('reasoning_effort')) {
+					supportEfforts = ['low', 'medium', 'high'];
 					reasoningKey = 'effort';
 				}
-			}
-			const arch = ext['architecture'] as Record<string, unknown> | undefined;
-			const inputModalities =
-				toStringArray(ext['input_modalities']) ?? (arch ? toStringArray(arch['input_modalities']) : undefined);
-lookup.set(id.toLowerCase(), {
+				const reasoning = ext['reasoning'];
+				if (reasoning && typeof reasoning === 'object') {
+					const r = reasoning as Record<string, unknown>;
+					const levels = toStringArray(r['levels'] ?? r['efforts'] ?? r['supported_efforts']);
+					if (levels) {
+						supportEfforts = levels;
+						reasoningKey = 'effort';
+					}
+				}
+				const arch = ext['architecture'] as Record<string, unknown> | undefined;
+				const inputModalities =
+					toStringArray(ext['input_modalities']) ??
+					(arch ? toStringArray(arch['input_modalities']) : undefined);
+				lookup.set(id.toLowerCase(), {
 					id,
 					displayName:
-					typeof ext['name'] === 'string' && ext['name'] && ext['name'] !== id ? ext['name'] : undefined,
-				maxContextSize: contextWindow,
-				maxOutputSize: maxOutput,
-				inputModalities,
-				reasoningKey,
-				supportEfforts,
-			});
-		}
+						typeof ext['name'] === 'string' && ext['name'] && ext['name'] !== id
+							? ext['name']
+							: undefined,
+					maxContextSize: contextWindow,
+					maxOutputSize: maxOutput,
+					inputModalities,
+					reasoningKey,
+					supportEfforts,
+				});
+			}
+
 	} catch {
 		// Провайдер не отдал каталог — работаем через models.dev/дефолты.
 	}

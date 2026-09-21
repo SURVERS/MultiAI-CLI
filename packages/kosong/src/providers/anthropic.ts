@@ -202,6 +202,7 @@ const CEILING_BY_FAMILY_VERSION: Readonly<Record<string, number>> = {
   'mythos-5': 128000,
   // Claude Opus per minor version. 4.6 through 4.8 document a 128k cap;
   // 4.5 ships at 64k; 4.1 and the dated 4.0 release stay at 32k.
+  'opus-5': 128000,
   'opus-4-8': 128000,
   'opus-4-7': 128000,
   'opus-4-6': 128000,
@@ -209,9 +210,9 @@ const CEILING_BY_FAMILY_VERSION: Readonly<Record<string, number>> = {
   'opus-4-1': 32000,
   'opus-4-0': 32000,
   'opus-4': 32000,
-  // Claude Sonnet 5 and 4.6 document a 128k ceiling; older 4.x stays at 64k.
-  'sonnet-5': 128000,
-  'sonnet-4-6': 128000,
+  // MultiAI currently exposes Sonnet 5 and 4.6 with a 64k output ceiling.
+  'sonnet-5': 64000,
+  'sonnet-4-6': 64000,
   'sonnet-4-5': 64000,
   'sonnet-4-0': 64000,
   'sonnet-4': 64000,
@@ -1306,9 +1307,7 @@ export class AnthropicChatProvider implements ChatProvider {
     const existingCap = this._generationKwargs.max_tokens;
     const clone = this._withGenerationKwargs({
       max_tokens:
-        existingCap === undefined || this._explicitMaxTokens
-          ? existingCap ?? requestedCap
-          : Math.min(existingCap, requestedCap),
+        existingCap === undefined ? requestedCap : Math.min(existingCap, requestedCap),
     });
     clone._explicitMaxTokens = this._explicitMaxTokens;
     return clone;

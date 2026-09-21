@@ -625,11 +625,12 @@ function buildProtocolProviderOptions(
   provider: ProviderConfig | undefined,
   baseUrl: string | undefined,
 ): ProtocolProviderOptions | undefined {
-  const options: MutableProtocolProviderOptions = {};
+  const options: MutableProtocolProviderOptions = {
+    defaultMaxTokens: model.maxOutputSize,
+  };
 
   switch (protocol) {
     case 'anthropic':
-      if (model.maxOutputSize !== undefined) options.defaultMaxTokens = model.maxOutputSize;
       if (model.supportEfforts !== undefined) options.supportEfforts = model.supportEfforts;
       if (model.adaptiveThinking !== undefined) options.adaptiveThinking = model.adaptiveThinking;
       if (model.betaApi !== undefined) options.betaApi = model.betaApi;

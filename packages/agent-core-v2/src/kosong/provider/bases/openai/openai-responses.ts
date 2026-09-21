@@ -1129,9 +1129,12 @@ export class OpenAIResponsesChatProvider implements ChatProvider {
       ) {
         cap = Math.min(cap, options.maxContextTokens - options.usedContextTokens);
       }
+      const requested = resolveDefaultMaxTokens(this._model, Math.max(1, cap));
+      const configured = kwargs['max_output_tokens'];
       kwargs = {
         ...kwargs,
-        max_output_tokens: resolveDefaultMaxTokens(this._model, Math.max(1, cap)),
+        max_output_tokens:
+          typeof configured === 'number' ? Math.min(configured, requested) : requested,
       };
     }
 

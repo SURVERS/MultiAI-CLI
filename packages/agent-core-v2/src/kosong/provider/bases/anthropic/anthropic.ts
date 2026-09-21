@@ -182,6 +182,7 @@ function applyResponseFormat(
 const CEILING_BY_FAMILY_VERSION: Readonly<Record<string, number>> = {
   'fable-5': 128000,
   'mythos-5': 128000,
+  'opus-5': 128000,
   'opus-4-8': 128000,
   'opus-4-7': 128000,
   'opus-4-6': 128000,
@@ -189,8 +190,8 @@ const CEILING_BY_FAMILY_VERSION: Readonly<Record<string, number>> = {
   'opus-4-1': 32000,
   'opus-4-0': 32000,
   'opus-4': 32000,
-  'sonnet-5': 128000,
-  'sonnet-4-6': 128000,
+  'sonnet-5': 64000,
+  'sonnet-4-6': 64000,
   'sonnet-4-5': 64000,
   'sonnet-4-0': 64000,
   'sonnet-4': 64000,
@@ -816,7 +817,6 @@ export class AnthropicChatProvider implements ChatProvider {
   private readonly _supportEfforts: readonly string[] | undefined;
   private readonly _betaApi: boolean;
   private readonly _thinkingEffort: ThinkingEffort | undefined;
-  private readonly _explicitMaxTokens: boolean;
   private readonly _hooks: AnthropicHooks | undefined;
 
   constructor(options: AnthropicOptions) {
@@ -834,7 +834,6 @@ export class AnthropicChatProvider implements ChatProvider {
     this._defaultHeaders = options.defaultHeaders;
     this._clientFactory = options.clientFactory;
     this._client = this._apiKey === undefined ? undefined : this._buildClient(this._apiKey);
-    this._explicitMaxTokens = options.defaultMaxTokens !== undefined;
     this._generationKwargs = {
       max_tokens: resolveDefaultMaxTokens(options.model, options.defaultMaxTokens),
       betaFeatures: options.betaFeatures ?? [INTERLEAVED_THINKING_BETA],
@@ -947,9 +946,7 @@ export class AnthropicChatProvider implements ChatProvider {
       kwargs = {
         ...kwargs,
         max_tokens:
-          existingCap === undefined || this._explicitMaxTokens
-            ? (existingCap ?? requestedCap)
-            : Math.min(existingCap, requestedCap),
+          existingCap === undefined ? requestedCap : Math.min(existingCap, requestedCap),
       };
     }
 

@@ -352,6 +352,7 @@ export function applyCustomRegistryProvider(
       provider: providerKey,
       model: model.id,
       maxContextSize,
+      maxOutputSize: model.limit?.output,
       capabilities,
       displayName,
       ...(model.support_efforts !== undefined ? { supportEfforts: model.support_efforts } : {}),

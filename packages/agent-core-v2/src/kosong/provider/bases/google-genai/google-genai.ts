@@ -85,6 +85,7 @@ export interface GoogleGenAIOptions {
   project?: string | undefined;
   location?: string | undefined;
   stream?: boolean | undefined;
+  maxOutputTokens?: number | undefined;
   thinkingEffort?: ThinkingEffort | undefined;
   defaultHeaders?: Record<string, string>;
   clientFactory?: (auth: ProviderRequestAuth) => GenAIClient;
@@ -667,7 +668,10 @@ export class GoogleGenAIChatProvider implements ChatProvider {
     this._vertexai = options.vertexai ?? false;
     this._stream = options.stream ?? true;
     this._thinkingEffort = options.thinkingEffort;
-    this._generationKwargs = {};
+    this._generationKwargs =
+      options.maxOutputTokens === undefined
+        ? {}
+        : { maxOutputTokens: options.maxOutputTokens };
 
     const apiKey = options.apiKey ?? process.env['GOOGLE_API_KEY'];
     this._apiKey = apiKey === undefined || apiKey.length === 0 ? undefined : apiKey;
@@ -753,7 +757,13 @@ export class GoogleGenAIChatProvider implements ChatProvider {
       ) {
         cap = Math.min(cap, options.maxContextTokens - options.usedContextTokens);
       }
-      kwargs = { ...kwargs, maxOutputTokens: Math.max(1, cap) };
+      const requested = Math.max(1, cap);
+      const configured = kwargs.maxOutputTokens;
+      kwargs = {
+        ...kwargs,
+        maxOutputTokens:
+          configured === undefined ? requested : Math.min(configured, requested),
+      };
     }
 
     const config: Record<string, unknown> = {

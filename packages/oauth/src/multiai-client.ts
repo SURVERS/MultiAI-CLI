@@ -649,14 +649,36 @@ export async function fetchMultiAIModels(options: {
             typeof candidate === 'string' && candidate.length > 0,
         )
       : undefined;
+    const positiveInteger = (value: unknown): number | undefined => {
+      const parsed = typeof value === 'number' ? value : Number(value);
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+    };
+    const limit =
+      record['limit'] !== null &&
+      typeof record['limit'] === 'object' &&
+      !Array.isArray(record['limit'])
+        ? (record['limit'] as Record<string, unknown>)
+        : undefined;
     const contextLength = [
-      record['max_input_tokens'],
       record['max_context_tokens'],
+      record['context_window'],
+      record['contextWindow'],
+      record['max_input_tokens'],
       record['context_length'],
-    ].find((value): value is number => typeof value === 'number' && Number.isInteger(value) && value > 0);
+      limit?.['context'],
+    ].map(positiveInteger).find((value): value is number => value !== undefined);
+    const maxOutputSize = [
+      record['max_output_tokens'],
+      record['max_completion_tokens'],
+      record['max_tokens'],
+      record['maxOutputTokens'],
+      record['max_output_length'],
+      limit?.['output'],
+    ].map(positiveInteger).find((value): value is number => value !== undefined);
     return [{
       id: record['id'],
       contextLength,
+      maxOutputSize,
       inputMultiplier:
         typeof record['input_multiplier'] === 'number' ? record['input_multiplier'] : undefined,
       cachedInputMultiplier:

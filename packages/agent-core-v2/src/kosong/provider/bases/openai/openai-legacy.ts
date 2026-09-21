@@ -801,7 +801,11 @@ export class OpenAILegacyChatProvider implements ChatProvider {
       ) {
         cap = Math.min(cap, options.maxContextTokens - options.usedContextTokens);
       }
-      cap = Math.max(1, cap);
+      const configuredCap = kwargs.max_completion_tokens ?? kwargs.max_tokens;
+      cap = Math.max(
+        1,
+        configuredCap === undefined ? cap : Math.min(cap, configuredCap),
+      );
       const hooked = this._hooks?.withMaxCompletionTokens?.(cap);
       if (hooked !== undefined) {
         kwargs = { ...kwargs, ...hooked };
