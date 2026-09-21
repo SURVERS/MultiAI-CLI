@@ -1,5 +1,11 @@
 # multiai-cli
 
+## 1.1.5
+
+### Patch Changes
+
+- [#2](https://github.com/SURVERS/MultiAI-CLI/pull/2) [`472cb4d`](https://github.com/SURVERS/MultiAI-CLI/commit/472cb4d702faffffca9e4dccca9a9f2b58ab36d0) Thanks [@Wolf02012](https://github.com/Wolf02012)! - Fix Claude requests failing when the generated output-token budget exceeds the model limit.
+
 ## 1.1.3
 
 ### Patch Changes
