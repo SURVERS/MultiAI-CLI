@@ -950,6 +950,42 @@ describe('OpenAIResponsesChatProvider', () => {
       expect(provider.maxCompletionTokens).toBe(1024);
     });
 
+    it('clamps Claude output limits without changing non-Claude limits', async () => {
+      const history: Message[] = [
+        { role: 'user', content: [{ type: 'text', text: 'Hi' }], toolCalls: [] },
+      ];
+      const claude = new OpenAIResponsesChatProvider({
+        model: 'claude-fable-5-1',
+        apiKey: 'test-key',
+        maxOutputTokens: 200000,
+      });
+      const gpt = new OpenAIResponsesChatProvider({
+        model: 'gpt-5',
+        apiKey: 'test-key',
+        maxOutputTokens: 200000,
+      });
+
+      const claudeBody = await captureRequestBody(claude, '', [], history);
+      const gptBody = await captureRequestBody(gpt, '', [], history);
+
+      expect(claudeBody['max_output_tokens']).toBe(128000);
+      expect(gptBody['max_output_tokens']).toBe(200000);
+    });
+
+    it('clamps Claude limits applied through withMaxCompletionTokens', async () => {
+      const provider = new OpenAIResponsesChatProvider({
+        model: 'claude-fable-5-1',
+        apiKey: 'test-key',
+      }).withMaxCompletionTokens(200000);
+      const history: Message[] = [
+        { role: 'user', content: [{ type: 'text', text: 'Hi' }], toolCalls: [] },
+      ];
+      const body = await captureRequestBody(provider, '', [], history);
+
+      expect(body['max_output_tokens']).toBe(128000);
+      expect(provider.maxCompletionTokens).toBe(128000);
+    });
+
     it('maps json_schema response format to text.format', async () => {
       const provider = createProvider();
       const history: Message[] = [

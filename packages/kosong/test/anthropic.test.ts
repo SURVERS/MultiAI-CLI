@@ -3307,6 +3307,7 @@ describe('AnthropicChatProvider', () => {
 describe('resolveDefaultMaxTokens', () => {
   it('returns per-version Messages-API caps for known Claude 4 models', () => {
     expect(resolveDefaultMaxTokens('claude-fable-5')).toBe(128000);
+    expect(resolveDefaultMaxTokens('claude-fable-5-1')).toBe(128000);
     expect(resolveDefaultMaxTokens('claude-opus-4-8')).toBe(128000);
     expect(resolveDefaultMaxTokens('claude-opus-4-7')).toBe(128000);
     expect(resolveDefaultMaxTokens('claude-opus-4-6')).toBe(128000);
@@ -3452,8 +3453,9 @@ describe('AnthropicChatProvider constructor max_tokens', () => {
     expect(await maxTokensFor('claude-opus-4-7', { defaultMaxTokens: 200 })).toBe(200);
   });
 
-  it('honors explicit defaultMaxTokens above the ceiling for known models', async () => {
-    expect(await maxTokensFor('claude-opus-4-7', { defaultMaxTokens: 999999 })).toBe(999999);
+  it('clamps explicit defaultMaxTokens to the ceiling for known models', async () => {
+    expect(await maxTokensFor('claude-fable-5-1', { defaultMaxTokens: 200000 })).toBe(128000);
+    expect(await maxTokensFor('claude-opus-4-7', { defaultMaxTokens: 999999 })).toBe(128000);
   });
 
   it('withMaxCompletionTokens sets max_tokens when no existing cap is present', async () => {
@@ -3540,19 +3542,19 @@ describe('AnthropicChatProvider constructor max_tokens', () => {
     expect(body['max_tokens']).toBe(128000);
   });
 
-  it('withMaxCompletionTokens preserves explicit defaultMaxTokens above the ceiling for known models', async () => {
+  it('withMaxCompletionTokens preserves an explicit cap after model-ceiling clamping', async () => {
     const provider = new AnthropicChatProvider({
-      model: 'claude-opus-4-7',
+      model: 'claude-fable-5-1',
       apiKey: 'test-key',
       stream: false,
-      defaultMaxTokens: 999999,
+      defaultMaxTokens: 200000,
     }).withMaxCompletionTokens(1024);
     const history: Message[] = [
       { role: 'user', content: [{ type: 'text', text: 'hi' }], toolCalls: [] },
     ];
     const body = await captureRequestBody(provider, '', [], history);
 
-    expect(body['max_tokens']).toBe(999999);
+    expect(body['max_tokens']).toBe(128000);
   });
 
   it('withMaxCompletionTokens clamps above the documented ceiling for known models', async () => {
