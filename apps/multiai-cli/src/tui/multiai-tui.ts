@@ -47,6 +47,7 @@ import { GutterContainer } from './components/chrome/gutter-container';
 import { MoonLoader, type SpinnerStyle } from './components/chrome/moon-loader';
 import { WelcomeComponent } from './components/chrome/welcome';
 import { pickRandomWorkingTip } from './components/chrome/working-tips';
+import { DEV_PHRASES } from './constant/dev-phrases';
 import { tipText } from './constant/tips';
 import {
   ApprovalPanelComponent,
@@ -2412,7 +2413,9 @@ export class MultiAITUI {
         this.state.ui.requestRender();
         return;
       case 'waiting': {
-        const spinner = this.ensureActivitySpinner('moon');
+        const spinner = this.ensureActivitySpinner('multiai', DEV_PHRASES.waiting, (s) =>
+          currentTheme.fg('accent', s),
+        );
         this.syncAgentSwarmActivitySpinner(placeSpinnerInAgentSwarm ? spinner : undefined);
         if (placeSpinnerInAgentSwarm) break;
         this.state.activityContainer.addChild(
@@ -2430,7 +2433,7 @@ export class MultiAITUI {
         break;
       }
       case 'composing': {
-        const spinner = this.ensureActivitySpinner('braille', t('working...', 'работаю...'), (s) =>
+        const spinner = this.ensureActivitySpinner('multiai', DEV_PHRASES.composing, (s) =>
           currentTheme.fg('primary', s),
         );
         this.syncAgentSwarmActivitySpinner(undefined);
@@ -2444,7 +2447,9 @@ export class MultiAITUI {
         break;
       }
       case 'tool': {
-        const spinner = this.ensureActivitySpinner('moon');
+        const spinner = this.ensureActivitySpinner('multiai', DEV_PHRASES.tool, (s) =>
+          currentTheme.fg('primary', s),
+        );
         this.syncAgentSwarmActivitySpinner(placeSpinnerInAgentSwarm ? spinner : undefined);
         if (placeSpinnerInAgentSwarm) break;
         this.state.activityContainer.addChild(
@@ -2742,7 +2747,7 @@ export class MultiAITUI {
 
   private ensureActivitySpinner(
     style: SpinnerStyle,
-    label = '',
+    labelOrPhrases: string | readonly string[] = '',
     colorFn?: (s: string) => string,
   ): MoonLoader {
     if (this.state.activitySpinner?.style !== style) {
@@ -2750,16 +2755,25 @@ export class MultiAITUI {
     }
 
     if (this.state.activitySpinner === null) {
-      const instance = new MoonLoader(this.state.ui, style, colorFn, label);
+      const initialLabel = Array.isArray(labelOrPhrases) ? '' : labelOrPhrases;
+      const instance = new MoonLoader(this.state.ui, style, colorFn, initialLabel);
+      if (Array.isArray(labelOrPhrases)) {
+        instance.setPhrases(labelOrPhrases);
+      }
       this.state.activitySpinner = { instance, style };
       return instance;
     }
 
-    this.state.activitySpinner.instance.setLabel(label);
-    if (colorFn !== undefined) {
-      this.state.activitySpinner.instance.setColorFn(colorFn);
+    const instance = this.state.activitySpinner.instance;
+    if (Array.isArray(labelOrPhrases)) {
+      instance.setPhrases(labelOrPhrases);
+    } else {
+      instance.setLabel(labelOrPhrases);
     }
-    return this.state.activitySpinner.instance;
+    if (colorFn !== undefined) {
+      instance.setColorFn(colorFn);
+    }
+    return instance;
   }
 
   private stopActivitySpinner(): void {

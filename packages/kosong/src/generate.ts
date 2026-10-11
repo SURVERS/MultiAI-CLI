@@ -1,4 +1,4 @@
-import { APIEmptyResponseError } from './errors';
+import { APIEmptyResponseError, APIStreamInterruptedError } from './errors';
 import {
   isContentPart,
   isToolCall,
@@ -241,6 +241,14 @@ export async function generate(
         finishReason: stream.finishReason,
         rawFinishReason: stream.rawFinishReason,
       },
+    );
+  }
+
+  // Stream was closed prematurely by network/server without any finish_reason signal
+  if (stream.finishReason === null && stream.rawFinishReason === null) {
+    throw new APIStreamInterruptedError(
+      'The model stream was interrupted and closed prematurely before completion (no finish_reason received).' +
+        ` Provider: ${provider.name}, model: ${provider.modelName}`,
     );
   }
 

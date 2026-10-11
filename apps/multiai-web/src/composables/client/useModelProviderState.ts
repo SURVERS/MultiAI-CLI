@@ -286,7 +286,24 @@ export function useModelProviderState(
   async function loadModels(): Promise<void> {
     try {
       const api = getMultiAIWebApi();
-      models.value = await api.listModels();
+      const rawModels = await api.listModels();
+      const isExcludedWebModel = (m: typeof rawModels[number]): boolean => {
+        const matches = (s: string) =>
+          s.startsWith('ma-') ||
+          s.includes('/ma-') ||
+          s.includes('transcribe') ||
+          s.includes('banan') ||
+          (s.includes('gpt') && s.includes('image')) ||
+          s.includes('gpt-image') ||
+          s.includes('image-2') ||
+          s.includes('image-1');
+        return (
+          matches((m.id || '').toLowerCase()) ||
+          matches((m.model || '').toLowerCase()) ||
+          matches((m.displayName || '').toLowerCase())
+        );
+      };
+      models.value = rawModels.filter((m) => !isExcludedWebModel(m));
       // Resolve the active session's level: its own daemon-reported level when
       // still declared, else the model's catalog default. Always re-resolved
       // (not just when unset) so a level carried over from another model can't

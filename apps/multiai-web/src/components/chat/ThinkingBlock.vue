@@ -5,7 +5,8 @@
      There is NO inline expand any more — clicking anywhere on the block emits
      `open`, and the parent shows the full text in the right-side panel. -->
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
+import { getRandomDevPhrase } from '../../lib/devPhrases';
 
 const props = withDefaults(
   defineProps<{
@@ -21,6 +22,35 @@ const emit = defineEmits<{
   /** Show the full thinking text (right-side panel — App's shared slot). */
   open: [];
 }>();
+
+const currentPhrase = ref(getRandomDevPhrase('waiting'));
+let phraseInterval: ReturnType<typeof setInterval> | null = null;
+
+watch(
+  () => props.streaming,
+  (isStreaming) => {
+    if (isStreaming) {
+      if (!phraseInterval) {
+        phraseInterval = setInterval(() => {
+          currentPhrase.value = getRandomDevPhrase('waiting', currentPhrase.value);
+        }, 3600);
+      }
+    } else {
+      if (phraseInterval) {
+        clearInterval(phraseInterval);
+        phraseInterval = null;
+      }
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  if (phraseInterval) {
+    clearInterval(phraseInterval);
+    phraseInterval = null;
+  }
+});
 
 // Live window while streaming, teaser afterwards. The 0.25s grid transition
 // between the two states (fa8b305) plays on the class flip.
@@ -66,6 +96,12 @@ watch(
 
 <template>
   <div class="think" :class="{ mob: mobile }">
+    <div class="think-badge-bar">
+      <div class="think-badge" :class="{ 'think-badge--streaming': streaming }">
+        <span class="think-dot" />
+        <span class="think-label">{{ streaming ? currentPhrase : 'Размышления' }}</span>
+      </div>
+    </div>
     <!-- Foldable: live window above, last-paragraph teaser below; click opens
          the full text in the right-side panel -->
     <template v-if="isFoldable">
@@ -86,6 +122,53 @@ watch(
 <style scoped>
 .think {
   margin: 0;
+}
+
+.think-badge-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.think-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-text-muted);
+  user-select: none;
+  padding: 3px 9px 3px 7px;
+  border-radius: 9999px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  transition: all 0.25s ease;
+}
+
+.think-badge--streaming {
+  color: #DDD6FE;
+  border-color: rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.14);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.25);
+}
+
+.think-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8B5CF6;
+  box-shadow: 0 0 6px #8B5CF6;
+  flex: none;
+}
+
+.think-badge--streaming .think-dot {
+  animation: think-dot-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes think-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.4; }
 }
 
 .tc-wrap {

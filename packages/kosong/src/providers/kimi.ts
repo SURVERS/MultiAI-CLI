@@ -431,7 +431,11 @@ export class KimiChatProvider implements ChatProvider {
   constructor(options: KimiOptions) {
     const apiKey = options.apiKey ?? process.env['KIMI_API_KEY'];
     this._apiKey = apiKey === undefined || apiKey.length === 0 ? undefined : apiKey;
-    this._baseUrl = options.baseUrl ?? process.env['KIMI_BASE_URL'] ?? 'https://api.moonshot.ai/v1';
+    this._baseUrl =
+      options.baseUrl ??
+      process.env['MULTIAI_BASE_URL'] ??
+      process.env['KIMI_BASE_URL'] ??
+      'https://multiai.store/v1';
     this._defaultHeaders = options.defaultHeaders;
     this._clientFactory = options.clientFactory;
     this._model = options.model;

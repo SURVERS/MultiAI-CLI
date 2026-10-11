@@ -114,6 +114,7 @@ export interface MultiAIModelInfo {
   readonly cachedInputMultiplier?: number;
   readonly outputMultiplier?: number;
   readonly capabilities?: readonly string[];
+  readonly isToggle?: boolean;
   readonly supportEfforts?: readonly string[];
   readonly defaultEffort?: string;
 }

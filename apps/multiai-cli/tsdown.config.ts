@@ -1,11 +1,12 @@
-import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 import { defineConfig } from 'tsdown';
 
 import { rawTextPlugin } from '../../build/raw-text-plugin.mjs';
 import { BUILT_IN_CATALOG_DEFINE, builtInCatalogDefine } from './scripts/built-in-catalog.mjs';
 
-const appRoot = import.meta.dirname;
+const appRoot = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   entry: ['./src/main.ts'],

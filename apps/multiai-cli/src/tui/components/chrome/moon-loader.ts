@@ -4,14 +4,14 @@ import type { TUI } from '@multiai/pi-tui';
 import {
   BRAILLE_SPINNER_FRAMES,
   BRAILLE_SPINNER_INTERVAL_MS,
-  MOON_SPINNER_FRAMES,
-  MOON_SPINNER_INTERVAL_MS,
+  MULTIAI_SPINNER_FRAMES,
+  MULTIAI_SPINNER_INTERVAL_MS,
 } from '#/tui/constant/rendering';
 import { currentTheme } from '#/tui/theme';
 
-export type SpinnerStyle = 'moon' | 'braille';
+export type SpinnerStyle = 'multiai' | 'braille' | 'moon';
 
-export class MoonLoader extends Text {
+export class MultiAiLoader extends Text {
   private currentFrame = 0;
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private ui: TUI;
@@ -31,18 +31,22 @@ export class MoonLoader extends Text {
 
   constructor(
     ui: TUI,
-    style: SpinnerStyle = 'moon',
+    style: SpinnerStyle = 'multiai',
     colorFn?: (s: string) => string,
     label: string = '',
   ) {
     super('', 1, 0);
     this.ui = ui;
-    this.frames = style === 'moon' ? [...MOON_SPINNER_FRAMES] : [...BRAILLE_SPINNER_FRAMES];
-    this.interval = style === 'moon' ? MOON_SPINNER_INTERVAL_MS : BRAILLE_SPINNER_INTERVAL_MS;
+    this.frames = style === 'braille' ? [...BRAILLE_SPINNER_FRAMES] : [...MULTIAI_SPINNER_FRAMES];
+    this.interval = style === 'braille' ? BRAILLE_SPINNER_INTERVAL_MS : MULTIAI_SPINNER_INTERVAL_MS;
     this.colorFn = colorFn;
     this.label = label;
     this.start();
   }
+
+  private phrasePool?: readonly string[];
+  private phraseIntervalId: ReturnType<typeof setInterval> | null = null;
+  private lastPhrase = '';
 
   start(): void {
     this.updateDisplay();
@@ -57,13 +61,45 @@ export class MoonLoader extends Text {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    if (this.phraseIntervalId) {
+      clearInterval(this.phraseIntervalId);
+      this.phraseIntervalId = null;
+    }
   }
 
   dispose(): void {
     this.stop();
   }
 
+  setPhrases(phrases: readonly string[], intervalMs = 3800): void {
+    this.phrasePool = phrases;
+    if (!phrases || phrases.length === 0) return;
+    this.pickNextPhrase();
+    if (this.phraseIntervalId) {
+      clearInterval(this.phraseIntervalId);
+    }
+    this.phraseIntervalId = setInterval(() => {
+      this.pickNextPhrase();
+    }, intervalMs);
+  }
+
+  private pickNextPhrase(): void {
+    if (!this.phrasePool || this.phrasePool.length === 0) return;
+    const candidates =
+      this.phrasePool.length > 1 && this.lastPhrase
+        ? this.phrasePool.filter((p) => p !== this.lastPhrase)
+        : this.phrasePool;
+    const next = candidates[Math.floor(Math.random() * candidates.length)] ?? this.phrasePool[0]!;
+    this.lastPhrase = next;
+    this.label = next;
+    this.updateDisplay();
+  }
+
   setLabel(label: string): void {
+    if (this.phraseIntervalId && !this.phrasePool?.includes(label)) {
+      clearInterval(this.phraseIntervalId);
+      this.phraseIntervalId = null;
+    }
     this.label = label;
     this.updateDisplay();
   }
@@ -105,3 +141,5 @@ export class MoonLoader extends Text {
     this.ui.requestRender();
   }
 }
+
+export const MoonLoader = MultiAiLoader;

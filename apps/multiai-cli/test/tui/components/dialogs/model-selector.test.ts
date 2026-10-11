@@ -57,7 +57,7 @@ describe('ModelSelectorComponent', () => {
 
     const out = text(picker);
     // Model name on the left, provider on the right, with the current marker.
-    expect(out).toMatch(/❯ Kimi K2\s+MultiAI CLI ← current/);
+    expect(out).toMatch(/❯ Kimi K2\s+MultiAI CLI ← (?:active|current)/);
     // Provider is no longer inlined in parentheses next to the name.
     expect(out).not.toContain('Kimi K2 (MultiAI CLI)');
   });

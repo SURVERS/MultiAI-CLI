@@ -407,12 +407,32 @@ async function applyEditorChoice(host: SlashCommandHost, value: string): Promise
   );
 }
 
+function isExcludedPickerModel(alias: string, model: { model?: string; displayName?: string } | undefined): boolean {
+  if (!model) return false;
+  const matches = (s: string) =>
+    s.startsWith('ma-') ||
+    s.includes('/ma-') ||
+    s.includes('transcribe') ||
+    s.includes('banan') ||
+    (s.includes('gpt') && s.includes('image')) ||
+    s.includes('gpt-image') ||
+    s.includes('image-2') ||
+    s.includes('image-1');
+  return (
+    matches(alias.toLowerCase()) ||
+    matches((model.model || '').toLowerCase()) ||
+    matches((model.displayName || '').toLowerCase())
+  );
+}
+
 export function showModelPicker(host: SlashCommandHost, selectedValue: string = host.state.appState.model): void {
   const models = Object.fromEntries(
-    Object.entries(host.state.appState.availableModels).map(([alias, model]) => [
-      alias,
-      effectiveModelForHost(host, model),
-    ]),
+    Object.entries(host.state.appState.availableModels)
+      .filter(([alias, model]) => !isExcludedPickerModel(alias, model))
+      .map(([alias, model]) => [
+        alias,
+        effectiveModelForHost(host, model),
+      ]),
   );
   const entries = Object.entries(models);
   if (entries.length === 0) {

@@ -179,17 +179,23 @@ function shortenCwd(path: string): string {
  * formatter.
  */
 function formatContextStatus(usage: number, tokens?: number, maxTokens?: number): string {
+  const colors = currentTheme.palette;
+  const icon = chalk.hex(colors.primary)('◈ ');
   if (maxTokens !== undefined && maxTokens > 0 && tokens !== undefined) {
-    const pct = String(usagePercent(tokens, maxTokens));
-    return t(
-      `context: ${pct}% (${formatTokenCount(tokens)}/${formatTokenCount(maxTokens)})`,
-      `контекст: ${pct}% (${formatTokenCount(tokens)}/${formatTokenCount(maxTokens)})`,
+    const rawPct = usagePercent(tokens, maxTokens);
+    const pctStyle = rawPct >= 90 ? chalk.hex(colors.error).bold : rawPct >= 75 ? chalk.hex(colors.warning).bold : chalk.hex(colors.textStrong);
+    const pct = pctStyle(`${rawPct}%`);
+    return (
+      icon +
+      t(
+        `context: ${pct} (${formatTokenCount(tokens)}/${formatTokenCount(maxTokens)})`,
+        `контекст: ${pct} (${formatTokenCount(tokens)}/${formatTokenCount(maxTokens)})`,
+      )
     );
   }
-  return t(
-    `context: ${String(usagePercentFromRatio(usage))}%`,
-    `контекст: ${String(usagePercentFromRatio(usage))}%`,
-  );
+  const rawPct = usagePercentFromRatio(usage);
+  const pctStyle = rawPct >= 90 ? chalk.hex(colors.error).bold : rawPct >= 75 ? chalk.hex(colors.warning).bold : chalk.hex(colors.textStrong);
+  return icon + t(`context: ${pctStyle(`${rawPct}%`)}`, `контекст: ${pctStyle(`${rawPct}%`)}`);
 }
 
 export function formatFooterGitBadge(status: GitStatus, colors: ColorPalette): string {
@@ -274,10 +280,13 @@ export class FooterComponent implements Component {
     const left: string[] = [];
     const modes: string[] = [];
     if (state.permissionMode === 'auto')
-      modes.push(chalk.hex(colors.warning).bold(t('auto', 'авто')));
-    if (state.permissionMode === 'yolo') modes.push(chalk.hex(colors.warning).bold('yolo'));
-    if (state.planMode) modes.push(chalk.hex(colors.primary).bold(t('plan', 'план')));
-    if (state.swarmMode) modes.push(chalk.hex(colors.accent).bold(t('swarm', 'рой')));
+      modes.push(chalk.bgHex(colors.warning).hex('#000000').bold(t(' AUTO ', ' АВТО ')));
+    if (state.permissionMode === 'yolo')
+      modes.push(chalk.bgHex(colors.error).hex('#FFFFFF').bold(' YOLO '));
+    if (state.planMode)
+      modes.push(chalk.bgHex(colors.primary).hex('#000000').bold(t(' PLAN ', ' ПЛАН ')));
+    if (state.swarmMode)
+      modes.push(chalk.bgHex(colors.accent).hex('#FFFFFF').bold(t(' SWARM ', ' РОЙ ')));
     if (modes.length > 0) left.push(modes.join(' '));
 
     const goalBadge = formatGoalBadge(state.goal, colors, this.goalWallClockMs(state.goal));
@@ -294,13 +303,13 @@ export class FooterComponent implements Component {
       const thinkingLabel =
         effort !== 'off'
           ? hasEfforts && effort !== 'on'
-            ? t(` thinking: ${effort}`, ` рассуждение: ${effort}`)
-            : t(' thinking', ' рассуждение')
+            ? chalk.hex(colors.accent)(t(` · thinking: ${effort}`, ` · рассуждение: ${effort}`))
+            : chalk.hex(colors.accent)(t(' · thinking', ' · рассуждение'))
           : '';
-      const modelLabel = `${model}${thinkingLabel}`;
-      let renderedModelLabel = chalk.hex(colors.text)(modelLabel);
+      const modelLabel = `${chalk.bold.hex(colors.primary)(model)}${thinkingLabel}`;
+      let renderedModelLabel = modelLabel;
       if (isRainbowDancing()) {
-        renderedModelLabel = renderDanceFooterModel(modelLabel);
+        renderedModelLabel = renderDanceFooterModel(`${model}${effort !== 'off' ? ` (${effort})` : ''}`);
       }
       left.push(renderedModelLabel);
     }

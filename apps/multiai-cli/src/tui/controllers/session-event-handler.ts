@@ -264,7 +264,8 @@ export class SessionEventHandler {
       case 'turn.step.started': this.handleStepBegin(event); break;
       case 'turn.step.interrupted': this.handleStepInterrupted(event); break;
       case 'turn.step.completed': this.handleStepCompleted(event); break;
-      case 'turn.step.retrying': break;
+      case 'turn.step.retrying':
+      case 'step.retrying': this.handleStepRetrying(event as any); break;
       case 'tool.progress': this.handleToolProgress(event); break;
       case 'shell.output': this.host.handleShellOutput(event); break;
       case 'shell.started': this.host.handleShellStarted(event); break;
@@ -480,16 +481,42 @@ export class SessionEventHandler {
     );
   }
 
+  private handleStepRetrying(event: {
+    readonly failedAttempt?: number;
+    readonly nextAttempt?: number;
+    readonly maxAttempts?: number;
+    readonly delayMs?: number;
+    readonly errorName?: string;
+    readonly errorMessage?: string;
+    readonly statusCode?: number;
+  }): void {
+    this.host.streamingUI.resetLiveText();
+    const nextAttempt = event.nextAttempt ?? ((event.failedAttempt ?? 1) + 1);
+    const maxAttempts = event.maxAttempts ?? 10;
+    const delaySec = event.delayMs ? (event.delayMs / 1000).toFixed(1) : '1.0';
+    const reason = event.statusCode
+      ? `HTTP ${String(event.statusCode)}`
+      : (event.errorMessage || event.errorName || '');
+    const cleanReason = reason ? ` (${reason})` : '';
+
+    const statusMsg = t(
+      `Model stream interrupted. Reconnecting in ${delaySec}s… (attempt ${String(nextAttempt)}/${String(maxAttempts)})${cleanReason}`,
+      `Связь с моделью прервана. Переподключение через ${delaySec}с… (попытка ${String(nextAttempt)}/${String(maxAttempts)})${cleanReason}`,
+    );
+
+    this.host.showStatus(statusMsg, 'warning');
+  }
+
   private handleThinkingDelta(event: ThinkingDeltaEvent): void {
     const { state, streamingUI } = this.host;
-    // Encrypted / redacted reasoning (e.g. Kimi over the Anthropic-compatible
-    // protocol) streams thinking deltas whose visible text is empty — only an
-    // opaque signature rides along. Models also occasionally stream whitespace-
-    // only thinking (e.g. a single space). Such deltas carry nothing to render,
+    // Encrypted / redacted reasoning (over Anthropic-compatible protocol)
+    // streams thinking deltas whose visible text is empty — only an opaque
+    // signature rides along. Models also occasionally stream whitespace-only
+    // thinking (e.g. a single space). Such deltas carry nothing to render,
     // so switching into the `thinking` pane mode here would stop the "waiting"
-    // moon spinner while no ThinkingComponent is ever created (it needs visible
-    // text), leaving a blank, spinner-less gap until the first real text/tool
-    // token arrives. Keep the moon up until actual thinking text shows up.
+    // activity spinner while no ThinkingComponent is ever created (it needs visible
+    // text), leaving a blank gap until the first real token arrives.
+    // Keep the spinner up until actual thinking text shows up.
     if (event.delta.trim().length === 0 && !streamingUI.hasThinkingDraft()) return;
     streamingUI.appendThinkingDelta(event.delta);
     this.host.patchLivePane({ mode: 'idle' });

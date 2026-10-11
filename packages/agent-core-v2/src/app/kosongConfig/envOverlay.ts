@@ -14,8 +14,8 @@
  *
  * The env provider's default `baseUrl` is resolved through kosong's
  * provider-definition registry (`resolveProviderEndpoint` against the same
- * env the overlay reads), not from a hardcoded vendor table — for Kimi that
- * is the `MULTIAI_BASE_URL` → `https://api.moonshot.ai/v1` chain declared by the
+ * env the overlay reads), not from a hardcoded vendor table — for MultiAI that
+ * is the `MULTIAI_BASE_URL` → `https://multiai.store/v1` chain declared by the
  * vendor's traits.
  */
 

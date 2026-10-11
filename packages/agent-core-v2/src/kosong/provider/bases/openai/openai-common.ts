@@ -286,7 +286,26 @@ export const OPENAI_TEXT_TOOL_CAPABILITY = Object.freeze({
 export const OPENAI_VISION_TOOL_PREFIXES = ['gpt-4o', 'gpt-4-turbo', 'gpt-4.1', 'gpt-4.5'] as const;
 
 export function isOpenAIReasoningModel(normalizedModelName: string): boolean {
-  return /^o\d/.test(normalizedModelName);
+  return (
+    /^o\d/.test(normalizedModelName) ||
+    normalizedModelName.includes('astra') ||
+    normalizedModelName.includes('reason') ||
+    normalizedModelName.includes('think') ||
+    /(?:^|[._/-])(o[134]|r1|qwq|qvq)(?:[._/-]|$)/i.test(normalizedModelName) ||
+    /claude-(?:sonnet|opus|haiku|fable)-(?:[4-9]|\d+\.\d+)/i.test(normalizedModelName) ||
+    /gpt-[5-9]/i.test(normalizedModelName) ||
+    /gemini-[3-9]/i.test(normalizedModelName) ||
+    /deepseek-(?:r\d|v[4-9])/i.test(normalizedModelName) ||
+    /grok-[4-9]/i.test(normalizedModelName) ||
+    /glm-[45]/i.test(normalizedModelName) ||
+    /qwen(?:3|\.5|\.8)/i.test(normalizedModelName) ||
+    /kimi-k[23]/i.test(normalizedModelName) ||
+    /mimo-v2/i.test(normalizedModelName) ||
+    /minimax-m3/i.test(normalizedModelName) ||
+    /solar-(?:pro|mini)4/i.test(normalizedModelName) ||
+    /nemotron-3/i.test(normalizedModelName) ||
+    /mistral-large-4/i.test(normalizedModelName)
+  );
 }
 
 export function hasModelPrefix(modelName: string, prefixes: readonly string[]): boolean {

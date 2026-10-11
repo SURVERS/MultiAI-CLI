@@ -86,24 +86,110 @@ export interface ModelSelectorOptions {
   readonly onCancel: () => void;
 }
 
+function isExcludedDialogModel(alias: string, model: ModelAlias | undefined): boolean {
+  if (!model) return false;
+  const normAlias = (alias || '').toLowerCase();
+  const normModel = (model.model || '').toLowerCase();
+  const normDisplay = (model.displayName || '').toLowerCase();
+  const matches = (s: string) =>
+    s.startsWith('ma-') ||
+    s.includes('/ma-') ||
+    s.includes('transcribe') ||
+    s.includes('banan') ||
+    (s.includes('gpt') && s.includes('image')) ||
+    s.includes('gpt-image') ||
+    s.includes('image-2') ||
+    s.includes('image-1');
+  return matches(normAlias) || matches(normModel) || matches(normDisplay);
+}
+
 function createModelChoices(models: Record<string, ModelAlias>): readonly ModelChoice[] {
-  return Object.entries(models).map(([alias, cfg]) => {
-    const effective = effectiveModelAlias(cfg);
-    const name = modelDisplayName(alias, effective);
-    const provider = providerDisplayName(effective.provider);
-    return { alias, model: effective, name, provider, label: `${name} (${provider})` };
-  });
+  return Object.entries(models)
+    .filter(([alias, cfg]) => !isExcludedDialogModel(alias, cfg))
+    .map(([alias, cfg]) => {
+      const effective = effectiveModelAlias(cfg);
+      const name = modelDisplayName(alias, effective);
+      const provider = providerDisplayName(effective.provider);
+      return { alias, model: effective, name, provider, label: `${name} (${provider})` };
+    });
+}
+
+export function isReasoningModel(model: ModelAlias): boolean {
+  if (model.capabilities?.includes('thinking') || model.capabilities?.includes('always_thinking')) {
+    return true;
+  }
+  const check = (str: string | undefined): boolean => {
+    if (!str) return false;
+    const normalized = str.toLowerCase();
+    return (
+      normalized.includes('astra') ||
+      normalized.includes('reason') ||
+      normalized.includes('think') ||
+      /(?:^|[._/-])(o[134]|r1|qwq|qvq)(?:[._/-]|$)/i.test(normalized) ||
+      /claude-(?:sonnet|opus|haiku|fable)-(?:[4-9]|\d+\.\d+)/i.test(normalized) ||
+      /gpt-[5-9]/i.test(normalized) ||
+      /gemini-[3-9]/i.test(normalized) ||
+      /deepseek-(?:r\d|v[4-9])/i.test(normalized) ||
+      /grok-[4-9]/i.test(normalized) ||
+      /glm-[45]/i.test(normalized) ||
+      /qwen(?:3|\.5|\.8)/i.test(normalized) ||
+      /kimi-k[23]/i.test(normalized) ||
+      /mimo-v2/i.test(normalized) ||
+      /minimax-m3/i.test(normalized) ||
+      /solar-(?:pro|mini)4/i.test(normalized) ||
+      /nemotron-3/i.test(normalized) ||
+      /mistral-large-4/i.test(normalized)
+    );
+  };
+  return check(model.model) || check(model.displayName);
 }
 
 export function thinkingAvailability(model: ModelAlias): ThinkingAvailability {
   const caps = model.capabilities ?? [];
   if (caps.includes('always_thinking')) return 'always-on';
   if (caps.includes('thinking') || model.adaptiveThinking === true) return 'toggle';
+  if (isReasoningModel(model)) return 'toggle';
   return 'unsupported';
 }
 
+export function isToggleModel(model: ModelAlias | undefined): boolean {
+  if (!model) return false;
+  if ((model as { isToggle?: boolean }).isToggle === true) return true;
+  const name = ((model.model || '') + ' ' + (model.displayName || '')).toLowerCase();
+  return (
+    name.includes(':free') ||
+    name.endsWith('-free') ||
+    name.includes('/free') ||
+    name.includes('minimax-m3') ||
+    name.includes('mimo-v2.6') ||
+    name.includes('glm-4.7') ||
+    name.includes('laguna') ||
+    name.includes('dots-3-note') ||
+    name.includes('nemotron-3.5') ||
+    name.includes('gemma-4') ||
+    name.includes('north-mini') ||
+    name.includes('apodex-1.1')
+  );
+}
+
 export function effortsOf(model: ModelAlias): readonly string[] {
-  return model.supportEfforts ?? [];
+  if (isToggleModel(model)) {
+    return [];
+  }
+  if (model.supportEfforts && model.supportEfforts.length > 0) {
+    return model.supportEfforts;
+  }
+  const name = ((model.model || '') + ' ' + (model.displayName || '')).toLowerCase();
+  if (
+    name.includes('astra') ||
+    /claude-(?:sonnet|opus|haiku|fable)-(?:[4-9]|\d+\.\d+)/i.test(name) ||
+    /gpt-[5-9]/i.test(name) ||
+    /deepseek-(?:r\d|v[4-9])/i.test(name) ||
+    /(?:^|[._/-])(o[134]|r1)(?:[._/-]|$)/i.test(name)
+  ) {
+    return ['low', 'medium', 'high', 'max'];
+  }
+  return [];
 }
 
 /**

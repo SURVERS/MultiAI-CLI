@@ -42,6 +42,13 @@ export class APIConnectionError extends ChatProviderError {
   }
 }
 
+export class APIStreamInterruptedError extends APIConnectionError {
+  constructor(message = 'Stream closed prematurely before completion') {
+    super(message);
+    this.name = 'APIStreamInterruptedError';
+  }
+}
+
 export class VideoUploadUnsupportedError extends ChatProviderError {
   constructor(message: string) {
     super(message);
@@ -239,7 +246,46 @@ export function isImageFormatError(error: unknown): boolean {
   return false;
 }
 
+const COMMON_NETWORK_CODES = new Set([
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ECONNREFUSED',
+  'EHOSTUNREACH',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'EPIPE',
+  'UND_ERR_SOCKET',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+  'UND_ERR_RESPONSE_STATUS_TIMEOUT',
+  'UND_ERR_REQ_DEGRADATION',
+]);
+
+const EXTENDED_NETWORK_MESSAGE_RE =
+  /network|connection|connect|disconnect|terminated|premature close|socket hang up|fetch failed|stream (?:closed|interrupted|aborted)|econnreset|etimedout|econnrefused|enotfound/i;
+
+export function isNetworkOrConnectionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  if (isAbortError(error)) return false;
+
+  const errObj = error as { code?: unknown; message?: unknown; cause?: unknown };
+  if (typeof errObj.code === 'string' && COMMON_NETWORK_CODES.has(errObj.code)) {
+    return true;
+  }
+  if (typeof errObj.message === 'string' && EXTENDED_NETWORK_MESSAGE_RE.test(errObj.message)) {
+    return true;
+  }
+  if (errObj.cause && isNetworkOrConnectionError(errObj.cause)) {
+    return true;
+  }
+  return false;
+}
+
 export function isRetryableGenerateError(error: unknown): boolean {
+  if (isAbortError(error)) {
+    return false;
+  }
   if (error instanceof APIConnectionError || error instanceof APITimeoutError) {
     return true;
   }
@@ -255,11 +301,15 @@ export function isRetryableGenerateError(error: unknown): boolean {
     }
     return [408, 409, 429, 500, 502, 503, 504, 529].includes(error.statusCode);
   }
+  if (isNetworkOrConnectionError(error)) {
+    return true;
+  }
   return error instanceof ChatProviderError && !isImageFormatError(error);
 }
 
-const NETWORK_RE = /network|connection|connect|disconnect|terminated/i;
-const TIMEOUT_RE = /timed?\s*out|timeout|deadline/i;
+const NETWORK_RE =
+  /network|connection|connect|disconnect|terminated|premature close|socket hang up|fetch failed|stream (?:closed|interrupted|aborted)|econnreset|econnrefused|enotfound/i;
+const TIMEOUT_RE = /timed?\s*out|timeout|deadline|etimedout/i;
 
 export function classifyBaseApiError(message: string): ChatProviderError {
   if (TIMEOUT_RE.test(message)) {

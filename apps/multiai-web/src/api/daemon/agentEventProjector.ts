@@ -1083,8 +1083,20 @@ export function createAgentProjector(): AgentProjector {
       }
 
       case 'turn.step.interrupted': {
-        // Discard current assistant message; next step.started will create a
-        // new one. Drop any pending retry reuse target for the same reason.
+        const msgId = s.currentAssistantMsgId;
+        if (msgId !== undefined && s.retryReuseMsgId === undefined) {
+          finishAssistantMessage(s, msgId);
+          const msg = getMsgById(s, msgId);
+          if (msg !== undefined && msg.content.length > 0) {
+            out.push({
+              type: 'messageUpdated',
+              sessionId,
+              messageId: msgId,
+              content: msg.content.map((c) => ({ ...c })),
+              status: 'completed',
+            });
+          }
+        }
         s.currentAssistantMsgId = undefined;
         s.retryReuseMsgId = undefined;
         break;

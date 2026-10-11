@@ -458,6 +458,7 @@ function copyDiff(code: string, idx: number) {
         ><span v-if="ln.type !== 'hunk'" class="diff-sign">{{ ln.sign }}</span><span class="diff-text">{{ ln.text }}</span></span></code></pre>
       </div>
     </template>
+    <span v-if="streaming" class="multiai-stream-cursor" aria-hidden="true" />
   </div>
 </template>
 
@@ -904,4 +905,21 @@ function copyDiff(code: string, idx: number) {
 .md .diff-wrap { border-radius: var(--radius-md); }
 .md :not(pre) > code,
 .md .inline-code { border-radius: var(--radius-sm); }
+
+.multiai-stream-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 5px;
+  vertical-align: -2px;
+  background: #00E5FF;
+  border-radius: 2px;
+  box-shadow: 0 0 8px #00E5FF, 0 0 14px rgba(0, 229, 255, 0.45);
+  animation: multiai-cursor-blink 0.9s ease-in-out infinite;
+}
+
+@keyframes multiai-cursor-blink {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.2; transform: scaleY(0.85); }
+}
 </style>

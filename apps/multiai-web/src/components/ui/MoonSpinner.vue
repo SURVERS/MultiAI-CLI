@@ -1,84 +1,127 @@
 <!-- apps/multiai-web/src/components/ui/MoonSpinner.vue -->
-<!-- Design-system §03 MoonSpinner: the SOLE sanctioned emoji-as-icon. Use ONLY
-     for "message sent, waiting for Agent's first response". All other loading
-     states must use Spinner. Pauses on the current frame under reduced motion. -->
+<!-- MultiAI Cyber Spinner: neon orbital gradient pulse for waiting and generation state. -->
 <script setup lang="ts">
-const MOON_FRAMES = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
-const MOON_FRAME_MS = 120;
-const MOON_FAST_FRAME_MS = 60;
-
 withDefaults(defineProps<{
   size?: 'sm' | 'md' | 'lg';
   fast?: boolean;
   label?: string;
 }>(), {
   size: 'md',
-  label: 'Waiting for response…',
+  label: 'Генерация ответа…',
 });
-
-function moonFrameStyle(index: number): Record<string, string> {
-  return {
-    '--moon-frame-delay': `${index * MOON_FRAME_MS}ms`,
-    '--moon-frame-fast-delay': `${index * MOON_FAST_FRAME_MS}ms`,
-  };
-}
 </script>
 
 <template>
   <span
-    class="ui-moon"
-    :class="[`ui-moon--${size}`, { 'ui-moon--fast': fast }]"
+    class="ui-multiai-spinner"
+    :class="[`ui-multiai-spinner--${size}`, { 'ui-multiai-spinner--fast': fast }]"
     :aria-label="label"
-    role="img"
+    role="status"
   >
-    <span
-      v-for="(frame, index) in MOON_FRAMES"
-      :key="frame"
-      class="ui-moon__frame"
-      :style="moonFrameStyle(index)"
-      aria-hidden="true"
-    >
-      {{ frame }}
-    </span>
+    <svg class="spinner-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="multiAiGradOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#00E5FF" />
+          <stop offset="50%" stop-color="#8B5CF6" />
+          <stop offset="100%" stop-color="#00E5FF" stop-opacity="0.1" />
+        </linearGradient>
+        <linearGradient id="multiAiGradInner" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#8B5CF6" />
+          <stop offset="100%" stop-color="#00E5FF" stop-opacity="0.2" />
+        </linearGradient>
+      </defs>
+      <!-- Background subtle track -->
+      <circle class="track" cx="16" cy="16" r="13" stroke="currentColor" stroke-opacity="0.12" stroke-width="2" />
+      <!-- Outer cyber orbit -->
+      <circle
+        class="outer-orbit"
+        cx="16"
+        cy="16"
+        r="13"
+        stroke="url(#multiAiGradOuter)"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-dasharray="45 35"
+      />
+      <!-- Inner counter-orbit -->
+      <circle
+        class="inner-orbit"
+        cx="16"
+        cy="16"
+        r="8.5"
+        stroke="url(#multiAiGradInner)"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-dasharray="24 28"
+      />
+      <!-- Glowing core -->
+      <circle class="core" cx="16" cy="16" r="3.2" fill="#00E5FF" />
+    </svg>
   </span>
 </template>
 
 <style scoped>
-.ui-moon {
-  display: inline-block;
+.ui-multiai-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   line-height: 1;
   user-select: none;
   flex: none;
+  filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.45));
 }
-.ui-moon--sm { width: 14px; height: 14px; font-size: 14px; }
-.ui-moon--md { width: 18px; height: 18px; font-size: 18px; }
-.ui-moon--lg { width: 24px; height: 24px; font-size: 24px; }
+.ui-multiai-spinner--sm { width: 16px; height: 16px; }
+.ui-multiai-spinner--md { width: 22px; height: 22px; }
+.ui-multiai-spinner--lg { width: 30px; height: 30px; }
 
-.ui-moon__frame {
-  position: absolute;
-  inset: 0;
-  display: block;
-  text-align: center;
-  opacity: 0;
-  animation-name: ui-moon-frame;
-  animation-duration: 960ms;
-  animation-timing-function: steps(1, end);
-  animation-iteration-count: infinite;
-  animation-delay: var(--moon-frame-delay);
-}
-.ui-moon--fast .ui-moon__frame {
-  animation-duration: 480ms;
-  animation-delay: var(--moon-frame-fast-delay);
+.spinner-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
-@keyframes ui-moon-frame {
-  0%, 12.49% { opacity: 1; }
-  12.5%, 100% { opacity: 0; }
+.outer-orbit {
+  transform-origin: 16px 16px;
+  animation: multiai-spin-clockwise 1.3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.inner-orbit {
+  transform-origin: 16px 16px;
+  animation: multiai-spin-counter 1s linear infinite;
+}
+
+.core {
+  transform-origin: 16px 16px;
+  animation: multiai-core-pulse 1.4s ease-in-out infinite;
+}
+
+.ui-multiai-spinner--fast .outer-orbit {
+  animation-duration: 0.65s;
+}
+.ui-multiai-spinner--fast .inner-orbit {
+  animation-duration: 0.5s;
+}
+.ui-multiai-spinner--fast .core {
+  animation-duration: 0.7s;
+}
+
+@keyframes multiai-spin-clockwise {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes multiai-spin-counter {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes multiai-core-pulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.75; }
+  50% { transform: scale(1.25); opacity: 1; filter: drop-shadow(0 0 6px #00E5FF); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-moon__frame { animation: none; opacity: 0; }
-  .ui-moon__frame:nth-child(4) { opacity: 1; }
+  .outer-orbit, .inner-orbit, .core { animation: none; }
 }
 </style>

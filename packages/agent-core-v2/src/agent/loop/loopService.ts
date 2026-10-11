@@ -616,10 +616,8 @@ export class AgentLoopService extends Disposable implements IAgentLoopService {
           if ('result' in begun) return begun.result;
           runtime.current = begun.step;
           const result = await this.executeLoopStep(
-            runtime.turnId,
-            begun.step.signal,
-            begun.step.number,
-            begun.step.uuid,
+            runtime,
+            begun.step,
             options.onStarted,
           );
           const completed = this.completeLoopStep(runtime, result);
@@ -721,6 +719,31 @@ export class AgentLoopService extends Disposable implements IAgentLoopService {
     const step = runtime.current?.mutableStep;
     if (!isAbortError(error) && !runtime.turnSignal.aborted && step?.signal.aborted !== true) return undefined;
     const reason = runtime.turnSignal.reason ?? step?.signal.reason ?? error;
+
+    const currentStep = runtime.current;
+    if (currentStep !== undefined && (currentStep.streamedText || currentStep.streamedThinking)) {
+      if (currentStep.streamedThinking) {
+        this.context.appendLoopEvent({
+          type: 'content.part',
+          uuid: randomUUID(),
+          turnId: String(runtime.turnId),
+          step: currentStep.number,
+          stepUuid: currentStep.uuid,
+          part: { type: 'think', think: currentStep.streamedThinking },
+        });
+      }
+      if (currentStep.streamedText) {
+        this.context.appendLoopEvent({
+          type: 'content.part',
+          uuid: randomUUID(),
+          turnId: String(runtime.turnId),
+          step: currentStep.number,
+          stepUuid: currentStep.uuid,
+          part: { type: 'text', text: currentStep.streamedText },
+        });
+      }
+    }
+
     this.emitStepInterrupted(
       runtime.turnId,
       runtime.current?.number,
@@ -799,18 +822,20 @@ export class AgentLoopService extends Disposable implements IAgentLoopService {
   }
 
   private async executeLoopStep(
-    turnId: number,
-    signal: AbortSignal,
-    currentStep: number,
-    stepUuid: string,
+    runtime: LoopRuntime,
+    step: StepRuntime,
     onStarted: ((step: number) => void) | undefined,
   ): Promise<StepExecutionResult> {
+    const turnId = runtime.turnId;
+    const signal = step.signal;
+    const currentStep = step.number;
+    const stepUuid = step.uuid;
     this.activeRequestTrace = undefined;
     await this.hooks.onWillBeginStep.run({ turnId, step: currentStep, signal });
     const markStepStarted = this.beginStep(turnId, signal, currentStep, stepUuid, onStarted);
     const request = this.llmRequester.start(
       { source: { type: 'turn', turnId, step: currentStep } },
-      this.createStreamPartHandler(turnId, markStepStarted),
+      this.createStreamPartHandler(turnId, markStepStarted, step),
       signal,
     );
     this.activeRequestTrace = request.trace;
@@ -1031,6 +1056,7 @@ export class AgentLoopService extends Disposable implements IAgentLoopService {
   private createStreamPartHandler(
     turnId: number,
     onResponseEvent: () => void,
+    step?: StepRuntime,
   ): (part: StreamedMessagePart) => void {
     const callsByIndex = new Map<number | string | undefined, { id: string; name: string }>();
 
@@ -1038,10 +1064,16 @@ export class AgentLoopService extends Disposable implements IAgentLoopService {
       switch (part.type) {
         case 'text':
           onResponseEvent();
+          if (step !== undefined) {
+            step.streamedText = (step.streamedText ?? '') + part.text;
+          }
           this.eventBus.publish({ type: 'assistant.delta', turnId, delta: part.text });
           return;
         case 'think':
           onResponseEvent();
+          if (step !== undefined) {
+            step.streamedThinking = (step.streamedThinking ?? '') + part.think;
+          }
           this.eventBus.publish({ type: 'thinking.delta', turnId, delta: part.think });
           return;
         case 'image_url':
@@ -1133,6 +1165,8 @@ interface StepRuntime {
   readonly batch: StepRequestBatch;
   readonly mutableStep: MutableStep | undefined;
   readonly signal: AbortSignal;
+  streamedText?: string;
+  streamedThinking?: string;
 }
 
 type BeginStepResult = { readonly step: StepRuntime } | { readonly result: LoopRunResult };

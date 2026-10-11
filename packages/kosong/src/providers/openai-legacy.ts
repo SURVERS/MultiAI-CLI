@@ -55,7 +55,7 @@ import {
  * endpoints. Many third-party providers reject `max_tokens` above this limit
  * (the documented range is `[1, 131072]`).
  */
-const CHAT_COMPLETIONS_MAX_OUTPUT_TOKENS_CEILING = 128 * 1024;
+const CHAT_COMPLETIONS_MAX_OUTPUT_TOKENS_CEILING = 128000;
 const OPENAI_CHAT_TOOL_CALL_ID_POLICY: ToolCallIdPolicy = {
   normalize: (id) => sanitizeToolCallId(id, 64),
   maxLength: 64,
@@ -141,6 +141,24 @@ function outboundToolCallExtraContent(toolCall: ToolCall, model: string): unknow
   return isGemini3Model(model)
     ? { google: { thought_signature: GEMINI_SKIP_THOUGHT_SIGNATURE } }
     : undefined;
+}
+
+function isToggleOrFreeModel(model: string): boolean {
+  const norm = model.toLowerCase();
+  return (
+    norm.includes(':free') ||
+    norm.endsWith('-free') ||
+    norm.includes('/free') ||
+    norm.includes('minimax-m3') ||
+    norm.includes('mimo-v2.6') ||
+    norm.includes('glm-4.7') ||
+    norm.includes('laguna') ||
+    norm.includes('dots-3-note') ||
+    norm.includes('nemotron-3.5') ||
+    norm.includes('gemma-4') ||
+    norm.includes('north-mini') ||
+    norm.includes('apodex-1.1')
+  );
 }
 
 function usesMaxCompletionTokens(model: string): boolean {
@@ -613,6 +631,7 @@ export class OpenAILegacyChatProvider implements ChatProvider {
     // to models that reject it).
     // See: https://github.com/SURVERS/MultiAI-CLI/issues/1616
     if (
+      !isToggleOrFreeModel(this._model) &&
       reasoningEffort === undefined &&
       effort !== 'off' &&
       kwargs['reasoning_effort'] === undefined
@@ -623,6 +642,12 @@ export class OpenAILegacyChatProvider implements ChatProvider {
       if (hasThinkPart) {
         reasoningEffort = 'medium';
       }
+    }
+
+    if (isToggleOrFreeModel(this._model)) {
+      reasoningEffort = undefined;
+      delete kwargs['reasoning_effort'];
+      delete kwargs['reasoning'];
     }
 
     // Remove undefined values from kwargs
@@ -652,8 +677,9 @@ export class OpenAILegacyChatProvider implements ChatProvider {
       createParams['stream_options'] = { include_usage: true };
     }
 
-    if (reasoningEffort !== undefined) {
+    if (reasoningEffort !== undefined && !isToggleOrFreeModel(this._model)) {
       createParams['reasoning_effort'] = reasoningEffort;
+      createParams['reasoning'] = { effort: reasoningEffort };
     }
 
     try {
@@ -665,6 +691,28 @@ export class OpenAILegacyChatProvider implements ChatProvider {
       )) as unknown as OpenAI.Chat.ChatCompletion | AsyncIterable<OpenAI.Chat.ChatCompletionChunk>;
       return new OpenAILegacyStreamedMessage(response, this._stream, this._reasoningKeyDialect);
     } catch (error: unknown) {
+      const errMessage = (error as { message?: string })?.message ?? '';
+      const limitMatch =
+        errMessage.match(/(?:max_output_tokens|max_tokens|max_completion_tokens).*?(?:limit of|less than or equal to|must be at most|maximum of|<=)\s*(\d+)/i) ||
+        errMessage.match(/exceeds the model limit of\s*(\d+)/i);
+      if (limitMatch && limitMatch[1]) {
+        const allowedLimit = parseInt(limitMatch[1], 10);
+        if (allowedLimit > 0 && typeof createParams === 'object' && createParams !== null) {
+          const retryParams = { ...createParams } as Record<string, unknown>;
+          if (retryParams['max_tokens'] !== undefined) retryParams['max_tokens'] = allowedLimit;
+          if (retryParams['max_completion_tokens'] !== undefined) retryParams['max_completion_tokens'] = allowedLimit;
+          try {
+            const client = this._createClient(options?.auth);
+            const response = (await client.chat.completions.create(
+              retryParams as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+              options?.signal ? { signal: options.signal } : undefined,
+            )) as unknown as OpenAI.Chat.ChatCompletion | AsyncIterable<OpenAI.Chat.ChatCompletionChunk>;
+            return new OpenAILegacyStreamedMessage(response, this._stream, this._reasoningKeyDialect);
+          } catch {
+            // Fall through to convertOpenAIError
+          }
+        }
+      }
       throw convertOpenAIError(error);
     }
   }

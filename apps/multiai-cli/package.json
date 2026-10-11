@@ -1,6 +1,6 @@
 {
   "name": "multiai-cli",
-  "version": "1.1.5",
+  "version": "1.1.7",
   "description": "MultiAI coding agent for the terminal, web, and IDE",
   "license": "MIT",
   "author": "MultiAI",
@@ -45,8 +45,7 @@
     "#/*": "./src/*.ts"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "scripts": {
     "build": "pnpm -C ../multiai-web run build && tsdown && node scripts/copy-native-assets.mjs && node scripts/copy-web-assets.mjs",

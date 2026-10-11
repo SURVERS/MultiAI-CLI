@@ -3,6 +3,7 @@ import { isRecord } from './utils';
 import { parseMultiAICustomHeaders } from './identity';
 import { parseSupportsThinkingType, parseThinkEfforts } from './provider-discovery';
 import { DISCOVERY_MODEL_FIELDS, mergeRefreshedModelAlias } from './model-alias-merge';
+import { isExcludedMultiAIModel, isToggleOrFreeMultiAIModel, parseMultiAIReasoning } from './multiai-client';
 import type {
   ProviderDiscoveryModelInfo,
   ProviderDiscoveryConfigShape,
@@ -21,31 +22,48 @@ export interface OpenPlatformDefinition {
 
 export const OPEN_PLATFORMS: readonly OpenPlatformDefinition[] = [
   {
-    id: 'moonshot-cn',
-    name: 'Kimi Platform (API key · platform.kimi.com)',
-    baseUrl: 'https://api.moonshot.cn/v1',
-    consoleUrl: 'https://platform.kimi.com',
-    allowedPrefixes: ['kimi-k'],
+    id: 'multiai',
+    name: 'MultiAI Official (multiai.store)',
+    baseUrl: 'https://multiai.store/v1',
+    consoleUrl: 'https://multiai.store',
   },
   {
-    id: 'moonshot-ai',
-    name: 'Kimi Platform (API key · platform.kimi.ai)',
-    baseUrl: 'https://api.moonshot.ai/v1',
-    consoleUrl: 'https://platform.kimi.ai',
-    allowedPrefixes: ['kimi-k'],
+    id: 'multiai-official',
+    name: 'MultiAI Official API (multiai.store)',
+    baseUrl: 'https://multiai.store/v1',
+    consoleUrl: 'https://multiai.store',
   },
 ];
 
 export function getOpenPlatformById(id: string): OpenPlatformDefinition | undefined {
-  return OPEN_PLATFORMS.find((p) => p.id === id);
+  const match = OPEN_PLATFORMS.find((p) => p.id === id);
+  if (match !== undefined) return match;
+  // Backward compatibility alias for legacy configs
+  if (id === 'moonshot-cn' || id === 'moonshot-ai') {
+    return OPEN_PLATFORMS[0];
+  }
+  return undefined;
 }
 
 export function isOpenPlatformId(id: string): boolean {
-  return OPEN_PLATFORMS.some((p) => p.id === id);
+  return OPEN_PLATFORMS.some((p) => p.id === id) || id === 'moonshot-cn' || id === 'moonshot-ai';
+}
+
+function isLikelyReasoningModelId(modelId: string): boolean {
+  const normalized = modelId.toLowerCase();
+  return (
+    normalized.includes('astra') ||
+    normalized.includes('reason') ||
+    normalized.includes('think') ||
+    /(?:^|[._/-])(o[134]|r1|qwq|qvq)(?:[._/-]|$)/i.test(normalized)
+  );
 }
 
 function toModelInfo(item: unknown): ProviderDiscoveryModelInfo | undefined {
   if (!isRecord(item) || typeof item['id'] !== 'string' || item['id'].length === 0) {
+    return undefined;
+  }
+  if (isExcludedMultiAIModel(item['id'])) {
     return undefined;
   }
   const contextLength = Number(item['context_length']);
@@ -65,20 +83,33 @@ function toModelInfo(item: unknown): ProviderDiscoveryModelInfo | undefined {
   const supportsToolUse = Object.hasOwn(item, 'supports_tool_use')
     ? Boolean(item['supports_tool_use'])
     : true;
-  // Effort levels come from the nested `think_efforts` object
-  // ({ support, valid_efforts, default_effort }) returned by /models.
   const thinkEfforts = parseThinkEfforts(item['think_efforts']);
+  const reasoningMeta = parseMultiAIReasoning(item);
+  const isToggle = Boolean(reasoningMeta.isToggle) || isToggleOrFreeMultiAIModel(item['id']);
+  const isReasoning =
+    reasoningMeta.isReasoning ||
+    Boolean(item['supports_reasoning']) ||
+    isLikelyReasoningModelId(item['id']);
+  const supportEfforts = isToggle
+    ? undefined
+    : (thinkEfforts.supportEfforts ?? reasoningMeta.supportEfforts);
+  const defaultEffort = isToggle
+    ? undefined
+    : (thinkEfforts.defaultEffort ?? reasoningMeta.defaultEffort);
+  const supportsThinkingType =
+    parseSupportsThinkingType(item['supports_thinking_type']) ??
+    (reasoningMeta.alwaysThinking ? 'only' : (isReasoning ? 'both' : undefined));
   return {
     id: item['id'],
     contextLength,
     maxOutputSize,
-    supportsReasoning: Boolean(item['supports_reasoning']),
+    supportsReasoning: isReasoning,
     supportsImageIn: Boolean(item['supports_image_in']),
     supportsVideoIn: Boolean(item['supports_video_in']),
     supportsToolUse,
-    supportsThinkingType: parseSupportsThinkingType(item['supports_thinking_type']),
-    supportEfforts: thinkEfforts.supportEfforts,
-    defaultEffort: thinkEfforts.defaultEffort,
+    supportsThinkingType,
+    supportEfforts,
+    defaultEffort,
     displayName: normalizedDisplayName,
   };
 }
@@ -98,7 +129,7 @@ export function capabilitiesForModel(model: ProviderDiscoveryModelInfo): string[
     case 'no':
       break;
     case undefined:
-      if (model.supportsReasoning) caps.add('thinking');
+      if (model.supportsReasoning || isLikelyReasoningModelId(model.id)) caps.add('thinking');
       break;
   }
   if (model.supportsImageIn) caps.add('image_in');

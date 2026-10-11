@@ -230,13 +230,104 @@ export function registerModelCatalogRoutes(app: ModelCatalogRouteHost, core: Sco
     },
     async (req, reply) => {
       const items = await (await loadCatalog(core)).listModels();
-      // Presentation filter: the secondary-model derived entry is synthesized
-      // runtime state, not a configured alias — keep it out of pickers (the
-      // catalog still resolves it by id, and the overlay's strip keeps any
-      // default-model pointer to it out of config.toml).
+      const isExcludedCatalogModel = (val: unknown): boolean => {
+        if (typeof val !== 'string' || val.length === 0) return false;
+        const norm = val.toLowerCase();
+        return (
+          norm.startsWith('ma-') ||
+          norm.includes('/ma-') ||
+          norm.includes('transcribe') ||
+          norm.includes('banan') ||
+          (norm.includes('gpt') && norm.includes('image')) ||
+          norm.includes('gpt-image') ||
+          norm.includes('image-2') ||
+          norm.includes('image-1')
+        );
+      };
+      // Presentation filter: filter secondary-derived entry, ma- models,
+      // transcribe models, nano-banano, and gpt-image models,
+      // and ensure astra/reasoning models declare thinking capabilities.
+      const filtered = items
+        .filter((item) => {
+          if (!item) return false;
+          if (item.model === SECONDARY_DERIVED_MODEL_ID) return false;
+          const rawItem = item as Record<string, unknown>;
+          return (
+            !isExcludedCatalogModel(item.model) &&
+            !isExcludedCatalogModel(item.display_name) &&
+            !isExcludedCatalogModel(rawItem['id'])
+          );
+        })
+        .map((item) => {
+          const rawItem = item as Record<string, unknown>;
+          const norm = String(item.model || rawItem['id'] || '').toLowerCase();
+          const rawReasoning = rawItem['reasoning'];
+          const hasApiReasoning =
+            rawReasoning !== null &&
+            typeof rawReasoning === 'object' &&
+            (rawReasoning as Record<string, unknown>)['kind'] !== 'none';
+          const isReasoning =
+            hasApiReasoning ||
+            Boolean(rawItem['visible_reasoning']) ||
+            Boolean(item.capabilities?.includes('thinking')) ||
+            norm.includes('astra') ||
+            norm.includes('reason') ||
+            norm.includes('think') ||
+            /(?:^|[._/-])(o[134]|r1|qwq|qvq)(?:[._/-]|$)/i.test(norm) ||
+            /claude-(?:sonnet|opus|haiku|fable)-(?:[4-9]|\d+\.\d+)/i.test(norm) ||
+            /gpt-[5-9]/i.test(norm) ||
+            /gemini-[3-9]/i.test(norm) ||
+            /deepseek-(?:r\d|v[4-9])/i.test(norm) ||
+            /grok-[4-9]/i.test(norm) ||
+            /glm-[45]/i.test(norm) ||
+            /qwen(?:3|\.5|\.8)/i.test(norm) ||
+            /kimi-k[23]/i.test(norm) ||
+            /mimo-v2/i.test(norm) ||
+            /minimax-m3/i.test(norm) ||
+            /solar-(?:pro|mini)4/i.test(norm) ||
+            /nemotron-3/i.test(norm) ||
+            /mistral-large-4/i.test(norm);
+          const isToggle =
+            (rawReasoning !== null && typeof rawReasoning === 'object' && (rawReasoning as Record<string, unknown>)['kind'] === 'toggle') ||
+            Boolean(rawItem['is_toggle']) ||
+            Boolean(rawItem['isToggle']) ||
+            Boolean(rawItem['billing_free']) ||
+            norm.includes(':free') ||
+            norm.endsWith('-free') ||
+            norm.includes('/free') ||
+            norm.includes('minimax-m3') ||
+            norm.includes('mimo-v2.6') ||
+            norm.includes('glm-4.7') ||
+            norm.includes('laguna') ||
+            norm.includes('dots-3-note') ||
+            norm.includes('nemotron-3.5') ||
+            norm.includes('gemma-4') ||
+            norm.includes('north-mini') ||
+            norm.includes('apodex-1.1');
+          if (isToggle) {
+            return {
+              ...item,
+              capabilities: item.capabilities?.includes('thinking')
+                ? item.capabilities
+                : [...(item.capabilities ?? []), 'thinking'],
+              isToggle: true,
+              supportEfforts: undefined,
+              defaultEffort: undefined,
+            };
+          }
+          if (isReasoning && (!item.capabilities || !item.capabilities.includes('thinking'))) {
+            return {
+              ...item,
+              capabilities: [...(item.capabilities ?? []), 'thinking'],
+              supportEfforts: item.supportEfforts ?? ['low', 'medium', 'high', 'max'],
+              defaultEffort: item.defaultEffort ?? 'high',
+            };
+          }
+          return item;
+        });
       reply.send(
         okEnvelope(
-          { items: items.filter((item) => item.model !== SECONDARY_DERIVED_MODEL_ID) },
+          { items: filtered },
           req.id,
         ),
       );

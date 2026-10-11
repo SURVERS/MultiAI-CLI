@@ -78,7 +78,7 @@ export class MoonshotFetchURLProvider implements UrlFetcher {
       }
       throw new HttpFetchError(
         response.status,
-        `Moonshot fetch request failed: HTTP ${String(response.status)}. ${detail}`.trim(),
+        `MultiAI fetch request failed: HTTP ${String(response.status)}. ${detail}`.trim(),
       );
     }
 
@@ -95,7 +95,7 @@ export class MoonshotFetchURLProvider implements UrlFetcher {
         Accept: 'text/markdown',
         'Content-Type': 'application/json',
         ...(toolCallId !== undefined && toolCallId.length > 0
-          ? { 'X-Msh-Tool-Call-Id': toolCallId }
+          ? { 'X-MultiAI-Tool-Call-Id': toolCallId, 'X-Msh-Tool-Call-Id': toolCallId }
           : {}),
         ...this.customHeaders,
       },
@@ -123,6 +123,6 @@ export class MoonshotFetchURLProvider implements UrlFetcher {
     if (this.apiKey !== undefined && this.apiKey.length > 0) {
       return this.apiKey;
     }
-    throw new Error('Moonshot fetch service is not configured: missing API key or token provider.');
+    throw new Error('MultiAI fetch service is not configured: missing API key or token provider.');
   }
 }

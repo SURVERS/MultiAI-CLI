@@ -7,6 +7,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
+import { fileURLToPath } from 'node:url';
+
 import { createMultiAIDefaultHeaders, createMultiAIUserAgent, type MultiAIHostIdentity } from '@multiai/oauth';
 
 import { CLI_USER_AGENT_PRODUCT } from '#/constant/app';
@@ -14,7 +16,7 @@ import { CLI_USER_AGENT_PRODUCT } from '#/constant/app';
 import { getDataDir } from '../utils/paths';
 import { MULTIAI_BUILD_INFO } from './build-info';
 
-const MODULE_DIR = import.meta.dirname;
+const MODULE_DIR = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 
 export function getHostPackageJsonPath(): string {
   // Walk upwards from this file's directory until a `package.json` shows up,

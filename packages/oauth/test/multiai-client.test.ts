@@ -205,6 +205,40 @@ describe('MultiAI managed model reasoning metadata', () => {
     });
   });
 
+  it('parses toggle and free models without supportEfforts or defaultEffort', async () => {
+    const models = await fetchMultiAIModels({
+      metadata: metadata(),
+      accessToken: 'access-token',
+      fetchImpl: vi.fn(async () =>
+        Response.json({
+          data: [
+            {
+              id: 'google/gemma-4-26b-it:free',
+              reasoning: { kind: 'toggle', allow_disable: true, levels: ['none', 'medium'] },
+            },
+            {
+              id: 'minimax-m3',
+              reasoning: { kind: 'toggle', allow_disable: true },
+            },
+            {
+              id: 'custom-free-model',
+              billing_free: true,
+              visible_reasoning: true,
+            },
+          ],
+        }),
+      ),
+    });
+
+    expect(models).toHaveLength(3);
+    for (const model of models) {
+      expect(model.capabilities).toEqual(['thinking']);
+      expect(model.isToggle).toBe(true);
+      expect(model.supportEfforts).toBeUndefined();
+      expect(model.defaultEffort).toBeUndefined();
+    }
+  });
+
   it('removes disabled models and resets thinking when the managed default changes', () => {
     const managedConfig: ManagedMultiAIConfigShape = { providers: {}, models: {} };
     applyManagedMultiAIConfig(managedConfig, [{ id: 'old-model' }, { id: 'kept-model' }]);

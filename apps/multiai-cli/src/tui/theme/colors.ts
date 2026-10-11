@@ -80,56 +80,56 @@ export interface ColorPalette {
 }
 
 export const darkColors: ColorPalette = {
-  primary: '#4FA8FF',
-  accent: '#5BC0BE',
+  primary: '#00E5FF',
+  accent: '#8B5CF6',
 
-  text: '#E0E0E0',
-  textStrong: '#F5F5F5',
-  textDim: '#888888',
-  textMuted: '#6B6B6B',
+  text: '#F1F5F9',
+  textStrong: '#FFFFFF',
+  textDim: '#94A3B8',
+  textMuted: '#64748B',
 
-  border: '#5A5A5A',
-  borderFocus: '#E8A838',
+  border: '#334155',
+  borderFocus: '#00E5FF',
 
-  success: '#4EC87E',
-  warning: '#E8A838',
-  error: '#E85454',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#F43F5E',
 
-  diffAdded: '#4EC87E',
-  diffRemoved: '#E85454',
-  diffAddedStrong: '#7AD99B',
-  diffRemovedStrong: '#F08585',
-  diffGutter: '#6B6B6B',
-  diffMeta: '#888888',
+  diffAdded: '#10B981',
+  diffRemoved: '#F43F5E',
+  diffAddedStrong: '#34D399',
+  diffRemovedStrong: '#FB7185',
+  diffGutter: '#64748B',
+  diffMeta: '#94A3B8',
 
-  roleUser: '#FFCB6B',
-  shellMode: '#BD93F9',
+  roleUser: '#FBBF24',
+  shellMode: '#C084FC',
 };
 
 export const lightColors: ColorPalette = {
-  primary: '#1565C0',
-  accent: '#00838F',
+  primary: '#0284C7',
+  accent: '#7C3AED',
 
-  text: '#1A1A1A',
-  textStrong: '#1A1A1A',
-  textDim: '#454545',
-  textMuted: '#5F5F5F',
+  text: '#0F172A',
+  textStrong: '#020617',
+  textDim: '#475569',
+  textMuted: '#64748B',
 
-  border: '#737373',
-  borderFocus: '#92660A',
+  border: '#94A3B8',
+  borderFocus: '#0284C7',
 
-  success: '#0E7A38',
-  warning: '#92660A',
-  error: '#B91C1C',
+  success: '#059669',
+  warning: '#D97706',
+  error: '#E11D48',
 
-  diffAdded: '#0E7A38',
-  diffRemoved: '#B91C1C',
-  diffAddedStrong: '#0E7A38',
-  diffRemovedStrong: '#B91C1C',
-  diffGutter: '#737373',
-  diffMeta: '#5F5F5F',
+  diffAdded: '#059669',
+  diffRemoved: '#E11D48',
+  diffAddedStrong: '#10B981',
+  diffRemovedStrong: '#F43F5E',
+  diffGutter: '#94A3B8',
+  diffMeta: '#64748B',
 
-  roleUser: '#9A4A00',
+  roleUser: '#D97706',
   shellMode: '#7C3AED',
 };
 

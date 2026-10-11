@@ -66,14 +66,14 @@ export class MoonshotWebSearchProvider implements WebSearchProvider {
     if (response.status === 401) {
       const detail = await safeReadText(response);
       throw new Error(
-        `Moonshot search request failed: HTTP 401 (auth/unauthorized). ${detail}`.trim(),
+        `MultiAI search request failed: HTTP 401 (auth/unauthorized). ${detail}`.trim(),
       );
     }
 
     if (response.status !== 200) {
       const detail = await safeReadText(response);
       throw new Error(
-        `Moonshot search request failed: HTTP ${String(response.status)}. ${detail}`.trim(),
+        `MultiAI search request failed: HTTP ${String(response.status)}. ${detail}`.trim(),
       );
     }
 
@@ -101,7 +101,7 @@ export class MoonshotWebSearchProvider implements WebSearchProvider {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         ...(toolCallId !== undefined && toolCallId.length > 0
-          ? { 'X-Msh-Tool-Call-Id': toolCallId }
+          ? { 'X-MultiAI-Tool-Call-Id': toolCallId, 'X-Msh-Tool-Call-Id': toolCallId }
           : {}),
         ...this.customHeaders,
       },
@@ -124,7 +124,7 @@ export class MoonshotWebSearchProvider implements WebSearchProvider {
       return this.apiKey;
     }
     throw new Error(
-      'Moonshot search service is not configured: missing API key or token provider.',
+      'MultiAI search service is not configured: missing API key or token provider.',
     );
   }
 }

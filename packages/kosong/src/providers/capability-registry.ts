@@ -161,7 +161,26 @@ function hasPrefix(modelName: string, prefixes: readonly string[]): boolean {
 }
 
 function isOpenAIReasoningModel(modelName: string): boolean {
-  return /^o\d/.test(modelName);
+  return (
+    /^o\d/.test(modelName) ||
+    modelName.includes('astra') ||
+    modelName.includes('reason') ||
+    modelName.includes('think') ||
+    /(?:^|[._/-])(o[134]|r1|qwq|qvq)(?:[._/-]|$)/i.test(modelName) ||
+    /claude-(?:sonnet|opus|haiku|fable)-(?:[4-9]|\d+\.\d+)/i.test(modelName) ||
+    /gpt-[5-9]/i.test(modelName) ||
+    /gemini-[3-9]/i.test(modelName) ||
+    /deepseek-(?:r\d|v[4-9])/i.test(modelName) ||
+    /grok-[4-9]/i.test(modelName) ||
+    /glm-[45]/i.test(modelName) ||
+    /qwen(?:3|\.5|\.8)/i.test(modelName) ||
+    /kimi-k[23]/i.test(modelName) ||
+    /mimo-v2/i.test(modelName) ||
+    /minimax-m3/i.test(modelName) ||
+    /solar-(?:pro|mini)4/i.test(modelName) ||
+    /nemotron-3/i.test(modelName) ||
+    /mistral-large-4/i.test(modelName)
+  );
 }
 
 function capabilityFromCatalog(

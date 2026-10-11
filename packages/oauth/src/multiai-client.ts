@@ -610,14 +610,118 @@ export async function fetchAccountSnapshot(options: {
   )) as unknown as MultiAIAccountSnapshot;
 }
 
-function isSupportedCLIModel(modelId: string): boolean {
-  const normalized = modelId.trim().toLowerCase();
-  if (normalized.startsWith('ma-')) return false;
-  if (normalized.includes('gpt') && normalized.includes('image')) return false;
-  if (normalized.includes('gpt') && normalized.includes('transcribe')) return false;
-  if (normalized.includes('nano') && /banan(?:a|o)/.test(normalized)) return false;
-  return true;
+import { isLikelyReasoningModelId } from './managed-multiai';
+
+export function isToggleOrFreeMultiAIModel(modelId: string | undefined): boolean {
+  if (!modelId) return false;
+  const norm = modelId.toLowerCase();
+  return (
+    norm.includes(':free') ||
+    norm.endsWith('-free') ||
+    norm.includes('/free') ||
+    norm.includes('minimax-m3') ||
+    norm.includes('mimo-v2.6') ||
+    norm.includes('glm-4.7') ||
+    norm.includes('laguna') ||
+    norm.includes('dots-3-note') ||
+    norm.includes('nemotron-3.5') ||
+    norm.includes('gemma-4') ||
+    norm.includes('north-mini') ||
+    norm.includes('apodex-1.1')
+  );
 }
+
+export function parseMultiAIReasoning(record: Record<string, unknown>): {
+  isReasoning: boolean;
+  alwaysThinking: boolean;
+  isToggle?: boolean;
+  supportEfforts?: string[];
+  defaultEffort?: string;
+} {
+  const modelId = typeof record['id'] === 'string' ? record['id'] : '';
+  const rawReasoning = record['reasoning'];
+  const visibleReasoning = Boolean(record['visible_reasoning']);
+  const isFree = Boolean(record['billing_free']) || isToggleOrFreeMultiAIModel(modelId);
+
+  if (rawReasoning !== null && typeof rawReasoning === 'object' && !Array.isArray(rawReasoning)) {
+    const r = rawReasoning as Record<string, unknown>;
+    const kind = typeof r['kind'] === 'string' ? r['kind'] : undefined;
+    if (kind !== 'none') {
+      const allowDisable = r['allow_disable'] !== false;
+      const isToggle = kind === 'toggle' || isFree;
+      if (isToggle) {
+        return {
+          isReasoning: true,
+          alwaysThinking: !allowDisable,
+          isToggle: true,
+          supportEfforts: undefined,
+          defaultEffort: undefined,
+        };
+      }
+      const rawLevels = Array.isArray(r['levels'])
+        ? r['levels'].filter((lvl): lvl is string => typeof lvl === 'string' && lvl !== 'none')
+        : [];
+      const supportEfforts = rawLevels.length > 0 ? rawLevels : ['low', 'medium', 'high', 'max'];
+      const rawDefault =
+        typeof r['default_effort'] === 'string' && r['default_effort'] !== 'none'
+          ? r['default_effort']
+          : typeof r['default'] === 'string' && r['default'] !== 'none'
+            ? r['default']
+            : undefined;
+      const defaultEffort =
+        rawDefault ?? (supportEfforts.includes('medium') ? 'medium' : supportEfforts[0] ?? 'high');
+      return {
+        isReasoning: true,
+        alwaysThinking: !allowDisable,
+        isToggle: false,
+        supportEfforts,
+        defaultEffort,
+      };
+    }
+  }
+
+  if (visibleReasoning || isLikelyReasoningModelId(modelId)) {
+    if (isFree) {
+      return {
+        isReasoning: true,
+        alwaysThinking: false,
+        isToggle: true,
+        supportEfforts: undefined,
+        defaultEffort: undefined,
+      };
+    }
+    return {
+      isReasoning: true,
+      alwaysThinking: false,
+      isToggle: false,
+      supportEfforts: ['low', 'medium', 'high', 'max'],
+      defaultEffort: 'high',
+    };
+  }
+
+  return { isReasoning: false, alwaysThinking: false, isToggle: false };
+}
+
+export function isExcludedMultiAIModel(modelIdOrAlias: string): boolean {
+  const normalized = modelIdOrAlias.trim().toLowerCase();
+  if (normalized.startsWith('ma-') || normalized.includes('/ma-')) return true;
+  if (normalized.includes('transcribe')) return true;
+  if (normalized.includes('banan')) return true;
+  if (
+    (normalized.includes('gpt') && normalized.includes('image')) ||
+    normalized.includes('gpt-image') ||
+    normalized.includes('image-2') ||
+    normalized.includes('image-1')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function isSupportedCLIModel(modelId: string): boolean {
+  return !isExcludedMultiAIModel(modelId);
+}
+
 
 export async function fetchMultiAIModels(options: {
   readonly metadata: OAuthAuthorizationServerMetadata;
@@ -637,18 +741,29 @@ export async function fetchMultiAIModels(options: {
       record['id'].length === 0 ||
       !isSupportedCLIModel(record['id'])
     ) return [];
+    const reasoningMeta = parseMultiAIReasoning(record);
+    const isToggle = Boolean(reasoningMeta.isToggle) || isToggleOrFreeMultiAIModel(record['id']);
     const capabilities = Array.isArray(record['capabilities'])
       ? record['capabilities'].filter(
           (candidate): candidate is string =>
             typeof candidate === 'string' && candidate.length > 0,
         )
-      : undefined;
-    const supportEfforts = Array.isArray(record['support_efforts'])
-      ? record['support_efforts'].filter(
-          (candidate): candidate is string =>
-            typeof candidate === 'string' && candidate.length > 0,
-        )
-      : undefined;
+      : (reasoningMeta.isReasoning
+          ? (reasoningMeta.alwaysThinking ? ['thinking', 'always_thinking'] : ['thinking'])
+          : undefined);
+    const supportEfforts = isToggle
+      ? undefined
+      : Array.isArray(record['support_efforts'])
+        ? record['support_efforts'].filter(
+            (candidate): candidate is string =>
+              typeof candidate === 'string' && candidate.length > 0,
+          )
+        : reasoningMeta.supportEfforts;
+    const defaultEffort = isToggle
+      ? undefined
+      : typeof record['default_effort'] === 'string' && record['default_effort'].length > 0
+        ? record['default_effort']
+        : reasoningMeta.defaultEffort;
     const positiveInteger = (value: unknown): number | undefined => {
       const parsed = typeof value === 'number' ? value : Number(value);
       return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
@@ -689,12 +804,10 @@ export async function fetchMultiAIModels(options: {
         typeof record['output_multiplier'] === 'number' ? record['output_multiplier'] : undefined,
       capabilities:
         capabilities !== undefined && capabilities.length > 0 ? capabilities : undefined,
+      isToggle: isToggle ? true : undefined,
       supportEfforts:
         supportEfforts !== undefined && supportEfforts.length > 0 ? supportEfforts : undefined,
-      defaultEffort:
-        typeof record['default_effort'] === 'string' && record['default_effort'].length > 0
-          ? record['default_effort']
-          : undefined,
+      defaultEffort: isToggle ? undefined : defaultEffort,
     }];
   });
 }

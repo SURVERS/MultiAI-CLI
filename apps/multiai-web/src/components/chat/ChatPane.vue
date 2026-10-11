@@ -13,6 +13,8 @@ import MessageTime from './MessageTime.vue';
 import AuthMedia from './AuthMedia.vue';
 import AttachmentChip from './AttachmentChip.vue';
 import MoonSpinner from '../ui/MoonSpinner.vue';
+import WorkingStatusPill from './WorkingStatusPill.vue';
+import type { DevPhraseMode } from '../../lib/devPhrases';
 import Spinner from '../ui/Spinner.vue';
 import Icon from '../ui/Icon.vue';
 import Tooltip from '../ui/Tooltip.vue';
@@ -191,6 +193,20 @@ const streamingTurnId = computed<string | null>(() => {
 // background agents and BTW side chats never show here — the moon belongs to
 // the main conversation only.
 const showWorking = computed(() => props.working);
+
+const activeWorkingMode = computed<DevPhraseMode>(() => {
+  if (!props.turnActive || props.turns.length === 0) return 'waiting';
+  const last = props.turns.at(-1);
+  if (!last || last.role !== 'assistant') return 'waiting';
+  const blocks = assistantRenderBlocks(last);
+  if (blocks.length === 0) return 'waiting';
+  const lastBlock = blocks.at(-1);
+  if (!lastBlock) return 'waiting';
+  if (lastBlock.kind === 'thinking') return 'waiting';
+  if (lastBlock.kind === 'tool' || lastBlock.kind === 'tool-stack') return 'tool';
+  if (lastBlock.kind === 'text') return 'composing';
+  return 'composing';
+});
 
 const emit = defineEmits<{
   openFile: [target: FilePreviewRequest];
@@ -673,11 +689,9 @@ function isStreamingRenderBlock(turn: ChatTurn, block: { sourceIndex: number }):
     <!-- Compaction in progress — body-sized moon activity notice -->
     <ActivityNotice v-if="compaction" :label="t('conversation.compacting')" />
 
-    <!-- Working placeholder — moon spinner while the conversation has an
-         unfinished prompt (covers a page refresh mid-stream, where the
-         optimistic submit flag was lost but the main turn is still in flight). -->
+    <!-- Working placeholder — MultiAI cyber status pill with rotating dev-phrases -->
     <div v-if="showWorking" class="sending-placeholder">
-      <MoonSpinner :fast="fastMoon" />
+      <WorkingStatusPill :mode="activeWorkingMode" :fast="fastMoon" />
     </div>
 
     <!-- Inline queue — pending user messages shown after the running turn.
@@ -862,7 +876,8 @@ function isStreamingRenderBlock(turn: ChatTurn, block: { sourceIndex: number }):
   padding: 11px 15px;
   font-size: var(--content-font-size);
   line-height: var(--leading-normal);
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 2px 14px rgba(0, 229, 255, 0.08), var(--shadow-xs);
+  backdrop-filter: blur(8px);
 }
 .u-meta {
   align-self: flex-end;

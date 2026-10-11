@@ -2,12 +2,38 @@ import type { AppModel, ThinkingLevel } from '../api/types';
 
 export type ThinkingAvailability = 'toggle' | 'always-on' | 'unsupported';
 
-export type ModelThinkingInfo = Pick<
-  AppModel,
-  'capabilities' | 'supportEfforts' | 'defaultEffort'
+export type ModelThinkingInfo = Partial<
+  Pick<
+    AppModel,
+    'id' | 'model' | 'displayName' | 'capabilities' | 'supportEfforts' | 'defaultEffort'
+  >
 > & {
   readonly adaptiveThinking?: boolean;
 };
+
+export function isReasoningModelName(name: string | undefined): boolean {
+  if (!name) return false;
+  const normalized = name.toLowerCase();
+  return (
+    normalized.includes('astra') ||
+    normalized.includes('reason') ||
+    normalized.includes('think') ||
+    /(?:^|[._/-])(o[134]|r1|qwq|qvq)(?:[._/-]|$)/i.test(normalized) ||
+    /claude-(?:sonnet|opus|haiku|fable)-(?:[4-9]|\d+\.\d+)/i.test(normalized) ||
+    /gpt-[5-9]/i.test(normalized) ||
+    /gemini-[3-9]/i.test(normalized) ||
+    /deepseek-(?:r\d|v[4-9])/i.test(normalized) ||
+    /grok-[4-9]/i.test(normalized) ||
+    /glm-[45]/i.test(normalized) ||
+    /qwen(?:3|\.5|\.8)/i.test(normalized) ||
+    /kimi-k[23]/i.test(normalized) ||
+    /mimo-v2/i.test(normalized) ||
+    /minimax-m3/i.test(normalized) ||
+    /solar-(?:pro|mini)4/i.test(normalized) ||
+    /nemotron-3/i.test(normalized) ||
+    /mistral-large-4/i.test(normalized)
+  );
+}
 
 export function modelThinkingAvailability(
   model: ModelThinkingInfo | undefined,
@@ -16,11 +42,51 @@ export function modelThinkingAvailability(
   const capabilities = model.capabilities ?? [];
   if (capabilities.includes('always_thinking')) return 'always-on';
   if (capabilities.includes('thinking') || model.adaptiveThinking === true) return 'toggle';
+  if (
+    isReasoningModelName(model.id) ||
+    isReasoningModelName(model.model) ||
+    isReasoningModelName(model.displayName)
+  ) {
+    return 'toggle';
+  }
   return 'unsupported';
 }
 
+export function isToggleThinkingModel(model: ModelThinkingInfo | undefined): boolean {
+  if (!model) return false;
+  if ((model as { isToggle?: boolean }).isToggle === true) return true;
+  const name = (model.id || model.model || model.displayName || '').toLowerCase();
+  return (
+    name.includes(':free') ||
+    name.endsWith('-free') ||
+    name.includes('/free') ||
+    name.includes('minimax-m3') ||
+    name.includes('mimo-v2.6') ||
+    name.includes('glm-4.7') ||
+    name.includes('laguna') ||
+    name.includes('dots-3-note') ||
+    name.includes('nemotron-3.5') ||
+    name.includes('gemma-4') ||
+    name.includes('north-mini') ||
+    name.includes('apodex-1.1')
+  );
+}
+
 function effortsOf(model: ModelThinkingInfo | undefined): readonly string[] {
-  return model?.supportEfforts ?? [];
+  if (isToggleThinkingModel(model)) return [];
+  if (model?.supportEfforts && model.supportEfforts.length > 0) return model.supportEfforts;
+  const name = (model?.id || model?.model || model?.displayName || '').toLowerCase();
+  if (
+    !isToggleThinkingModel(model) &&
+    (name.includes('astra') ||
+      /claude-(?:sonnet|opus|haiku|fable)-(?:[4-9]|\d+\.\d+)/i.test(name) ||
+      /gpt-[5-9]/i.test(name) ||
+      /deepseek-(?:r\d|v[4-9])/i.test(name) ||
+      /(?:^|[._/-])(o[134]|r1)(?:[._/-]|$)/i.test(name))
+  ) {
+    return ['low', 'medium', 'high', 'max'];
+  }
+  return [];
 }
 
 function middleOf(efforts: readonly string[]): string {
@@ -38,7 +104,7 @@ export function defaultThinkingLevelFor(
 ): ThinkingLevel {
   if (modelThinkingAvailability(model) === 'unsupported') return 'off';
   const efforts = effortsOf(model);
-  if (efforts.length > 0) return model?.defaultEffort ?? middleOf(efforts);
+  if (efforts.length > 0) return model?.defaultEffort ?? (efforts.includes('high') ? 'high' : middleOf(efforts));
   return 'on';
 }
 

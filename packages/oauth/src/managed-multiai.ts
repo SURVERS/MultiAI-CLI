@@ -4,6 +4,7 @@ import {
   MULTIAI_OAUTH_KEY,
   MULTIAI_PROVIDER_NAME,
 } from './multiai-constants';
+import { isExcludedMultiAIModel, isToggleOrFreeMultiAIModel } from './multiai-client';
 import type { MultiAIModelInfo } from './multiai-types';
 
 export interface ManagedMultiAIOAuthRef {
@@ -100,7 +101,25 @@ const MANAGED_MODEL_PROFILES: Readonly<Record<string, ManagedMultiAIModelProfile
   'deepseek-v4-pro': effortProfile(HIGH_MAX, 'high'),
   'glm-5.2': effortProfile(HIGH_MAX, 'high'),
   'grok-4.5': effortProfile(LOW_MEDIUM_HIGH, 'medium'),
-  'minimax-m3': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'gpt-astra': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'astra': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'gpt-4o-astra': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'gpt-5-astra': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'astra-pro': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'astra-flash': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'o1': effortProfile(LOW_MEDIUM_HIGH, 'high'),
+  'o1-mini': effortProfile(LOW_MEDIUM_HIGH, 'high'),
+  'o1-pro': effortProfile(LOW_MEDIUM_HIGH, 'high'),
+  'o3': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'o3-mini': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'o3-pro': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'o4': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'o4-mini': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'deepseek-r1': effortProfile(HIGH_MAX, 'high'),
+  'deepseek-reasoner': effortProfile(HIGH_MAX, 'high'),
+  'qwq-32b': effortProfile(HIGH_MAX, 'high'),
+  'qwq': effortProfile(HIGH_MAX, 'high'),
+  'minimax-m3': { capabilities: THINKING_CAPABILITY },
   'mimo-v2.5': { capabilities: THINKING_CAPABILITY },
   'mimo-v2.5-pro': { capabilities: THINKING_CAPABILITY },
   'nemotron-3-ultra': { capabilities: THINKING_CAPABILITY },
@@ -128,6 +147,29 @@ function openAIGatewayProfile(
   };
 }
 
+export function isLikelyReasoningModelId(modelId: string): boolean {
+  const normalized = modelId.toLowerCase();
+  return (
+    normalized.includes('astra') ||
+    normalized.includes('reason') ||
+    normalized.includes('think') ||
+    /(?:^|[._/-])(o[134]|r1|qwq|qvq)(?:[._/-]|$)/i.test(normalized) ||
+    /claude-(?:sonnet|opus|haiku|fable)-(?:[4-9]|\d+\.\d+)/i.test(normalized) ||
+    /gpt-[5-9]/i.test(normalized) ||
+    /gemini-[3-9]/i.test(normalized) ||
+    /deepseek-(?:r\d|v[4-9])/i.test(normalized) ||
+    /grok-[4-9]/i.test(normalized) ||
+    /glm-[45]/i.test(normalized) ||
+    /qwen(?:3|\.5|\.8)/i.test(normalized) ||
+    /kimi-k[23]/i.test(normalized) ||
+    /mimo-v2/i.test(normalized) ||
+    /minimax-m3/i.test(normalized) ||
+    /solar-(?:pro|mini)4/i.test(normalized) ||
+    /nemotron-3/i.test(normalized) ||
+    /mistral-large-4/i.test(normalized)
+  );
+}
+
 /**
  * MultiAI's OpenAI-compatible `/v1/models` response is intentionally sparse,
  * so the native client supplies the reasoning controls that are part of the
@@ -138,7 +180,15 @@ export function managedMultiAIModelProfile(
   modelId: string,
 ): ManagedMultiAIModelProfile | undefined {
   const canonicalId = modelId.startsWith('ma-') ? modelId.slice(3) : modelId;
-  return MANAGED_MODEL_PROFILES[canonicalId];
+  const direct = MANAGED_MODEL_PROFILES[canonicalId];
+  if (direct !== undefined) return direct;
+  if (isToggleOrFreeMultiAIModel(canonicalId)) {
+    return { capabilities: THINKING_CAPABILITY };
+  }
+  if (isLikelyReasoningModelId(canonicalId)) {
+    return effortProfile(LOW_MEDIUM_HIGH_MAX, 'high');
+  }
+  return undefined;
 }
 
 /**
@@ -226,12 +276,19 @@ export function applyManagedMultiAIConfig(
   };
 
   const nextModels = { ...config.models };
-  const incomingAliases = new Set(models.map(({ id }) => multiAIModelAlias(id)));
+  const incomingAliases = new Set(
+    models.map(({ id }) => multiAIModelAlias(id)),
+  );
   for (const [alias, model] of Object.entries(nextModels)) {
+    const rawModelId = (model as { model?: unknown }).model;
+    const isExcluded =
+      (typeof rawModelId === 'string' && isExcludedMultiAIModel(rawModelId)) ||
+      isExcludedMultiAIModel(alias);
     if (
-      alias.startsWith('multiai/') &&
+      (isExcluded && !incomingAliases.has(alias)) ||
+      (alias.startsWith('multiai/') &&
       (model as { provider?: unknown }).provider === MULTIAI_PROVIDER_NAME &&
-      !incomingAliases.has(alias)
+      !incomingAliases.has(alias))
     ) {
       delete nextModels[alias];
     }

@@ -1281,11 +1281,11 @@ function selectModel(modelId: string): void {
   corner-shape: superellipse(1.5);
   background: var(--bg);
   box-shadow: var(--shadow-md);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .composer-card:focus-within {
   border-color: var(--color-accent);
-  box-shadow: var(--shadow-md), 0 0 0 3px var(--color-accent-soft);
+  box-shadow: var(--shadow-md), 0 0 15px rgba(0, 229, 255, 0.2), 0 0 0 2px var(--color-accent-soft);
 }
 
 
@@ -1397,7 +1397,7 @@ function selectModel(modelId: string): void {
   /* Keep the caret at the normal text colour even when the field is empty:
      the empty state sets `color` to `--faint` (so the placeholder feels soft),
      and an unset caret inherits that faint colour and nearly disappears. */
-  caret-color: var(--color-text);
+  caret-color: var(--color-accent);
   flex: 1;
   border: none;
   outline: none;
@@ -1453,9 +1453,9 @@ function selectModel(modelId: string): void {
   height: var(--composer-send-size);
   border-radius: 50%;
   background: var(--color-accent);
-  color: var(--color-text-on-accent); /* white on accent — readable in light and dark */
+  color: #070a12;
   border: none;
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
   padding: 0;
   display: flex;
   align-items: center;
@@ -1463,12 +1463,13 @@ function selectModel(modelId: string): void {
   cursor: pointer;
   flex-shrink: 0;
   margin-left: var(--space-2);
-  transition: background 0.25s ease, transform 0.12s ease;
+  transition: background 0.25s ease, transform 0.12s ease, box-shadow 0.25s ease;
   position: relative;
 }
 
 .send:hover {
   background: var(--color-accent-hover);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.65);
 }
 
 .send:active {
@@ -1487,11 +1488,11 @@ function selectModel(modelId: string): void {
 /* Spinner-on-accent: recolor the ring so the arc reads on the accent fill.
    Spinner.vue styles are scoped, so pierce them with :deep(). */
 .send.is-starting :deep(.ui-spinner) {
-  color: var(--color-text-on-accent);
+  color: #070a12;
 }
 
 .send.is-starting :deep(.ui-spinner__track) {
-  stroke: rgba(255, 255, 255, 0.32);
+  stroke: rgba(0, 0, 0, 0.25);
 }
 
 .send svg {
@@ -1510,7 +1511,7 @@ function selectModel(modelId: string): void {
   background: var(--color-danger-soft);
   color: var(--color-danger);
   border: 1px solid var(--color-danger-bd);
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.25);
   padding: 0;
   display: flex;
   align-items: center;
@@ -1518,12 +1519,13 @@ function selectModel(modelId: string): void {
   cursor: pointer;
   flex-shrink: 0;
   margin-left: var(--space-2);
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.12s ease, box-shadow 0.16s ease;
 }
 .stop:hover {
   background: var(--color-danger);
-  color: var(--color-text-on-accent);
+  color: #ffffff;
   border-color: var(--color-danger);
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.55);
 }
 .stop:active {
   transform: scale(0.92);

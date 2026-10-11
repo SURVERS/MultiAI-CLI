@@ -95,7 +95,7 @@ import { normalizeKimiToolSchema } from './kimi-schema';
 
 export const KIMI_API_KEY_ENV = 'KIMI_API_KEY';
 export const KIMI_BASE_URL_ENV = 'KIMI_BASE_URL';
-export const KIMI_DEFAULT_BASE_URL = 'https://api.moonshot.ai/v1';
+export const KIMI_DEFAULT_BASE_URL = 'https://multiai.store/v1';
 
 const INTERLEAVED_THINKING_BETA = 'interleaved-thinking-2025-05-14';
 

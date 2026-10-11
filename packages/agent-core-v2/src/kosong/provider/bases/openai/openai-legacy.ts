@@ -88,7 +88,7 @@ import { normalizeToolCallIdsForProvider, sanitizeToolCallId } from '../tool-cal
 // arms can be pinned by an explicit key — operator config (`reasoning_key`)
 // or a trait's `reasoningKey` declaration.
 
-const CHAT_COMPLETIONS_MAX_OUTPUT_TOKENS_CEILING = 128 * 1024;
+const CHAT_COMPLETIONS_MAX_OUTPUT_TOKENS_CEILING = 128000;
 
 export const OPENAI_CHAT_TOOL_CALL_ID_POLICY: ToolCallIdPolicy = {
   normalize: (id) => sanitizeToolCallId(id, 64),
@@ -185,6 +185,24 @@ function outboundToolCallExtraContent(toolCall: ToolCall, model: string): unknow
   return isGemini3Model(model)
     ? { google: { thought_signature: GEMINI_SKIP_THOUGHT_SIGNATURE } }
     : undefined;
+}
+
+function isToggleOrFreeModel(model: string): boolean {
+  const norm = model.toLowerCase();
+  return (
+    norm.includes(':free') ||
+    norm.endsWith('-free') ||
+    norm.includes('/free') ||
+    norm.includes('minimax-m3') ||
+    norm.includes('mimo-v2.6') ||
+    norm.includes('glm-4.7') ||
+    norm.includes('laguna') ||
+    norm.includes('dots-3-note') ||
+    norm.includes('nemotron-3.5') ||
+    norm.includes('gemma-4') ||
+    norm.includes('north-mini') ||
+    norm.includes('apodex-1.1')
+  );
 }
 
 function usesMaxCompletionTokens(model: string): boolean {
@@ -694,8 +712,9 @@ export class OpenAILegacyChatProvider implements ChatProvider {
       createParams['stream_options'] = { include_usage: true };
     }
 
-    if (reasoningEffort !== undefined) {
+    if (reasoningEffort !== undefined && !isToggleOrFreeModel(this._model)) {
       createParams['reasoning_effort'] = reasoningEffort;
+      createParams['reasoning'] = { effort: reasoningEffort };
     }
 
     // buildParams is the last hook to run before the request is sent.
@@ -728,6 +747,43 @@ export class OpenAILegacyChatProvider implements ChatProvider {
         this._hooks?.convertError,
       );
     } catch (error: unknown) {
+      const errMessage = (error as { message?: string })?.message ?? '';
+      const limitMatch =
+        errMessage.match(/(?:max_output_tokens|max_tokens|max_completion_tokens).*?(?:limit of|less than or equal to|must be at most|maximum of|<=)\s*(\d+)/i) ||
+        errMessage.match(/exceeds the model limit of\s*(\d+)/i);
+      if (limitMatch && limitMatch[1]) {
+        const allowedLimit = parseInt(limitMatch[1], 10);
+        if (allowedLimit > 0 && typeof finalParams === 'object' && finalParams !== null) {
+          const retryParams = { ...finalParams } as Record<string, unknown>;
+          if (retryParams['max_tokens'] !== undefined) retryParams['max_tokens'] = allowedLimit;
+          if (retryParams['max_completion_tokens'] !== undefined) retryParams['max_completion_tokens'] = allowedLimit;
+          try {
+            const client = this._createClient(options?.auth);
+            const endpoint = new URL(this._baseUrl ?? 'https://api.openai.com/v1');
+            const headers = endpoint.hostname === 'opencode.ai'
+              && endpoint.pathname.startsWith('/zen/go/') && options?.cacheKey
+              ? { 'x-opencode-session': options.cacheKey } : undefined;
+            const { data, response } = await client.chat.completions
+              .create(
+                retryParams as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+                { signal: options?.signal, headers },
+              )
+              .withResponse();
+            return new OpenAILegacyStreamedMessage(
+              data as unknown as
+                | OpenAI.Chat.ChatCompletion
+                | AsyncIterable<OpenAI.Chat.ChatCompletionChunk>,
+              this._stream,
+              this._reasoningKeyDialect,
+              parseTraceId(response.headers),
+              this._hooks?.extractUsage,
+              this._hooks?.convertError,
+            );
+          } catch {
+            // Fall through to convertOpenAIError
+          }
+        }
+      }
       throw convertOpenAIError(error, this._hooks?.convertError);
     }
   }
@@ -777,7 +833,9 @@ export class OpenAILegacyChatProvider implements ChatProvider {
 
     // issue #1616 history scan — disabled entirely when a withThinking hook
     // exists: once a trait takes over thinking, the base must not interfere.
+    // For toggle or free models, never auto-upgrade to 'medium'!
     if (
+      !isToggleOrFreeModel(this._model) &&
       reasoningEffort === undefined &&
       explicitThinkingEffort !== 'off' &&
       kwargs['reasoning_effort'] === undefined &&
@@ -789,6 +847,12 @@ export class OpenAILegacyChatProvider implements ChatProvider {
       if (hasThinkPart) {
         reasoningEffort = 'medium';
       }
+    }
+
+    if (isToggleOrFreeModel(this._model)) {
+      reasoningEffort = undefined;
+      delete kwargs['reasoning_effort'];
+      delete kwargs['reasoning'];
     }
 
     if (options?.maxCompletionTokens !== undefined) {

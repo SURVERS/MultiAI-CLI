@@ -89,6 +89,9 @@ export {
   fetchAuthorizationServerMetadata,
   fetchMultiAIModels,
   fetchUserInfo,
+  isExcludedMultiAIModel,
+  isSupportedCLIModel,
+  parseMultiAIReasoning,
   pollDeviceToken as pollMultiAIDeviceToken,
   refreshToken as refreshMultiAIToken,
   requestDeviceAuthorization as requestMultiAIDeviceAuthorization,
@@ -107,6 +110,7 @@ export {
   applyManagedMultiAIConfig,
   applyManagedMultiAIModelProfiles,
   clearManagedMultiAIConfig,
+  isLikelyReasoningModelId,
   managedMultiAIModelProfile,
   multiAIModelAlias,
 } from './managed-multiai';
