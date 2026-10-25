@@ -79,10 +79,8 @@ export class Text implements Component {
 			if (this.customBgFn) {
 				contentLines.push(applyBackgroundToLine(lineWithMargins, width, this.customBgFn));
 			} else {
-				// No background - just pad to width with spaces
-				const visibleLen = visibleWidth(lineWithMargins);
-				const paddingNeeded = Math.max(0, width - visibleLen);
-				contentLines.push(lineWithMargins + " ".repeat(paddingNeeded));
+				// No background - keep line without artificial space padding to avoid terminal margin clipping
+				contentLines.push(lineWithMargins);
 			}
 		}
 

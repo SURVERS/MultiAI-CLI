@@ -46,6 +46,7 @@ export interface AppState {
   isReplaying: boolean;
   streamingPhase: 'idle' | 'waiting' | 'thinking' | 'composing' | 'shell';
   streamingStartTime: number;
+  lastTurnDurationMs?: number;
   language?: TuiLanguage;
   theme: ThemeName;
   version: string;

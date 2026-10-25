@@ -385,8 +385,21 @@ export class FooterComponent implements Component {
         ' '.repeat(pad) +
         chalk.hex(colors.text)(contextText);
     } else {
-      const leftPad = Math.max(0, width - contextWidth);
-      line2 = ' '.repeat(leftPad) + chalk.hex(colors.text)(contextText);
+      let leftInfo = '';
+      if (state.streamingPhase !== 'idle' && state.streamingStartTime) {
+        const sec = ((Date.now() - state.streamingStartTime) / 1000).toFixed(1);
+        leftInfo = chalk.hex(colors.textMuted)(t(`● Working ${sec}s…`, `● Работает ${sec}с…`));
+      } else if (state.lastTurnDurationMs !== undefined && state.lastTurnDurationMs > 0) {
+        const sec = state.lastTurnDurationMs / 1000;
+        const durText =
+          sec < 60
+            ? `${sec < 10 ? sec.toFixed(1) : Math.round(sec)}${t('s', 'с')}`
+            : `${Math.floor(sec / 60)}${t('m', 'м')} ${Math.round(sec % 60)}${t('s', 'с')}`;
+        leftInfo = chalk.hex(colors.textMuted)(t(`✓ Done in ${durText}`, `✓ Выполнено за ${durText}`));
+      }
+      const leftInfoWidth = visibleWidth(leftInfo);
+      const pad = Math.max(0, width - leftInfoWidth - contextWidth);
+      line2 = leftInfo + ' '.repeat(pad) + chalk.hex(colors.text)(contextText);
     }
 
     return [truncateToWidth(line1, width), truncateToWidth(line2, width)];

@@ -352,6 +352,18 @@ export class SessionEventHandler {
 
   private handleTurnEnd(event: TurnEndedEvent, sendQueued: (item: QueuedMessage) => void): void {
     this.host.streamingUI.flushNow();
+    const durationMs =
+      event.durationMs ??
+      (this.host.state.appState.streamingStartTime
+        ? Date.now() - this.host.state.appState.streamingStartTime
+        : undefined);
+    const lastAssistant = this.host.streamingUI.getLastTurnAssistantComponent();
+    if (lastAssistant && durationMs !== undefined && durationMs > 0) {
+      lastAssistant.setExecutionDuration(durationMs);
+    }
+    if (durationMs !== undefined) {
+      this.host.setAppState({ lastTurnDurationMs: durationMs });
+    }
     if (event.reason === 'cancelled') {
       this.markActiveAgentSwarmsCancelled();
     }

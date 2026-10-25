@@ -9,6 +9,8 @@
  * event-filtering / completion flow intact.
  */
 
+import { visibleWidth } from '@multiai/pi-tui';
+
 import type { PromptOutputFormat } from './options';
 
 /**
@@ -101,8 +103,9 @@ interface PromptJsonRetryMetaMessage {
 export class PromptTranscriptWriter implements PromptTurnWriter {
   private readonly assistantWriter: PromptBlockWriter;
   private readonly thinkingWriter: PromptBlockWriter;
+  private readonly startedAt = Date.now();
 
-  constructor(stdout: PromptOutput, stderr: PromptOutput) {
+  constructor(private readonly stdout: PromptOutput, stderr: PromptOutput) {
     this.assistantWriter = new PromptBlockWriter(stdout);
     this.thinkingWriter = new PromptBlockWriter(stderr);
   }
@@ -143,6 +146,13 @@ export class PromptTranscriptWriter implements PromptTurnWriter {
   finish(): void {
     this.thinkingWriter.finish();
     this.assistantWriter.finish();
+    const durationMs = Date.now() - this.startedAt;
+    const sec = durationMs / 1000;
+    const dur =
+      sec < 60
+        ? `${sec < 10 ? sec.toFixed(1) : Math.round(sec)}s`
+        : `${Math.floor(sec / 60)}m ${Math.round(sec % 60)}s`;
+    this.stdout.write(`\x1b[2m✓ MultiAI (${dur})\x1b[0m\n`);
   }
 }
 
@@ -270,6 +280,8 @@ class PromptBlockWriter {
   private started = false;
   private atLineStart = false;
   private lineWidth = 0;
+  private wordBuffer = '';
+  private wordBufferWidth = 0;
   private readonly wrapWidth: number | undefined;
 
   constructor(private readonly output: PromptOutput) {
@@ -283,38 +295,80 @@ class PromptBlockWriter {
     if (chunk.length === 0) return;
     let rendered = this.start();
     for (const char of chunk) {
-      if (this.atLineStart && char !== '\n') {
-        rendered += PROMPT_BLOCK_INDENT;
-        this.atLineStart = false;
-        this.lineWidth = PROMPT_BLOCK_INDENT.length;
-      }
-      const charWidth = visibleCharWidth(char);
-      if (
-        this.wrapWidth !== undefined &&
-        !this.atLineStart &&
-        char !== '\n' &&
-        this.lineWidth + charWidth > this.wrapWidth
-      ) {
-        rendered += `\n${PROMPT_BLOCK_INDENT}`;
-        this.lineWidth = PROMPT_BLOCK_INDENT.length;
-      }
-      rendered += char;
       if (char === '\n') {
+        rendered += this.flushWord();
+        rendered += '\n';
         this.atLineStart = true;
         this.lineWidth = 0;
+      } else if (char === ' ' || char === '\t') {
+        rendered += this.flushWord();
+        if (this.atLineStart) {
+          rendered += PROMPT_BLOCK_INDENT;
+          this.atLineStart = false;
+          this.lineWidth = PROMPT_BLOCK_INDENT.length;
+        }
+        const spaceWidth = char === '\t' ? 4 : 1;
+        if (
+          this.wrapWidth !== undefined &&
+          this.lineWidth + spaceWidth > this.wrapWidth
+        ) {
+          rendered += `\n${PROMPT_BLOCK_INDENT}`;
+          this.lineWidth = PROMPT_BLOCK_INDENT.length;
+        } else {
+          rendered += char;
+          this.lineWidth += spaceWidth;
+        }
       } else {
-        this.lineWidth += charWidth;
+        const charWidth = visibleCharWidth(char);
+        this.wordBuffer += char;
+        this.wordBufferWidth += charWidth;
+        const maxContentWidth =
+          this.wrapWidth !== undefined
+            ? Math.max(1, this.wrapWidth - PROMPT_BLOCK_INDENT.length)
+            : undefined;
+        if (maxContentWidth !== undefined && this.wordBufferWidth >= maxContentWidth) {
+          rendered += this.flushWord();
+        }
       }
     }
-    this.output.write(rendered);
+    if (rendered.length > 0) {
+      this.output.write(rendered);
+    }
+  }
+
+  private flushWord(): string {
+    if (this.wordBuffer.length === 0) return '';
+    let rendered = '';
+    if (this.atLineStart) {
+      rendered += PROMPT_BLOCK_INDENT;
+      this.atLineStart = false;
+      this.lineWidth = PROMPT_BLOCK_INDENT.length;
+    }
+    if (
+      this.wrapWidth !== undefined &&
+      this.lineWidth > PROMPT_BLOCK_INDENT.length &&
+      this.lineWidth + this.wordBufferWidth > this.wrapWidth
+    ) {
+      rendered += `\n${PROMPT_BLOCK_INDENT}`;
+      this.lineWidth = PROMPT_BLOCK_INDENT.length;
+    }
+    rendered += this.wordBuffer;
+    this.lineWidth += this.wordBufferWidth;
+    this.wordBuffer = '';
+    this.wordBufferWidth = 0;
+    return rendered;
   }
 
   finish(): void {
     if (!this.started) return;
-    this.output.write(this.atLineStart ? '\n' : '\n\n');
+    let tail = this.flushWord();
+    tail += this.atLineStart ? '\n' : '\n\n';
+    this.output.write(tail);
     this.started = false;
     this.atLineStart = false;
     this.lineWidth = 0;
+    this.wordBuffer = '';
+    this.wordBufferWidth = 0;
   }
 
   private start(): string {
@@ -327,7 +381,8 @@ class PromptBlockWriter {
 }
 
 function visibleCharWidth(char: string): number {
-  return char === '\t' ? 4 : 1;
+  if (char === '\t') return 4;
+  return Math.max(1, visibleWidth(char));
 }
 
 function formatHookResultPlain(event: HookResultEventLike): string {

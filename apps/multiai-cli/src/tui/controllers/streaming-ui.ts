@@ -67,6 +67,7 @@ export class StreamingUIController {
    * opening a second bulleted block below the tool card.
    */
   private _stepAssistantBlock: AssistantStreamBlock | null = null;
+  private _lastTurnAssistantBlock: AssistantStreamBlock | null = null;
   private _activeThinkingComponent: ThinkingComponent | undefined = undefined;
   private _activeCompactionBlock: CompactionComponent | undefined = undefined;
   private _activeToolCalls = new Map<string, ToolCallBlockData>();
@@ -99,7 +100,10 @@ export class StreamingUIController {
   }
 
   setTurnId(turnId: string | undefined): void {
-    if (turnId !== this._currentTurnId) this._stepAssistantBlock = null;
+    if (turnId !== this._currentTurnId) {
+      this._stepAssistantBlock = null;
+      this._lastTurnAssistantBlock = null;
+    }
     this._currentTurnId = turnId;
   }
 
@@ -113,6 +117,10 @@ export class StreamingUIController {
     return this._currentTurnId !== undefined;
   }
 
+  getLastTurnAssistantComponent(): AssistantMessageComponent | undefined {
+    return this._lastTurnAssistantBlock?.component;
+  }
+
   // ---------------------------------------------------------------------------
   // Text streaming — semantic write accessors
   // ---------------------------------------------------------------------------
@@ -124,7 +132,7 @@ export class StreamingUIController {
 
   appendAssistantDelta(delta: string): void {
     if (this._streamingBlock === null) {
-      const resumed = this.resumableStepBlock();
+      const resumed = this.resumableBlockForDelta(delta);
       if (resumed === null) {
         this.onStreamingTextStart();
       } else {
@@ -151,6 +159,33 @@ export class StreamingUIController {
       return null;
     }
     return block;
+  }
+
+  /**
+   * Look up a resumable assistant block for the incoming delta.
+   * If the previous assistant text was interrupted mid-word across step or tool
+   * boundaries, we seamlessly resume the existing block so words aren't torn in half.
+   */
+  private resumableBlockForDelta(delta: string): AssistantStreamBlock | null {
+    const stepBlock = this.resumableStepBlock();
+    if (stepBlock !== null) return stepBlock;
+
+    const turnBlock = this._lastTurnAssistantBlock;
+    if (turnBlock === null) return null;
+    if (!this.host.state.transcriptContainer.children.includes(turnBlock.component)) {
+      this._lastTurnAssistantBlock = null;
+      return null;
+    }
+
+    const prev = turnBlock.entry.content;
+    const endsWithWord = prev.length > 0 && !/[\s\n.,!?:;'"\)\]\}]$/.test(prev);
+    const startsWithWord = delta.length > 0 && !/^[\s\n.,!?:;'"\(]/.test(delta);
+
+    if (endsWithWord || (prev.length > 0 && startsWithWord && !prev.endsWith('\n'))) {
+      return turnBlock;
+    }
+
+    return null;
   }
 
   hasThinkingDraft(): boolean {
@@ -565,6 +600,7 @@ export class StreamingUIController {
     this._assistantDraft = '';
     this._streamingBlock = null;
     this._stepAssistantBlock = null;
+    this._lastTurnAssistantBlock = null;
     this._thinkingDraft = '';
     this.disposeActiveThinkingComponent();
   }
@@ -601,6 +637,7 @@ export class StreamingUIController {
     this.resetToolCallState();
     this._currentTurnId = undefined;
     this._stepAssistantBlock = null;
+    this._lastTurnAssistantBlock = null;
 
     const next = this.host.shiftQueuedMessage();
     if (next !== undefined) {
@@ -645,6 +682,7 @@ export class StreamingUIController {
     const component = new AssistantMessageComponent();
     this._streamingBlock = { component, entry };
     this._stepAssistantBlock = this._streamingBlock;
+    this._lastTurnAssistantBlock = this._streamingBlock;
     this.host.pushTranscriptEntry(entry);
     state.transcriptContainer.addChild(component);
     state.ui.requestRender();

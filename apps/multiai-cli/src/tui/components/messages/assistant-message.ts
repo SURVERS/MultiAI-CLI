@@ -7,6 +7,7 @@
 
 import { Container, Markdown, truncateToWidth, visibleWidth, type Component } from '@multiai/pi-tui';
 
+import { t } from '#/tui/i18n';
 import { MESSAGE_INDENT } from '#/tui/constant/rendering';
 import { STATUS_BULLET } from '#/tui/constant/symbols';
 import { currentTheme } from '#/tui/theme';
@@ -24,6 +25,7 @@ export class AssistantMessageComponent implements Component {
   private lastText = '';
   private lastTransient = false;
   private showBullet: boolean;
+  private executionDurationMs: number | undefined;
 
   private renderCache: { width: number; lines: string[] } | undefined;
 
@@ -39,6 +41,12 @@ export class AssistantMessageComponent implements Component {
   setShowBullet(show: boolean): void {
     if (this.showBullet === show) return;
     this.showBullet = show;
+    this.markRenderDirty();
+  }
+
+  setExecutionDuration(durationMs: number | undefined): void {
+    if (this.executionDurationMs === durationMs) return;
+    this.executionDurationMs = durationMs;
     this.markRenderDirty();
   }
 
@@ -114,10 +122,29 @@ export class AssistantMessageComponent implements Component {
         i === 0 && this.showBullet ? currentTheme.fg('text', STATUS_BULLET) : MESSAGE_INDENT;
       lines.push(p + contentLines[i]);
     }
-    const rendered = lines.map((line) => truncateToWidth(line, safeWidth, '…'));
+
+    if (this.executionDurationMs !== undefined && this.executionDurationMs > 0) {
+      const durText = formatExecutionTime(this.executionDurationMs);
+      lines.push(MESSAGE_INDENT + currentTheme.fg('textDim', `· ${durText}`));
+    }
+
+    const rendered = lines.map((line) =>
+      visibleWidth(line) > safeWidth ? truncateToWidth(line, safeWidth, '…') : line,
+    );
     if (isRenderCacheEnabled()) {
       this.renderCache = { width: safeWidth, lines: rendered };
     }
     return rendered;
   }
+}
+
+function formatExecutionTime(ms: number): string {
+  const sec = ms / 1000;
+  if (sec < 60) {
+    const s = sec < 10 ? sec.toFixed(1) : Math.round(sec).toString();
+    return t(`${s}s`, `${s}с`);
+  }
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return t(`${m}m ${s}s`, `${m}м ${s}с`);
 }
