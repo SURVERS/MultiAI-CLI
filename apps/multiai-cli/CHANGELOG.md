@@ -1,5 +1,11 @@
 # multiai-cli
 
+## 1.1.9
+
+### Patch Changes
+
+- Fix premature turn termination when reaching output token limit (max_tokens) by adding auto-continuation support up to 3 times per phase and fixing finishReason normalization for OpenAI-compatible providers.
+
 ## 1.1.8
 
 ### Patch Changes
