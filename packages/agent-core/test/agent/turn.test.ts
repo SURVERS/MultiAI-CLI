@@ -3071,4 +3071,95 @@ describe('abandoned tool exchange teardown', () => {
     });
     expect(JSON.stringify(ctx.agent.context.history)).toContain('follow-up after failure');
   });
+
+  it('auto-continues the turn when the model response hits output token limit (truncated)', async () => {
+    let callCount = 0;
+    const generate: GenerateFn = async (_provider, _system, _tools, history) => {
+      callCount += 1;
+      if (callCount === 1) {
+        return {
+          id: 'step-1-truncated',
+          message: {
+            role: 'assistant',
+            content: [{ type: 'text', text: 'Here is part 1 of my plan...' }],
+            toolCalls: [],
+          },
+          usage: { inputOther: 10, output: 50, inputCacheRead: 0, inputCacheCreation: 0 },
+          finishReason: 'truncated',
+          rawFinishReason: 'length',
+        };
+      }
+      return {
+        id: 'step-2-completed',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Here is part 2, now completed!' }],
+          toolCalls: [],
+        },
+        usage: { inputOther: 20, output: 30, inputCacheRead: 0, inputCacheCreation: 0 },
+        finishReason: 'completed',
+        rawFinishReason: 'stop',
+      };
+    };
+
+    const ctx = testAgent({ generate });
+    ctx.configure({
+      provider: { type: 'kimi', apiKey: 'test-key', model: 'kimi-code' },
+    });
+
+    await ctx.rpc.prompt({ input: [{ type: 'text', text: 'tell me a long story' }] });
+    const events = await ctx.untilTurnEnd();
+
+    expect(callCount).toBe(2);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        event: 'turn.ended',
+        args: expect.objectContaining({ reason: 'completed' }),
+      }),
+    );
+
+    // Verify continuation user message was inserted into context
+    const history = ctx.agent.context.messages;
+    const continuationMsg = history.find(
+      (m) =>
+        m.role === 'user' &&
+        m.content.some((c) => c.type === 'text' && c.text.includes('Output token limit hit')),
+    );
+    expect(continuationMsg).toBeDefined();
+  });
+
+  it('caps output token limit auto-continuations at MAX_OUTPUT_TOKEN_CONTINUATIONS (3)', async () => {
+    let callCount = 0;
+    const generate: GenerateFn = async () => {
+      callCount += 1;
+      return {
+        id: `step-${String(callCount)}-truncated`,
+        message: {
+          role: 'assistant',
+          content: [{ type: 'text', text: `Part ${String(callCount)} cut off...` }],
+          toolCalls: [],
+        },
+        usage: { inputOther: 10, output: 50, inputCacheRead: 0, inputCacheCreation: 0 },
+        finishReason: 'truncated',
+        rawFinishReason: 'length',
+      };
+    };
+
+    const ctx = testAgent({ generate });
+    ctx.configure({
+      provider: { type: 'kimi', apiKey: 'test-key', model: 'kimi-code' },
+    });
+
+    await ctx.rpc.prompt({ input: [{ type: 'text', text: 'infinite truncation loop test' }] });
+    const events = await ctx.untilTurnEnd();
+
+    // 1 initial call + 3 auto-continuations = 4 calls total
+    expect(callCount).toBe(4);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        event: 'turn.ended',
+        args: expect.objectContaining({ reason: 'completed' }),
+      }),
+    );
+  });
 });

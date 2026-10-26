@@ -267,8 +267,15 @@ export function normalizeOpenAIFinishReason(raw: string | null | undefined): {
     case 'function_call':
       return { finishReason: 'tool_calls', rawFinishReason: raw };
     case 'length':
+    case 'max_tokens':
+    case 'max_output_tokens':
+    case 'model_context_window_exceeded':
       return { finishReason: 'truncated', rawFinishReason: raw };
+    case 'pause_turn':
+      return { finishReason: 'paused', rawFinishReason: raw };
     case 'content_filter':
+    case 'safety':
+    case 'sensitive':
       return { finishReason: 'filtered', rawFinishReason: raw };
     default:
       return { finishReason: 'other', rawFinishReason: raw };

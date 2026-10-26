@@ -192,6 +192,7 @@ export async function runTurn(input: RunTurnInput): Promise<TurnResult> {
         stepNumber: steps,
         usage: stepResult.usage,
         stopReason: terminalStopReason,
+        unexecutedToolCallsRecorded: stepResult.unexecutedToolCallsRecorded,
         signal,
         llm,
       });

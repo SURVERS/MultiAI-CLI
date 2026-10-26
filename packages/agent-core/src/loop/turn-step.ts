@@ -93,6 +93,11 @@ export async function executeLoopStep(deps: ExecuteLoopStepDeps): Promise<{
    * projection for the same reason as above.
    */
   readonly mediaStrippedResendUsed?: boolean;
+  /**
+   * True when tool calls were present on an interrupted/truncated response
+   * and were closed with synthetic unexecuted results.
+   */
+  readonly unexecutedToolCallsRecorded?: boolean;
 }> {
   const {
     turnId,
@@ -394,6 +399,7 @@ export async function executeLoopStep(deps: ExecuteLoopStepDeps): Promise<{
   const stopTurnAfterUsage = usageResult?.stopTurn === true;
   const stopReason = deriveStepStopReason(response);
 
+  let unexecutedToolCallsRecorded = false;
   // Execute tools only when the normalized response shape represents a tool
   // step. Provider terminal diagnostics such as filtering or truncation must
   // not trigger side-effecting tool execution even if a malformed response also
@@ -416,6 +422,7 @@ export async function executeLoopStep(deps: ExecuteLoopStepDeps): Promise<{
     // risks re-triggering the filter on every resend, and a well-formed
     // tool_use response stopped by usage recording keeps its skip behavior.
     await recordUnexecutedToolCalls(step, response);
+    unexecutedToolCallsRecorded = true;
   }
 
   // When a tool batch runs, it drains paired `tool.result` events even when
@@ -465,6 +472,7 @@ export async function executeLoopStep(deps: ExecuteLoopStepDeps): Promise<{
       stopTurnAfterStep && effectiveStopReason === 'tool_use' ? 'end_turn' : effectiveStopReason,
     mediaDegradedResendUsed,
     mediaStrippedResendUsed,
+    unexecutedToolCallsRecorded: unexecutedToolCallsRecorded ? true : undefined,
   };
 }
 
@@ -498,7 +506,17 @@ function logStepTiming(
   });
 }
 
+const OUTPUT_LIMIT_RAW_REASONS = new Set([
+  'length',
+  'max_tokens',
+  'max_output_tokens',
+  'model_context_window_exceeded',
+]);
+
 function deriveStepStopReason(response: LLMChatResponse): LoopStepStopReason {
+  if (OUTPUT_LIMIT_RAW_REASONS.has(response.rawFinishReason ?? '')) {
+    return 'max_tokens';
+  }
   switch (response.providerFinishReason) {
     case 'truncated':
       return 'max_tokens';

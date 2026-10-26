@@ -63,6 +63,12 @@ interface BufferedSteer {
   readonly origin: PromptOrigin;
 }
 
+const MAX_OUTPUT_TOKEN_CONTINUATIONS = 3;
+const OUTPUT_TOKEN_CONTINUE_PROMPT =
+  'Output token limit hit. Resume directly — no apology, no recap of what you were doing. Pick up mid-thought if that is where the cut happened. Break remaining work into smaller pieces.';
+const OUTPUT_TOKEN_CONTINUE_TOOL_PROMPT =
+  'Output token limit hit. The previous generation was interrupted while preparing tool calls. Resume directly — no apology, no recap. Execute the next tool call or pick up where you were cut off.';
+
 export interface TurnEndResult {
   readonly event: TurnEndedEvent;
   readonly stopReason?: LoopTurnStopReason;
@@ -809,6 +815,7 @@ export class TurnFlow {
     let stopHookContinuationUsed = false;
     let goalOutcomeMessageContinuationUsed = false;
     let goalOutcomeToolResultPending = false;
+    let outputTokenContinuationCount = 0;
     const deduper = new ToolCallDeduplicator({ telemetry: this.agent.telemetry });
     await this.agent.mcp?.waitForInitialLoad(signal);
     // Surface the active goal at the start of the turn (append-only; no-op when
@@ -875,10 +882,13 @@ export class TurnFlow {
               await this.agent.injection.inject();
               return;
             },
-            afterStep: async ({ usage }) => {
+            afterStep: async ({ usage, stopReason }) => {
               this.agent.usage.record(model, usage, 'turn');
               await this.agent.fullCompaction.afterStep();
               deduper.endStep();
+              if (stopReason === 'tool_use') {
+                outputTokenContinuationCount = 0;
+              }
               return stopForGoalBudget ? { stopTurn: true } : undefined;
             },
             // oxlint-disable-next-line no-loop-func -- stop hook continuation state is scoped to this turn.
@@ -939,7 +949,44 @@ export class TurnFlow {
                 return { continue: true };
               }
 
-              // 3. The external Stop hook gets exactly one continuation; the cap
+              // 3. Output token limit / truncation / paused auto-continuation.
+              // When the response hits the token limit or is cut off mid-thought or mid-tool-call,
+              // automatically resume without forcing the user to type "continue" ("продолжай").
+              if (
+                (ctx.stopReason === 'max_tokens' ||
+                  ctx.stopReason === 'paused' ||
+                  (ctx.stopReason === 'unknown' && ctx.unexecutedToolCallsRecorded === true)) &&
+                outputTokenContinuationCount < MAX_OUTPUT_TOKEN_CONTINUATIONS
+              ) {
+                if (!hasStepBudgetRemaining(maxStepsPerTurn, ctx.stepNumber)) {
+                  return { continue: false };
+                }
+                outputTokenContinuationCount += 1;
+                const promptText =
+                  ctx.stopReason === 'paused'
+                    ? 'Continue.'
+                    : ctx.unexecutedToolCallsRecorded === true
+                      ? OUTPUT_TOKEN_CONTINUE_TOOL_PROMPT
+                      : OUTPUT_TOKEN_CONTINUE_PROMPT;
+
+                this.agent.context.appendUserMessage(
+                  [{ type: 'text', text: promptText }],
+                  {
+                    kind: 'system_trigger',
+                    name: 'output_token_continuation',
+                  },
+                );
+                this.agent.log?.info('auto-continuing turn after output token limit or interruption', {
+                  stopReason: ctx.stopReason,
+                  unexecutedToolCallsRecorded: ctx.unexecutedToolCallsRecorded,
+                  continuationCount: outputTokenContinuationCount,
+                  maxContinuations: MAX_OUTPUT_TOKEN_CONTINUATIONS,
+                  stepNumber: ctx.stepNumber,
+                });
+                return { continue: true };
+              }
+
+              // 4. The external Stop hook gets exactly one continuation; the cap
               //    is intentionally separate from (and does not cap) goal mode.
               if (!stopHookContinuationUsed) {
                 const stopBlock = await this.agent.hooks?.triggerBlock('Stop', {
@@ -960,7 +1007,7 @@ export class TurnFlow {
                 }
               }
 
-              // 4. Otherwise stop. Goal continuation is no longer driven here:
+              // 5. Otherwise stop. Goal continuation is no longer driven here:
               //    each goal turn is an ordinary turn, and the goal driver decides
               //    whether to run another after this one ends.
               return { continue: false };

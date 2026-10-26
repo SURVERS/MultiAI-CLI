@@ -205,6 +205,7 @@ export interface LoopAfterStepContext extends LoopStepHookContext {
 export interface LoopStoppedStepContext extends LoopStepHookContext {
   readonly usage: TokenUsage;
   readonly stopReason: LoopTerminalStepStopReason;
+  readonly unexecutedToolCallsRecorded?: boolean | undefined;
 }
 
 export interface BeforeStepResult {
