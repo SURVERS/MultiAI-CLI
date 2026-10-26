@@ -1067,6 +1067,45 @@ describe('ProviderManager OAuth auth', () => {
       code: ErrorCodes.AUTH_LOGIN_REQUIRED,
     });
   });
+
+  it('dynamically resolves kimi-k3.1-pro and multiai/* models when managed:multiai is configured', () => {
+    const manager = new ProviderManager({
+      config: oauthConfig(),
+    });
+
+    const resolved = manager.resolveProviderConfig('multiai/kimi-k3.1-pro');
+    expect(resolved.providerName).toBe('managed:multiai');
+    expect(resolved.alwaysThinking).toBe(true);
+    expect(resolved.supportEfforts).toEqual(['low', 'high', 'max']);
+    expect(resolved.defaultEffort).toBe('max');
+
+    const bareResolved = manager.resolveProviderConfig('kimi-k3.1-pro');
+    expect(bareResolved.providerName).toBe('managed:multiai');
+    expect(bareResolved.alwaysThinking).toBe(true);
+    expect(bareResolved.supportEfforts).toEqual(['low', 'high', 'max']);
+    expect(bareResolved.defaultEffort).toBe('max');
+  });
+
+  it('resolves bare model alias when multiai/<id> is configured in models', () => {
+    const manager = new ProviderManager({
+      config: {
+        ...BASE_CONFIG,
+        models: {
+          'multiai/custom-model': {
+            provider: 'managed:multiai',
+            model: 'custom-model-wire',
+            maxContextSize: 500000,
+          },
+        },
+      },
+    });
+
+    const resolved = manager.resolveProviderConfig('custom-model');
+    expect(resolved.providerName).toBe('managed:multiai');
+    expect(resolved.provider).toMatchObject({
+      model: 'custom-model-wire',
+    });
+  });
 });
 
 describe('resolveThinkingEffort', () => {

@@ -275,6 +275,34 @@ describe('MultiAI managed model reasoning metadata', () => {
     expect(managedConfig.models?.['multiai/old-model']).toBeUndefined();
     expect(managedConfig.defaultModel).toBe('external/model');
   });
+
+  it('provides dedicated profiles for Kimi models and supports multiai/ prefix in lookup', () => {
+    const k31 = managedMultiAIModelProfile('kimi-k3.1-pro');
+    expect(k31).toBeDefined();
+    expect(k31?.capabilities).toContain('always_thinking');
+    expect(k31?.supportEfforts).toEqual(['low', 'high', 'max']);
+    expect(k31?.defaultEffort).toBe('max');
+
+    const k31Prefixed = managedMultiAIModelProfile('multiai/kimi-k3.1-pro');
+    expect(k31Prefixed).toEqual(k31);
+
+    const k3 = managedMultiAIModelProfile('kimi-k3');
+    expect(k3).toBeDefined();
+    expect(k3?.capabilities).toEqual(['thinking']);
+    expect(k3?.supportEfforts).toEqual(['low', 'high', 'max']);
+    expect(k3?.defaultEffort).toBe('high');
+
+    const config: ManagedMultiAIConfigShape = { providers: {}, models: {} };
+    applyManagedMultiAIConfig(config, [{ id: 'kimi-k3.1-pro', contextLength: 1048576 }]);
+    expect(config.models?.['multiai/kimi-k3.1-pro']).toMatchObject({
+      provider: 'managed:multiai',
+      model: 'kimi-k3.1-pro',
+      maxContextSize: 1048576,
+      capabilities: ['always_thinking'],
+      supportEfforts: ['low', 'high', 'max'],
+      defaultEffort: 'max',
+    });
+  });
 });
 
 describe('MultiAI OAuth metadata', () => {

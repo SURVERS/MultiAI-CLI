@@ -7,7 +7,7 @@ import {
   getModelCapability,
   UNKNOWN_CAPABILITY,
 } from '@multiai/kosong';
-import { MULTIAI_PROVIDER_NAME, parseMultiAICustomHeaders } from '@multiai/oauth';
+import { MULTIAI_PROVIDER_NAME, managedMultiAIModelProfile, parseMultiAICustomHeaders } from '@multiai/oauth';
 import {
   effectiveModelAlias,
   type MultiAIConfig,
@@ -96,13 +96,51 @@ export class ProviderManager implements ModelProvider {
   }
 
   resolveProviderConfig(model: string): ResolvedRuntimeProvider {
-    const alias = this.config.models?.[model];
+    let alias = this.config.models?.[model];
+    if (alias === undefined) {
+      if (this.config.models?.[`multiai/${model}`] !== undefined) {
+        alias = this.config.models[`multiai/${model}`];
+      } else if (
+        model.startsWith('multiai/') &&
+        this.config.models?.[model.slice('multiai/'.length)] !== undefined
+      ) {
+        alias = this.config.models[model.slice('multiai/'.length)];
+      } else {
+        const hasManagedProvider =
+          this.config.providers[MULTIAI_PROVIDER_NAME] !== undefined ||
+          this.config.providers['multiai'] !== undefined;
+        const isExplicitMultiAI = model.startsWith('multiai/');
+        const rawModelId = isExplicitMultiAI ? model.slice('multiai/'.length) : model;
+        const profile = managedMultiAIModelProfile(rawModelId);
+        if (hasManagedProvider && (isExplicitMultiAI || profile !== undefined)) {
+          const providerName =
+            this.config.providers[MULTIAI_PROVIDER_NAME] !== undefined
+              ? MULTIAI_PROVIDER_NAME
+              : (this.config.providers['multiai'] !== undefined ? 'multiai' : MULTIAI_PROVIDER_NAME);
+          alias = {
+            provider: providerName,
+            model: rawModelId,
+            maxContextSize: 1048576,
+            maxOutputSize: 131072,
+            capabilities: profile?.capabilities ?? ['thinking'],
+            supportEfforts: profile?.supportEfforts,
+            defaultEffort: profile?.defaultEffort,
+            protocol: profile?.protocol,
+            betaApi: profile?.betaApi,
+            adaptiveThinking: profile?.adaptiveThinking,
+          };
+        }
+      }
+    }
+
     if (alias === undefined) {
       throw new MultiAIError(
         ErrorCodes.CONFIG_INVALID,
         `Model "${model}" is not configured in config.toml. Add a [models."${model}"] entry with max_context_size.`,
       );
     }
+
+
 
     const providerName = alias.provider ?? this.config.defaultProvider;
     if (providerName === undefined) {

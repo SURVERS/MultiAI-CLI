@@ -84,17 +84,30 @@ export class ModelCatalogService
 
   async setDefaultModel(modelId: string): Promise<SetDefaultModelResponse> {
     const config = await this._readConfig();
-    const alias = config.models?.[modelId];
+    let resolvedId = modelId;
+    let alias = config.models?.[resolvedId];
+    if (alias === undefined) {
+      if (config.models?.[`multiai/${modelId}`] !== undefined) {
+        resolvedId = `multiai/${modelId}`;
+        alias = config.models[resolvedId];
+      } else if (
+        modelId.startsWith('multiai/') &&
+        config.models?.[modelId.slice('multiai/'.length)] !== undefined
+      ) {
+        resolvedId = modelId.slice('multiai/'.length);
+        alias = config.models[resolvedId];
+      }
+    }
     if (alias === undefined) {
       throw new ModelNotFoundError(modelId);
     }
 
-    const updated = await this.core.rpc.setMultiAIConfig({ defaultModel: modelId });
-    const updatedAlias = updated.models?.[modelId] ?? alias;
+    const updated = await this.core.rpc.setMultiAIConfig({ defaultModel: resolvedId });
+    const updatedAlias = updated.models?.[resolvedId] ?? alias;
     return {
-      default_model: modelId,
+      default_model: resolvedId,
       model: toProtocolModel(
-        modelId,
+        resolvedId,
         updatedAlias,
         this._providerTypeOf(updated, updatedAlias),
       ),

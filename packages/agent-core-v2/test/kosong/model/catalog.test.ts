@@ -570,6 +570,35 @@ describe('headers merge order', () => {
       host.dispose();
     }
   });
+
+  it('dynamically synthesizes unconfigured kimi-k3.1-pro and multiai/* models when managed:multiai is present', () => {
+    const { host, catalog } = createHost({
+      providers: {
+        'managed:multiai': {
+          type: 'multiai',
+          apiKey: 'access-token',
+          baseUrl: 'https://multiai.store/v1',
+        },
+      },
+      models: {},
+    });
+    try {
+      const model = catalog.get('multiai/kimi-k3.1-pro');
+      expect(model.id).toBe('multiai/kimi-k3.1-pro');
+      expect(model.name).toBe('kimi-k3.1-pro');
+      expect(model.providerName).toBe('managed:multiai');
+      expect(model.alwaysThinking).toBe(true);
+      expect(model.supportEfforts).toEqual(['low', 'high', 'max']);
+      expect(model.defaultEffort).toBe('max');
+
+      const bare = catalog.get('kimi-k3.1-pro');
+      expect(bare.id).toBe('kimi-k3.1-pro');
+      expect(bare.name).toBe('kimi-k3.1-pro');
+      expect(bare.alwaysThinking).toBe(true);
+    } finally {
+      host.dispose();
+    }
+  });
 });
 
 describe('ModelCatalog inspect', () => {
@@ -596,8 +625,8 @@ describe('ModelCatalog inspect', () => {
         kind: 'none',
       });
       expect(view.sources['resolved']).toMatchObject({ kind: 'synthesized' });
-      // Kimi's definition capability is UNKNOWN — nothing is detected.
-      expect(view.sources['resolved.capabilities.tool_use']).toMatchObject({ kind: 'none' });
+      // Kimi's capability is detected through the base protocol.
+      expect(view.sources['resolved.capabilities.tool_use']).toMatchObject({ kind: 'builtin' });
     } finally {
       host.dispose();
     }
@@ -776,7 +805,7 @@ describe('ModelCatalog inspect', () => {
     });
     try {
       const view = catalog.inspect('k1');
-      expect(view.resolved.baseUrl).toBe('https://api.moonshot.ai/v1');
+      expect(view.resolved.baseUrl).toBe('https://multiai.store/v1');
       expect(view.sources['resolved.baseUrl']).toMatchObject({
         kind: 'builtin',
         detail: expect.stringContaining('defaultBaseUrl'),

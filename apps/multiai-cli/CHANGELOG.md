@@ -1,5 +1,13 @@
 # multiai-cli
 
+## 1.1.11
+
+### Patch Changes
+
+- Add native model profiles and dynamic runtime resolution for Kimi models (`kimi-k3.1-pro`, `kimi-k3`, `kimi-k2.8-preview`, `kimi-k2.7-code`) with accurate reasoning levels, always-thinking defaults, and 1M context limits.
+- Fix model resolution when requested via bare model id (e.g. `--model kimi-k3.1-pro`) vs prefixed alias (`multiai/kimi-k3.1-pro`) when `managed:multiai` is configured, preventing `[config.invalid] Model is not configured in config.toml` error.
+- Support dynamic model alias synthesis for managed MultiAI catalog models across v1 and v2 engines without requiring manual entry in `config.toml`.
+
 ## 1.1.10
 
 ### Patch Changes

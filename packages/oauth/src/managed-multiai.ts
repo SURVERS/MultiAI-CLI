@@ -123,6 +123,10 @@ const MANAGED_MODEL_PROFILES: Readonly<Record<string, ManagedMultiAIModelProfile
   'mimo-v2.5': { capabilities: THINKING_CAPABILITY },
   'mimo-v2.5-pro': { capabilities: THINKING_CAPABILITY },
   'nemotron-3-ultra': { capabilities: THINKING_CAPABILITY },
+  'kimi-k3.1-pro': effortProfile(['low', 'high', 'max'], 'max', true),
+  'kimi-k3': effortProfile(['low', 'high', 'max'], 'high'),
+  'kimi-k2.8-preview': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
+  'kimi-k2.7-code': effortProfile(LOW_MEDIUM_HIGH_MAX, 'high'),
 };
 
 function effortProfile(
@@ -148,7 +152,7 @@ function openAIGatewayProfile(
 }
 
 export function isLikelyReasoningModelId(modelId: string): boolean {
-  const normalized = modelId.toLowerCase();
+  const normalized = modelId.toLowerCase().replace(/^(?:multiai\/|ma-)/, '');
   return (
     normalized.includes('astra') ||
     normalized.includes('reason') ||
@@ -179,7 +183,11 @@ export function isLikelyReasoningModelId(modelId: string): boolean {
 export function managedMultiAIModelProfile(
   modelId: string,
 ): ManagedMultiAIModelProfile | undefined {
-  const canonicalId = modelId.startsWith('ma-') ? modelId.slice(3) : modelId;
+  const canonicalId = modelId.startsWith('multiai/')
+    ? modelId.slice('multiai/'.length)
+    : modelId.startsWith('ma-')
+      ? modelId.slice(3)
+      : modelId;
   const direct = MANAGED_MODEL_PROFILES[canonicalId];
   if (direct !== undefined) return direct;
   if (isToggleOrFreeMultiAIModel(canonicalId)) {

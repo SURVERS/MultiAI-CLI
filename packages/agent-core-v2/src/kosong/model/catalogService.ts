@@ -45,7 +45,7 @@
  * refresh lives in `app/kosongConfig`, not here.
  */
 
-import { parseMultiAICustomHeaders } from '@multiai/oauth';
+import { MULTIAI_PROVIDER_NAME, managedMultiAIModelProfile, parseMultiAICustomHeaders } from '@multiai/oauth';
 
 import { Disposable } from '#/_base/di/lifecycle';
 import { LifecycleScope, ScopeActivation, registerScopedService } from '#/_base/di/scope';
@@ -265,7 +265,31 @@ export class ModelCatalog extends Disposable implements IModelCatalog {
   }
 
   async setDefaultModel(modelId: string): Promise<SetDefaultModelResponse> {
-    const record = this.models.get(modelId);
+    let effectiveId = modelId;
+    let record = this.models.get(effectiveId);
+    if (record === undefined && this.models.get(`multiai/${modelId}`) !== undefined) {
+      effectiveId = `multiai/${modelId}`;
+      record = this.models.get(effectiveId);
+    }
+    if (record === undefined && modelId.startsWith('multiai/') && this.models.get(modelId.slice('multiai/'.length)) !== undefined) {
+      effectiveId = modelId.slice('multiai/'.length);
+      record = this.models.get(effectiveId);
+    }
+    if (record === undefined) {
+      try {
+        const synthesized = this.get(effectiveId);
+        if (synthesized) {
+          record = {
+            providerId: synthesized.providerName,
+            model: synthesized.name,
+            name: synthesized.name,
+            maxContextSize: synthesized.maxContextSize,
+            maxOutputSize: synthesized.maxOutputSize,
+            capabilities: synthesized.capabilities ? [...synthesized.capabilities] : undefined,
+          };
+        }
+      } catch {}
+    }
     if (record === undefined) {
       throw new Error2(
         ModelCatalogErrors.codes.MODEL_NOT_FOUND,
@@ -274,10 +298,10 @@ export class ModelCatalog extends Disposable implements IModelCatalog {
     }
     // Materialization gate: a model that cannot resolve (dangling provider
     // reference, conflicting credentials, ...) must not become the default.
-    const model = this.get(modelId);
-    await this.models.setDefaultModel(modelId);
+    const model = this.get(effectiveId);
+    await this.models.setDefaultModel(effectiveId);
     return {
-      default_model: modelId,
+      default_model: effectiveId,
       model: toProtocolModel(model, record, this.providerTypeOf(record)),
     };
   }
@@ -314,7 +338,43 @@ export class ModelCatalog extends Disposable implements IModelCatalog {
   }
 
   private buildModel(id: string, trace: ResolutionTraceCollector): Model {
-    const configuredModel = this.models.get(id);
+    let configuredModel = this.models.get(id);
+    if (configuredModel === undefined) {
+      if (this.models.get(`multiai/${id}`) !== undefined) {
+        configuredModel = this.models.get(`multiai/${id}`);
+      } else if (
+        id.startsWith('multiai/') &&
+        this.models.get(id.slice('multiai/'.length)) !== undefined
+      ) {
+        configuredModel = this.models.get(id.slice('multiai/'.length));
+      } else {
+        const hasManagedProvider =
+          this.providers.get(MULTIAI_PROVIDER_NAME) !== undefined ||
+          this.providers.get('multiai') !== undefined;
+        const isExplicitMultiAI = id.startsWith('multiai/');
+        const rawModelId = isExplicitMultiAI ? id.slice('multiai/'.length) : id;
+        const profile = managedMultiAIModelProfile(rawModelId);
+        if (hasManagedProvider && (isExplicitMultiAI || profile !== undefined)) {
+          const providerId =
+            this.providers.get(MULTIAI_PROVIDER_NAME) !== undefined
+              ? MULTIAI_PROVIDER_NAME
+              : (this.providers.get('multiai') !== undefined ? 'multiai' : MULTIAI_PROVIDER_NAME);
+          configuredModel = {
+            providerId,
+            model: rawModelId,
+            name: rawModelId,
+            maxContextSize: 1048576,
+            maxOutputSize: 131072,
+            capabilities: profile?.capabilities ? [...profile.capabilities] : ['thinking'],
+            supportEfforts: profile?.supportEfforts ? [...profile.supportEfforts] : undefined,
+            defaultEffort: profile?.defaultEffort,
+            protocol: profile?.protocol as any,
+            betaApi: profile?.betaApi,
+            adaptiveThinking: profile?.adaptiveThinking,
+          };
+        }
+      }
+    }
     if (configuredModel === undefined) {
       throw new Error2(
         CONFIG_INVALID_ERROR_CODE,
