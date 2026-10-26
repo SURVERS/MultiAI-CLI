@@ -279,13 +279,17 @@ export class ModelCatalog extends Disposable implements IModelCatalog {
       try {
         const synthesized = this.get(effectiveId);
         if (synthesized) {
+          const caps: string[] = [];
+          if (synthesized.capabilities?.thinking) caps.push('thinking');
+          if (synthesized.capabilities?.image_in) caps.push('image_in');
+          if (synthesized.capabilities?.tool_use) caps.push('tool_use');
           record = {
             providerId: synthesized.providerName,
             model: synthesized.name,
             name: synthesized.name,
             maxContextSize: synthesized.maxContextSize,
             maxOutputSize: synthesized.maxOutputSize,
-            capabilities: synthesized.capabilities ? [...synthesized.capabilities] : undefined,
+            capabilities: caps,
           };
         }
       } catch {}
