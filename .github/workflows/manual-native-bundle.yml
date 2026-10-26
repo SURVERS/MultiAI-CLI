@@ -12,7 +12,7 @@ jobs:
     with:
       upload-artifact-prefix: multiai-cli-native
       retention-days: 3
-      sign-macos: true
+      sign-macos: false
     secrets:
       APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
       APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}

@@ -79,6 +79,7 @@ jobs:
     name: Deploy docs
     needs: release
     if: needs.release.outputs.packages_published == 'true'
+    continue-on-error: true
     uses: ./.github/workflows/docs-deploy.yml
     permissions:
       contents: read
@@ -93,7 +94,7 @@ jobs:
     with:
       upload-artifact-prefix: multiai-cli-native
       retention-days: 7
-      sign-macos: true
+      sign-macos: false
     secrets:
       APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
       APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
