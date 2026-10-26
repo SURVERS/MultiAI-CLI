@@ -79,7 +79,6 @@ jobs:
     name: Deploy docs
     needs: release
     if: needs.release.outputs.packages_published == 'true'
-    continue-on-error: true
     uses: ./.github/workflows/docs-deploy.yml
     permissions:
       contents: read
