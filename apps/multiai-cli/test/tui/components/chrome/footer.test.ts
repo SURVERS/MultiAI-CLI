@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { FooterComponent } from '#/tui/components/chrome/footer';
+import { FooterComponent, formatWorkingDuration } from '#/tui/components/chrome/footer';
 import { setRainbowDance, type RainbowDanceController } from '#/tui/easter-eggs/dance';
 import { currentTheme, darkColors, lightColors } from '#/tui/theme';
 import type { ModelAlias } from '@multiai/sdk';
@@ -185,5 +185,64 @@ describe('FooterComponent displayName override', () => {
 
     expect(footer.render(120).join('\n')).toContain('Custom Name');
     expect(footer.render(120).join('\n')).not.toContain('Remote Name');
+  });
+});
+
+describe('formatWorkingDuration', () => {
+  it('formats sub-minute live durations with 1 decimal place', () => {
+    expect(formatWorkingDuration(5400, true)).toMatch(/5\.4[sс]/);
+    expect(formatWorkingDuration(59900, true)).toMatch(/59\.9[sс]/);
+  });
+
+  it('formats sub-minute completed durations', () => {
+    expect(formatWorkingDuration(4200, false)).toMatch(/4\.2[sс]/);
+    expect(formatWorkingDuration(45000, false)).toMatch(/45[sс]/);
+  });
+
+  it('formats minute and second durations', () => {
+    const res = formatWorkingDuration(65000, true);
+    expect(res).toMatch(/1[mм] 5[sс]/);
+  });
+
+  it('formats hour, minute, and second durations', () => {
+    const res1 = formatWorkingDuration(3605000, true);
+    expect(res1).toMatch(/1[hч] 0[mм] 5[sс]/);
+
+    const res2 = formatWorkingDuration(7350000, true);
+    expect(res2).toMatch(/2[hч] 2[mм] 30[sс]/);
+  });
+
+  it('formats day, hour, minute, and second durations', () => {
+    const res1 = formatWorkingDuration(86400000 + 5000, true);
+    expect(res1).toMatch(/1[dд] 0[hч] 0[mм] 5[sс]/);
+
+    const res2 = formatWorkingDuration(90065000, true);
+    expect(res2).toMatch(/1[dд] 1[hч] 1[mм] 5[sс]/);
+
+    const res3 = formatWorkingDuration(2 * 86400000 + 3 * 3600000 + 15 * 60000 + 30000, false);
+    expect(res3).toMatch(/2[dд] 3[hч] 15[mм] 30[sс]/);
+  });
+
+  it('renders Working status in footer with formatted duration when streaming', () => {
+    const now = Date.now();
+    const state: AppState = {
+      ...appState,
+      streamingPhase: 'thinking',
+      streamingStartTime: now - 65000, // 1m 5s ago
+    };
+    const footer = new FooterComponent(state);
+    const text = footer.render(120).join('\n');
+    expect(text).toMatch(/(Working|Работает).*(1[mм] 5[sс])/);
+  });
+
+  it('renders Done status in footer with formatted duration when turn finishes', () => {
+    const state: AppState = {
+      ...appState,
+      streamingPhase: 'idle',
+      lastTurnDurationMs: 3665000, // 1h 1m 5s
+    };
+    const footer = new FooterComponent(state);
+    const text = footer.render(120).join('\n');
+    expect(text).toMatch(/(Done in|Выполнено за).*(1[hч] 1[mм] 5[sс])/);
   });
 });

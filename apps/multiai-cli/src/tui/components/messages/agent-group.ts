@@ -366,10 +366,25 @@ function maxElapsedSeconds(snapshots: readonly ToolCallSubagentSnapshot[]): numb
 }
 
 function formatElapsed(seconds: number): string {
-  if (seconds < 60) return t(`${String(seconds)}s`, `${String(seconds)}с`);
-  const minutes = Math.floor(seconds / 60);
-  const remainder = seconds % 60;
-  return t(`${String(minutes)}m ${String(remainder)}s`, `${String(minutes)}м ${String(remainder)}с`);
+  const totalSec = Math.max(0, Math.floor(seconds));
+  if (totalSec < 60) return t(`${String(totalSec)}s`, `${String(totalSec)}с`);
+  const s = totalSec % 60;
+  const m = Math.floor(totalSec / 60) % 60;
+  const h = Math.floor(totalSec / 3600) % 24;
+  const d = Math.floor(totalSec / 86400);
+
+  const dUnit = t('d', 'д');
+  const hUnit = t('h', 'ч');
+  const mUnit = t('m', 'м');
+  const sUnit = t('s', 'с');
+
+  if (d > 0) {
+    return `${d}${dUnit} ${h}${hUnit} ${m}${mUnit} ${s}${sUnit}`;
+  }
+  if (h > 0) {
+    return `${h}${hUnit} ${m}${mUnit} ${s}${sUnit}`;
+  }
+  return `${m}${mUnit} ${s}${sUnit}`;
 }
 
 function formatTokens(n: number): string {

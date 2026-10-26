@@ -139,12 +139,27 @@ export class AssistantMessageComponent implements Component {
 }
 
 function formatExecutionTime(ms: number): string {
-  const sec = ms / 1000;
+  const sec = Math.max(0, ms / 1000);
   if (sec < 60) {
     const s = sec < 10 ? sec.toFixed(1) : Math.round(sec).toString();
     return t(`${s}s`, `${s}с`);
   }
-  const m = Math.floor(sec / 60);
-  const s = Math.round(sec % 60);
-  return t(`${m}m ${s}s`, `${m}м ${s}с`);
+  const totalSec = Math.floor(sec);
+  const s = totalSec % 60;
+  const m = Math.floor(totalSec / 60) % 60;
+  const h = Math.floor(totalSec / 3600) % 24;
+  const d = Math.floor(totalSec / 86400);
+
+  const dUnit = t('d', 'д');
+  const hUnit = t('h', 'ч');
+  const mUnit = t('m', 'м');
+  const sUnit = t('s', 'с');
+
+  if (d > 0) {
+    return `${d}${dUnit} ${h}${hUnit} ${m}${mUnit} ${s}${sUnit}`;
+  }
+  if (h > 0) {
+    return `${h}${hUnit} ${m}${mUnit} ${s}${sUnit}`;
+  }
+  return `${m}${mUnit} ${s}${sUnit}`;
 }

@@ -141,12 +141,51 @@ function formatGoalBadge(
 }
 
 function formatBadgeElapsed(ms: number): string {
-  const totalSeconds = Math.round(ms / 1000);
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
   if (totalSeconds < 60) return `${totalSeconds}s`;
   const minutes = Math.floor(totalSeconds / 60);
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
-  return `${hours}h${minutes % 60}m`;
+  if (hours < 24) return `${hours}h${minutes % 60}m`;
+  const days = Math.floor(hours / 24);
+  return `${days}d${hours % 24}h`;
+}
+
+/**
+ * Format a duration in milliseconds for the footer working status (and done indicator).
+ * Formats duration into days, hours, minutes, and seconds:
+ * - < 60s:
+ *   - live: `${s.toFixed(1)}s` (e.g. 5.2s, 59.9s)
+ *   - done: `< 10s ? ${s.toFixed(1)}s : ${Math.round(s)}s` (e.g. 4.2s, 15s)
+ * - >= 60s & < 1h: `${m}m ${s}s` (e.g. 1m 5s, 59m 59s)
+ * - >= 1h & < 1d: `${h}h ${m}m ${s}s` (e.g. 1h 0m 5s, 2h 15m 30s)
+ * - >= 1d: `${d}d ${h}h ${m}m ${s}s` (e.g. 1d 0h 5m 3s, 1d 2h 15m 30s)
+ */
+export function formatWorkingDuration(ms: number, isLive = false): string {
+  const totalSec = Math.max(0, ms / 1000);
+  if (totalSec < 60) {
+    const s = isLive || totalSec < 10 ? totalSec.toFixed(1) : Math.round(totalSec).toString();
+    return `${s}${t('s', 'с')}`;
+  }
+
+  const intSec = Math.floor(totalSec);
+  const s = intSec % 60;
+  const m = Math.floor(intSec / 60) % 60;
+  const h = Math.floor(intSec / 3600) % 24;
+  const d = Math.floor(intSec / 86400);
+
+  const dUnit = t('d', 'д');
+  const hUnit = t('h', 'ч');
+  const mUnit = t('m', 'м');
+  const sUnit = t('s', 'с');
+
+  if (d > 0) {
+    return `${d}${dUnit} ${h}${hUnit} ${m}${mUnit} ${s}${sUnit}`;
+  }
+  if (h > 0) {
+    return `${h}${hUnit} ${m}${mUnit} ${s}${sUnit}`;
+  }
+  return `${m}${mUnit} ${s}${sUnit}`;
 }
 
 function modelDisplayName(state: AppState): string {
@@ -390,14 +429,10 @@ export class FooterComponent implements Component {
     } else {
       let leftInfo = '';
       if (state.streamingPhase !== 'idle' && state.streamingStartTime) {
-        const sec = ((Date.now() - state.streamingStartTime) / 1000).toFixed(1);
-        leftInfo = chalk.hex(colors.textMuted)(t(`● Working ${sec}s…`, `● Работает ${sec}с…`));
+        const durText = formatWorkingDuration(Date.now() - state.streamingStartTime, true);
+        leftInfo = chalk.hex(colors.textMuted)(t(`● Working ${durText}…`, `● Работает ${durText}…`));
       } else if (state.lastTurnDurationMs !== undefined && state.lastTurnDurationMs > 0) {
-        const sec = state.lastTurnDurationMs / 1000;
-        const durText =
-          sec < 60
-            ? `${sec < 10 ? sec.toFixed(1) : Math.round(sec)}${t('s', 'с')}`
-            : `${Math.floor(sec / 60)}${t('m', 'м')} ${Math.round(sec % 60)}${t('s', 'с')}`;
+        const durText = formatWorkingDuration(state.lastTurnDurationMs, false);
         leftInfo = chalk.hex(colors.textMuted)(t(`✓ Done in ${durText}`, `✓ Выполнено за ${durText}`));
       }
       const leftInfoWidth = visibleWidth(leftInfo);
