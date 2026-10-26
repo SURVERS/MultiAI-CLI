@@ -3162,4 +3162,104 @@ describe('abandoned tool exchange teardown', () => {
       }),
     );
   });
+
+  it('auto-continues when model ends turn without tool calls while TodoList has pending items', async () => {
+    let callCount = 0;
+    const generate: GenerateFn = async () => {
+      callCount += 1;
+      if (callCount === 1) {
+        return {
+          id: 'step-1',
+          message: {
+            role: 'assistant',
+            content: [{ type: 'text', text: "The file is assembled; I'm checking syntax and rendering in Chromium now." }],
+            toolCalls: [],
+          },
+          usage: { inputOther: 10, output: 50, inputCacheRead: 0, inputCacheCreation: 0 },
+          finishReason: 'completed',
+          rawFinishReason: 'stop',
+        };
+      }
+      // On call 2, mark tasks done so turn completes cleanly
+      ctx.agent.tools.updateStore('todo', [
+        { title: 'Build the aquarium', status: 'done' },
+        { title: 'Validate syntax and browser runtime', status: 'done' },
+      ]);
+      return {
+        id: 'step-2',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'text', text: 'All tasks completed successfully!' }],
+          toolCalls: [],
+        },
+        usage: { inputOther: 10, output: 50, inputCacheRead: 0, inputCacheCreation: 0 },
+        finishReason: 'completed',
+        rawFinishReason: 'stop',
+      };
+    };
+
+    const ctx = testAgent({ generate });
+    ctx.configure({
+      provider: { type: 'kimi', apiKey: 'test-key', model: 'kimi-code' },
+    });
+    ctx.agent.tools.updateStore('todo', [
+      { title: 'Build the aquarium', status: 'in_progress' },
+      { title: 'Validate syntax and browser runtime', status: 'pending' },
+    ]);
+
+    await ctx.rpc.prompt({ input: [{ type: 'text', text: 'build and validate' }] });
+    await ctx.untilTurnEnd();
+
+    // Call 1: model ended with promise & pending todos -> auto-continued!
+    // Call 2: model finished
+    expect(callCount).toBe(2);
+    const history = ctx.agent.context.history;
+    const reminders = history.filter(
+      (m) => m.role === 'user' && m.origin?.kind === 'system_trigger' && m.origin.name === 'action_continuation',
+    );
+    expect(reminders.length).toBe(1);
+    expect(reminders[0]!.content[0]!.type === 'text' ? reminders[0]!.content[0]!.text : '').toContain(
+      'You have incomplete tasks in your Todo list',
+    );
+  });
+
+  it('injects authoritative continue instruction when user types "continue" after empty assistant turn', async () => {
+    let callCount = 0;
+    const generate: GenerateFn = async () => {
+      callCount += 1;
+      return {
+        id: `step-${callCount}`,
+        message: {
+          role: 'assistant',
+          content: [{ type: 'text', text: "The file is assembled; I'm checking syntax now." }],
+          toolCalls: [],
+        },
+        usage: { inputOther: 10, output: 50, inputCacheRead: 0, inputCacheCreation: 0 },
+        finishReason: 'completed',
+        rawFinishReason: 'stop',
+      };
+    };
+
+    const ctx = testAgent({ generate });
+    ctx.configure({
+      provider: { type: 'kimi', apiKey: 'test-key', model: 'kimi-code' },
+    });
+    ctx.agent.tools.updateStore('todo', [{ title: 'Validate syntax', status: 'pending' }]);
+
+    await ctx.rpc.prompt({ input: [{ type: 'text', text: 'build' }] });
+    await ctx.untilTurnEnd();
+
+    // Now user types "continue"
+    await ctx.rpc.prompt({ input: [{ type: 'text', text: 'continue' }] });
+    await ctx.untilTurnEnd();
+
+    const history = ctx.agent.context.history;
+    const continueInstructions = history.filter(
+      (m) => m.role === 'user' && m.origin?.kind === 'injection' && (m.origin as any).variant === 'continue_instruction',
+    );
+    expect(continueInstructions.length).toBe(1);
+    expect(continueInstructions[0]!.content[0]!.type === 'text' ? continueInstructions[0]!.content[0]!.text : '').toContain(
+      'The user instructed you to continue. You must take action',
+    );
+  });
 });

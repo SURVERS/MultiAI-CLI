@@ -1,5 +1,14 @@
 # multiai-cli
 
+## 1.1.10
+
+### Patch Changes
+
+- Fix premature turn termination and repetitive infinite loops when models (e.g. reasoning models like Kimi k3.1 pro with thinking: max) emit conversational promises of action without tool calls while TodoList has pending tasks.
+- Add auto-continuation for incomplete tasks in TodoList up to 3 times per phase with authoritative system-reminder directives to execute tools directly.
+- Add authoritative action injection when user submits generic continuation prompts ("continue", "продолжай", etc.) after turns with no tool calls, preventing verbatim text repetition loops.
+- Strengthen system prompt to prohibit announcing actions without invoking tools in the exact same response.
+
 ## 1.1.9
 
 ### Patch Changes

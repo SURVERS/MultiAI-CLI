@@ -50,6 +50,7 @@ import { canonicalTelemetryArgs, isPlainRecord } from './canonical-args';
 import { degradeUnresolvedVideoToTag, resolvePromptMedia } from './media-resolve';
 import { ToolCallDeduplicator } from './tool-dedup';
 import { budgetToolResultForModel } from './tool-result-budget';
+import { TODO_STORE_KEY, type TodoItem } from '../../tools/builtin/state/todo-list';
 
 interface ActiveTurn {
   readonly turnId: number;
@@ -68,6 +69,55 @@ const OUTPUT_TOKEN_CONTINUE_PROMPT =
   'Output token limit hit. Resume directly — no apology, no recap of what you were doing. Pick up mid-thought if that is where the cut happened. Break remaining work into smaller pieces.';
 const OUTPUT_TOKEN_CONTINUE_TOOL_PROMPT =
   'Output token limit hit. The previous generation was interrupted while preparing tool calls. Resume directly — no apology, no recap. Execute the next tool call or pick up where you were cut off.';
+
+const MAX_ACTION_CONTINUATIONS = 3;
+
+function isAskingUserQuestion(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed.endsWith('?')) return true;
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.includes('?') ||
+    lower.includes('would you like') ||
+    lower.includes('do you want') ||
+    lower.includes('please confirm') ||
+    lower.includes('please choose') ||
+    lower.includes('please specify') ||
+    lower.includes('which option') ||
+    lower.includes('which one') ||
+    lower.includes('how would you like') ||
+    lower.includes('should i') ||
+    lower.includes('could you clarify') ||
+    lower.includes('хотите ли') ||
+    lower.includes('вы хотите') ||
+    lower.includes('подтвердите') ||
+    lower.includes('выберите') ||
+    lower.includes('уточните') ||
+    lower.includes('какой вариант') ||
+    lower.includes('как вы предпочитаете') ||
+    lower.includes('стоит ли мне') ||
+    lower.includes('нужно ли')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function hasUnfulfilledActionIntent(text: string): boolean {
+  const lower = text.toLowerCase();
+  return (
+    /\b(i'm|i am|i will|let me|now)\s+(checking|validating|running|executing|testing|inspecting|creating|building|assembling|rendering|fixing|updating|installing|verifying)\b/i.test(lower) ||
+    /\b(сейчас|я\s+(?:сейчас\s+)?(?:проверю|проверяю|запущу|запускаю|протестирую|тестирую|создам|создаю|скомпилирую|компилирую|установлю|устанавливаю|соберу|собираю))\b/i.test(lower)
+  );
+}
+
+function isGenericContinuePrompt(parts: readonly ContentPart[]): boolean {
+  if (parts.length === 0) return false;
+  const textParts = parts.filter((p): p is { type: 'text'; text: string } => p.type === 'text');
+  if (textParts.length !== parts.length) return false;
+  const fullText = textParts.map((p) => p.text).join(' ').trim().toLowerCase();
+  return /^(continue|продолжай|продолжи|дальше|давай|next|go on|proceed|keep going|resume)[!.]?$/i.test(fullText);
+}
 
 export interface TurnEndResult {
   readonly event: TurnEndedEvent;
@@ -601,8 +651,31 @@ export class TurnFlow {
       // inline/tag fallback — BEFORE it lands in history, so no unresolved
       // `file://` reference reaches the model or is persisted for resume. Auth
       // rejections surface as a failed turn via the catch below.
+      const previousMsg = this.agent.context.history[this.agent.context.history.length - 1];
       const resolvedInput = await resolvePromptMedia(this.agent, input, signal);
       this.agent.context.appendUserMessage(resolvedInput, origin);
+
+      if (origin.kind === 'user' && isGenericContinuePrompt(resolvedInput)) {
+        const rawTodos = this.agent.tools.storeData()[TODO_STORE_KEY];
+        const incompleteTodos = Array.isArray(rawTodos)
+          ? (rawTodos as readonly TodoItem[]).filter(
+              (t) => t && typeof t === 'object' && (t.status === 'in_progress' || t.status === 'pending'),
+            )
+          : [];
+        if (
+          previousMsg?.role === 'assistant' &&
+          (previousMsg.toolCalls.length === 0 || incompleteTodos.length > 0)
+        ) {
+          const taskHint =
+            incompleteTodos.length > 0
+              ? `\nActive tasks:\n${incompleteTodos.map((t) => `- [${t.status}] ${t.title}`).join('\n')}`
+              : '';
+          this.agent.context.appendSystemReminder(
+            `The user instructed you to continue. You must take action and execute the next step using your tools now.${taskHint}\nCRITICAL: Do NOT repeat previous conversational text or status updates without calling tools. Invoke the tool call directly.`,
+            { kind: 'injection', variant: 'continue_instruction' },
+          );
+        }
+      }
       const promptHookEnded = await this.applyUserPromptHook(turnId, resolvedInput, origin, signal, startedAt);
       if (promptHookEnded !== undefined) {
         ended = promptHookEnded.event;
@@ -816,6 +889,7 @@ export class TurnFlow {
     let goalOutcomeMessageContinuationUsed = false;
     let goalOutcomeToolResultPending = false;
     let outputTokenContinuationCount = 0;
+    let actionContinuationCount = 0;
     const deduper = new ToolCallDeduplicator({ telemetry: this.agent.telemetry });
     await this.agent.mcp?.waitForInitialLoad(signal);
     // Surface the active goal at the start of the turn (append-only; no-op when
@@ -888,6 +962,7 @@ export class TurnFlow {
               deduper.endStep();
               if (stopReason === 'tool_use') {
                 outputTokenContinuationCount = 0;
+                actionContinuationCount = 0;
               }
               return stopForGoalBudget ? { stopTurn: true } : undefined;
             },
@@ -986,7 +1061,59 @@ export class TurnFlow {
                 return { continue: true };
               }
 
-              // 4. The external Stop hook gets exactly one continuation; the cap
+              // 4. Incomplete tasks in TodoList or conversational action promise without tool execution auto-continuation.
+              // When the response ends with `end_turn` (0 tool calls), but the model still has pending
+              // or in_progress tasks in its TodoList, or promised an action without invoking tools,
+              // don't abort to the interactive prompt. Automatically prompt the model to proceed.
+              if (
+                ctx.stopReason === 'end_turn' &&
+                actionContinuationCount < MAX_ACTION_CONTINUATIONS
+              ) {
+                const history = this.agent.context.history;
+                const lastMsg = history[history.length - 1];
+                if (lastMsg?.role === 'assistant' && lastMsg.toolCalls.length === 0) {
+                  const assistantText = lastMsg.content
+                    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+                    .map((p) => p.text)
+                    .join('\n')
+                    .trim();
+
+                  const rawTodos = this.agent.tools.storeData()[TODO_STORE_KEY];
+                  const incompleteTodos = Array.isArray(rawTodos)
+                    ? (rawTodos as readonly TodoItem[]).filter(
+                        (t) => t && typeof t === 'object' && (t.status === 'in_progress' || t.status === 'pending'),
+                      )
+                    : [];
+                  const hasIncomplete = incompleteTodos.length > 0;
+                  const hasPromise = hasUnfulfilledActionIntent(assistantText);
+                  const isAskingQuestion = isAskingUserQuestion(assistantText);
+
+                  if ((hasIncomplete || hasPromise) && !isAskingQuestion) {
+                    if (!hasStepBudgetRemaining(maxStepsPerTurn, ctx.stepNumber)) {
+                      return { continue: false };
+                    }
+                    actionContinuationCount += 1;
+                    const promptText = hasIncomplete
+                      ? `You have incomplete tasks in your Todo list:\n${incompleteTodos.map((t) => `- [${t.status}] ${t.title}`).join('\n')}\n\nPlease proceed with the next step using the available tools now. Do NOT merely state or describe what you will do — you must execute the action by calling the appropriate tool.`
+                      : `You announced or started an action ("${assistantText.slice(0, 120)}"), but no tool was invoked. Please invoke the appropriate tool now to perform the action.`;
+
+                    this.agent.context.appendSystemReminder(promptText, {
+                      kind: 'system_trigger',
+                      name: 'action_continuation',
+                    });
+                    this.agent.log?.info('auto-continuing turn for incomplete todo tasks or unfulfilled action promise', {
+                      stopReason: ctx.stopReason,
+                      continuationCount: actionContinuationCount,
+                      maxContinuations: MAX_ACTION_CONTINUATIONS,
+                      stepNumber: ctx.stepNumber,
+                      incompleteCount: incompleteTodos.length,
+                    });
+                    return { continue: true };
+                  }
+                }
+              }
+
+              // 5. The external Stop hook gets exactly one continuation; the cap
               //    is intentionally separate from (and does not cap) goal mode.
               if (!stopHookContinuationUsed) {
                 const stopBlock = await this.agent.hooks?.triggerBlock('Stop', {
@@ -1007,7 +1134,7 @@ export class TurnFlow {
                 }
               }
 
-              // 5. Otherwise stop. Goal continuation is no longer driven here:
+              // 6. Otherwise stop. Goal continuation is no longer driven here:
               //    each goal turn is an ordinary turn, and the goal driver decides
               //    whether to run another after this one ends.
               return { continue: false };
