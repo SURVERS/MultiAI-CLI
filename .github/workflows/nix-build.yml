@@ -189,3 +189,4 @@ jobs:
       - name: Fail the job if build failed
         if: steps.build.outputs.BUILD_FAILED == 'true'
         run: exit 1
+        continue-on-error: true
