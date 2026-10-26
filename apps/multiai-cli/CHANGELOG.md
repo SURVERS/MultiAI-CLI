@@ -1,5 +1,14 @@
 # multiai-cli
 
+## 1.1.12
+
+### Patch Changes
+
+- Redesign terminal UI palette to clean, high-contrast white and emerald green aesthetic (matching terminal hacker style, eliminating rainbow/slop palette).
+- Add automatic login initiation on first launch when unauthenticated, immediately prompting and guiding user through browser OAuth sign-in.
+- Add `multiai mcp` command suite (`list`, `add`, `remove`, `enable`, `disable`, `test`) for complete Model Context Protocol management from the terminal.
+- Fix `working` status timer in footer to continuously track the entire task/turn duration from request to completion without resetting across steps, tool executions, and thinking phases.
+
 ## 1.1.11
 
 ### Patch Changes

@@ -217,6 +217,7 @@ export class FooterComponent implements Component {
   private goalSnapshotKey: string | null = null;
   private goalObservedAtMs = Date.now();
   private goalTimer: ReturnType<typeof setInterval> | null = null;
+  private workingTimer: ReturnType<typeof setInterval> | null = null;
   /**
    * Non-terminal background-task counts split by kind so the footer can
    * render two distinct badges. `bashTasks` covers `bash-*` BPM tasks
@@ -234,6 +235,7 @@ export class FooterComponent implements Component {
     this.gitCache = createGitStatusCache(state.workDir, { onChange: this.onRefresh });
     this.syncGoalClock(state.goal);
     this.syncGoalTimer(state.goal);
+    this.syncWorkingTimer(state.streamingPhase);
   }
 
   setState(state: AppState): void {
@@ -243,6 +245,7 @@ export class FooterComponent implements Component {
     }
     this.syncGoalClock(state.goal);
     this.syncGoalTimer(state.goal);
+    this.syncWorkingTimer(state.streamingPhase);
     this.state = state;
   }
 
@@ -428,10 +431,30 @@ export class FooterComponent implements Component {
     }
   }
 
+  private syncWorkingTimer(phase: AppState['streamingPhase']): void {
+    if (phase !== 'idle') {
+      if (this.workingTimer !== null) return;
+      this.workingTimer = setInterval(() => {
+        this.onRefresh();
+      }, 100);
+      this.workingTimer.unref?.();
+      return;
+    }
+
+    if (this.workingTimer !== null) {
+      clearInterval(this.workingTimer);
+      this.workingTimer = null;
+    }
+  }
+
   dispose(): void {
     if (this.goalTimer !== null) {
       clearInterval(this.goalTimer);
       this.goalTimer = null;
+    }
+    if (this.workingTimer !== null) {
+      clearInterval(this.workingTimer);
+      this.workingTimer = null;
     }
   }
 

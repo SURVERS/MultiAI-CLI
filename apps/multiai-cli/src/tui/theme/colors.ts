@@ -80,35 +80,35 @@ export interface ColorPalette {
 }
 
 export const darkColors: ColorPalette = {
-  primary: '#00E5FF',
-  accent: '#8B5CF6',
+  primary: '#22C55E',
+  accent: '#4ADE80',
 
-  text: '#F1F5F9',
+  text: '#F8FAFC',
   textStrong: '#FFFFFF',
   textDim: '#94A3B8',
   textMuted: '#64748B',
 
   border: '#334155',
-  borderFocus: '#00E5FF',
+  borderFocus: '#22C55E',
 
-  success: '#10B981',
+  success: '#22C55E',
   warning: '#F59E0B',
-  error: '#F43F5E',
+  error: '#EF4444',
 
-  diffAdded: '#10B981',
-  diffRemoved: '#F43F5E',
-  diffAddedStrong: '#34D399',
-  diffRemovedStrong: '#FB7185',
+  diffAdded: '#22C55E',
+  diffRemoved: '#EF4444',
+  diffAddedStrong: '#4ADE80',
+  diffRemovedStrong: '#F87171',
   diffGutter: '#64748B',
   diffMeta: '#94A3B8',
 
-  roleUser: '#FBBF24',
-  shellMode: '#C084FC',
+  roleUser: '#FFFFFF',
+  shellMode: '#4ADE80',
 };
 
 export const lightColors: ColorPalette = {
-  primary: '#0284C7',
-  accent: '#7C3AED',
+  primary: '#16A34A',
+  accent: '#15803D',
 
   text: '#0F172A',
   textStrong: '#020617',
@@ -116,21 +116,21 @@ export const lightColors: ColorPalette = {
   textMuted: '#64748B',
 
   border: '#94A3B8',
-  borderFocus: '#0284C7',
+  borderFocus: '#16A34A',
 
-  success: '#059669',
+  success: '#16A34A',
   warning: '#D97706',
-  error: '#E11D48',
+  error: '#DC2626',
 
-  diffAdded: '#059669',
-  diffRemoved: '#E11D48',
-  diffAddedStrong: '#10B981',
-  diffRemovedStrong: '#F43F5E',
+  diffAdded: '#16A34A',
+  diffRemoved: '#DC2626',
+  diffAddedStrong: '#22C55E',
+  diffRemovedStrong: '#EF4444',
   diffGutter: '#94A3B8',
   diffMeta: '#64748B',
 
-  roleUser: '#D97706',
-  shellMode: '#7C3AED',
+  roleUser: '#0F172A',
+  shellMode: '#16A34A',
 };
 
 export type ResolvedTheme = 'dark' | 'light';

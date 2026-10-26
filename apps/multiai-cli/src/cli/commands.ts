@@ -10,6 +10,7 @@ import { registerExportCommand } from './sub/export';
 import { registerLoginCommand } from './sub/login';
 import { registerLogoutCommand } from './sub/logout';
 import { registerAccountCommand } from './sub/account';
+import { registerMcpCommand } from './sub/mcp';
 import { registerProviderCommand } from './sub/provider';
 import { registerVisCommand } from './sub/vis';
 import { registerWebCommand } from './sub/web';
@@ -127,6 +128,7 @@ export function createProgram(
   registerLoginCommand(program);
   registerLogoutCommand(program);
   registerAccountCommand(program);
+  registerMcpCommand(program);
   registerDoctorCommand(program);
   registerVisCommand(program);
   program

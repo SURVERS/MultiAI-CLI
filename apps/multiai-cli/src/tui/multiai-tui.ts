@@ -688,6 +688,14 @@ export class MultiAITUI {
     }
     void this.refreshSkillCommands(this.session);
     void this.refreshPluginCommands(this.session);
+
+    if (this.session === undefined || !this.state.appState.model) {
+      void this.harness.auth.status().then((authStatus) => {
+        if (!authStatus.loggedIn && !this.aborted && !this.isShuttingDown) {
+          void this.handleCommand('login');
+        }
+      }).catch(() => {});
+    }
   }
 
   private async showSessionWarnings(session: Session): Promise<void> {

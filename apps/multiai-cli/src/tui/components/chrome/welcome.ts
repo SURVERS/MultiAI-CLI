@@ -66,16 +66,13 @@ export class WelcomeComponent implements Component {
       logoLines = [
         chalk.bold.hex(colors.primary)('◈ MULTIAI CLI') +
           chalk.hex(colors.textMuted)(' · ') +
-          chalk.hex(colors.accent)(t('Agentic IDE', 'AI-ассистент')),
+          chalk.hex(colors.primary)(t('Agentic IDE', 'AI-ассистент')),
       ];
     } else if (isRainbowDancing()) {
       logoLines = renderDanceWelcomeLogo(MULTIAI_WORDMARK);
     } else {
-      const splitAt = Math.ceil(MULTIAI_WORDMARK.length / 2);
-      logoLines = MULTIAI_WORDMARK.map((line, index) =>
-        chalk.bold.hex(
-          index < splitAt ? colors.primary : colors.accent,
-        )(line),
+      logoLines = MULTIAI_WORDMARK.map((line) =>
+        chalk.bold.hex(colors.primary)(line),
       );
     }
 
@@ -83,7 +80,7 @@ export class WelcomeComponent implements Component {
       chalk.hex(colors.primary)('⚡ ') +
       chalk.bold.hex(colors.textStrong)('MULTIAI IDE') +
       chalk.hex(colors.textMuted)(' ◈ ') +
-      chalk.hex(colors.accent)(t('NEXT-GEN AGENTIC RUNTIME', 'АВТОНОМНАЯ СРЕДА РАЗРАБОТКИ'));
+      chalk.hex(colors.primary)(t('NEXT-GEN AGENTIC RUNTIME', 'АВТОНОМНАЯ СРЕДА РАЗРАБОТКИ'));
 
     const cardWidth = Math.min(Math.max(safeWidth - 4, 30), Math.max(WORDMARK_WIDTH, 66));
     const canRenderBox = safeWidth >= 44 && cardWidth >= 36;
@@ -95,12 +92,12 @@ export class WelcomeComponent implements Component {
       const topBorder =
         CONTENT_INDENT +
         chalk.hex(colors.border)('╭─') +
-        chalk.bold.hex(colors.accent)(badgeText) +
+        chalk.bold.hex(colors.primary)(badgeText) +
         chalk.hex(colors.border)('─'.repeat(rightBorderLen) + '╮');
 
       const statusText =
         chalk.hex(colors.success)('● ') +
-        chalk.hex(colors.text)(t('Готов к работе', 'Ready')) +
+        chalk.bold.hex(colors.textStrong)(t('Готов к работе', 'Ready')) +
         chalk.hex(colors.textDim)(` · v${this.state.version}`);
 
       const rows = [

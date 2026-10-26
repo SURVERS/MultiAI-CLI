@@ -328,7 +328,7 @@ export class SessionEventHandler {
     });
     this.host.setAppState({
       streamingPhase: 'waiting',
-      streamingStartTime: Date.now(),
+      streamingStartTime: this.host.state.appState.streamingStartTime || Date.now(),
     });
   }
 
@@ -413,7 +413,7 @@ export class SessionEventHandler {
     });
     this.host.setAppState({
       streamingPhase: 'waiting',
-      streamingStartTime: Date.now(),
+      streamingStartTime: this.host.state.appState.streamingStartTime || Date.now(),
     });
   }
 
@@ -533,7 +533,10 @@ export class SessionEventHandler {
     streamingUI.appendThinkingDelta(event.delta);
     this.host.patchLivePane({ mode: 'idle' });
     if (state.appState.streamingPhase !== 'thinking') {
-      this.host.setAppState({ streamingPhase: 'thinking', streamingStartTime: Date.now() });
+      this.host.setAppState({
+        streamingPhase: 'thinking',
+        streamingStartTime: state.appState.streamingStartTime || Date.now(),
+      });
     }
     streamingUI.scheduleFlush();
   }
@@ -556,7 +559,10 @@ export class SessionEventHandler {
       pendingQuestion: null,
     });
     if (state.appState.streamingPhase !== 'composing') {
-      this.host.setAppState({ streamingPhase: 'composing', streamingStartTime: Date.now() });
+      this.host.setAppState({
+        streamingPhase: 'composing',
+        streamingStartTime: state.appState.streamingStartTime || Date.now(),
+      });
     }
     streamingUI.scheduleFlush();
   }
@@ -629,7 +635,10 @@ export class SessionEventHandler {
       pendingQuestion: null,
     });
     if (state.appState.streamingPhase !== 'composing') {
-      this.host.setAppState({ streamingPhase: 'composing', streamingStartTime: Date.now() });
+      this.host.setAppState({
+        streamingPhase: 'composing',
+        streamingStartTime: state.appState.streamingStartTime || Date.now(),
+      });
     }
     streamingUI.scheduleFlush();
   }
