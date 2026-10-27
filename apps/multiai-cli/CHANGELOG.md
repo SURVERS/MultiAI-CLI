@@ -1,5 +1,11 @@
 # multiai-cli
 
+## 1.1.13
+
+### Patch Changes
+
+- Format `working` live duration and completed execution timers with days, hours, minutes, and seconds (`1d 2h 15m 30s` / `1д 2ч 15м 30с`) instead of formatting long runtimes entirely in seconds.
+
 ## 1.1.12
 
 ### Patch Changes
