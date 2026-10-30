@@ -1,5 +1,12 @@
 # multiai-cli
 
+## 1.1.14
+
+### Patch Changes
+
+- Add `/enhance` (alias `/improve`) command to refine and optimize draft prompts for the active model architecture (Claude, OpenAI/DeepSeek, Gemini, General) and custom providers without leaking meta-prompt text.
+- Support active custom provider resolution and direct endpoint dispatch (`${baseUrl}/chat/completions`) for custom AI keys, preventing MultiAI token errors when custom providers are in use.
+
 ## 1.1.13
 
 ### Patch Changes

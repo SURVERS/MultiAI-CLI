@@ -55,6 +55,7 @@ import {
   handleTitleCommand,
 } from './session';
 import { handleSwarmCommand } from './swarm';
+import { handleEnhanceCommand } from './enhance';
 import { handleUndoCommand } from './undo';
 import { handleWebCommand } from './web';
 
@@ -64,6 +65,7 @@ import { handleWebCommand } from './web';
 
 export { handleLoginCommand, handleLogoutCommand } from './auth';
 export { handleBtwCommand } from './btw';
+export { handleEnhanceCommand } from './enhance';
 export { handleCopyCommand } from './copy';
 export { handleAddDirCommand } from './add-dir';
 export {
@@ -332,6 +334,9 @@ async function handleBuiltInSlashCommand(
       return;
     case 'btw':
       await handleBtwCommand(host, args);
+      return;
+    case 'enhance':
+      await handleEnhanceCommand(host, args);
       return;
     case 'title':
       await handleTitleCommand(host, args);

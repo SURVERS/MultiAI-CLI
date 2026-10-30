@@ -210,6 +210,14 @@ export const BUILTIN_SLASH_COMMANDS = [
     availability: 'always',
   },
   {
+    name: 'enhance',
+    aliases: ['improve'],
+    description: t('Enhance draft prompt for the active model and provider', 'Улучшить черновик промпта под активную модель и провайдер'),
+    priority: 88,
+    argumentHint: '<draft prompt>',
+    availability: 'always',
+  },
+  {
     name: 'help',
     aliases: ['h', '?'],
     description: t('Show available commands and shortcuts', 'Показать доступные команды и сочетания клавиш'),
