@@ -54,6 +54,7 @@ import { IEventBus } from '#/app/event/eventBus';
 import {
   APIRequestTooLargeError,
   APIStatusError,
+  APIStreamInterruptedError,
   classifyApiError,
   isImageFormatError,
   isRecoverableRequestStructureError,
@@ -264,9 +265,19 @@ export class AgentLLMRequesterService implements IAgentLLMRequesterService {
         },
       );
     } catch (error) {
-      this.logRequestFailure(error, overrides, signal);
-      trace.set(this.trackApiError(error, startedAt, signal, overrides.source, trace.traceId));
-      throw error;
+      const normalizedError =
+        signal !== undefined && !signal.aborted && isAbortError(error)
+          ? new APIStreamInterruptedError(
+              error instanceof Error && error.message
+                ? error.message
+                : 'Upstream LLM stream aborted unexpectedly',
+            )
+          : error;
+      this.logRequestFailure(normalizedError, overrides, signal);
+      trace.set(
+        this.trackApiError(normalizedError, startedAt, signal, overrides.source, trace.traceId),
+      );
+      throw normalizedError;
     }
   }
 
@@ -427,7 +438,7 @@ export class AgentLLMRequesterService implements IAgentLLMRequesterService {
       }
 
       if (message === undefined || finish === undefined) {
-        throw new Error('LLM request stream ended without a finish event.');
+        throw new APIStreamInterruptedError('LLM request stream ended without a finish event.');
       }
 
       this.usage.record(request.modelAlias, usage, request.source);

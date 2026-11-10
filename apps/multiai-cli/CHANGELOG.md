@@ -1,5 +1,13 @@
 # multiai-cli
 
+## 1.1.16
+
+### Patch Changes
+
+- Fix unsolicited turn cancellations across v1 (`chatWithRetry`) and v2 (`AgentLLMRequesterService`) agent loops when upstream SSE/HTTP streams abort (`AbortError` / stream ended without finish event) without user cancellation (`!signal.aborted`), converting them into retryable connection/stream-interrupted errors instead of terminating the turn as cancelled.
+- Auto-continue turns when models stop after reasoning-only steps (`think` content with empty visible text and zero tool calls) or empty post-tool steps, and increase max action continuations per phase to 5.
+- Exclude non-chat audio/TTS/STT/embedding models (`elevenlabs`, `tts`, `stt`, `whisper`, `transcribe`, `embedding`, `moderation`, `rerank`) from the managed MultiAI model catalog.
+
 ## 1.1.15
 
 ### Patch Changes

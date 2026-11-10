@@ -705,7 +705,14 @@ export function parseMultiAIReasoning(record: Record<string, unknown>): {
 export function isExcludedMultiAIModel(modelIdOrAlias: string): boolean {
   const normalized = modelIdOrAlias.trim().toLowerCase();
   if (normalized.startsWith('ma-') || normalized.includes('/ma-')) return true;
-  if (normalized.includes('transcribe')) return true;
+  if (normalized.includes('elevenlabs')) return true;
+  if (
+    /(?:^|[/_.: -])(?:tts|stt|whisper|transcribe|transcription|embedding|embeddings|moderation|rerank)(?:[/_.: -]|$)/i.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
   if (normalized.includes('banan')) return true;
   if (
     (normalized.includes('gpt') && normalized.includes('image')) ||

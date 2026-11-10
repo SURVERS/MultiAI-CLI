@@ -70,7 +70,7 @@ const OUTPUT_TOKEN_CONTINUE_PROMPT =
 const OUTPUT_TOKEN_CONTINUE_TOOL_PROMPT =
   'Output token limit hit. The previous generation was interrupted while preparing tool calls. Resume directly — no apology, no recap. Execute the next tool call or pick up where you were cut off.';
 
-const MAX_ACTION_CONTINUATIONS = 3;
+const MAX_ACTION_CONTINUATIONS = 5;
 
 const TRAILING_EMOJI_OR_SPACE_RE =
   /[\s\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]+$/u;
@@ -1123,6 +1123,12 @@ export class TurnFlow {
                     .map((p) => p.text)
                     .join('\n')
                     .trim();
+                  const hasReasoningOnly =
+                    assistantText.length === 0 &&
+                    lastMsg.content.some(
+                      (p) => p.type === 'think' && typeof p.think === 'string' && p.think.trim().length > 0,
+                    );
+                  const isEmptyAfterTools = assistantText.length === 0 && ctx.stepNumber > 1;
 
                   const rawTodos = this.agent.tools.storeData()[TODO_STORE_KEY];
                   const incompleteTodos = Array.isArray(rawTodos)
@@ -1134,14 +1140,16 @@ export class TurnFlow {
                   const hasPromise = hasUnfulfilledActionIntent(assistantText);
                   const isAskingQuestion = isAskingUserQuestion(assistantText);
 
-                  if ((hasIncomplete || hasPromise) && !isAskingQuestion) {
+                  if ((hasIncomplete || hasPromise || hasReasoningOnly || isEmptyAfterTools) && !isAskingQuestion) {
                     if (!hasStepBudgetRemaining(maxStepsPerTurn, ctx.stepNumber)) {
                       return { continue: false };
                     }
                     actionContinuationCount += 1;
                     const promptText = hasIncomplete
                       ? `You have incomplete tasks in your Todo list:\n${incompleteTodos.map((t) => `- [${t.status}] ${t.title}`).join('\n')}\n\nPlease proceed with the next step using the available tools now. Do NOT merely state or describe what you will do — you must execute the action by calling the appropriate tool.`
-                      : `You announced or started an action ("${assistantText.slice(0, 120)}"), but no tool was invoked. Please invoke the appropriate tool now to perform the action.`;
+                      : hasReasoningOnly || isEmptyAfterTools
+                        ? 'You stopped after reasoning or tool execution without emitting a follow-up tool call or visible answer. Continue immediately: invoke the next required tool call or provide the complete final response.'
+                        : `You announced or started an action ("${assistantText.slice(0, 120)}"), but no tool was invoked. Please invoke the appropriate tool now to perform the action.`;
 
                     this.agent.context.appendSystemReminder(promptText, {
                       kind: 'system_trigger',

@@ -1,6 +1,6 @@
 import { sleep } from '@antfu/utils';
 
-import { APIStatusError } from '@multiai/kosong';
+import { APIConnectionError, APIStatusError } from '@multiai/kosong';
 import type { Logger } from '#/logging/types';
 
 import { abortable } from '../utils/abort';
@@ -62,9 +62,17 @@ export async function chatWithRetry(input: ChatWithRetryInput): Promise<LLMChatR
       return response;
     } catch (error) {
       captureAttemptTraceId(input, error);
-      if (attempt >= maxAttempts || !input.llm.isRetryableError(error)) {
-        logRequestFailure(input, error, attempt, maxAttempts);
-        throw error;
+      const effectiveError =
+        isAbortError(error) && !input.params.signal.aborted
+          ? new APIConnectionError(
+              error instanceof Error && error.message
+                ? `Upstream stream aborted unexpectedly: ${error.message}`
+                : 'Upstream stream aborted unexpectedly',
+            )
+          : error;
+      if (attempt >= maxAttempts || !input.llm.isRetryableError(effectiveError)) {
+        logRequestFailure(input, effectiveError, attempt, maxAttempts);
+        throw effectiveError;
       }
 
       // A server `Retry-After` (carried on the error) overrides the computed
