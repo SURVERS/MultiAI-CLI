@@ -72,31 +72,51 @@ const OUTPUT_TOKEN_CONTINUE_TOOL_PROMPT =
 
 const MAX_ACTION_CONTINUATIONS = 3;
 
+const TRAILING_EMOJI_OR_SPACE_RE =
+  /[\s\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D]+$/u;
+
+const DANGLING_END_WORD_RE =
+  /(?:^|\s)(?:и|а|но|или|либо|что|чтобы|также|для|в|во|на|с|со|к|ко|по|из|от|у|о|об|обо|при|через|после|перед|между|под|над|за|про|без|до|если|когда|где|как|так|то|не|ни|же|ли|бы|который|которая|которое|которые|которого|которой|которых|которому|которым|которыми|этот|эта|это|эти|этого|этой|этих|мой|моя|мое|моё|мои|наш|наша|наше|наши|свой|своя|свое|своё|свои|and|or|but|nor|so|yet|for|with|without|to|in|into|on|onto|at|from|by|of|about|as|like|through|after|over|between|against|during|before|under|around|among|that|which|who|whom|whose|where|when|while|because|although|though|if|unless|until|whether|will|would|shall|should|can|could|may|might|must|is|are|was|were|be|been|being|have|has|had|do|does|did|the|a|an|this|these|those|my|your|our|their|its)$/iu;
+
+const RU_ACTION_INTENT_RE =
+  /(?:^|[.!?;—–\-,\s])(?:(?:окей|ок|хорошо|отлично|понял|принято|ладно|супер|так|теперь|сейчас|щас|сначала|сперва|далее|давай(?:те)?)[,\s]+)*(?:я\s+)?(?:(?:сейчас|щас|теперь|сначала|сперва|далее|быстро|сразу)\s+)+(?:гляну|погляжу|посмотрю|смотрю|проверю|проверяю|проверим|запущу|запускаю|запустим|открою|открываю|прочитаю|читаю|найду|ищу|исправлю|исправляю|исправим|поправлю|поправляю|поправим|обновлю|обновляю|обновим|создам|создаю|добавлю|добавляю|удалю|удаляю|выполню|выполняю|сделаю|делаю|соберу|собираю|протестирую|тестирую|скомпилирую|компилирую|перейду|перехожу|начну|начинаю|продолжу|продолжаю|попробую|пробую|включу|включаю|вызову|вызываю|применю|применяю|внесу|вношу|загружу|загружаю|скачаю|скачиваю|установлю|устанавливаю|перезапущу|перезапускаю|исследую|изучу|изучаю|разберусь|разбираюсь)\b/iu;
+
+const RU_DIRECT_ACTION_START_RE =
+  /^(?:(?:окей|ок|хорошо|отлично|понял|принято|ладно|так|давай(?:те)?|я)[,!\s]+)*(?:гляну|погляжу|посмотрю|смотрю|проверю|проверяю|проверим|запущу|запускаю|запустим|открою|открываю|прочитаю|читаю|найду|ищу|исправлю|исправляю|исправим|поправлю|поправляю|поправим|обновлю|обновляю|обновим|создам|создаю|добавлю|добавляю|выполню|выполняю|соберу|собираю|перехожу\s+к|приступаю\s+к|начинаю|продолжаю|вношу\s+правки|внесу\s+правки)\b/iu;
+
+const EN_ACTION_INTENT_RE =
+  /\b(?:i'm|i\s+am|i\s+will|i'll|let\s+me|let's|now|next,?\s+i\s+will|next,?\s+i'll|first,?\s+let\s+me)\s+(?:checking|validating|running|executing|testing|inspecting|creating|building|assembling|rendering|fixing|updating|installing|verifying|check|inspect|read|look|search|find|open|run|execute|test|build|fix|update|edit|modify|create|write|add|remove|delete|install|start|continue|proceed|verify|investigate|analyze|examine|review|fetch|call|invoke|try)\b/i;
+
 function isAskingUserQuestion(text: string): boolean {
-  const trimmed = text.trim();
-  if (trimmed.endsWith('?')) return true;
-  const lower = trimmed.toLowerCase();
+  const coreText = text.trim().replace(TRAILING_EMOJI_OR_SPACE_RE, '').trim();
+  if (!coreText) return false;
+  if (coreText.endsWith('?') || coreText.endsWith('？')) return true;
+  const tailLower = coreText.slice(-320).toLowerCase();
   if (
-    lower.includes('?') ||
-    lower.includes('would you like') ||
-    lower.includes('do you want') ||
-    lower.includes('please confirm') ||
-    lower.includes('please choose') ||
-    lower.includes('please specify') ||
-    lower.includes('which option') ||
-    lower.includes('which one') ||
-    lower.includes('how would you like') ||
-    lower.includes('should i') ||
-    lower.includes('could you clarify') ||
-    lower.includes('хотите ли') ||
-    lower.includes('вы хотите') ||
-    lower.includes('подтвердите') ||
-    lower.includes('выберите') ||
-    lower.includes('уточните') ||
-    lower.includes('какой вариант') ||
-    lower.includes('как вы предпочитаете') ||
-    lower.includes('стоит ли мне') ||
-    lower.includes('нужно ли')
+    tailLower.endsWith('?') ||
+    tailLower.includes('would you like') ||
+    tailLower.includes('do you want') ||
+    tailLower.includes('please confirm') ||
+    tailLower.includes('please choose') ||
+    tailLower.includes('please specify') ||
+    tailLower.includes('which option') ||
+    tailLower.includes('which one') ||
+    tailLower.includes('how would you like') ||
+    tailLower.includes('should i') ||
+    tailLower.includes('could you clarify') ||
+    tailLower.includes('let me know if') ||
+    tailLower.includes('хотите ли') ||
+    tailLower.includes('вы хотите') ||
+    tailLower.includes('подтвердите') ||
+    tailLower.includes('выберите') ||
+    tailLower.includes('уточните') ||
+    tailLower.includes('какой вариант') ||
+    tailLower.includes('как вы предпочитаете') ||
+    tailLower.includes('стоит ли мне') ||
+    tailLower.includes('нужно ли') ||
+    tailLower.includes('дайте знать') ||
+    tailLower.includes('скажи, если') ||
+    tailLower.includes('скажите, если')
   ) {
     return true;
   }
@@ -104,10 +124,36 @@ function isAskingUserQuestion(text: string): boolean {
 }
 
 function hasUnfulfilledActionIntent(text: string): boolean {
-  const lower = text.toLowerCase();
+  const rawTrimmed = text.trim();
+  if (!rawTrimmed) return false;
+  const fenceCount = rawTrimmed.match(/```/g)?.length ?? 0;
+  if (fenceCount % 2 === 1) return true;
+
+  const coreText = rawTrimmed.replace(TRAILING_EMOJI_OR_SPACE_RE, '').trim();
+  if (!coreText) return false;
+
+  if (
+    (/[:;,\u2014\u2013\u2026]$/.test(coreText) || coreText.endsWith('...')) &&
+    !coreText.endsWith('|')
+  ) {
+    return true;
+  }
+  if (DANGLING_END_WORD_RE.test(coreText)) {
+    return true;
+  }
+
+  const lastParagraph = (
+    coreText
+      .split(/\n\s*\n/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .at(-1) ?? coreText
+  ).slice(-320);
+
   return (
-    /\b(i'm|i am|i will|let me|now)\s+(checking|validating|running|executing|testing|inspecting|creating|building|assembling|rendering|fixing|updating|installing|verifying)\b/i.test(lower) ||
-    /\b(сейчас|я\s+(?:сейчас\s+)?(?:проверю|проверяю|запущу|запускаю|протестирую|тестирую|создам|создаю|скомпилирую|компилирую|установлю|устанавливаю|соберу|собираю))\b/i.test(lower)
+    RU_ACTION_INTENT_RE.test(lastParagraph) ||
+    EN_ACTION_INTENT_RE.test(lastParagraph) ||
+    (coreText.length <= 280 && RU_DIRECT_ACTION_START_RE.test(lastParagraph))
   );
 }
 
@@ -1030,7 +1076,7 @@ export class TurnFlow {
               if (
                 (ctx.stopReason === 'max_tokens' ||
                   ctx.stopReason === 'paused' ||
-                  (ctx.stopReason === 'unknown' && ctx.unexecutedToolCallsRecorded === true)) &&
+                  ctx.stopReason === 'unknown') &&
                 outputTokenContinuationCount < MAX_OUTPUT_TOKEN_CONTINUATIONS
               ) {
                 if (!hasStepBudgetRemaining(maxStepsPerTurn, ctx.stepNumber)) {

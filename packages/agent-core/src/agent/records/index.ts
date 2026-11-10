@@ -289,7 +289,7 @@ export class AgentRecords {
             protocol_version: AGENT_WIRE_PROTOCOL_VERSION,
           };
         }
-        replayedRecords?.push(migratedRecord);
+        if (shouldRewrite) replayedRecords?.push(migratedRecord);
         if (this.restore(migratedRecord)) {
           completed = false;
           break;

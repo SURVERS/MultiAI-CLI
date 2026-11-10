@@ -1,5 +1,13 @@
 # multiai-cli
 
+## 1.1.15
+
+### Patch Changes
+
+- Fix premature mid-sentence and mid-task turn cutoffs across all providers, especially in Full Access (`--yolo` / `auto`) mode.
+- Expand unfulfilled action-intent and mid-sentence cutoff detection (unclosed code blocks, trailing colons/ellipses/dangling prepositions, and Russian/English transitional announcements) to automatically continue the turn and invoke the next tool without requiring manual `"continue"` / `"продолжай"` prompts.
+- Auto-continue when streams terminate with `unknown`/`other` or `paused` stop reasons after emitting partial output, and strengthen `auto` mode system reminders against standalone status-update turns without tool calls.
+
 ## 1.1.14
 
 ### Patch Changes

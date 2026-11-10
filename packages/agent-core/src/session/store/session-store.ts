@@ -400,7 +400,9 @@ export class SessionStore {
     // or UNC location (for example TUI `C:/Work` vs VS Code `c:\\Work`).
     const index = await readSessionIndex(this.homeDir, this.sessionsDir);
     for (const entry of index.values()) {
-      if (seen.has(entry.sessionId) || !(await isDirectory(entry.sessionDir))) continue;
+      if (seen.has(entry.sessionId)) continue;
+      if (entry.workDir && !areSameFsPath(entry.workDir, workDir)) continue;
+      if (!(await isDirectory(entry.sessionDir))) continue;
       const summary = await this.summaryFromDir(entry.sessionId, entry.sessionDir, entry.workDir);
       if (!areSameFsPath(summary.workDir, workDir)) continue;
       if (!includeArchive && summary.archived === true) continue;
